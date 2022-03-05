@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="//cdn.jsdelivr.net/npm/phaser@3.24.1/dist/phaser.min.js"></script>
+    </head>
+    <body>
+        <div id="game"></div>
+        <script>
+// example from https://www.thepolyglotdeveloper.com/2020/09/include-touch-cursor-gesture-events-phaser-game/
+/*
+            const phaserConfig = {
+                type: Phaser.AUTO,
+                parent: "game",
+                width: 1280,
+                height: 720,
+                backgroundColor: "#5DACD8",
+                scene: {
+                    init: initScene,
+                    preload: preloadScene,
+                    create: createScene,
+                    update: updateScene
+                }
+            };
+  */          
+
+  //from  https://rexrainbow.github.io/phaser3-rex-notes/docs/site/game/#configuration
+
+            const phaserConfig = {
+                type: Phaser.AUTO,
+                parent: 'game',
+                // 750x1334
+                // 2560×1440
+                width: 600,
+                height: 800,
+                //width: 1440,
+                //height: 2560,
+                scale: {
+                    mode: Phaser.Scale.FIT,
+                    autoCenter: Phaser.Scale.CENTER_BOTH
+                },
+                dom: {
+                    createContainer: false,
+                },
+                scene: null,
+                backgroundColor: 0x333333,
+                scene: {
+                    init: initScene,
+                    preload: preloadScene,
+                    create: createScene,
+                    update: updateScene
+                }            
+            }
+
+            const game = new Phaser.Game(phaserConfig);
+
+            //var game = new Phaser.Game(config);
+
+
+            var isClicking = false;
+            var swipeDirection;
+            var touchAlpha = 0.5;
+            var touchAlphaChange = -0.1;
+            var cX =0;
+            var cY =0;
+            var pX =0;
+            var pY =0;
+
+            var matrixWidth = 10;
+            var userState = 'ready'
+
+
+
+
+            rectSize = game.config.width/matrixWidth;
+            var textConfig={fontSize:rectSize*2,color:'#555555',fontFamily: 'Courier'};
+
+
+
+            function initScene() { }
+
+            function preloadScene() {
+                this.load.image("plane", "plane.png");
+            }
+
+            function createScene() {
+
+
+                
+
+                // text example from https://phasergames.com/phaser-3-basics-images-text-and-click/
+                // var textConfig={fontSize:'20px',color:'#555555',fontFamily: 'Arial'};
+                // var textConfig={fontSize:fontSizePx,color:'#555555',font: '20px monospace'};
+
+                //var textConfig={fontSize:fontSize,color:'#555555',font: fontSizePx};
+                var textConfig={fontSize:rectSize,color:'#555555',fontFamily: 'Courier'};
+
+
+                var w0 = this.add.text(0, rectSize*6, "123456789012345678",textConfig);
+                var w1 = this.add.text(rectSize*2, rectSize*6, "Z",textConfig);
+                w2 = this.add.text(rectSize, rectSize*11, "A",textConfig);
+                
+                this.add.text(rectSize*4, rectSize*6, "C",textConfig);
+
+
+                w1.setOrigin(0.5,0.5);
+                //w2.setOrigin(0.5,0.5);
+                //w0.setOrigin(0.5,0.5);
+                //this.setOrigin (0.5,0.5);
+
+
+                // this.title=this.add.text(game.config.width/2,game.config.height*.75,"Hello Wordga!!!",textConfig);
+                aTaskBar = this.add.text(0,0,"01234567890123456789",textConfig);
+
+
+                var rectangles = [];
+
+                    for(var x = 0; x < 8; x++)
+                    {
+                        for(var y = 0; y < 8; y++)
+                        {
+                            rectangles.push(new Phaser.Geom.Rectangle(x * rectSize*2+rectSize, y * rectSize*2+rectSize, rectSize*2, rectSize*2));
+                        }
+                    }
+
+
+
+                //setOrigin() replaces anchor.set()
+                //sprites now default to orign 0.5 for both x and y
+                //this.title.setOrigin(0.5,0.5);
+                //aTaskBar.setOrigin(0.5,0);
+                //aText.setOrigin(0.5,0.5);
+                
+                //r2.setOrigin(0,0);
+                
+
+                
+                plane = this.add.sprite(640, 360, "plane");
+                plane.setScale(0.4);
+
+
+            }
+
+            //function updateScene() { }
+            /* option 1 direct */
+            function updateScene() {
+
+                if(!this.input.activePointer.isDown && isClicking == true) {
+                    plane.x = this.input.activePointer.position.x;
+                    plane.y = this.input.activePointer.position.y;
+                    isClicking = false;
+
+                    console.log("---Position---");
+                    console.log(this.input.activePointer.position.x);  
+                    console.log(this.input.activePointer.position.y);   
+
+                    plane.alpha = 1.0;
+
+                    pX = cX;
+                    pY = cY;    
+                    cX = parseInt(this.input.activePointer.position.x/game.config.width*matrixWidth);
+                    cY = parseInt(this.input.activePointer.position.y/game.config.width*matrixWidth);
+
+                    getUserState()
+
+                } else if(this.input.activePointer.isDown && isClicking == false) {
+                    isClicking = true;
+                }
+
+                if(plane.alpha<=0.1) {
+                    touchAlphaChange = 0.01;
+                } else if (plane.alpha>=0.9) {
+                    touchAlphaChange = -0.01;
+                }
+
+             plane.alpha += touchAlphaChange;
+
+             w2.setText(cX+" "+cY+" "+pX+" "+pY);
+
+
+
+            }
+
+            function getUserState() {
+            //    function placeWord() {
+            
+                console.log("User state logged")
+
+			var x1 = pX;
+			var y1 = pY;
+			var x2 = cX;
+			var y2 = cY;
+
+
+
+
+			console.log("---old position----");
+			console.log(x1);
+			console.log(y1);
+			console.log("---new position----");
+			console.log(x2);
+			console.log(y2);
+			console.log("-------");
+
+			var xShift = 0;
+			var yShift = 0;
+
+			if (x1 == x2) {
+				//console.log ("must be verticle");
+
+				if (y1 == y2) {
+					console.log("no direction indicated");
+				}
+				else if (y1 < y2) {
+					console.log("verticle down");
+					yShift = 1;
+				}
+				else if (y1 > y2) {
+					console.log("verticle up");
+					yShift = -1;
+				}
+				else {
+					console.log("error!");
+				}
+
+			}
+            else if (y1 == y2) {
+                if (x1 < x2) {
+				console.log("horizontal right");
+				xShift = 1;
+                }
+                else if (x1 > x2) {
+                    console.log("horizontal left");
+                    xShift = -1;
+                }
+                else {
+                    console.log("no direction");
+                }
+
+
+            }
+
+            if (userState == 'ready') {
+                userState = 'anchor'
+
+            }
+            else if (userState =='anchor') {
+                if (xShift + xShift ==0) {
+                    userState = 'ready'
+                }
+                else {
+                    userState = 'place'
+                }
+
+            }
+
+
+            console.log(userState);
+
+            }
+
+        </script>
+    </body>
+</html>

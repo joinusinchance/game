@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="//cdn.jsdelivr.net/npm/phaser@3.24.1/dist/phaser.min.js"></script>
+    </head>
+    <body>
+        <div id="game"></div>
+        <script>
+// example from https://www.thepolyglotdeveloper.com/2020/09/include-touch-cursor-gesture-events-phaser-game/
+
+            const phaserConfig = {
+                type: Phaser.AUTO,
+                parent: "game",
+                width: 1280,
+                height: 720,
+                backgroundColor: "#5DACD8",
+                scene: {
+                    init: initScene,
+                    preload: preloadScene,
+                    create: createScene,
+                    update: updateScene
+                }
+            };
+
+            const game = new Phaser.Game(phaserConfig);
+
+            var isClicking = false;
+            var swipeDirection;
+
+            function initScene() { }
+
+            function preloadScene() {
+                this.load.image("plane", "plane.png");
+            }
+
+            function createScene() {
+
+                plane = this.add.sprite(640, 360, "plane");
+                plane.setScale(0.4);
+
+            }
+
+            //function updateScene() { }
+/* option 1 direct
+function updateScene() {
+
+    if(!this.input.activePointer.isDown && isClicking == true) {
+        plane.y = this.input.activePointer.position.y;
+        isClicking = false;
+    } else if(this.input.activePointer.isDown && isClicking == false) {
+        isClicking = true;
+    }
+
+}
+*/
+
+function updateScene() {
+
+    if(!this.input.activePointer.isDown && isClicking == true) {
+        if(Math.abs(this.input.activePointer.upY - this.input.activePointer.downY) >= 50) {
+            if(this.input.activePointer.upY < this.input.activePointer.downY) {
+                swipeDirection = "up";
+            } else if(this.input.activePointer.upY > this.input.activePointer.downY) {
+                swipeDirection = "down";
+            }
+        }
+        isClicking = false;
+    } else if(this.input.activePointer.isDown && isClicking == false) {
+        isClicking = true;
+    }
+
+    if(swipeDirection == "down" && plane.y < 500) {
+        if(Math.abs(plane.y - 500) <= 10) {
+            plane.y = 500;
+        } else {
+            plane.y += 8;
+        }
+    } else if(swipeDirection == "up" && plane.y > 150) {
+        if(Math.abs(plane.y - 150) <= 10) {
+            plane.y = 150;
+        } else {
+            plane.y -= 8;
+        }
+    }
+
+}
+        </script>
+    </body>
+</html>

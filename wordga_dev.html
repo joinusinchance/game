@@ -1,0 +1,525 @@
+<!doctype html>
+
+<html>
+
+<head>
+	<title>Wordga!</title>
+	<meta charset="utf-8" />
+
+	<style type="text/css">
+		body {
+			margin: 0px;
+			padding: 0px;
+		}
+	</style>
+
+	<script type="text/javascript">
+		var xDown = new Number();
+		var yDown = new Number();
+		var xUp = new Number();
+		var yUp = new Number();
+		//////////////////////////////////////////////////
+		var totalLevels = 5;
+		var level = 0;
+		var wordID = 0;
+		var levelWordList = new Array(totalLevels);
+		levelWordList[0] = ["blob", "slob", "globe", "best", "sore", "port"];
+		levelWordList[1] = ["kitchen", "red", "apples", "motion", "park", "crunch"];
+		levelWordList[2] = ["to", "be", "or", "not", "to", "be", "that", "is", "the", "question"];
+		levelWordList[3] = ["Neither", "a", "borrower", "nor", "a", "lender", "be"];
+		levelWordList[4] = ["The", "lady", "doth", "protest", "too", "much", "methinks"];
+		levelWordList[5] = ["Do", "you", "think", "I", "am", "easier", "to", "be", "played", "on", "than", "a", "pipe?"]
+		levelWordList[5] = ["evil", "live", "veil", "vile"];
+
+		var levelWordMinScore = new Array(totalLevels);
+		levelWordMinScore = [9, 5, 10, 7, 3, 6];
+		var score = 0;
+		var totalScore = 0;
+
+		var wordColor = ["white", "grey", "blue", "green", "yellow", "orange", "orangered", "red"];
+		var phase = "frontScreen"; //frontScreen , readyForLevel, levelSetUp, level,   
+		var wordListLen = levelWordList[0].length;
+		var lastTime = 100;
+
+		var matrixSize = 8;
+
+
+
+		//2D matrix for words placed
+		// todo dynamically generate this any size
+		var letterMatrix = new Array(matrixSize);
+		letterMatrix[0] = new Array(matrixSize);
+		letterMatrix[1] = new Array(matrixSize);
+		letterMatrix[2] = new Array(matrixSize);
+		letterMatrix[3] = new Array(matrixSize);
+		letterMatrix[4] = new Array(matrixSize);
+		letterMatrix[5] = new Array(matrixSize);
+		letterMatrix[6] = new Array(matrixSize);
+		letterMatrix[7] = new Array(matrixSize);
+
+		//2D matrix for words height
+		var heightMatrix = new Array(matrixSize);
+
+		heightMatrix[0] = new Array(matrixSize);
+		heightMatrix[1] = new Array(matrixSize);
+		heightMatrix[2] = new Array(matrixSize);
+		heightMatrix[3] = new Array(matrixSize);
+		heightMatrix[4] = new Array(matrixSize);
+		heightMatrix[5] = new Array(matrixSize);
+		heightMatrix[6] = new Array(matrixSize);
+		heightMatrix[7] = new Array(matrixSize);
+
+
+		document.addEventListener("DOMContentLoaded", init, false);
+
+
+		function init() {
+			populateDefaultLetterMatrix();
+			console.log("-----height matrix- 2 2---");
+			console.log(heightMatrix[2][2]);
+			var canvas = document.getElementById("canvas");
+			refreshDisplayFrontScreen();
+			phase = "readyForLevel";
+			canvas.addEventListener("mousedown", getPositionDown, false);
+			canvas.addEventListener("mouseup", getPositionUp, false);
+			canvas.addEventListener("mouseout", getPositionLast, false);
+
+			// Set up touch events for mobile, etc -- thanks https://bencentra.com/code/2014/12/05/html5-canvas-touch-events.html
+			canvas.addEventListener("touchstart", function (e) {
+				mousePos = getTouchPos(canvas, e);
+				var touch = e.touches[0];
+				var mouseEvent = new MouseEvent("mousedown", {
+					clientX: touch.clientX,
+					clientY: touch.clientY
+				});
+				canvas.dispatchEvent(mouseEvent);
+			}, false);
+			canvas.addEventListener("touchend", function (e) {
+				var mouseEvent = new MouseEvent("mouseup", {});
+				canvas.dispatchEvent(mouseEvent);
+			}, false);
+			canvas.addEventListener("touchmove", function (e) {
+				var touch = e.touches[0];
+				var mouseEvent = new MouseEvent("mousemove", {
+					clientX: touch.clientX,
+					clientY: touch.clientY
+				});
+				canvas.dispatchEvent(mouseEvent);
+			}, false);
+
+
+
+
+			// Prevent scrolling when touching the canvas -- thanks https://bencentra.com/code/2014/12/05/html5-canvas-touch-events.html
+			document.body.addEventListener("touchstart", function (e) {
+				if (e.target == canvas) {
+					e.preventDefault();
+				}
+			}, false);
+			document.body.addEventListener("touchend", function (e) {
+				if (e.target == canvas) {
+					e.preventDefault();
+				}
+			}, false);
+			document.body.addEventListener("touchmove", function (e) {
+				if (e.target == canvas) {
+					e.preventDefault();
+				}
+			}, false);
+
+
+
+			xDown = undefined;
+			yDown = undefined;
+			xUp = undefined;
+			yUp = undefined;
+
+		}
+
+		function populateDefaultLetterMatrix() {
+			for (var x = 0; x < matrixSize; x++) {
+				for (var y = 0; y < matrixSize; y++) {
+					letterMatrix[x][y] = "#";
+					heightMatrix[x][y] = 0;
+				}
+			}
+		}
+
+
+
+		function getPositionDown(event) {
+			var canvas = document.getElementById("canvas");
+
+			if (event.x != undefined && event.y != undefined) {
+				xDown = event.x;
+				yDown = event.y;
+			}
+			else // Firefox method to get the position
+			{
+				xDown = event.clientX + document.body.scrollLeft +
+					document.documentElement.scrollLeft;
+				yDown = event.clientY + document.body.scrollTop +
+					document.documentElement.scrollTop;
+			}
+
+			console.log("xDown: " + xDown + "  yDown: " + yDown);
+
+			////////////////////////////////////////////
+		}
+
+		function getPositionUp(event) {
+			var canvas = document.getElementById("canvas");
+
+			if (event.x != undefined && event.y != undefined) {
+				xUp = event.x;
+				yUp = event.y;
+			}
+			else // Firefox method to get the position
+			{
+				xUp = event.clientX + document.body.scrollLeft +
+					document.documentElement.scrollLeft;
+				yUp = event.clientY + document.body.scrollTop +
+					document.documentElement.scrollTop;
+			}
+
+			xUp -= canvas.offsetLeft;
+			yUp -= canvas.offsetTop;
+
+			console.log("xUp: " + xUp + "  yUp: " + yUp);
+
+			////////////////////////////////////////////
+			doLogic();
+		}
+
+		function getPositionLast(event) {
+			console.log("last position");
+
+
+			var canvas = document.getElementById("canvas");
+
+			if (event.x != undefined && event.y != undefined) {
+				xUp = event.x;
+				yUp = event.y;
+			}
+			else // Firefox method to get the position
+			{
+				xUp = event.clientX + document.body.scrollLeft +
+					document.documentElement.scrollLeft;
+				yUp = event.clientY + document.body.scrollTop +
+					document.documentElement.scrollTop;
+			}
+
+			xUp -= canvas.offsetLeft;
+			yUp -= canvas.offsetTop;
+			console.log("xUp: " + xUp + "  yUp: " + yUp);
+
+			////////////////////////////////////////////
+			if (xDown != undefined) {
+				doLogic();
+			}
+
+		}
+
+		function doLogic() {
+
+			console.log("phase " + phase + "  doLogic");
+			if (phase == "frontScreen") {
+				refreshDisplayFrontScreen();
+				phase = "readyForLevel";
+			}
+			else if (phase == "readyForLevel") {
+				refreshDisplayReadyForLevel();
+				phase = "levelSetUp";
+			}
+			else if (phase == "levelSetUp") {
+				refreshDisplayLevel();
+				phase = "level";
+			}
+			else if (phase == "level") {
+				placeWord();
+			}
+			else if (phase == "playerWon") {
+				refreshDisplayPlayerWon();
+				phase = "frontScreen";
+			}
+
+			xDown = undefined;
+			yDown = undefined;
+			xUp = undefined;
+			yUp = undefined;
+
+
+		}
+
+
+		function placeWord() {
+			var x1 = parseInt(Math.floor(xDown / 50));
+			var y1 = parseInt(Math.floor(yDown / 50));
+			var x2 = parseInt(Math.floor(xUp / 50));
+			var y2 = parseInt(Math.floor(yUp / 50));
+
+
+
+
+			console.log("---grid down----");
+			console.log(x1);
+			console.log(y1);
+			console.log("---grid up----");
+			console.log(x2);
+			console.log(y2);
+			console.log("-------");
+
+
+			// game logic > 
+			var currentWord = levelWordList[level][wordID].split("");
+			var currentWordLen = currentWord.length;
+
+			var xShift = 0;
+			var yShift = 0;
+			var swap = 0;
+
+			if (x1 == x2) {
+				//console.log ("must be verticle");
+
+				if (y1 == y2) {
+					console.log("no direction indicated");
+				}
+				else if (y1 < y2) {
+					console.log("verticle down");
+					yShift = 1;
+				}
+				else if (y1 > y2) {
+					console.log("verticle up");
+					yShift = -1;
+				}
+				else {
+					console.log("error!");
+				}
+
+			}
+			else if (x1 < x2) {
+				console.log("horizontal right");
+				xShift = 1;
+			}
+			else if (x1 > x2) {
+				console.log("horizontal left");
+				xShift = -1;
+			}
+			else {
+				console.log("no direction");
+			}
+
+			if (xShift + yShift != 0) {
+				console.log("xshift " + xShift + " yshift " + yShift);
+
+				for (var a = 0; a < currentWordLen; a++) {
+
+					if (letterMatrix[x1][y1] == currentWord[a]) {
+						score += 1;
+						totalScore += 1;
+						console.log("point gained +1");
+					}
+
+					if (letterMatrix[x1][y1] != currentWord[a]) {
+						letterMatrix[x1][y1] = currentWord[a];
+						heightMatrix[x1][y1] = heightMatrix[x1][y1] + 1;
+						console.log(letterMatrix[x1][y1]);
+					}
+
+
+
+					console.log(currentWord[a]);
+					console.log(x1);
+					console.log(y1);
+
+					y1 = (y1 + yShift) % (matrixSize);
+					x1 = (x1 + xShift) % (matrixSize);
+
+
+					if (x1 < 0) {
+						x1 = matrixSize - 1
+					}
+
+					if (y1 < 0) {
+						y1 = matrixSize - 1
+					}
+
+
+				}
+				wordID++;
+				refreshDisplayLevel();
+			}
+
+		}
+
+
+		function refreshDisplayLevel() {
+			var canvas = document.getElementById("canvas");
+			var context = canvas.getContext("2d");
+			var x = 15;
+			var y = 40;
+
+			context.rect(0, 0, 400, 600);
+			context.fillStyle = "white";
+			context.fill();
+
+
+			context.fillStyle = "black";
+			context.beginPath();
+
+			for (gx = 0; gx <= matrixSize * 50; gx = gx + 50) {
+				context.moveTo(gx, 0);
+				context.lineTo(gx, matrixSize * 50);
+				context.stroke();
+			}
+
+			for (gy = 0; gy <= matrixSize * 50; gy = gy + 50) {
+				context.moveTo(0, gy);
+				context.lineTo(matrixSize * 50, gy);
+				context.stroke();
+			}
+
+			context.fillStyle = "blue";
+			context.font = "bold 30px Courier New";
+			console.log("ready to paint!");
+
+
+
+			for (var x1 = 0; x1 < matrixSize; x1++) {
+
+				for (var y1 = 0; y1 < matrixSize; y1++) {
+					context.fillStyle = wordColor[heightMatrix[x1][y1]];
+					context.fillText(letterMatrix[x1][y1], x, y);
+					// fix last letter drop off
+					y = y + 50;
+				}
+
+				y = 40;
+				x = x + 50;
+
+				//console.log (currentWord[a]);
+			}
+
+			//context.fillText("a", Math.ceil(xUp/50)*50-25, Math.ceil(yUp/50)*50-25);
+			//console.log ("x=" + Math.ceil(xUp/50) + " y=" + Math.ceil(yUp/50));	
+			context.fillStyle = "blue";
+			context.font = "bold 15px Courier New";
+
+			if (wordID < wordListLen) {
+
+
+				context.fillText("Reuse as many letters as you can:", 15, 500);
+				context.fillText(levelWordList[level], 15, 525);
+				context.fillText("Current score: " + score + " TotalScore: " + totalScore, 15, 550);
+				context.fillText("Score to unlock next level: " + levelWordMinScore[level], 15, 575);
+			}
+
+			if (wordID == wordListLen) {
+				context.fillText("Current score: " + score, 15, 500);
+				context.fillText("Score to unlock next level: " + levelWordMinScore[level], 15, 525);
+
+				if (score < levelWordMinScore[level]) {
+					context.fillText("You have failed to save enough letters", 15, 550);
+					context.fillText("Click here to continue...", 15, 575);
+					level = 0;
+					wordID = 0;
+					score = 0;
+					totalScore = 0;
+					populateDefaultLetterMatrix();
+					phase = "frontScreen";
+				}
+				else {
+					context.fillText("Congrats! You have unlocked the next level..", 15, 550);
+					context.fillText("Click here to continue...", 15, 575);
+					level += 1;
+
+					if (level == totalLevels) {
+						phase = "playerWon";
+					}
+					else {
+						phase = "readyForLevel";
+						wordID = 0;
+						score = 0;
+						wordListLen = levelWordList[level].length;
+						populateDefaultLetterMatrix();
+
+					}
+				}
+
+
+			}
+		}
+
+		function refreshDisplayFrontScreen() {
+			var canvas = document.getElementById("canvas");
+			var context = canvas.getContext("2d");
+			context.rect(0, 0, 400, 600);
+			context.fillStyle = "white";
+			context.fill();
+
+			context.fillStyle = "blue";
+			context.font = "bold 30px Courier New";
+			context.fillText("Wordga!", 100, 200);
+			context.font = "bold 15px Courier New";
+			context.fillText("Click here to start..", 100, 225);
+
+			console.log("phase" + phase + "  refreshDisplayFrontScreen");
+
+			xDown = 0;
+			yDown = 0;
+			xUp = 0;
+			yUp = 0;
+
+		}
+
+
+		function refreshDisplayReadyForLevel() {
+			var canvas = document.getElementById("canvas");
+			var context = canvas.getContext("2d");
+			context.rect(0, 0, 400, 600);
+			context.fillStyle = "white";
+			context.fill();
+
+			context.fillStyle = "blue";
+			context.font = "bold 30px Courier New";
+			context.fillText("Level " + (level + 1), 100, 200);
+			context.font = "bold 15px Courier New";
+			context.fillText("Click here to continue..", 50, 225);
+
+			xDown = 0;
+			yDown = 0;
+			xUp = 0;
+			yUp = 0;
+
+		}
+
+
+		function refreshDisplayPlayerWon() {
+			var canvas = document.getElementById("canvas");
+			var context = canvas.getContext("2d");
+			context.rect(0, 0, 400, 600);
+			context.fillStyle = "white";
+			context.fill();
+
+			context.fillStyle = "blue";
+			context.font = "bold 30px Courier New";
+			context.fillText("You have Won!", 50, 200);
+			context.font = "bold 15px Courier New";
+			context.fillText("Click here to continue..", 50, 225);
+
+			xDown = 0;
+			yDown = 0;
+			xUp = 0;
+			yUp = 0;
+
+		}
+
+	</script>
+
+</head>
+
+<body>
+	<canvas id="canvas" width="400" height="600"></canvas>
+</body>
+
+</html>
