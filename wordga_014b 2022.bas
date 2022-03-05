@@ -1,5 +1,5 @@
 CLS
-
+! from old code on phone lets rehabilitate for 2022
 ! max dimensions
 ! maximum, how many words in a level?
 ! lets say 32 max
