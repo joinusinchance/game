@@ -20,10 +20,11 @@
                     create: createScene,
                     update: updateScene
                 }
-            };
+            }; 
   */          
 
   //from  https://rexrainbow.github.io/phaser3-rex-notes/docs/site/game/#configuration
+ // something added
 
             const phaserConfig = {
                 type: Phaser.AUTO,
@@ -41,7 +42,7 @@
                 dom: {
                     createContainer: false,
                 },
-                scene: null,
+                scene: 'scene_01',
                 backgroundColor: 0x333333,
                 scene: {
                     init: initScene,
@@ -71,9 +72,10 @@
 
 
 
-            rectSize = game.config.width/matrixWidth;
-            var textConfig={fontSize:rectSize*2,color:'#555555',fontFamily: 'Courier'};
-
+            widthText = game.config.width/matrixWidth;
+            heightText = widthText
+            
+            
 
 
             function initScene() { }
@@ -84,55 +86,102 @@
 
             function createScene() {
 
+                //set up matrix
+          
 
-                
+
+                var textConfig={fontSize:widthText,color:'#555555',fontFamily: 'monospace'};
+            
+
+
 
                 // text example from https://phasergames.com/phaser-3-basics-images-text-and-click/
                 // var textConfig={fontSize:'20px',color:'#555555',fontFamily: 'Arial'};
                 // var textConfig={fontSize:fontSizePx,color:'#555555',font: '20px monospace'};
 
                 //var textConfig={fontSize:fontSize,color:'#555555',font: fontSizePx};
-                var textConfig={fontSize:rectSize,color:'#555555',fontFamily: 'Courier'};
-
-
-                var w0 = this.add.text(0, rectSize*6, "123456789012345678",textConfig);
-                var w1 = this.add.text(rectSize*2, rectSize*6, "Z",textConfig);
-                w2 = this.add.text(rectSize, rectSize*11, "A",textConfig);
                 
-                this.add.text(rectSize*4, rectSize*6, "C",textConfig);
 
 
-                w1.setOrigin(0.5,0.5);
+                var w0 = this.add.text(0, widthText*6, "123456789012345678",textConfig);
+                var let0 = this.add.text(widthText, heightText, "A",textConfig);
+                var let00 = this.add.text(widthText*8, heightText, "H",textConfig);
+                
+                var let8 = this.add.text(widthText*1.2, (heightText*8)-(heightText*0.1), "A",textConfig);
+                var let88 = this.add.text(widthText*8, heightText*8, "H",textConfig);
+                
+                var let1 = this.add.text(widthText, heightText*6, "A",textConfig);
+                var let2 = this.add.text(widthText*2, heightText*6, "B",textConfig);
+                var let2 = this.add.text(widthText*8, heightText*6, "H",textConfig);
+                var word1 = this.add.text((widthText)+(widthText*0.2), (heightText*7)-(heightText*0.1), "q",textConfig);
+                var word2 = this.add.text((widthText*2)+(widthText*0.2), (heightText*7)-(heightText*0.1), "w",textConfig);
+                var word2 = this.add.text((widthText*3)+(widthText*0.2), (heightText*7)-(heightText*0.1), "e",textConfig);
+                var word2 = this.add.text((widthText*4)+(widthText*0.2), (heightText*7)-(heightText*0.1), "r",textConfig);
+                var word2 = this.add.text((widthText*5)+(widthText*0.2), (heightText*7)-(heightText*0.1), "t",textConfig);
+                var word2 = this.add.text((widthText*6)+(widthText*0.2), (heightText*7)-(heightText*0.1), "y",textConfig);
+                var word2 = this.add.text((widthText*7)+(widthText*0.2), (heightText*7)-(heightText*0.1), "u",textConfig);
+                var word2 = this.add.text((widthText*8)+(widthText*0.2), (heightText*7)-(heightText*0.1), "p",textConfig);
+
+                //
+                w2 = this.add.text(widthText, widthText*11, "A",textConfig);    
+                this.add.text(widthText*4, widthText*6, "C",textConfig);
+                
+
+                //w1.setOrigin(0,0);
+                //w2.setOrigin(0.5,0.5);
                 //w2.setOrigin(0.5,0.5);
                 //w0.setOrigin(0.5,0.5);
                 //this.setOrigin (0.5,0.5);
-
+                //let00.setOrigin(0.5,0.5);
 
                 // this.title=this.add.text(game.config.width/2,game.config.height*.75,"Hello Wordga!!!",textConfig);
                 aTaskBar = this.add.text(0,0,"01234567890123456789",textConfig);
-
-
-                var rectangles = [];
-
-                    for(var x = 0; x < 8; x++)
-                    {
-                        for(var y = 0; y < 8; y++)
-                        {
-                            rectangles.push(new Phaser.Geom.Rectangle(x * rectSize*2+rectSize, y * rectSize*2+rectSize, rectSize*2, rectSize*2));
-                        }
-                    }
-
-
-
-                //setOrigin() replaces anchor.set()
-                //sprites now default to orign 0.5 for both x and y
-                //this.title.setOrigin(0.5,0.5);
-                //aTaskBar.setOrigin(0.5,0);
-                //aText.setOrigin(0.5,0.5);
+             
+                //line1 = new Phaser.Line(100, 100,100, 100);
                 
-                //r2.setOrigin(0,0);
-                
+                console.log("********")
+                console.log(widthText, heightText)
 
+                const landscape = this.add.graphics();
+
+                //landscape.fillStyle(0x000000, 1);
+                landscape.lineStyle(1, 0xFFFFFF, 1);
+
+
+                //landscape.moveTo(widthText, heightText);
+                //landscape.lineTo(widthText*9, heightText);
+
+                
+                var currentHeighText = 1 
+
+                for (let i =1; i<=9 ; i++)
+                {
+                    landscape.moveTo(widthText, heightText*i);
+                    landscape.lineTo(widthText*9, heightText*i);
+                }
+
+                for (let i =1; i<=9 ; i++)
+                {
+                    landscape.moveTo(widthText*i, heightText);
+                    landscape.lineTo(widthText*i, heightText*9);
+                }
+
+
+
+                //landscape.moveTo(100, 100);
+                //landscape.lineTo(150, 150);
+                landscape.strokePath();
+
+
+
+                //GR.LINE n,wt, ht* cyid, wt*9, ht * cyid
+
+
+/*
+                GR.LINE n,wt, ht, wt*9, ht
+                GR.LINE n,wt, ht, wt, ht*8
+                GR.LINE n,wt*9, ht, wt*9, ht*8
+*/
                 
                 plane = this.add.sprite(640, 360, "plane");
                 plane.setScale(0.4);
@@ -257,6 +306,14 @@
             console.log(userState);
 
             }
+/*
+    function drawMatrix ()
+    {
+        GR.LINE n,wt, ht, wt*9, ht
+        GR.LINE n,wt, ht, wt, ht*8
+        GR.LINE n,wt*9, ht, wt*9, ht*8
+    }
+    */
 
         </script>
     </body>
