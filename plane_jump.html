@@ -80,6 +80,8 @@
 
 
             var textConfig={fontSize:widthText,color:'#555555',fontFamily: 'monospace'};
+            var textStatusConfig={fontSize:widthText/2,color:'#555555',fontFamily: 'monospace'};
+
 
             console.log ( widthOffset,  heightOffset);
 
@@ -114,7 +116,10 @@
             var matrixSize = 8;
 
             var landscape = null; // this will be our graphics object on create
+
             
+
+
             var displayMatrix =new Array(matrixSize); //  this will be our text matrix on create
             displayMatrix[0] = new Array(matrixSize);
             displayMatrix[1] = new Array(matrixSize);
@@ -153,8 +158,21 @@
             heightMatrix[7] = new Array(matrixSize);
 
 
+            // create objects for front screen and level splsh screen
+            displayFrontTitle = null;
+            displayFrontComment1 = null;
+            displayFrontComment2 = null;
+            displayFrontComment3 = null;
+            // create objects for 
 
 
+
+            // create objects for commentary and score ingame 
+            displayComment = null;
+            displayWordList = null; 
+            displayScore= null;
+            displayNextLevelScore= null;
+        
 
             
             
@@ -178,12 +196,23 @@
 
                 // text example from https://phasergames.com/phaser-3-basics-images-text-and-click/
         
-                w2 = this.add.text(widthText, widthText*11, "A",textConfig);    
+                //w2 = this.add.text(widthText, widthText*11, "A",textConfig);    
         
                 
 
-                aTaskBar = this.add.text(0,0,"01234567890123456789",textConfig);
-             
+                //aTaskBar = this.add.text(0,0,"01234567890123456789",textConfig);
+ 
+                
+                displayFrontTitle = this.add.text(0,heightText*5,"",textConfig)
+                displayFrontComment1 = this.add.text(0,heightText*6,"",textStatusConfig)
+                displayFrontComment2 = this.add.text(0,heightText*6,"",textStatusConfig)
+
+
+                
+                displayComment= this.add.text(0,heightText*(9.5)+heightOffset, ("COMMENT"), textStatusConfig);
+                displayScore= this.add.text(0,heightText*(10)+heightOffset, ("SCORE"), textStatusConfig);
+                displayWordList = this.add.text(0,heightText*(10.5)+heightOffset,("LIST"), textStatusConfig); 
+                displayNextLevelScore= this.add.text(0,heightText*(11)+heightOffset,("NEXT"), textStatusConfig); 
                 //line1 = new Phaser.Line(100, 100,100, 100);
                 
                 console.log("********")
@@ -194,18 +223,22 @@
 
                 landscape = this.add.graphics();
 
+                // initialise objects, set alpha  to 0.
+                // when object wanted, change alpha 
+
                    console.log ('init screen');
                 for (x = 0;x<8;x++ ) {
                 
                 for (y = 0 ;y<8;y++) {
                     displayMatrix[x][y]= this.add.text((widthText*(x+1))+widthOffset, (heightText*(y+1))+heightOffset, "#" ,textConfig);
+                    displayMatrix[x][y].alpha =0.0;
                 }
                } 
 
 
                 //letterMatrix = this.add.text((widthText*(1+1))+widthOffset, (heightText*(1+1))+heightOffset, "#" ,textConfig);
 
-                initDisplayLevel_Dev();
+                // initDisplayLevel_Dev();
 
                 //GR.LINE n,wt, ht* cyid, wt*9, ht * cyid
 
@@ -220,7 +253,16 @@
                 plane.setScale(0.4);
 
 
+                doLogic();
+
+
             }
+
+            function clearScene()
+            {
+        
+            }
+
 
             //function updateScene() { }
             /* option 1 direct */
@@ -242,7 +284,7 @@
                     x2 = parseInt(this.input.activePointer.position.x/game.config.width*matrixWidth);
                     y2 = parseInt(this.input.activePointer.position.y/game.config.width*matrixWidth);
 
-                    getUserState()
+                    getUserState();
 
                 } else if(this.input.activePointer.isDown && isClicking == false) {
                     isClicking = true;
@@ -256,9 +298,9 @@
 
              plane.alpha += touchAlphaChange;
 
-             w2.setText(x2+" "+y2+" "+x1+" "+y1);
+            // w2.setText(x2+" "+y2+" "+x1+" "+y1);
 
-
+            //doLogic();
 
             }
 
@@ -279,7 +321,7 @@
                 */
 
                 
-                    console.log("User state logged")
+                console.log("User state logged")
 
 
                 console.log("---old position----");
@@ -336,6 +378,17 @@
                 console.log (xShift,yShift);
 
                 /*
+                ## If phase = 'readyForLevel'
+                */
+                
+                if (phase!='level') {
+                    doLogic();
+                }
+
+
+
+                /*
+                ## IF phase = 'level'
                 2) Decide Click state (for valid clicks)
                 on 0th click = ready
                 on 1st click = anchor
@@ -346,41 +399,51 @@
                             remove anchor
                     then set user state to be ready
                 */
-                if (userState == 'ready') {
-                    userState = 'anchor'
+                
+                
+                
+                else if (phase ='level'){
+                
+                    if (userState == 'ready') {
+                        userState = 'anchor';
 
-                }
-                else if (userState =='anchor') {
-                    if (xShift + yShift != 0) {  
-                        userState = 'place'
                     }
-                    // implied here is that we want to re anchor the text 
+                    else if (userState =='anchor') {
+                        if (xShift + yShift != 0) {  
+                            userState = 'place';
+                        }
+                        // implied here is that we want to re anchor the text 
+                    }
+                    else if (userState == 'place') {
+                        userState = 'anchor';
+                    }
+
+
+                    console.log(userState);
+
+
+                    /*
+                    if anchor is within the  playfield,
+                    placewords
+                    else funstuff
+                    */
+
+
+
+
+                
+                    if (userState == 'place' 
+                    && x1>0 && x1<9 
+                    && y1>0 && y1<9
+                    ) {
+                        console.log ('please place word')
+
+
+                        placeWord();
+                        userState = 'ready';
+                    }
                 }
-                else if (userState == 'place') {
-                    userState = 'anchor'
-                }
 
-
-                console.log(userState);
-
-
-                /*
-                if anchor is within the  playfield,
-                placewords
-                else funstuff
-                */
-
-            
-                if (userState == 'place' 
-               && x1>0 && x1<9 
-                && y1>0 && y1<9
-                ) {
-                    console.log ('please place word')
-
-
-                    placeWord();
-                    userState = 'ready';
-                }
 
             
             }
@@ -400,9 +463,9 @@
             function placeWord() {
 
 
-            console.log ("Place current word:", levelWordList[level][wordID])
-            var currentWord = levelWordList[level][wordID].split("");
-			var currentWordLen = currentWord.length;
+                console.log ("Place current word:", levelWordList[level][wordID])
+                var currentWord = levelWordList[level][wordID].split("");
+                var currentWordLen = currentWord.length;
 
                 // turn postion in to array location ..Hack fix
                 x1--;
@@ -460,15 +523,9 @@
         function initDisplayLevel_Dev() {
             
 
-            //var word2 = this.add.text((widthText*3)+(widthText*0.2), (heightText*7)-(heightText*0.1), "e",textConfig);
-            //w2.setText(x2+" "+y2+" "+x1+" "+y1);
-
-
-
-            //landscape.fillStyle(0x000000, 1);
             landscape.lineStyle(1, 0xFFFFFF, 1);
 
-
+            // draw matrix
             for (let i =1; i<=9 ; i++)
                 {
                     landscape.moveTo(widthText, heightText*i);
@@ -481,36 +538,21 @@
                     landscape.lineTo(widthText*i, heightText*9);
                 }
 
-                //landscape.moveTo(100, 100);
-                //landscape.lineTo(150, 150);
+                landscape.alpha = 1.0;
                 landscape.strokePath();
 
-                //y=0;
-            
 
-            for (x = 0;x<8;x++ ) {
-                
-                for (y = 0 ;y<8;y++) {
-                    displayMatrix[1][1].setText("?");    
-                    
-                }
-                //
-                //allText= this.add.text((widthText*(x+1))+widthOffset, (heightText*(y+1))+heightOffset, letterMatrix[x][y] ,textConfig);
-            } 
+                displayComment.alpha = 1.0;
+                displayScore.alpha = 1.0;
+                displayNextLevelScore.alpha = 1.0;
+                displayWordList.alpha = 1.0;
 
 
-                
-
-
-        
         }
 
-
-        function refreshDisplayLevel_Dev() {
-
-
-
-
+        function clearDisplayLevel_Dev()
+        {
+            landscape = null;
 
         }
 
@@ -521,10 +563,18 @@
 
 				for (var y1 = 0; y1 < matrixSize; y1++) {
                     displayMatrix[x1][y1].setText(letterMatrix[x1][y1]);
-
+                    if (letterMatrix[x1][y1]!= '#') {
+                        displayMatrix[x1][y1].alpha = 1.0;
+                    }
 				}
 
 			}
+
+
+            initDisplayLevel_Dev();
+
+            displayFrontTitle.alpha = 0.0;
+            displayFrontComment1.alpha = 0.0;
 
             /*
 
@@ -532,33 +582,29 @@
 			//console.log ("x=" + Math.ceil(xUp/50) + " y=" + Math.ceil(yUp/50));	
 			context.fillStyle = "blue";
 			context.font = "bold 15px Courier New";
-
+            */
 			if (wordID < wordListLen) {
-
-
-				context.fillText("Reuse as many letters as you can:", 15, 500);
-				context.fillText(levelWordList[level], 15, 525);
-				context.fillText("Current score: " + score + " TotalScore: " + totalScore, 15, 550);
-				context.fillText("Score to unlock next level: " + levelWordMinScore[level], 15, 575);
+				displayComment.setText("Reuse as many letters as you can:");
+				displayWordList.setText(levelWordList[level].toString());
+				displayScore.setText("Current score: " + score + " TotalScore: " + totalScore);
+				displayNextLevelScore.setText("Score to unlock next level: " + levelWordMinScore[level]);
 			}
 
 			if (wordID == wordListLen) {
-				context.fillText("Current score: " + score, 15, 500);
-				context.fillText("Score to unlock next level: " + levelWordMinScore[level], 15, 525);
-
+				displayScore.setText("Current score: " + score);
+				
 				if (score < levelWordMinScore[level]) {
-					context.fillText("You have failed to save enough letters", 15, 550);
-					context.fillText("Click here to continue...", 15, 575);
+					displayComment.setText("You have failed to save enough letters");
+					displayWordList.setText("Click here to continue...");
 					level = 0;
 					wordID = 0;
 					score = 0;
 					totalScore = 0;
-					populateDefaultLetterMatrix();
 					phase = "frontScreen";
 				}
 				else {
-					context.fillText("Congrats! You have unlocked the next level..", 15, 550);
-					context.fillText("Click here to continue...", 15, 575);
+					displayComment.setText("Congrats! You have unlocked the next level..");
+					displayWordList.setText("Click here to continue...");
 					level += 1;
 
 					if (level == totalLevels) {
@@ -569,15 +615,133 @@
 						wordID = 0;
 						score = 0;
 						wordListLen = levelWordList[level].length;
-						populateDefaultLetterMatrix();
+						//populateDefaultLetterMatrix();
 
 					}
 				}
 
 
 			}
-		*/
+	
         }
+
+        function populateDefaultLetterMatrix()
+        {
+            for (x = 0;x<8;x++ ) {
+                for (y = 0 ;y<8;y++) {
+                    letterMatrix[x][y]= "#";
+                    displayMatrix[x][y].alpha = 0.0;
+                }
+               } 
+
+        }
+
+		function doLogic() {
+
+            console.log("phase " + phase + "  doLogic");
+            if (phase == "frontScreen") {
+                refreshDisplayFrontScreen();
+                phase = "readyForLevel";
+            }
+            else if (phase == "readyForLevel") {
+                refreshDisplayReadyForLevel();
+                phase = "levelSetUp";
+            }
+            else if (phase == "levelSetUp") {
+                refreshDisplayLevel();
+                phase = "level";
+            }
+            else if (phase == "level") {
+                placeWord();
+            }
+            else if (phase == "playerWon") {
+                refreshDisplayPlayerWon();
+                phase = "frontScreen";
+            }
+
+            xDown = undefined;
+            yDown = undefined;
+            xUp = undefined;
+            yUp = undefined;
+
+            console.log ("Next phase:"+ phase);
+
+
+        }
+
+
+
+		function refreshDisplayFrontScreen() {
+
+
+
+            landscape.alpha = 0.0;
+
+            displayFrontTitle.alpha = 1.0;
+            displayFrontTitle.setText( "Welcome to Wordga");
+            displayFrontComment1.alpha = 1.0;
+            displayFrontComment1.setText("Tap to start")
+            displayFrontComment2.alpha = 1.0;
+
+
+            displayComment.alpha = 0.0;
+            displayScore.alpha = 0.0;
+            displayNextLevelScore.alpha = 0.0;
+            displayWordList.alpha = 0.0;
+
+
+			console.log("phase" + phase + "  refreshDisplayFrontScreen");
+
+            populateDefaultLetterMatrix();
+
+			xDown = 0;
+			yDown = 0;
+			xUp = 0;
+			yUp = 0;
+
+		}
+
+
+		function refreshDisplayReadyForLevel() {
+
+            landscape.alpha = 0.0;
+            displayFrontTitle.alpha = 1.0;
+            displayFrontTitle.setText("Level "+ level);
+            displayFrontComment1.alpha = 1.0;
+            displayFrontComment1.setText("tap to continue..")
+            displayFrontComment2.alpha = 1.0;
+
+
+            displayComment.alpha = 0.0;
+            displayScore.alpha = 0.0;
+            displayNextLevelScore.alpha = 0.0;
+            displayWordList.alpha = 0.0;
+
+            populateDefaultLetterMatrix();
+
+			xDown = 0;
+			yDown = 0;
+			xUp = 0;
+			yUp = 0;
+
+            //doLogic();
+
+		}
+
+
+		function refreshDisplayPlayerWon() {
+
+			displayFrontTitle.setText("You have Won!");
+			displayFrontComment1.setText("Click here to continue..");
+
+			xDown = 0;
+			yDown = 0;
+			xUp = 0;
+			yUp = 0;
+
+		}
+
+
 
 /*
     function drawMatrix ()
