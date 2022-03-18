@@ -7,15 +7,61 @@
         <div id="game"></div>
         <script>
 
-            searchValues = window.location.search;
-            searchValues = window.location.href;
+            searchValues = decodeURI(window.location.search);
             
+            // if no parameters are passed, run test script
+
+            if (searchValues.length>0) {
+
+                //window.location.serach
+
+                //reuseStart = searchValues.search("reuse=");
+                
+                
+                delimeter = searchValues.search(";");
+                //reuseValue = searchValues.substring(reuseStart+6,reuseEnd-reuseStart+1);
+                reuseValue = searchValues.substring(1,delimeter);
+                
+
+                searchValues = searchValues.substring(delimeter+1,1024);
+
+                delimeter = searchValues.search(";");
+                levelName =searchValues.substring(0,delimeter);
+
+                searchValues = searchValues.substring(delimeter+1,1024);
+
+                delimeter = searchValues.search(";");
+                levelComment =searchValues.substring(0,delimeter);
+                
+                searchValues = searchValues.substring(delimeter+1,1024);
+
+
+                levelWordsArray =searchValues.split(";");
+                
+
+                //levelName = levelName.replace(/%20/g," ");
+                console.log(searchValues);
+                console.log (reuseValue);
+                console.log(levelName);
+                console.log(levelComment);
+                console.log(levelWordsArray);
+                console.log("----");
+                console.log(delimeter,reuseValue );
+
+            }
+
+            else {
+                console.log ("boot to main menu");
+            
+            }
+            
+
 
             console.log("something ") + searchValues + " else";
             
-            console.log(window.location.hostname);
+            console.log(window.location.host);
             console.log(window.location.url);
-            console.log(window.location.serach);
+            console.log(window.location.search);
         </script>
     </body>
 </html>

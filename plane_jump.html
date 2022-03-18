@@ -175,6 +175,67 @@
             displayNextLevelScore= null;
         
 
+
+
+            // figure out whether we are using a url based level
+
+
+
+            searchValues = decodeURI(window.location.search);
+            
+            // if no parameters are passed, run test script
+
+            if (searchValues.length>0) {
+
+                //window.location.serach
+
+                //reuseStart = searchValues.search("reuse=");
+                
+                
+                delimeter = searchValues.search(";");
+                //reuseValue = searchValues.substring(reuseStart+6,reuseEnd-reuseStart+1);
+                reuseValue = searchValues.substring(1,delimeter);
+                
+
+                searchValues = searchValues.substring(delimeter+1,1024);
+
+                delimeter = searchValues.search(";");
+                levelName =searchValues.substring(0,delimeter);
+
+                searchValues = searchValues.substring(delimeter+1,1024);
+
+                delimeter = searchValues.search(";");
+                levelComment =searchValues.substring(0,delimeter);
+                
+                searchValues = searchValues.substring(delimeter+1,1024);
+
+
+                levelWordsArray =searchValues.split(";");
+                
+
+                //levelName = levelName.replace(/%20/g," ");
+                console.log(searchValues);
+                console.log (reuseValue);
+                console.log(levelName);
+                console.log(levelComment);
+                console.log(levelWordsArray);
+                console.log("----");
+                console.log(delimeter,reuseValue );
+
+                urlGame = "Yes";
+
+
+                levelWordList[0] = searchValues.split(";");
+                levelWordMinScore[0] = reuseValue;
+                wordListLen = levelWordList[0].length;
+
+            }
+
+            else {
+                console.log ("boot to main menu");
+                
+                urlGame = "No";
+            }
             
             
 
@@ -204,16 +265,16 @@
                 //aTaskBar = this.add.text(0,0,"01234567890123456789",textConfig);
  
                 
-                displayFrontTitle = this.add.text(0,heightText*5,"",textConfig)
-                displayFrontComment1 = this.add.text(0,heightText*6,"",textStatusConfig)
-                displayFrontComment2 = this.add.text(0,heightText*6,"",textStatusConfig)
+                displayFrontTitle = this.add.text(heightText*.2,heightText*5,"",textConfig)
+                displayFrontComment1 = this.add.text(heightText*.2,heightText*6,"",textStatusConfig)
+                displayFrontComment2 = this.add.text(heightText*.2,heightText*6,"",textStatusConfig)
 
 
                 
-                displayComment= this.add.text(0,heightText*(9.5)+heightOffset, ("COMMENT"), textStatusConfig);
-                displayScore= this.add.text(0,heightText*(10)+heightOffset, ("SCORE"), textStatusConfig);
-                displayWordList = this.add.text(0,heightText*(10.5)+heightOffset,("LIST"), textStatusConfig); 
-                displayNextLevelScore= this.add.text(0,heightText*(11)+heightOffset,("NEXT"), textStatusConfig); 
+                displayComment= this.add.text(heightText*.2,heightText*(9.5)+heightOffset, ("COMMENT"), textStatusConfig);
+                displayScore= this.add.text(heightText*.2,heightText*(10)+heightOffset, ("SCORE"), textStatusConfig);
+                displayWordList = this.add.text(heightText*.2,heightText*(10.5)+heightOffset,("LIST"), textStatusConfig); 
+                displayNextLevelScore= this.add.text(heightText*.2,heightText*(11)+heightOffset,("NEXT"), textStatusConfig); 
                 //line1 = new Phaser.Line(100, 100,100, 100);
                 
                 console.log("********")
