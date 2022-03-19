@@ -180,7 +180,7 @@
             // figure out whether we are using a url based level
 
 
-
+            //levelName = levelName.replace(/%20/g," ");
             searchValues = decodeURI(window.location.search);
             
             // if no parameters are passed, run test script
@@ -213,7 +213,7 @@
                 levelWordsArray =searchValues.split(";");
                 
 
-                //levelName = levelName.replace(/%20/g," ");
+                
                 console.log(searchValues);
                 console.log (reuseValue);
                 console.log(levelName);
