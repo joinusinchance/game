@@ -119,6 +119,7 @@
         var score = 0;
         var totalScore = 0;
         var levelWordOrder = null;
+        var levelWordDisplay = null;
         
 
         var wordColor = ["white", "grey", "blue", "green", "yellow", "orange", "orangered", "red"];
@@ -287,6 +288,31 @@
             for (i = 0; i<levelWordList[level].length;i++){
                 levelWordOrder[i] = i;
             }
+
+            levelWordDisplay = levelWordList[level];
+        }
+
+        function cycleWordOrder() {
+
+
+            var fruitsDisplay = new Array(fruits.length);
+
+            //fruits.push("Kiwi", "Lemon");
+
+            anOrder = levelWordOrder[0];
+            levelWordOrder.shift();
+            levelWordOrder.push(anOrder);
+
+
+
+            for (var i = 0; i < levelWordOrder.length; i++) {
+
+                levelWordDisplay[i] = levelWordDisplay[order_[i]];
+
+                console.log(levelWordDisplay[i]);
+
+            }
+
         }
 
 
@@ -976,37 +1002,6 @@
         }
 
 
-        function cycleWordOrder() {
-            const fruits = ["Banana", "Orange", "Apple", "Mango"];
-
-            var order_ = [0, 1, 2, 3]
-
-            var fruitsDisplay = new Array(fruits.length);
-
-            //fruits.push("Kiwi", "Lemon");
-
-            anOrder = order_[0];
-            order_.shift();
-            order_.push(anOrder);
-
-            // push twice
-
-            anOrder = order_[0];
-            order_.shift();
-            order_.push(anOrder);
-            console.log(order_.length);
-
-
-
-            for (var i = 0; i < order_.length; i++) {
-
-                fruitsDisplay[i] = fruits[order_[i]];
-
-                console.log(fruitsDisplay[i]);
-
-            }
-
-        }
 
 
     </script>
