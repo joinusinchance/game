@@ -118,6 +118,8 @@
         levelWordMinScore = [9, 5, 10, 7, 3, 6];
         var score = 0;
         var totalScore = 0;
+        var levelWordOrder = null;
+        
 
         var wordColor = ["white", "grey", "blue", "green", "yellow", "orange", "orangered", "red"];
         var phase = "frontScreen"; //frontScreen , readyForLevel, levelSetUp, level,   
@@ -279,6 +281,13 @@
         }
 
 
+        function setupWordOrder() {
+
+            levelWordOrder = new Array(levelWordList[level].length);
+            for (i = 0; i<levelWordList[level].length;i++){
+                levelWordOrder[i] = i;
+            }
+        }
 
 
         function initScene() { }
@@ -350,8 +359,6 @@
 
 
 
-
-
             for (x = 0; x < 8; x++) {
 
                 for (y = 0; y < 8; y++) {
@@ -359,30 +366,10 @@
                     displayMatrix[x][y] = this.add.text((widthText * (x + 1)) + widthOffset, (heightText * (y + 1)) + heightOffset, "#", textConfig);
                     //displayMatrix[x][y].alpha =1.0;
 
-
                     displayMatrix[x][y].alpha = 0.0;
                 }
             }
 
-
-
-
-
-
-
-
-            //letterMatrix = this.add.text((widthText*(1+1))+widthOffset, (heightText*(1+1))+heightOffset, "#" ,textConfig);
-
-            // initDisplayLevel_Dev();
-
-            //GR.LINE n,wt, ht* cyid, wt*9, ht * cyid
-
-
-            /*
-                            GR.LINE n,wt, ht, wt*9, ht
-                            GR.LINE n,wt, ht, wt, ht*8
-                            GR.LINE n,wt*9, ht, wt*9, ht*8
-            */
 
             plane = this.add.sprite(640, 360, "plane");
             plane.setScale(0.4);
@@ -418,7 +405,7 @@
                 currentX = parseInt(this.input.activePointer.position.x / game.config.width * matrixWidth);
                 currentY = parseInt(this.input.activePointer.position.y / game.config.width * matrixWidth);
 
-                // turn XY position in to array position
+                // turn XY position in to array position hack
                 currentX--;
                 currentY--;
 
@@ -441,34 +428,7 @@
             yAlpha = previousY;
 
 
-            //console.log("phase",phase,"userState",userState)
-
-            if (phase == "level" && (userState == "anchor" || userState == "place")) {
-                yAlpha = (yAlpha + 1) % (matrixSize);
-                boxMatrix[xAlpha][yAlpha].alpha += touchAlphaChange;
-
-                yAlpha = previousY;
-                xAlpha = (xAlpha + 1) % (matrixSize);
-                boxMatrix[xAlpha][yAlpha].alpha += touchAlphaChange;
-
-                yAlpha = (yAlpha - 1) % (matrixSize);
-                xAlpha = previousX;
-
-                if (yAlpha < 0) {
-                    yAlpha = matrixSize - 1
-                }
-                boxMatrix[xAlpha][yAlpha].alpha += touchAlphaChange;
-
-                yAlpha = previousY;
-                xAlpha = (xAlpha - 1) % (matrixSize);
-
-                if (xAlpha < 0) {
-                    xAlpha = matrixSize - 1
-                }
-
-                boxMatrix[xAlpha][yAlpha].alpha += touchAlphaChange;
-
-            }
+    
 
             /*
             previousX = (previousX + xShift) % (matrixSize);
@@ -627,10 +587,10 @@
 
                     console.log('please place anchor ////////////');
                     populateDefaultLetterMatrix();
-                    if (wordID>0) { 
-                        placeWords(wordID-1);
+                    if (wordID > 0) {
+                        placeWords(wordID - 1);
                     }
-                    
+
                     placeAnchor(levelWordList[level][wordID]);
                     refreshDisplayLevel();
                 }
@@ -665,12 +625,14 @@
 
         // placewords up to wordID
         function placeWords(uptToWord) {
+
+            score = 0;
+            totalScore = 0;
             
-            score = 0 ;
             populateDefaultLetterMatrix();
             for (var a = 0; a <= uptToWord; a++) {
 
-                placeWord(levelWordList[level][a], wordStartX[a], wordStartY[a], wordDirectionX[a], wordDirectionY[a], 1,1)
+                placeWord(levelWordList[level][a], wordStartX[a], wordStartY[a], wordDirectionX[a], wordDirectionY[a], 1, 1)
 
             }
 
@@ -713,10 +675,10 @@
 
             console.log("currentXcurrentY:", currentX, currentY);
             //levelWordList[level][wordID]
-            placeWord(aWord, currentX, currentY, 0, -1, 1,0);
-            placeWord(aWord, currentX, currentY, 1, 0, 1,0);
-            placeWord(aWord, currentX, currentY, 0, 1, 1,0);
-            placeWord(aWord, currentX, currentY, -1, 0, 1,0);
+            placeWord(aWord, currentX, currentY, 0, -1, 1, 0);
+            placeWord(aWord, currentX, currentY, 1, 0, 1, 0);
+            placeWord(aWord, currentX, currentY, 0, 1, 1, 0);
+            placeWord(aWord, currentX, currentY, -1, 0, 1, 0);
 
             // userState = 'place';
 
@@ -726,7 +688,7 @@
 
 
 
-        function placeWord(aWord, posX, posY, shiftX, shiftY, maskBit,scoreBit) {
+        function placeWord(aWord, posX, posY, shiftX, shiftY, maskBit, scoreBit) {
 
 
 
@@ -740,7 +702,7 @@
 
                 for (var a = 0; a < currentWordLen; a++) {
 
-                    if (letterMatrix[posX][posY] == currentWord[a] &&scoreBit == 1) {
+                    if (letterMatrix[posX][posY] == currentWord[a] && scoreBit == 1) {
                         score += 1;
                         totalScore += 1;
                         //console.log("point gained +1");
@@ -787,13 +749,7 @@
 
 
 
-            for (x = 0; x < 8; x++) {
-
-                for (y = 0; y < 8; y++) {
-                    boxMatrix[x][y].alpha = 1;
-                }
-            }
-
+            setBoxVisibility(1.0);
 
 
 
@@ -813,6 +769,7 @@
 
 
         function refreshDisplayLevel() {
+
 
             for (var x1 = 0; x1 < matrixSize; x1++) {
 
@@ -861,6 +818,7 @@
                     displayComment.setText("Congrats! You have unlocked the next level..");
                     displayWordList.setText("Click here to continue...");
                     level += 1;
+                    
 
                     if (level == totalLevels) {
                         phase = "playerWon";
@@ -871,7 +829,7 @@
                         score = 0;
                         wordListLen = levelWordList[level].length;
                         //populateDefaultLetterMatrix();
-
+                        //levelWordOrder = new Array ();
                     }
                 }
             }
@@ -948,6 +906,7 @@
             console.log("phase" + phase + "  refreshDisplayFrontScreen");
 
             populateDefaultLetterMatrix();
+            setBoxVisibility(0.0);
 
             xDown = 0;
             yDown = 0;
@@ -958,6 +917,12 @@
 
 
         function refreshDisplayReadyForLevel() {
+
+
+
+            setBoxVisibility (0.0);
+
+
 
             //landscape.alpha = 0.0;
             displayFrontTitle.alpha = 1.0;
@@ -974,7 +939,8 @@
 
 
 
-            //doLogic();
+
+
 
 
             populateDefaultLetterMatrix();
@@ -986,6 +952,16 @@
 
         }
 
+
+        function setBoxVisibility (alphaValue){
+            //hide boxes
+            console.log ("setBoxVisibility", alphaValue);
+            for (x = 0; x < 8; x++) {
+                for (y = 0; y < 8; y++) {
+                    boxMatrix[x][y].alpha = alphaValue;
+                }
+            }
+        }
 
         function refreshDisplayPlayerWon() {
 
@@ -1000,7 +976,7 @@
         }
 
 
-        function cycleWords() {
+        function cycleWordOrder() {
             const fruits = ["Banana", "Orange", "Apple", "Mango"];
 
             var order_ = [0, 1, 2, 3]
@@ -1032,15 +1008,6 @@
 
         }
 
-
-        /*
-            function drawMatrix ()
-            {
-                GR.LINE n,wt, ht, wt*9, ht
-                GR.LINE n,wt, ht, wt, ht*8
-                GR.LINE n,wt*9, ht, wt*9, ht*8
-            }
-            */
 
     </script>
 </body>
