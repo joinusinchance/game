@@ -120,7 +120,7 @@
         var totalScore = 0;
         var levelWordOrder = null;
         var levelWordDisplay = null;
-        
+
 
         var wordColor = ["white", "grey", "blue", "green", "yellow", "orange", "orangered", "red"];
         var phase = "frontScreen"; //frontScreen , readyForLevel, levelSetUp, level,   
@@ -284,36 +284,55 @@
 
         function setupWordOrder() {
 
+            console.log("setup word order:");
             levelWordOrder = new Array(levelWordList[level].length);
-            for (i = 0; i<levelWordList[level].length;i++){
+            for (i = 0; i < levelWordList[level].length; i++) {
                 levelWordOrder[i] = i;
             }
 
-            levelWordDisplay = levelWordList[level];
+            levelWordDisplay = [...levelWordList[level]]; // fix this
+            console.log (levelWordDisplay);
+            console.log (levelWordList[level]);
         }
 
         function cycleWordOrder() {
 
 
-            var fruitsDisplay = new Array(fruits.length);
+            //var fruitsDisplay = new Array(fruits.length);
 
             //fruits.push("Kiwi", "Lemon");
-
+            console.log ("cycle word start ----");
+            console.log(levelWordOrder);
             anOrder = levelWordOrder[0];
+            console.log(anOrder);
             levelWordOrder.shift();
+            console.log(levelWordOrder);
             levelWordOrder.push(anOrder);
 
+            console.log(levelWordOrder);
 
+
+            console.log(levelWordOrder.length);
 
             for (var i = 0; i < levelWordOrder.length; i++) {
+                
+                levelWordDisplay[i] = levelWordList[level][levelWordOrder[i]];
+                console.log("i: ", i);
+                console.log("word order ", levelWordOrder[i]);
+                console.log("level word list value ", levelWordList[level][levelWordOrder[i]]);
+                console.log("word order ",levelWordOrder[i]);
+                console.log("level word display ",levelWordDisplay[i]);
 
-                levelWordDisplay[i] = levelWordDisplay[order_[i]];
-
-                console.log(levelWordDisplay[i]);
 
             }
+            console.log (levelWordList[level]);
+            console.log (levelWordDisplay);
+            console.log ("cycle word END ####");
 
         }
+
+
+
 
 
         function initScene() { }
@@ -349,7 +368,16 @@
 
             displayComment = this.add.text(heightText * .2, heightText * (9.5) + heightOffset, ("COMMENT"), textStatusConfig);
             displayScore = this.add.text(heightText * .2, heightText * (10) + heightOffset, ("SCORE"), textStatusConfig);
-            displayWordList = this.add.text(heightText * .2, heightText * (10.5) + heightOffset, ("LIST"), textStatusConfig);
+            displayWordList = this.add.text(heightText * .2, heightText * (10.5) + heightOffset, ("LIST"), textStatusConfig)
+                .setInteractive()
+                .on('pointerdown', () => updateDisplayWordList(1))
+                .on('pointerover', () => enterButtonHoverState())
+                .on('pointerout', () => enterButtonRestState());
+
+            //displayWordList.events.onInputDown.add(down, this);
+            //text.events.onInputDown.add(down, this);
+
+
             displayNextLevelScore = this.add.text(heightText * .2, heightText * (11) + heightOffset, ("NEXT"), textStatusConfig);
             //line1 = new Phaser.Line(100, 100,100, 100);
 
@@ -404,11 +432,33 @@
             doLogic();
 
 
+
+
+
         }
 
-        function clearScene() {
 
+        function updateDisplayWordList(clickCount) {
+            console.log ("clicked");
+            
+            cycleWordOrder();
+            //this.clickCountText.setText(`Button has been clicked ${clickCount} times.`);
         }
+
+        function enterButtonHoverState() {
+            
+            console.log ("hover");
+            //this.clickButton.setStyle({ fill: '#ff0' });
+        }
+
+        function enterButtonRestState() {
+        
+            console.log ("reset");
+            //    this.clickButton.setStyle({ fill: '#0f0' });
+        
+        }
+
+
 
 
         //function updateScene() { }
@@ -454,7 +504,7 @@
             yAlpha = previousY;
 
 
-    
+
 
             /*
             previousX = (previousX + xShift) % (matrixSize);
@@ -654,7 +704,7 @@
 
             score = 0;
             totalScore = 0;
-            
+
             populateDefaultLetterMatrix();
             for (var a = 0; a <= uptToWord; a++) {
 
@@ -774,7 +824,7 @@
         function initDisplayLevel_Dev() {
 
 
-
+            setupWordOrder();
             setBoxVisibility(1.0);
 
 
@@ -823,7 +873,9 @@
             */
             if (wordID < wordListLen) {
                 displayComment.setText("Reuse as many letters as you can:");
-                displayWordList.setText(levelWordList[level].toString());
+                //displayWordList.setText(levelWordList[level].toString());
+                displayWordList.setText(levelWordDisplay.toString());
+                
                 displayScore.setText("Current score: " + score + " TotalScore: " + totalScore);
                 displayNextLevelScore.setText("Score to unlock next level: " + levelWordMinScore[level]);
             }
@@ -844,7 +896,7 @@
                     displayComment.setText("Congrats! You have unlocked the next level..");
                     displayWordList.setText("Click here to continue...");
                     level += 1;
-                    
+
 
                     if (level == totalLevels) {
                         phase = "playerWon";
@@ -946,7 +998,7 @@
 
 
 
-            setBoxVisibility (0.0);
+            setBoxVisibility(0.0);
 
 
 
@@ -979,9 +1031,9 @@
         }
 
 
-        function setBoxVisibility (alphaValue){
+        function setBoxVisibility(alphaValue) {
             //hide boxes
-            console.log ("setBoxVisibility", alphaValue);
+            console.log("setBoxVisibility", alphaValue);
             for (x = 0; x < 8; x++) {
                 for (y = 0; y < 8; y++) {
                     boxMatrix[x][y].alpha = alphaValue;

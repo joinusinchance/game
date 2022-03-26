@@ -1,0 +1,69 @@
+<html>
+
+<body>
+
+ 
+
+<h1>JavaScript Arrays</h1>
+
+<h2>The push() Method</h2>
+
+ 
+
+<p>push() adds new items to the end of an array:</p>
+
+ 
+
+<p id="demo"></p>
+
+ 
+
+<script>
+
+const fruits = ["Banana", "Orange", "Apple", "Mango"];
+
+var order_ = [0,1,2,3]
+
+var fruitsDisplay = new Array(fruits.length);
+
+//fruits.push("Kiwi", "Lemon");
+
+anOrder = order_[0];
+
+order_.shift();
+
+order_.push(anOrder);
+
+// push twice
+
+anOrder = order_[0];
+
+order_.shift();
+
+order_.push(anOrder);
+
+ 
+
+console.log (order_.length);
+
+ 
+
+for (var i=0;i<order_.length;i++){
+
+               fruitsDisplay[i] = fruits[order_[i]];
+
+               console.log (fruitsDisplay[i]);
+
+}
+
+ 
+
+document.getElementById("demo").innerHTML = fruitsDisplay;
+
+</script>
+
+ 
+
+</body>
+
+</html>
