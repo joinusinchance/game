@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.24.1/dist/phaser.min.js"></script>
+</head>
+
+<body>
+    <div id="game"></div>
+    <script>
+        // example from https://www.thepolyglotdeveloper.com/2020/09/include-touch-cursor-gesture-events-phaser-game/
+        /*
+                    const phaserConfig = {
+                        type: Phaser.AUTO,
+                        parent: "game",
+                        width: 1280,
+                        height: 720,
+                        backgroundColor: "#5DACD8",
+                        scene: {
+                            init: initScene,
+                            preload: preloadScene,
+                            create: createScene,
+                            update: updateScene
+                        }
+                    }; 
+          */
+
+        //from  https://rexrainbow.github.io/phaser3-rex-notes/docs/site/game/#configuration
+        // something added
+
+        const phaserConfig = {
+            type: Phaser.AUTO,
+            parent: 'game',
+            // 750previousX334
+            // 2560×1440
+            width: 828,
+            height: 1792, 
+            //width: 1440,
+            //height: 2560,
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            },
+            dom: {
+                createContainer: false,
+            },
+            scene: 'scene_01',
+            backgroundColor: 0x333333,
+            transparent: true,
+            scene: {
+                init: initScene,
+                preload: preloadScene,
+                create: createScene,
+                update: updateScene
+            }
+        }
+
+        const game = new Phaser.Game(phaserConfig);
+
+        //var game = new Phaser.Game(config);
+
+
+        var isClicking = false;
+        var swipeDirection;
+        var touchAlpha = 0.5;
+        var touchAlphaChange = -0.1;
+        var currentX = 0;
+        var currentY = 0;
+        var previousX = 0;
+        var previousY = 0;
+
+        var matrixWidth = 10;
+        var playWidth = 8;
+
+
+        widthText = game.config.width / matrixWidth;
+        heightText = widthText
+
+
+        // text offset x & y 
+        var widthOffset = widthText * 0.2;
+        var heightOffset = heightText * -0.1;
+
+
+        var textConfig = { fontSize: widthText, color: '#555555', fontFamily: 'monospace' };
+        var textStatusConfig = { fontSize: widthText / 2, color: '#555555', fontFamily: 'monospace' };
+
+
+        console.log(widthOffset, heightOffset);
+
+        // user input info
+        var userState = 'ready'
+        //var xShift = 0;
+        //var yShift = 0;
+
+        var maxWords = 1024;
+
+        // setup matrices
+        var totalLevels = 5;
+        var level = 0;
+        var wordID = 0;
+
+        var wordStartX = new Array(maxWords);
+        var wordStartY = new Array(maxWords);
+        var wordDirectionX = new Array(maxWords);
+        var wordDirectionY = new Array(maxWords);
+        var levelWordList = new Array(totalLevels);
+
+        levelWordList[0] = ["blob", "slob", "globe", "best", "sore", "port"];
+        levelWordList[1] = ["kitchen", "red", "apples", "motion", "park", "crunch"];
+        levelWordList[2] = ["to", "be", "or", "not", "to", "be", "that", "is", "the", "question"];
+        levelWordList[3] = ["Neither", "a", "borrower", "nor", "a", "lender", "be"];
+        levelWordList[4] = ["The", "lady", "doth", "protest", "too", "much", "methinks"];
+        levelWordList[5] = ["Do", "you", "think", "I", "am", "easier", "to", "be", "played", "on", "than", "a", "pipe?"]
+        levelWordList[5] = ["evil", "live", "veil", "vile"];
+
+        var levelWordMinScore = new Array(totalLevels);
+        levelWordMinScore = [9, 5, 10, 7, 3, 6];
+        var score = 0;
+        var totalScore = 0;
+        var levelWordOrder = null;
+        var levelWordDisplay = null;
+
+
+        var wordColor = ["white", "grey", "blue", "green", "yellow", "orange", "orangered", "red"];
+        var phase = "frontScreen"; //frontScreen , readyForLevel, levelSetUp, level,   
+        var wordListLen = levelWordList[0].length;
+        var lastTime = 100;
+
+        var matrixSize = 8;
+
+
+
+        //var landscape = null; // this will be our graphics object on create
+
+
+
+
+        var displayMatrix = new Array(matrixSize); //  this will be our text matrix on create
+        displayMatrix[0] = new Array(matrixSize);
+        displayMatrix[1] = new Array(matrixSize);
+        displayMatrix[2] = new Array(matrixSize);
+        displayMatrix[3] = new Array(matrixSize);
+        displayMatrix[4] = new Array(matrixSize);
+        displayMatrix[5] = new Array(matrixSize);
+        displayMatrix[6] = new Array(matrixSize);
+        displayMatrix[7] = new Array(matrixSize);
+
+
+
+        //2D matrix for words placed
+        // todo dynamically generate this any size
+        var maskMatrix = new Array(matrixSize);
+        maskMatrix[0] = new Array(matrixSize);
+        maskMatrix[1] = new Array(matrixSize);
+        maskMatrix[2] = new Array(matrixSize);
+        maskMatrix[3] = new Array(matrixSize);
+        maskMatrix[4] = new Array(matrixSize);
+        maskMatrix[5] = new Array(matrixSize);
+        maskMatrix[6] = new Array(matrixSize);
+        maskMatrix[7] = new Array(matrixSize);
+
+
+        // box matrix - this be the rectangular background that should help us improve UI
+        var boxMatrix = new Array(matrixSize);
+        boxMatrix[0] = new Array(matrixSize);
+        boxMatrix[1] = new Array(matrixSize);
+        boxMatrix[2] = new Array(matrixSize);
+        boxMatrix[3] = new Array(matrixSize);
+        boxMatrix[4] = new Array(matrixSize);
+        boxMatrix[5] = new Array(matrixSize);
+        boxMatrix[6] = new Array(matrixSize);
+        boxMatrix[7] = new Array(matrixSize);
+
+
+
+
+
+
+
+        //2D matrix for words placed
+        // todo dynamically generate this any size
+        var letterMatrix = new Array(matrixSize);
+        letterMatrix[0] = new Array(matrixSize);
+        letterMatrix[1] = new Array(matrixSize);
+        letterMatrix[2] = new Array(matrixSize);
+        letterMatrix[3] = new Array(matrixSize);
+        letterMatrix[4] = new Array(matrixSize);
+        letterMatrix[5] = new Array(matrixSize);
+        letterMatrix[6] = new Array(matrixSize);
+        letterMatrix[7] = new Array(matrixSize);
+
+        //2D matrix for words height
+        var heightMatrix = new Array(matrixSize);
+
+        heightMatrix[0] = new Array(matrixSize);
+        heightMatrix[1] = new Array(matrixSize);
+        heightMatrix[2] = new Array(matrixSize);
+        heightMatrix[3] = new Array(matrixSize);
+        heightMatrix[4] = new Array(matrixSize);
+        heightMatrix[5] = new Array(matrixSize);
+        heightMatrix[6] = new Array(matrixSize);
+        heightMatrix[7] = new Array(matrixSize);
+
+
+        // create objects for front screen and level splsh screen
+        displayFrontTitle = null;
+        displayFrontComment1 = null;
+        displayFrontComment2 = null;
+        displayFrontComment3 = null;
+        // create objects for 
+
+
+
+        // create objects for commentary and score ingame 
+        displayComment = null;
+        displayWordList = null;
+        displayScore = null;
+        displayNextLevelScore = null;
+        displayUndo = null;
+        firstUndo = 1;
+
+
+
+        // figure out whether we are using a url based level
+
+
+        //levelName = levelName.replace(/%20/g," ");
+        searchValues = decodeURI(window.location.search);
+
+        // if no parameters are passed, run test script
+
+        if (searchValues.length > 0) {
+
+            //window.location.serach
+
+            //reuseStart = searchValues.search("reuse=");
+
+
+            delimeter = searchValues.search(";");
+            //reuseValue = searchValues.substring(reuseStart+6,reuseEnd-reuseStart+1);
+            reuseValue = searchValues.substring(1, delimeter);
+
+
+            searchValues = searchValues.substring(delimeter + 1, 1024);
+
+            delimeter = searchValues.search(";");
+            levelName = searchValues.substring(0, delimeter);
+
+            searchValues = searchValues.substring(delimeter + 1, 1024);
+
+            delimeter = searchValues.search(";");
+            levelComment = searchValues.substring(0, delimeter);
+
+            searchValues = searchValues.substring(delimeter + 1, 1024);
+
+
+            levelWordsArray = searchValues.split(";");
+
+
+
+            console.log(searchValues);
+            console.log(reuseValue);
+            console.log(levelName);
+            console.log(levelComment);
+            console.log(levelWordsArray);
+            console.log("----");
+            console.log(delimeter, reuseValue);
+
+            urlGame = "Yes";
+
+
+            levelWordList[0] = searchValues.split(";");
+            levelWordMinScore[0] = reuseValue;
+            wordListLen = levelWordList[0].length;
+
+        }
+
+        else {
+            console.log("boot to main menu");
+
+            urlGame = "No";
+        }
+
+
+        function setupWordOrder() {
+
+            console.log("setup word order:");
+            levelWordOrder = new Array(levelWordList[level].length);
+            for (i = 0; i < levelWordList[level].length; i++) {
+                levelWordOrder[i] = i;
+            }
+
+            levelWordDisplay = [...levelWordList[level]]; // fix this
+            console.log (levelWordDisplay);
+            console.log (levelWordList[level]);
+        }
+
+        function cycleWordOrder(direction) {
+
+
+
+            if (direction =="forward")
+            {
+            console.log ("cycle word start ----");
+            console.log(levelWordOrder);
+            anOrder = levelWordOrder[0];
+            console.log(anOrder);
+            levelWordOrder.shift();
+            console.log(levelWordOrder);
+            levelWordOrder.push(anOrder);
+
+            console.log(levelWordOrder);
+
+
+            console.log(levelWordOrder.length);
+            }
+            else if 
+            (direction =="backward")
+            {
+            console.log ("cycle word start ----");
+            console.log(levelWordOrder);
+            anOrder = levelWordOrder.pop();
+            console.log(anOrder); 
+            levelWordOrder.unshift(anOrder);
+            console.log(levelWordOrder);
+  
+            console.log(levelWordOrder);
+
+
+            console.log(levelWordOrder.length);
+            }
+
+
+
+            for (var i = 0; i < levelWordOrder.length; i++) {
+                
+                levelWordDisplay[i] = levelWordList[level][levelWordOrder[i]];
+                console.log("i: ", i);
+                console.log("word order ", levelWordOrder[i]);
+                console.log("level word list value ", levelWordList[level][levelWordOrder[i]]);
+                console.log("word order ",levelWordOrder[i]);
+                console.log("level word display ",levelWordDisplay[i]);
+
+
+            }
+            console.log (levelWordList[level]);
+            console.log (levelWordDisplay);
+            console.log ("cycle word END ####");
+            displayWordList.setText(levelWordDisplay.toString());
+
+        }
+
+
+
+
+
+        function initScene() { }
+
+        function preloadScene() {
+            this.load.image("plane", "plane.png");
+        }
+
+        function createScene() {
+
+            /* 
+            add all text boxes
+            show and hide by setting alpha to 1 or 0 
+            */
+            displayFrontTitle = this.add.text(heightText * .2, heightText * 5, "", textConfig)
+            displayFrontComment1 = this.add.text(heightText * .2, heightText * 6, "", textStatusConfig)
+            displayFrontComment2 = this.add.text(heightText * .2, heightText * 6, "", textStatusConfig)
+            displayComment = this.add.text(heightText * .2, heightText * (9.5) + heightOffset, ("COMMENT"), textStatusConfig);
+            displayScore = this.add.text(heightText * .2, heightText * (10) + heightOffset, ("SCORE"), textStatusConfig);
+            displayWordList = this.add.text(heightText * .2, heightText * (10.5) + heightOffset, ("LIST"), textStatusConfig)
+                .setInteractive()
+                /*.on('pointerdown', () => updateDisplayWordList(1)) */
+                .on('pointerover', () => enterButtonHoverState())
+                .on('pointerout', () => enterButtonRestState());
+
+            displayNextLevelScore = this.add.text(heightText * .2, heightText * (11) + heightOffset, ("NEXT"), textStatusConfig);
+            //displayUndo= this.add.text(heightText * .2, heightText * (11.5) + heightOffset, ("UNDO"), textStatusConfig)
+           // .setInteractive()
+             //   .on('pointerdown', () => updateUndo());
+                //.on('pointerover', () => enterButtonHoverState())
+                //.on('pointerout', () => enterButtonRestState());
+
+            /*
+                create array of background boxes 
+                this will be use hint user actions.. 
+            */
+            for (x = 0; x < 8; x++) {
+
+                for (y = 0; y < 8; y++) {
+                    boxMatrix[x][y] = this.add.rectangle(widthText * (x + 1), widthText * (y + 1), widthText, widthText, 0x000);
+                    boxMatrix[x][y].setStrokeStyle(1, 0xffffff);
+                    boxMatrix[x][y].fillColor = 0x808B96;
+                    boxMatrix[x][y].alpha = 0;
+                    boxMatrix[x][y].setOrigin(0);
+                }
+            }
+
+            /*
+                create array of text boxes for letters
+                this will display the words the user has placed
+            */
+            
+
+            for (x = 0; x < 8; x++) {
+
+                for (y = 0; y < 8; y++) {
+
+                    displayMatrix[x][y] = this.add.text((widthText * (x + 1)) + widthOffset, (heightText * (y + 1)) + heightOffset, "#", textConfig);
+                    //displayMatrix[x][y].alpha =1.0;
+
+                    displayMatrix[x][y].alpha = 0.0;
+                }
+            }
+
+            /*
+                create a cursor
+            */
+            plane = this.add.sprite(640, 360, "plane");
+            plane.setScale(0.4);
+
+
+            /*
+            step in to game loop 
+            */ 
+            doLogic();
+
+        }
+
+
+        function updateUndo() {
+            console.log("=====undo ", wordID, "user state ", userState);
+
+            populateDefaultLetterMatrix();
+
+            if (wordID >0){
+                wordID --;
+            }
+
+
+            if (wordID==0){
+                userState = 'ready';
+            }
+            else if( wordID>0){
+                //placeWords(wordID-1);   
+                placewords();
+                userState == "anchor";
+
+                cycleWordOrder("backward");
+            }
+            console.log("undo -refresh");
+            refreshDisplayLevel();
+
+        } 
+
+        
+
+
+        function updateDisplayWordList(clickCount) {
+            console.log ("clicked");
+            
+            cycleWordOrder();
+            //this.clickCountText.setText(`Button has been clicked ${clickCount} times.`);
+        }
+
+        function enterButtonHoverState() {
+            
+            console.log ("hover");
+           // this.clickButton.setStyle({ fill: '#ff0' });
+        }
+
+        function enterButtonRestState() {
+        
+            console.log ("reset");
+          //  this.clickButton.setStyle({ fill: '#0f0' });
+        
+        }
+
+
+
+
+        //function updateScene() { }
+        /* option 1 direct */
+        function updateScene() {
+
+            if (!this.input.activePointer.isDown && isClicking == true) {
+                plane.x = this.input.activePointer.position.x;
+                plane.y = this.input.activePointer.position.y;
+                isClicking = false;
+
+                console.log("---Position--->>");
+                console.log(this.input.activePointer.position.x);
+                console.log(this.input.activePointer.position.y);
+
+                plane.alpha = 1.0;
+
+                previousX = currentX;
+                previousY = currentY;
+                currentX = parseInt(this.input.activePointer.position.x / game.config.width * matrixWidth);
+                currentY = parseInt(this.input.activePointer.position.y / game.config.width * matrixWidth);
+
+                // turn XY position in to array position hack
+                currentX--;
+                currentY--;
+
+                getUserState();
+
+            } else if (this.input.activePointer.isDown && isClicking == false) {
+                isClicking = true;
+            }
+
+            if (plane.alpha <= 0.1) {
+                touchAlphaChange = 0.01;
+            } else if (plane.alpha >= 0.9) {
+                touchAlphaChange = -0.01;
+            }
+
+            plane.alpha += touchAlphaChange;
+
+
+            xAlpha = previousX;
+            yAlpha = previousY;
+
+
+        }
+
+        function getUserState() {
+            /*
+                1) Compare current click XY postions to previous
+                decide whether it is up down left right or same
+
+                2) Decide Click state (for valid clicks)
+                on 0th click = ready
+                on 1st click = anchor
+                on 2nd click decide action
+                        if first click <> second click
+                            place word
+                        if firstclick = second click
+                            remove anchor
+                    then set user state to be ready
+            */
+
+
+            console.log("User state logged")
+
+
+            console.log("---old position----");
+            console.log(previousX);
+            console.log(previousY);
+            console.log("---new position----");
+            console.log(currentX);
+            console.log(currentY);
+            console.log("-------");
+
+
+            var xShift = 0;
+            var yShift = 0;
+
+            // check if user input is vertical
+            if (previousX == currentX) {
+                xShift = 0;
+                if (previousY == currentY) {
+                    yShift = 0;
+                    console.log("no direction indicated");
+                }
+                else if (previousY < currentY) {
+                    console.log("verticle down");
+                    yShift = 1;
+                }
+                else if (previousY > currentY) {
+                    console.log("verticle up");
+                    yShift = -1;
+                }
+                else {
+                    console.log("error!");
+                }
+
+            }
+            // check if user input is horizontal
+            else if (previousY == currentY) {
+                yShift = 0;
+                if (previousX < currentX) {
+                    console.log("horizontal right");
+                    xShift = 1;
+                }
+                else if (previousX > currentX) {
+                    console.log("horizontal left");
+                    xShift = -1;
+                }
+                else {
+                    console.log("no direction");
+                }
+            }
+
+
+
+            console.log("Previous XY ", previousX, previousY);
+            console.log("Current XY ", currentX, currentY);
+
+            console.log(xShift, yShift);
+
+            /*
+            ## If phase = 'readyForLevel'
+            */
+
+
+            console.log("xShift yShift", xShift, yShift);
+
+
+            if (phase != 'level') {
+                doLogic();
+            }
+
+
+
+            /*
+            ## IF phase = 'level'
+            2) Decide Click state (for valid clicks)
+            on 0th click = ready
+            on 1st click = anchor
+            on 2nd click decide action
+                    if first click <> second click
+                        place word
+                    if firstclick = second click
+                        remove anchor
+                then set user state to be ready
+            */
+
+
+
+            else if (phase = 'level') {
+
+                if (userState == 'ready') {
+                    userState = 'anchor';
+
+                }
+                else if (userState == 'anchor') {
+                    if (xShift + yShift != 0) {
+                        userState = 'place';
+                    }
+                    // implied here is that we want to re anchor the text 
+                }
+                else if (userState == 'place') {
+                    userState = 'anchor';
+                }
+
+
+                console.log("-##-", userState, "-##-");
+                console.log("xshiftyshift:", xShift, yShift);
+
+                /*
+                if anchor is within the  playfield,
+                placewords
+                else funstuff
+                */
+
+                if (
+                    currentX > 0 && currentX < 9
+                    && currentY > 0 && currentY < 9
+                    && userState == 'anchor'
+                ) {
+
+                    console.log('please place anchor ////////////');
+                    populateDefaultLetterMatrix();
+                    if (wordID > 0) {
+                        placeWords(wordID - 1);
+                        firstUndo = 1;
+                    }
+                    
+                    console.log (levelWordList[level][levelWordOrder[wordID]]);
+                    placeAnchor(levelWordList[level][levelWordOrder[wordID]]);
+                    //placeAnchor(levelWordList[level][wordID]);
+                    refreshDisplayLevel();
+                }
+                else if (
+                    previousX > 0 && previousX < 9
+                    && previousY > 0 && previousY < 9
+                    && userState == 'place'
+                ) {
+                    console.log('please place word------------------');
+
+                    wordStartX[levelWordOrder[wordID]] = previousX;
+                    wordStartY[levelWordOrder[wordID]] = previousY;
+                    wordDirectionX[levelWordOrder[wordID]] = xShift;
+                    wordDirectionY[levelWordOrder[wordID]] = yShift;
+
+                    populateDefaultLetterMatrix();
+                    placeWords(levelWordOrder[wordID]);
+                    //placeWords(wordID);
+                    wordID++;
+
+                    levelWordDisplay.shift();
+                    //cycleWordOrder("forward");
+                    refreshDisplayLevel();
+
+
+                    userState = 'place';
+
+
+
+                }
+
+            }
+        }
+
+
+        // placewords up to wordID
+        function placeWords(uptToWord) {
+
+            score = 0;
+            totalScore = 0;
+
+            populateDefaultLetterMatrix();
+            for (var a = 0; a <= uptToWord; a++) {
+
+                placeWord(levelWordList[level][levelWordOrder[a]], wordStartX[a], wordStartY[a], wordDirectionX[a], wordDirectionY[a], 1, 1)
+
+            }
+
+
+        }
+
+
+        function placeAnchor(aWord) {
+
+
+
+            console.log("Place anchor letter");
+
+            // but first clear matrix;
+            //populateDefaultLetterMatrix();
+
+            console.log("Place anchor letter:", levelWordList[level][wordID])
+            var currentWord = levelWordList[level][wordID].split("");
+            var currentWordLen = currentWord.length;
+
+
+
+
+
+            for (var mx = 0; mx < matrixSize; mx++) {
+                for (var my = 0; my < matrixSize; my++) {
+                    maskMatrix[mx][my] = 0;
+                }
+            }
+
+
+
+
+
+
+            // turn postion in to array location ..Hack fix
+
+            // turn postion in to array location ..Hack fix
+
+
+            console.log("currentXcurrentY:", currentX, currentY);
+            //levelWordList[level][wordID]
+            placeWord(aWord, currentX, currentY, 0, -1, 1, 0);
+            placeWord(aWord, currentX, currentY, 1, 0, 1, 0);
+            placeWord(aWord, currentX, currentY, 0, 1, 1, 0);
+            placeWord(aWord, currentX, currentY, -1, 0, 1, 0);
+
+            // userState = 'place';
+
+
+
+        }
+
+
+
+        function placeWord(aWord, posX, posY, shiftX, shiftY, maskBit, scoreBit) {
+
+
+
+            console.log("Place current anchor:", aWord)
+            var currentWord = aWord.split("");
+            var currentWordLen = currentWord.length;
+
+
+            if (shiftX + shiftY != 0) {
+                console.log("xshift " + shiftX + " yshift " + shiftY);
+
+                for (var a = 0; a < currentWordLen; a++) {
+
+                    if (letterMatrix[posX][posY] == currentWord[a] && scoreBit == 1) {
+                        score += 1;
+                        totalScore += 1;
+                        //console.log("point gained +1");
+                    }
+                    else if (letterMatrix[posX][posY] != currentWord[a]) {
+                        letterMatrix[posX][posY] = currentWord[a];
+                        heightMatrix[posX][posY] = heightMatrix[posX][posY] + 1;
+                        //    console.log(letterMatrix[posX][posY]);
+                    }
+
+
+                    /*
+                    console.log(currentWord[a]);
+                    console.log(posX);
+                    console.log(posY);
+                    */
+
+                    posX = (posX + shiftX) % (matrixSize);
+                    posY = (posY + shiftY) % (matrixSize);
+
+
+                    if (posX < 0) {
+                        posX = matrixSize - 1
+                    }
+
+                    if (posY < 0) {
+                        posY = matrixSize - 1
+                    }
+
+
+                }
+                //wordID++;
+
+                //userState = 'place';
+            }
+
+        }
+
+
+
+
+
+        function initDisplayLevel_Dev() {
+
+
+            
+            setBoxVisibility(1.0);
+
+
+
+
+            displayComment.alpha = 1.0;
+            displayScore.alpha = 1.0;
+            displayNextLevelScore.alpha = 1.0;
+            displayWordList.alpha = 1.0;
+            //displayUndo.alpha = 1.0;
+
+        }
+
+
+
+        function refreshDisplayLevel() {
+
+
+            for (var x1 = 0; x1 < matrixSize; x1++) {
+
+                for (var y1 = 0; y1 < matrixSize; y1++) {
+                    displayMatrix[x1][y1].setText(letterMatrix[x1][y1]);
+                    if (letterMatrix[x1][y1] != '#') {
+                        displayMatrix[x1][y1].alpha = 1.0;
+                    }
+                }
+
+            }
+
+
+            initDisplayLevel_Dev();
+
+            displayFrontTitle.alpha = 0.0;
+            displayFrontComment1.alpha = 0.0;
+
+            /*
+ 
+            //context.fillText("a", Math.ceil(xUp/50)*50-25, Math.ceil(yUp/50)*50-25);
+            //console.log ("x=" + Math.ceil(xUp/50) + " y=" + Math.ceil(yUp/50));	
+            context.fillStyle = "blue";
+            context.font = "bold 15px Courier New";
+            */
+            if (wordID < wordListLen) {
+                displayComment.setText("Reuse as many letters as you can:");
+                //displayWordList.setText(levelWordList[level].toString());
+                displayWordList.setText(levelWordDisplay.toString());
+                
+                displayScore.setText("Current score: " + score + " TotalScore: " + totalScore);
+                displayNextLevelScore.setText("Score to unlock next level: " + levelWordMinScore[level]);
+            }
+
+            if (wordID == wordListLen) {
+                displayScore.setText("Current score: " + score);
+
+                if (score < levelWordMinScore[level]) {
+                    displayComment.setText("You have failed to save enough letters");
+                    displayWordList.setText("Click here to continue...");
+                    level = 0;
+                    wordID = 0;
+                    score = 0;
+                    totalScore = 0;
+                    phase = "frontScreen";
+                }
+                else {
+                    displayComment.setText("Congrats! You have unlocked the next level..");
+                    displayWordList.setText("Click here to continue...");
+                    level += 1;
+
+
+                    if (level == totalLevels) {
+                        phase = "playerWon";
+                    }
+                    else {
+                        phase = "readyForLevel";
+                        wordID = 0;
+                        score = 0;
+                        wordListLen = levelWordList[level].length;
+                        //populateDefaultLetterMatrix();
+                        //levelWordOrder = new Array ();
+                    }
+                }
+            }
+        }
+
+        function populateDefaultLetterMatrix() {
+            for (x = 0; x < 8; x++) {
+                for (y = 0; y < 8; y++) {
+                    letterMatrix[x][y] = "#";
+                    displayMatrix[x][y].alpha = 0.0;
+                }
+            }
+
+        }
+
+        function doLogic() {
+
+            console.log("phase " + phase + "  doLogic");
+            if (phase == "frontScreen") {
+                refreshDisplayFrontScreen();
+                phase = "readyForLevel";
+            }
+            else if (phase == "readyForLevel") {
+                refreshDisplayReadyForLevel();
+                phase = "levelSetUp";
+            }
+            else if (phase == "levelSetUp") {
+                refreshDisplayLevel();
+                previousX = 0;
+                previousY = 0;
+                currentX = 0;
+                currentY = 0;
+                phase = "level";
+            }
+            else if (phase == "level") {
+                // placeWord();
+            }
+            else if (phase == "playerWon") {
+                refreshDisplayPlayerWon();
+                phase = "frontScreen";
+            }
+
+            xDown = undefined;
+            yDown = undefined;
+            xUp = undefined;
+            yUp = undefined;
+
+            console.log("Next phase:" + phase);
+
+
+        }
+
+
+
+        function refreshDisplayFrontScreen() {
+
+
+
+            // landscape.alpha = 0.0;
+
+            displayFrontTitle.alpha = 1.0;
+            displayFrontTitle.setText("Welcome to Wordga");
+            displayFrontComment1.alpha = 1.0;
+            displayFrontComment1.setText("Tap to start")
+            displayFrontComment2.alpha = 1.0;
+
+
+            displayComment.alpha = 0.0;
+            displayScore.alpha = 0.0;
+            displayNextLevelScore.alpha = 0.0;
+            displayWordList.alpha = 0.0;
+            //displayUndo.alpha = 0.0;
+
+            console.log("phase" + phase + "  refreshDisplayFrontScreen");
+
+            populateDefaultLetterMatrix();
+            setBoxVisibility(0.0);
+
+            xDown = 0;
+            yDown = 0;
+            xUp = 0;
+            yUp = 0;
+
+        }
+
+
+        function refreshDisplayReadyForLevel() {
+
+
+
+            setBoxVisibility(0.0);
+            setupWordOrder();
+
+
+            //landscape.alpha = 0.0;
+            displayFrontTitle.alpha = 1.0;
+            displayFrontTitle.setText("Level " + level);
+            displayFrontComment1.alpha = 1.0;
+            displayFrontComment1.setText("tap to continue..")
+            displayFrontComment2.alpha = 1.0;
+
+
+            displayComment.alpha = 0.0;
+            displayScore.alpha = 0.0;
+            displayNextLevelScore.alpha = 0.0;
+            displayWordList.alpha = 0.0;
+            //displayUndo.alpha = 0.0;
+
+
+
+
+
+
+            populateDefaultLetterMatrix();
+
+            xDown = 0;
+            yDown = 0;
+            xUp = 0;
+            yUp = 0;
+
+        }
+
+
+        function setBoxVisibility(alphaValue) {
+            //hide boxes
+            console.log("setBoxVisibility", alphaValue);
+            for (x = 0; x < 8; x++) {
+                for (y = 0; y < 8; y++) {
+                    boxMatrix[x][y].alpha = alphaValue;
+                }
+            }
+        }
+
+        function refreshDisplayPlayerWon() {
+
+            displayFrontTitle.setText("You have Won!");
+            displayFrontComment1.setText("Click here to continue..");
+
+            xDown = 0;
+            yDown = 0;
+            xUp = 0;
+            yUp = 0;
+
+        }
+
+
+
+
+    </script>
+</body>
+
+</html>
