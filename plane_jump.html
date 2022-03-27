@@ -296,12 +296,12 @@
             console.log (levelWordList[level]);
         }
 
-        function cycleWordOrder() {
+        function cycleWordOrder(direction) {
 
 
-            //var fruitsDisplay = new Array(fruits.length);
 
-            //fruits.push("Kiwi", "Lemon");
+            if (direction =="forward")
+            {
             console.log ("cycle word start ----");
             console.log(levelWordOrder);
             anOrder = levelWordOrder[0];
@@ -314,6 +314,24 @@
 
 
             console.log(levelWordOrder.length);
+            }
+            else if 
+            (direction =="backward")
+            {
+            console.log ("cycle word start ----");
+            console.log(levelWordOrder);
+            anOrder = levelWordOrder.pop();
+            console.log(anOrder); 
+            levelWordOrder.unshift(anOrder);
+            console.log(levelWordOrder);
+  
+            console.log(levelWordOrder);
+
+
+            console.log(levelWordOrder.length);
+            }
+
+
 
             for (var i = 0; i < levelWordOrder.length; i++) {
                 
@@ -345,29 +363,13 @@
 
         function createScene() {
 
-            //set up matrix
-
-
-
-
-
-
-
-            // text example from https://phasergames.com/phaser-3-basics-images-text-and-click/
-
-            //w2 = this.add.text(widthText, widthText*11, "A",textConfig);    
-
-
-
-            //aTaskBar = this.add.text(0,0,"01234567890123456789",textConfig);
-
-
+            /* 
+            add all text boxes
+            show and hide by setting alpha to 1 or 0 
+            */
             displayFrontTitle = this.add.text(heightText * .2, heightText * 5, "", textConfig)
             displayFrontComment1 = this.add.text(heightText * .2, heightText * 6, "", textStatusConfig)
             displayFrontComment2 = this.add.text(heightText * .2, heightText * 6, "", textStatusConfig)
-
-
-
             displayComment = this.add.text(heightText * .2, heightText * (9.5) + heightOffset, ("COMMENT"), textStatusConfig);
             displayScore = this.add.text(heightText * .2, heightText * (10) + heightOffset, ("SCORE"), textStatusConfig);
             displayWordList = this.add.text(heightText * .2, heightText * (10.5) + heightOffset, ("LIST"), textStatusConfig)
@@ -376,42 +378,17 @@
                 .on('pointerover', () => enterButtonHoverState())
                 .on('pointerout', () => enterButtonRestState());
 
-            //displayWordList.events.onInputDown.add(down, this);
-            //text.events.onInputDown.add(down, this);
-
-
             displayNextLevelScore = this.add.text(heightText * .2, heightText * (11) + heightOffset, ("NEXT"), textStatusConfig);
-
-
-            displayUndo= this.add.text(heightText * .2, heightText * (11.5) + heightOffset, ("UNDO"), textStatusConfig)
-            .setInteractive()
-                .on('pointerdown', () => updateUndo());
+            //displayUndo= this.add.text(heightText * .2, heightText * (11.5) + heightOffset, ("UNDO"), textStatusConfig)
+           // .setInteractive()
+             //   .on('pointerdown', () => updateUndo());
                 //.on('pointerover', () => enterButtonHoverState())
                 //.on('pointerout', () => enterButtonRestState());
 
-
-            
-            //line1 = new Phaser.Line(100, 100,100, 100);
-
-            console.log("********")
-            console.log(widthText, heightText)
-
-            var currentHeighText = 1;
-
-
-
-            // initialise objects, set alpha  to 0.
-            // when object wanted, change alpha 
-
             /*
-            consider rectangle and text alignment example here:
-            https://gamedev.stackexchange.com/questions/143341/how-to-align-text-dynamically-inside-a-rectangle-with-phaser-js
+                create array of background boxes 
+                this will be use hint user actions.. 
             */
-
-            console.log('init screen');
-
-
-
             for (x = 0; x < 8; x++) {
 
                 for (y = 0; y < 8; y++) {
@@ -423,7 +400,11 @@
                 }
             }
 
-
+            /*
+                create array of text boxes for letters
+                this will display the words the user has placed
+            */
+            
 
             for (x = 0; x < 8; x++) {
 
@@ -436,16 +417,17 @@
                 }
             }
 
-
+            /*
+                create a cursor
+            */
             plane = this.add.sprite(640, 360, "plane");
             plane.setScale(0.4);
 
 
+            /*
+            step in to game loop 
+            */ 
             doLogic();
-
-
-
-
 
         }
 
@@ -464,25 +446,14 @@
                 userState = 'ready';
             }
             else if( wordID>0){
-                placeWords(wordID-1);   
+                //placeWords(wordID-1);   
+                placewords();
                 userState == "anchor";
 
-                
+                cycleWordOrder("backward");
             }
-
- 
-
-
-/*
-            if (wordID >0 ) {
-                wordID--;
-                placeWords(levelWordOrder[wordID]);
-            }
- */           
             console.log("undo -refresh");
             refreshDisplayLevel();
-
-
 
         } 
 
@@ -499,13 +470,13 @@
         function enterButtonHoverState() {
             
             console.log ("hover");
-            //this.clickButton.setStyle({ fill: '#ff0' });
+           // this.clickButton.setStyle({ fill: '#ff0' });
         }
 
         function enterButtonRestState() {
         
             console.log ("reset");
-            //    this.clickButton.setStyle({ fill: '#0f0' });
+          //  this.clickButton.setStyle({ fill: '#0f0' });
         
         }
 
@@ -554,25 +525,6 @@
             xAlpha = previousX;
             yAlpha = previousY;
 
-
-
-
-            /*
-            previousX = (previousX + xShift) % (matrixSize);
-
-
-                    if (previousX < 0) {
-                        previousX = matrixSize - 1
-                    }
-
-                    if (previousY < 0) {
-                        previousY = matrixSize - 1
-                    }
-
-            */
-            // w2.setText(currentX+" "+currentY+" "+previousX+" "+previousY);
-
-            //doLogic();
 
         }
 
@@ -731,16 +683,18 @@
                 ) {
                     console.log('please place word------------------');
 
-                    wordStartX[wordID] = previousX;
-                    wordStartY[wordID] = previousY;
-                    wordDirectionX[wordID] = xShift;
-                    wordDirectionY[wordID] = yShift;
+                    wordStartX[levelWordOrder[wordID]] = previousX;
+                    wordStartY[levelWordOrder[wordID]] = previousY;
+                    wordDirectionX[levelWordOrder[wordID]] = xShift;
+                    wordDirectionY[levelWordOrder[wordID]] = yShift;
 
                     populateDefaultLetterMatrix();
                     placeWords(levelWordOrder[wordID]);
                     //placeWords(wordID);
                     wordID++;
 
+                    levelWordDisplay.shift();
+                    //cycleWordOrder("forward");
                     refreshDisplayLevel();
 
 
@@ -879,7 +833,7 @@
         function initDisplayLevel_Dev() {
 
 
-            setupWordOrder();
+            
             setBoxVisibility(1.0);
 
 
@@ -889,14 +843,10 @@
             displayScore.alpha = 1.0;
             displayNextLevelScore.alpha = 1.0;
             displayWordList.alpha = 1.0;
-            displayUndo.alpha = 1.0;
+            //displayUndo.alpha = 1.0;
 
         }
 
-        function clearDisplayLevel_Dev() {
-            // landscape = null;
-
-        }
 
 
         function refreshDisplayLevel() {
@@ -1034,7 +984,7 @@
             displayScore.alpha = 0.0;
             displayNextLevelScore.alpha = 0.0;
             displayWordList.alpha = 0.0;
-            displayUndo.alpha = 0.0;
+            //displayUndo.alpha = 0.0;
 
             console.log("phase" + phase + "  refreshDisplayFrontScreen");
 
@@ -1054,7 +1004,7 @@
 
 
             setBoxVisibility(0.0);
-
+            setupWordOrder();
 
 
             //landscape.alpha = 0.0;
@@ -1069,7 +1019,7 @@
             displayScore.alpha = 0.0;
             displayNextLevelScore.alpha = 0.0;
             displayWordList.alpha = 0.0;
-            displayUndo.alpha = 0.0;
+            //displayUndo.alpha = 0.0;
 
 
 
