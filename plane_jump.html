@@ -217,7 +217,8 @@
         displayWordList = null;
         displayScore = null;
         displayNextLevelScore = null;
-
+        displayUndo = null;
+        firstUndo = 1;
 
 
 
@@ -328,6 +329,7 @@
             console.log (levelWordList[level]);
             console.log (levelWordDisplay);
             console.log ("cycle word END ####");
+            displayWordList.setText(levelWordDisplay.toString());
 
         }
 
@@ -370,7 +372,7 @@
             displayScore = this.add.text(heightText * .2, heightText * (10) + heightOffset, ("SCORE"), textStatusConfig);
             displayWordList = this.add.text(heightText * .2, heightText * (10.5) + heightOffset, ("LIST"), textStatusConfig)
                 .setInteractive()
-                .on('pointerdown', () => updateDisplayWordList(1))
+                /*.on('pointerdown', () => updateDisplayWordList(1)) */
                 .on('pointerover', () => enterButtonHoverState())
                 .on('pointerout', () => enterButtonRestState());
 
@@ -379,6 +381,16 @@
 
 
             displayNextLevelScore = this.add.text(heightText * .2, heightText * (11) + heightOffset, ("NEXT"), textStatusConfig);
+
+
+            displayUndo= this.add.text(heightText * .2, heightText * (11.5) + heightOffset, ("UNDO"), textStatusConfig)
+            .setInteractive()
+                .on('pointerdown', () => updateUndo());
+                //.on('pointerover', () => enterButtonHoverState())
+                //.on('pointerout', () => enterButtonRestState());
+
+
+            
             //line1 = new Phaser.Line(100, 100,100, 100);
 
             console.log("********")
@@ -436,6 +448,45 @@
 
 
         }
+
+
+        function updateUndo() {
+            console.log("=====undo ", wordID, "user state ", userState);
+
+            populateDefaultLetterMatrix();
+
+            if (wordID >0){
+                wordID --;
+            }
+
+
+            if (wordID==0){
+                userState = 'ready';
+            }
+            else if( wordID>0){
+                placeWords(wordID-1);   
+                userState == "anchor";
+
+                
+            }
+
+ 
+
+
+/*
+            if (wordID >0 ) {
+                wordID--;
+                placeWords(levelWordOrder[wordID]);
+            }
+ */           
+            console.log("undo -refresh");
+            refreshDisplayLevel();
+
+
+
+        } 
+
+        
 
 
         function updateDisplayWordList(clickCount) {
@@ -665,9 +716,12 @@
                     populateDefaultLetterMatrix();
                     if (wordID > 0) {
                         placeWords(wordID - 1);
+                        firstUndo = 1;
                     }
-
-                    placeAnchor(levelWordList[level][wordID]);
+                    
+                    console.log (levelWordList[level][levelWordOrder[wordID]]);
+                    placeAnchor(levelWordList[level][levelWordOrder[wordID]]);
+                    //placeAnchor(levelWordList[level][wordID]);
                     refreshDisplayLevel();
                 }
                 else if (
@@ -683,7 +737,8 @@
                     wordDirectionY[wordID] = yShift;
 
                     populateDefaultLetterMatrix();
-                    placeWords(wordID);
+                    placeWords(levelWordOrder[wordID]);
+                    //placeWords(wordID);
                     wordID++;
 
                     refreshDisplayLevel();
@@ -708,7 +763,7 @@
             populateDefaultLetterMatrix();
             for (var a = 0; a <= uptToWord; a++) {
 
-                placeWord(levelWordList[level][a], wordStartX[a], wordStartY[a], wordDirectionX[a], wordDirectionY[a], 1, 1)
+                placeWord(levelWordList[level][levelWordOrder[a]], wordStartX[a], wordStartY[a], wordDirectionX[a], wordDirectionY[a], 1, 1)
 
             }
 
@@ -834,7 +889,7 @@
             displayScore.alpha = 1.0;
             displayNextLevelScore.alpha = 1.0;
             displayWordList.alpha = 1.0;
-
+            displayUndo.alpha = 1.0;
 
         }
 
@@ -979,7 +1034,7 @@
             displayScore.alpha = 0.0;
             displayNextLevelScore.alpha = 0.0;
             displayWordList.alpha = 0.0;
-
+            displayUndo.alpha = 0.0;
 
             console.log("phase" + phase + "  refreshDisplayFrontScreen");
 
@@ -1014,7 +1069,7 @@
             displayScore.alpha = 0.0;
             displayNextLevelScore.alpha = 0.0;
             displayWordList.alpha = 0.0;
-
+            displayUndo.alpha = 0.0;
 
 
 
