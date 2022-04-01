@@ -456,6 +456,11 @@
                 currentX--;
                 currentY--;
 
+
+boxMatrix[previousX][previousY].setStrokeStyle(1, 0x000000);
+
+boxMatrix[currentX][currentY].setStrokeStyle(1, 0xffffff);
+
                 getUserState();
 
             } else if (this.input.activePointer.isDown && isClicking == false) {
