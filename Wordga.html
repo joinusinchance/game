@@ -335,7 +335,7 @@
             for (x = 0; x < 8; x++) {
 
                 for (y = 0; y < 8; y++) {
-                    boxMatrix[x][y] = this.add.rectangle(widthText * (x + 1), widthText * (y + 1), widthText, widthText, 0x000);
+                    boxMatrix[x][y] = this.add.rectangle(widthText * (x + 1), widthText * (y + 1), widthText-1, widthText-1, 0x000);
                     boxMatrix[x][y].setStrokeStyle(1, 0x000000);
                     boxMatrix[x][y].fillColor = 0x808B96;
                     boxMatrix[x][y].alpha = 0;
@@ -365,8 +365,8 @@
             /*
                 create a cursor
             */
-            plane = this.add.sprite(640, 360, "plane");
-            plane.setScale(0.4);
+            //plane = this.add.sprite(640, 360, "plane");
+            //plane.setScale(0.4);
 
 
             /*
@@ -437,15 +437,15 @@
         function updateScene() {
 
             if (!this.input.activePointer.isDown && isClicking == true) {
-                plane.x = this.input.activePointer.position.x;
-                plane.y = this.input.activePointer.position.y;
+              //  plane.x = this.input.activePointer.position.x;
+               // plane.y = this.input.activePointer.position.y;
                 isClicking = false;
 
                 console.log("---Position--->>");
                 console.log(this.input.activePointer.position.x);
                 console.log(this.input.activePointer.position.y);
 
-                plane.alpha = 1.0;
+               // plane.alpha = 1.0;
 
                 previousX = currentX;
                 previousY = currentY;
@@ -466,7 +466,7 @@ boxMatrix[currentX][currentY].setStrokeStyle(1, 0xffffff);
             } else if (this.input.activePointer.isDown && isClicking == false) {
                 isClicking = true;
             }
-
+/*
             if (plane.alpha <= 0.1) {
                 touchAlphaChange = 0.01;
             } else if (plane.alpha >= 0.9) {
@@ -474,7 +474,7 @@ boxMatrix[currentX][currentY].setStrokeStyle(1, 0xffffff);
             }
 
             plane.alpha += touchAlphaChange;
-
+*/
 
             xAlpha = previousX;
             yAlpha = previousY;
