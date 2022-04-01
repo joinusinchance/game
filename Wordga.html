@@ -336,12 +336,14 @@
 
                 for (y = 0; y < 8; y++) {
                     boxMatrix[x][y] = this.add.rectangle(widthText * (x + 1), widthText * (y + 1), widthText, widthText, 0x000);
-                    boxMatrix[x][y].setStrokeStyle(1, 0xffffff);
+                    boxMatrix[x][y].setStrokeStyle(1, 0x000000);
                     boxMatrix[x][y].fillColor = 0x808B96;
                     boxMatrix[x][y].alpha = 0;
                     boxMatrix[x][y].setOrigin(0);
                 }
             }
+
+            //this.setStrokeStyle(1, 0xffffff);
 
             /*
                 create array of text boxes for letters
