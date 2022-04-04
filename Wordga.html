@@ -106,7 +106,7 @@
         var maxWords = 1024;
 
         // setup matrices
-        var totalLevels = 5;
+        var totalLevels = 6;
         var level = 0;
         var wordID = 0;
 
@@ -123,9 +123,13 @@
         levelWordList[4] = ["The", "lady", "doth", "protest", "too", "much", "methinks"];
         levelWordList[5] = ["Do", "you", "think", "I", "am", "easier", "to", "be", "played", "on", "than", "a", "pipe?"]
         levelWordList[5] = ["evil", "live", "veil", "vile"];
+        levelWordList[6] = ["alpaca", "bandit", "cava", "tuba"];
+        //levelWordList[7] = ["alpaca", "bandit", "cava", "tuba"];
+        //levelWordList[6] = ["escoba", "bandit", "bake", "tuba"];
+
 
         var levelWordMinScore = new Array(totalLevels);
-        levelWordMinScore = [6, 5, 10, 7, 3, 6];
+        levelWordMinScore = [6, 5, 10, 7, 3, 6,7];
         var score = 0;
         var totalScore = 0;
         var levelWordOrder = null;
@@ -613,8 +617,8 @@
                 */
 
                 if (
-                    currentX > 0 && currentX < 9
-                    && currentY > 0 && currentY < 9
+                    currentX >= 0 && currentX <= 7
+                    && currentY >= 0 && currentY <= 7
                     && userState == 'anchor'
                 ) {
 
@@ -631,8 +635,8 @@
                     refreshDisplayLevel();
                 }
                 else if (
-                    previousX > 0 && previousX < 9
-                    && previousY > 0 && previousY < 9
+                    previousX >= 0 && previousX <=7
+                    && previousY > 0 && previousY <=7
                     && userState == 'place'
                 ) {
                     console.log('please place word------------------');
