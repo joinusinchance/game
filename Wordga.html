@@ -107,7 +107,7 @@
         var maxWords = 1024;
 
         // setup matrices
-        var totalLevels = 8;
+        var totalLevels = 10 //levelWordList.length();
         var level = 0;
         var wordID = 0;
 
@@ -115,6 +115,7 @@
         var wordStartY = new Array(maxWords);
         var wordDirectionX = new Array(maxWords);
         var wordDirectionY = new Array(maxWords);
+   
         var levelWordList = new Array(totalLevels);
 
         levelWordList[0] = ["zero", "one", "two", "three", "four", "five"];
@@ -122,14 +123,22 @@
         levelWordList[2] = ["to", "be", "or", "not", "to", "be", "that", "is", "the", "question"];
         levelWordList[3] = ["Neither", "a", "borrower", "nor", "a", "lender", "be"];
         levelWordList[4] = ["The", "lady", "doth", "protest", "too", "much", "methinks"];
+        
         levelWordList[5] = ["Do", "you", "think", "I", "am", "easier", "to", "be", "played", "on", "than", "a", "pipe?"]
-        levelWordList[5] = ["evil", "live", "veil", "vile"];
-        levelWordList[6] = ["alpaca", "bandit", "cava", "tuba"];
-        levelWordList[7] = ["amaroid", "tressed", "animal", "diorama", "lamina", "dessert"];
+        
+        levelWordList[6] = ["evil", "live", "veil", "vile"];
+        levelWordList[7] = ["alpaca", "bandit", "cava", "tuba"];
+        levelWordList[8] = ["amaroid", "tressed", "animal", "diorama", "lamina", "dessert"];
+        levelWordList[9] = ["reflog", "gater","knab" ,"golfer", "retag","bank"];
+
+   
+
+
+
 
 
         var levelWordMinScore = new Array(totalLevels);
-        levelWordMinScore = [6, 5, 10, 7, 3, 6, 7, 20];
+        levelWordMinScore = [6, 5, 10, 7, 3, 6, 10 ,8 ,7 ,20,18];
         var score = 0;
         var totalScore = 0;
         var levelWordOrder = null;
