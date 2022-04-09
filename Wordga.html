@@ -118,7 +118,7 @@
    
         var levelWordList = new Array(totalLevels);
 
-        levelWordList[0] = ["zero", "one", "two", "three", "four", "five"];
+        levelWordList[0] = ["a","zero", "one", "two", "three", "four", "five"];
         levelWordList[1] = ["kitchen", "red", "apples", "motion", "park", "crunch"];
         levelWordList[2] = ["to", "be", "or", "not", "to", "be", "that", "is", "the", "question"];
         levelWordList[3] = ["Neither", "a", "borrower", "nor", "a", "lender", "be"];
@@ -707,16 +707,20 @@
                         populateDefaultLetterMatrix();
                         placeWords(wordID);
                         //placeWords(wordID);
-                        wordID++;
+                        //if (wordID<wordListLen){
+                            wordID++;
+
+                        
 
                         levelWordDisplay.shift();
                         //cycleWordOrder("forward");
                         refreshDisplayLevel();
 
-
+                        currentX = -1;
+                        currentY = -1;
                         userState = 'place';
 
-
+                        //}
 
                     }
                     else {
@@ -764,6 +768,10 @@
 
 
             // turn postion in to array location ..Hack fix
+
+            if (aWord.length==1) {
+                aWord=aWord + "✓";
+            }
 
 
             console.log("currentXcurrentY:", currentX, currentY);
@@ -883,17 +891,19 @@
             if (wordID == wordListLen) {
                 displayScore.setText("Current score: " + score);
 
+                
                 if (score < levelWordMinScore[level]) {
-                    displayComment.setText("You have failed to save enough letters");
-                    displayWordList.setText("Click here to continue...");
-                    level = 0;
+                    displayComment.setText("You have failed..");
+                    displayWordList.setText("Tap to try the level again");
                     wordID = 0;
                     score = 0;
                     totalScore = 0;
-                    phase = "frontScreen";
+                    phase = "readyForLevel";
                 }
-                else {
-                    displayComment.setText("Congrats! You have unlocked the next level..");
+                    
+
+                else if (score >= levelWordMinScore[level]) {
+                    displayComment.setText("Next level unlocked!!");
                     displayWordList.setText("Click here to continue...");
                     level += 1;
 
