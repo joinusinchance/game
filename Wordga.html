@@ -125,7 +125,7 @@
         levelWordList[5] = ["Do", "you", "think", "I", "am", "easier", "to", "be", "played", "on", "than", "a", "pipe?"]
         levelWordList[5] = ["evil", "live", "veil", "vile"];
         levelWordList[6] = ["alpaca", "bandit", "cava", "tuba"];
-        levelWordList[7] = ["amaroid", "tressed","animal", "diorama", "lamina","dessert"];
+        levelWordList[7] = ["amaroid", "tressed", "animal", "diorama", "lamina", "dessert"];
 
 
         var levelWordMinScore = new Array(totalLevels);
@@ -413,7 +413,7 @@
             }
             console.log("undo -refresh");
             console.log(wordID);
-            userState  = "ready";
+            userState = "ready";
             refreshDisplayLevel();
 
         }
@@ -454,8 +454,8 @@
                 isClicking = false;
 
                 console.log("---Position--->>");
-                console.log(this.input.activePointer.position.x,this.input.activePointer.position.y);
-                
+                console.log(this.input.activePointer.position.x, this.input.activePointer.position.y);
+
 
                 // plane.alpha = 1.0;
 
@@ -545,8 +545,8 @@
 
 
             console.log("---old pos new pso----");
-            console.log(previousX,previousY);
-            console.log(currentX,currentY);
+            console.log(previousX, previousY);
+            console.log(currentX, currentY);
 
 
             var xShift = 0;
@@ -576,14 +576,21 @@
 
             }
             // check if user input is horizontal
-            else if (currentX == previousX + 1 || (currentX == 0 && previousX == 7)) {
-                yShift = 0;
-                console.log("horizontal right");
-                xShift = 1;
-            }
-            else if (currentX == previousX - 1 || (currentX == 7 && previousX == 0)) {
-                console.log("horizontal left");
-                xShift = -1;
+
+            else if (previousY == currentY) {
+                if (currentX == previousX + 1 || (currentX == 0 && previousX == 7)) {
+                    yShift = 0;
+                    console.log("horizontal right");
+                    xShift = 1;
+                }
+                else if (currentX == previousX - 1 || (currentX == 7 && previousX == 0)) {
+                    console.log("horizontal left");
+                    xShift = -1;
+                }
+                else {
+                    console.log("Error! We should never be here")
+
+                }
             }
             else {
                 console.log("no direction");
@@ -920,10 +927,10 @@
             }
             else if (phase == "levelSetUp") {
                 refreshDisplayLevel();
-                previousX = 0;
-                previousY = 0;
-                currentX = 0;
-                currentY = 0;
+                previousX = -1;
+                previousY = -1;
+                currentX = -1;
+                currentY = -1;
                 phase = "level";
             }
             else if (phase == "level") {
