@@ -76,11 +76,13 @@ for (var tagcounter = 0; tagcounter < tagarray.length; tagcounter++){
   tag.value = tagarray[tagcounter];
   tag.id = 'tagbutton';
   tagsContainer.appendChild(tag);
-  tag.addEventListener('mouseover' , function(){
-    tag.style.color = 'white';
+  tag.addEventListener('onclick' , function(){
+    this.style.color = 'white';
   });
-  tag.addEventListener('mouseout' , function(){
-    tag.style.color = 'orange';
+  //tag.addEventListener('mouseout' , function(){
+    //tag.style.color = 'orange';
+    //this.style.color = 'white';
+
   });
 }
 
