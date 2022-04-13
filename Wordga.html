@@ -132,7 +132,7 @@
         levelWordList[9] = ["reflog", "gater","knab" ,"golfer", "retag","bank"];
         levelWordList[10] = ["tuba", "carom", "bassist", "maraca"];
    
-
+        // ["paprica","cart","tapioca","camp"]
 
 
 
@@ -145,7 +145,8 @@
         var levelWordDisplay = null;
 
 
-        var wordColor = ["white", "grey", "blue", "green", "yellow", "orange", "orangered", "red"];
+        //var wordColor = ["grey", "white", "blue", "green", "yellow", "orange", "orangered", "red"];
+        var wordColor = ["#555555","#ffffff","#0581a3","04bf55","#b9c211","#cfa81b","eb822d","#ff0000"];
         var phase = "frontScreen"; //frontScreen , readyForLevel, levelSetUp, level,   
         var wordListLen = levelWordList[0].length;
         var lastTime = 100;
@@ -194,20 +195,6 @@
         boxMatrix[5] = new Array(matrixSize);
         boxMatrix[6] = new Array(matrixSize);
         boxMatrix[7] = new Array(matrixSize);
-
-
-        var colorMatrix = new Array(matrixSize);
-        colorMatrix[0] = new Array(matrixSize);
-        colorMatrix[1] = new Array(matrixSize);
-        colorMatrix[2] = new Array(matrixSize);
-        colorMatrix[3] = new Array(matrixSize);
-        colorMatrix[4] = new Array(matrixSize);
-        colorMatrix[5] = new Array(matrixSize);
-        colorMatrix[6] = new Array(matrixSize);
-        colorMatrix[7] = new Array(matrixSize);
-
-
-
 
         //2D matrix for words placed
         // todo dynamically generate this any size
@@ -271,10 +258,7 @@
             delimeter = searchValues.search(";");
             //reuseValue = searchValues.substring(reuseStart+6,reuseEnd-reuseStart+1);
             reuseValue = searchValues.substring(1, delimeter);
-
-
             searchValues = searchValues.substring(delimeter + 1, 1024);
-
             delimeter = searchValues.search(";");
             levelName = searchValues.substring(0, delimeter);
 
@@ -351,7 +335,6 @@
 
             /*
                 create array of background boxes 
-                this will be use hint user actions.. 
             */
             for (x = 0; x < 8; x++) {
 
@@ -361,6 +344,7 @@
                     boxMatrix[x][y].fillColor = 0x808B96;
                     boxMatrix[x][y].alpha = 0;
                     boxMatrix[x][y].setOrigin(0);
+                    heightMatrix[x][y] = 0;
                 }
             }
 
@@ -373,12 +357,9 @@
 
 
             for (x = 0; x < 8; x++) {
-
                 for (y = 0; y < 8; y++) {
-
                     displayMatrix[x][y] = this.add.text((widthText * (x + 1)) + widthOffset, (heightText * (y + 1)) + heightOffset, "#", textConfig);
                     //displayMatrix[x][y].alpha =1.0;
-
                     displayMatrix[x][y].alpha = 0.0;
                 }
             }
@@ -803,18 +784,18 @@
 
                 for (var a = 0; a < currentWordLen; a++) {
 
-                    if (letterMatrix[posX][posY] == currentWord[a] && scoreBit == 1) {
+                    if (letterMatrix[posX][posY] == currentWord[a] && scoreBit == 1) {  //&& 
                         score += 1;
                         totalScore += 1;
-                        //console.log("point gained +1");
+                        heightMatrix[posX][posY] = heightMatrix[posX][posY] + 1 ;
                     }
                     else if (letterMatrix[posX][posY] != currentWord[a]) {
                         letterMatrix[posX][posY] = currentWord[a];
-                        heightMatrix[posX][posY] = heightMatrix[posX][posY] + 1;
-
-
-                        //    console.log(letterMatrix[posX][posY]);
                     }
+
+
+
+
 
                     posX = (posX + shiftX) % (matrixSize);
                     posY = (posY + shiftY) % (matrixSize);
@@ -842,14 +823,7 @@
 
 
         function initDisplayLevel() {
-
-
-
             setBoxVisibility(1.0);
-
-
-
-
             displayComment.alpha = 1.0;
             displayScore.alpha = 1.0;
             displayNextLevelScore.alpha = 1.0;
@@ -864,14 +838,14 @@
 
 
             for (var x1 = 0; x1 < matrixSize; x1++) {
-
                 for (var y1 = 0; y1 < matrixSize; y1++) {
                     displayMatrix[x1][y1].setText(letterMatrix[x1][y1]);
                     if (letterMatrix[x1][y1] != '#') {
+                        displayMatrix[x1][y1].setColor(wordColor[heightMatrix[x1][y1]]);
                         displayMatrix[x1][y1].alpha = 1.0;
+                        console.log("color", wordColor[heightMatrix[x1][y1]]);
                     }
                 }
-
             }
 
 
@@ -936,6 +910,8 @@
                 for (y = 0; y < 8; y++) {
                     letterMatrix[x][y] = "#";
                     displayMatrix[x][y].alpha = 0.0;
+                    displayMatrix[x][y].setColor(wordColor[0]);
+                    heightMatrix[x][y]=0;
                 }
             }
 
