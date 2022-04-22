@@ -122,22 +122,22 @@
         levelWordList[1] = ["kitchen", "red", "apples", "motion", "park", "crunch"];
         levelWordList[2] = ["to", "be", "or", "not", "to", "be", "that", "is", "the", "question"];
         levelWordList[3] = ["Neither", "a", "borrower", "nor", "a", "lender", "be"];
+
         levelWordList[4] = ["The", "lady", "doth", "protest", "too", "much", "methinks"];
-        
         levelWordList[5] = ["Do", "you", "think", "I", "am", "easier", "to", "be", "played", "on", "than", "a", "pipe?"]
-        
         levelWordList[6] = ["evil", "live", "veil", "vile"];
         levelWordList[7] = ["alpaca", "bandit", "cava", "tuba"];
+
         levelWordList[8] = ["amaroid", "tressed", "animal", "diorama", "lamina", "dessert"];
         levelWordList[9] = ["reflog", "gater","knab" ,"golfer", "retag","bank"];
         levelWordList[10] = ["tuba", "carom", "bassist", "maraca"];
         levelWordList[11] = ["biscuits", "crisps", "chocolates", "sweets"];
 
         
-        levelWordList[11] = ["Ryan", "Reynolds", "gifts", "Wrexham","co-owner","memorial","urinal"];
-        levelWordList[12] = ["owls", "unwelcome", "contribution", "to","news","briefing"];
-        levelWordList[13] = ["manufacturer", "makes", "mistake", "on","Queen","memorabilia"];
-        levelWordList[14] = ["Lost", "dog", "rescued", "by","sausage","dangled","from","drone"];
+        levelWordList[12] = ["Ryan", "Reynolds", "gifts", "Wrexham","co-owner","memorial","urinal"];
+        levelWordList[13] = ["owls", "unwelcome", "contribution", "to","news","briefing"];
+        levelWordList[14] = ["manufacturer", "makes", "mistake", "on","Queen","memorabilia"];
+        levelWordList[15] = ["Lost", "dog", "rescued", "by","sausage","dangled","from","drone"];
 
 
         // ["paprica","cart","tapioca","camp"]
@@ -518,8 +518,8 @@
 
             if (isFadeOn == 1){
                 wordColorHighlight = colorFade(wordColorHighlight);
-                refreshDisplayLevel();
-
+                //refreshDisplayLevel();
+                redrawMatrix();
             }        
             //  hack remove outside loop
             else if (isFadeOn == 0 && phase == "level"){
@@ -527,8 +527,8 @@
                 isFadeOn = -1;
                 //refreshDisplayLevel();
                 console.log ("last fade");
-                refreshDisplayLevel();
-                getUserState();
+                redrawMatrix();
+                //getUserState();
                 
             }
 
@@ -874,12 +874,15 @@
             displayWordList.alpha = 1.0;
             displayUndo.alpha = 1.0;
 
+            // and for the bits we dont need 
+            displayFrontTitle.alpha = 0.0;
+            displayFrontComment1.alpha = 0.0;
+
         }
 
 
 
-        function refreshDisplayLevel() {
-
+        function redrawMatrix() {
 
             for (var x1 = 0; x1 < matrixSize; x1++) {
                 for (var y1 = 0; y1 < matrixSize; y1++) {
@@ -901,12 +904,15 @@
                     }
                 }
             }
+        }
 
 
+        function refreshDisplayLevel() {
+
+
+            redrawMatrix();
             initDisplayLevel();
 
-            displayFrontTitle.alpha = 0.0;
-            displayFrontComment1.alpha = 0.0;
 
             /*
  
@@ -915,7 +921,8 @@
             context.fillStyle = "blue";
             context.font = "bold 15px Courier New";
             */
-            if (wordID < wordListLen && isFadeOn <=0) {
+
+            if (wordID < wordListLen) {
                 displayComment.setText("Reuse as many letters as you can:");
                 //displayWordList.setText(levelWordList[level].toString());
                 displayWordList.setText(levelWordDisplay.toString());
@@ -924,7 +931,7 @@
                 displayNextLevelScore.setText("Score to unlock next level: " + levelWordMinScore[level]);
             }
 
-            if (wordID == wordListLen && isFadeOn <=0) {
+            if (wordID == wordListLen) {
                 displayScore.setText("Current score: " + score);
                 console.log ("# end of level #");
 
@@ -1109,6 +1116,7 @@
             displayNextLevelScore.alpha = 0.0;
             displayWordList.alpha = 0.0;
             displayUndo.alpha = 0.0;
+            level = 0;
 
         }
 
