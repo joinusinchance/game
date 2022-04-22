@@ -327,14 +327,14 @@
             displayFrontComment1 = this.add.text(heightText * .2, heightText * 6, "", textStatusConfig)
             displayFrontComment2 = this.add.text(heightText * .2, heightText * 6, "", textStatusConfig)
             displayComment = this.add.text(heightText * .2, heightText * (9.5) + heightOffset, ("COMMENT"), textStatusConfig);
-            displayScore = this.add.text(heightText * .2, heightText * (10) + heightOffset, ("SCORE"), textStatusConfig);
+            displayScore = this.add.text(widthText, heightText /2 + heightOffset, ("SCORE"), textStatusConfig);
             displayWordList = this.add.text(heightText * .2, heightText * (10.5) + heightOffset, ("LIST"), textStatusConfig)
                 .setInteractive()
                 /*.on('pointerdown', () => updateDisplayWordList(1)) */
                 .on('pointerover', () => enterButtonHoverState())
                 .on('pointerout', () => enterButtonRestState());
 
-            displayNextLevelScore = this.add.text(heightText * .2, heightText * (11) + heightOffset, ("NEXT"), textStatusConfig);
+            //displayNextLevelScore = this.add.text(heightText * .2, heightText * (11) + heightOffset, ("NEXT"), textStatusConfig);
             displayUndo = this.add.text(heightText * .2, heightText * (11.5) + heightOffset, ("UNDO"), textStatusConfig)
                 .setInteractive()
                 .on('pointerdown', () => updateUndo())
@@ -870,7 +870,7 @@
             setBoxVisibility(1.0);
             displayComment.alpha = 1.0;
             displayScore.alpha = 1.0;
-            displayNextLevelScore.alpha = 1.0;
+            //displayNextLevelScore.alpha = 1.0;
             displayWordList.alpha = 1.0;
             displayUndo.alpha = 1.0;
 
@@ -927,8 +927,8 @@
                 //displayWordList.setText(levelWordList[level].toString());
                 displayWordList.setText(levelWordDisplay.toString());
 
-                displayScore.setText("Current score: " + score + " TotalScore: " + totalScore);
-                displayNextLevelScore.setText("Score to unlock next level: " + levelWordMinScore[level]);
+                displayScore.setText( "Total:" + totalScore +" Level:" + score + " To unlock:"+levelWordMinScore[level]);
+                //displayNextLevelScore.setText("Score to unlock next level: " + levelWordMinScore[level]);
             }
 
             if (wordID == wordListLen) {
@@ -1033,7 +1033,7 @@
 
             displayComment.alpha = 0.0;
             displayScore.alpha = 0.0;
-            displayNextLevelScore.alpha = 0.0;
+            //displayNextLevelScore.alpha = 0.0;
             displayWordList.alpha = 0.0;
             displayUndo.alpha = 0.0;
 
@@ -1070,7 +1070,7 @@
 
             displayComment.alpha = 0.0;
             displayScore.alpha = 0.0;
-            displayNextLevelScore.alpha = 0.0;
+            //displayNextLevelScore.alpha = 0.0;
             displayWordList.alpha = 0.0;
             displayUndo.alpha = 0.0;
 
@@ -1113,7 +1113,7 @@
 
             displayComment.alpha = 0.0;
             displayScore.alpha = 0.0;
-            displayNextLevelScore.alpha = 0.0;
+            //displayNextLevelScore.alpha = 0.0;
             displayWordList.alpha = 0.0;
             displayUndo.alpha = 0.0;
             level = 0;
