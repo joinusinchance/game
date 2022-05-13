@@ -107,9 +107,20 @@
         var maxWords = 1024;
 
         // setup matrices
-        var totalLevels = 16 //levelWordList.length();
+        var totalLevels = 20 //levelWordList.length();
         var level = 0;
+        var levelStore = 0;
         var wordID = 0;
+
+        /*
+            bootState
+            practice =  all levels 
+            daily = from day N ration 1 game per day
+            others WIP
+        */
+
+        var bootState = "practice";
+
 
         var wordStartX = new Array(maxWords);
         var wordStartY = new Array(maxWords);
@@ -139,16 +150,23 @@
         levelWordList[14] = ["manufacturer", "makes", "mistake", "on","Queen","memorabilia"];
         levelWordList[15] = ["Lost", "dog", "rescued", "by","sausage","dangled","from","drone"];
 
+        levelWordList[16] = ["amoeba","basilica","tuba", "bassist","balsa","cab"];
+        levelWordList[17] = ["piranha", "harp", "cola", "laconic","lapwing","gala","tombola","last"];
+        levelWordList[18] = ["cinema", "magic", "dilemma", "maid","dogma","matted","eczema","maize"];
+        levelWordList[19] = ["stigma", "mains", "echidna","name", "savanna","nabs"];
 
         // ["paprica","cart","tapioca","camp"]
 
 
+        //var days = Math.floor(delta / 86400);
+        //delta -= days * 86400;
 
 
         var levelWordMinScore = new Array(totalLevels);
-        levelWordMinScore = [6,  5, 10, 7, 3, 6,  8 ,5 ,5 ,17,5, 5,5,4,5,7];
+        levelWordMinScore = [6,5,10,7, 7,11,9,5, 22,17,7,4, 5,4,5,7, 8,14,14,11];
         var score = 0;
         var totalScore = 0;
+        var totalScoreStore = 0;
         var levelWordOrder = null;
         var levelWordDisplay = null;
 
@@ -305,6 +323,35 @@
 
             urlGame = "No";
         }
+
+
+        //localStorage.getItem("mytime")
+//localStorage
+
+
+
+        if (bootState == "daily") {
+            levelStore = localStorage.getItem('wordga_level');
+            totalScoreStore = localStorage.getItem('wordga_totalScore');
+
+
+            console.log ("levelStore # totalScoreStore", levelStore,totalScoreStore);
+
+            if (levelStore == totalLevels) {
+                level = 0;
+            } 
+            else if (levelStore >=0 && levelStore < totalLevels) {
+                level = parseInt(levelStore,10);
+                if (totalScoreStore>=0) {
+                    totalScore = parseInt(totalScoreStore,10);
+                }
+            }
+
+        }
+
+
+
+        //var x = localStorage.getItem("mytime");
 
 
         console.log("standalone ", window.navigator.standalone);
@@ -502,6 +549,7 @@
 
                 }
                 else if (phase != "level") {
+                //    getCalendarPhase();
                     getUserState();
                     hasMatrixPosChanged = 0;
                 }
@@ -531,7 +579,13 @@
                 //getUserState();
                 
             }
+            else if (phase == "waitScreen") {
+                doLogic();
 
+            }
+
+            //currentDay = new Date(event.getDate());
+             
             /*
                         if (plane.alpha <= 0.1) {
                             touchAlphaChange = 0.01;
@@ -949,12 +1003,17 @@
                 else if (score >= levelWordMinScore[level]) {
                     displayComment.setText("Next level unlocked!!");
                     displayWordList.setText("Click here to continue...");
-                    window.localStorage.setItem('wordga_level',level);
+
+                    localStorage.setItem('wordga_level',level+1);
+                    localStorage.setItem('wordga_totalScore',totalScore);
                     console.log ("# player passed #");
+
+
 
                     if (level == totalLevels) {
                         phase = "playerWon";
-                        window.localStorage.setItem('wordga_level',level);
+                        localStorage.setItem('wordga_level',level);
+                        localStorage.setItem('wordga_totalScore',totalScore);
                     }
                     else {
                         phase = "readyForLevel";
@@ -984,11 +1043,26 @@
             console.log("phase " + phase + "  doLogic");
             if (phase == "frontScreen") {
                 refreshDisplayFrontScreen();
-                phase = "readyForLevel";
+                //phase = "readyForLevel";
+                if (bootState == "daily") {
+                    getCalendarPhase();
+                } 
+                else if (bootState == "practice") {
+                    phase = "readyForLevel";
+                }
+                //phase = "wait";
+            }
+            else if (phase == "waitScreen") {
+                waitScreen();
             }
             else if (phase == "readyForLevel") {
                 refreshDisplayReadyForLevel();
-                phase = "levelSetUp";
+                if (bootState == "daily") {
+                    getCalendarPhase();
+                } 
+                else if (bootState =="practice") {
+                    phase = "levelSetUp";
+                }
             }
             else if (phase == "levelSetUp") {
                 refreshDisplayLevel();
@@ -1027,7 +1101,7 @@
             displayFrontTitle.alpha = 1.0;
             displayFrontTitle.setText("Wordga!");
             displayFrontComment1.alpha = 1.0;
-            displayFrontComment1.setText("Tap to start")
+            displayFrontComment1.setText(bootState + " - tap to start")
             displayFrontComment2.alpha = 1.0;
 
 
@@ -1037,7 +1111,7 @@
             displayWordList.alpha = 0.0;
             displayUndo.alpha = 0.0;
 
-            console.log("phase" + phase + "  refreshDisplayFrontScreen");
+            console.log("phase" + phase + "  refreshDisplayFrontScreen " + bootState);
 
             populateDefaultLetterMatrix();
             setBoxVisibility(0.0);
@@ -1088,6 +1162,25 @@
 
         }
 
+        function waitScreen() {
+
+            displayFrontTitle.alpha = 1.0;
+            displayFrontTitle.setText("Next level in..");
+            displayFrontComment1.alpha = 1.0;
+
+
+            var waitTime = getCalendarPhase();
+
+            displayFrontComment1.setText("..."+waitTime);
+            displayFrontComment2.alpha = 1.0;
+
+            displayComment.alpha = 0.0;
+            displayScore.alpha = 0.0;
+            //displayNextLevelScore.alpha = 0.0;
+            displayWordList.alpha = 0.0;
+            displayUndo.alpha = 0.0;
+
+        }
 
         function setBoxVisibility(alphaValue) {
             //hide boxes
@@ -1133,7 +1226,48 @@
             return (bColor);
         }
 
+        function getCalendarPhase() {
+            /*
+            get dateLevel from datediff
+            get stored level 
+            if levelStore >= dateLevel
+                phase "waitscreen"
+            if levelStore < dateLevel 
+                phase level 
+                level dateLevel
+            */
 
+
+
+
+                var firstDay = new Date('May 02, 2022 00:00:00');
+                var currentDay = new Date() ;  //.setHours(0,0,0,0);
+
+                levelStore = localStorage.getItem('wordga_level');
+                currentDay.setDate(currentDay.getDate());  
+                var dateDiff = Math.floor(currentDay  - firstDay);
+                
+                var dateLevel = Math.floor(dateDiff/ 86400000);
+                //level = dateLevel;
+
+                //console.log("Level store", levelStore, "Date level",dateLevel);
+
+                if (dateLevel >=totalLevels) {
+                    dateLevel = 0
+                }
+
+                if (levelStore >=dateLevel) {
+                    phase = "waitScreen";
+
+                }
+                else if (levelStore< dateLevel) {
+                    phase = "readyForLevel";
+                    level = dateLevel;
+                }
+
+                return dateDiff;
+        
+        }
 
     </script>
 </body>

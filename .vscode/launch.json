@@ -7,8 +7,8 @@
         {
             "type": "pwa-chrome",
             "request": "launch",
-            "name": "Open plane_jump.html",
-            "file": "c:\\Users\\c\\Documents\\GitHub\\game\\plane_jump.html"
+            "name": "Open Wordga.html",
+            "file": "c:\\Users\\c\\Documents\\GitHub\\game\\Wordga.html"
         }
     ]
 }

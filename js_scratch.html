@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>JavaScript getTime()</h2>
+<p>The internal clock in JavaScript counts from midnight January 1, 1970.</p>
+<p>The getTime() function returns the number of milliseconds since then:</p>
+
+<p id="demo"></p>
+<p id="nextDemo"></p>
+<p id="diff"></p>
+
+<script>
+const d = new Date();
+
+const today = new Date();
+const tomorrow = new Date(today);
+today.setDate(today.getDate());
+
+
+tomorrow.setDate(tomorrow.getDate() + 1);
+tomorrow.setHours(0,0,0,0);
+
+
+
+// get total seconds between the times
+var delta = Math.abs(tomorrow - today) / 1000;
+
+// calculate (and subtract) whole days  86400000
+var days = Math.floor(delta / 86400);
+delta -= days * 86400;
+
+// calculate (and subtract) whole hours
+var hours = Math.floor(delta / 3600) % 24;
+delta -= hours * 3600;
+
+// calculate (and subtract) whole minutes
+var minutes = Math.floor(delta / 60) % 60;
+delta -= minutes * 60;
+
+// what's left is seconds
+var seconds = Math.floor(delta % 60);  // in theory the modulus is not required
+
+totalDiff = "" + days+":"+hours+":"+minutes+":"+seconds;
+
+
+/*
+console.log(scores.indexOf(10)); // 0
+consider above to find current level for the date
+*/
+
+latestLevelPlayed = today;
+
+document.getElementById("demo").innerHTML = today;
+document.getElementById("nextDemo").innerHTML = tomorrow;
+document.getElementById("diff").innerHTML = totalDiff;
+
+/*
+1) get current date 
+2) if current dates level has not been played,  play 
+3) if current dates level has been played, countdown clock
+*/
+
+
+localStorage.setItem('wordga_level',level+1);
+
+
+
+</script>
+
+</body>
+</html>
