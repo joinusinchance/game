@@ -1,0 +1,246 @@
+<html>
+
+<body>
+    <script>
+
+
+        var maxWords = 1024;
+
+        // setup matrices
+        var totalLevels = 20 //levelWordList.length();
+        var level = 0;
+        var levelStore = 0;
+        var wordID = 0;
+        var matrixSize = 8;
+
+        /*
+            bootState
+            practice =  all levels 
+            daily = from day N ration 1 game per day
+            others WIP
+        */
+
+        var bootState = "practice";
+
+
+        var wordStartX = new Array(maxWords);
+        var wordStartY = new Array(maxWords);
+        var wordDirectionX = new Array(maxWords);
+        var wordDirectionY = new Array(maxWords);
+
+        var levelWordList = new Array(totalLevels);
+
+        var letterMatrix = new Array(matrixSize);
+        letterMatrix[0] = new Array(matrixSize);
+        letterMatrix[1] = new Array(matrixSize);
+        letterMatrix[2] = new Array(matrixSize);
+        letterMatrix[3] = new Array(matrixSize);
+        letterMatrix[4] = new Array(matrixSize);
+        letterMatrix[5] = new Array(matrixSize);
+        letterMatrix[6] = new Array(matrixSize);
+        letterMatrix[7] = new Array(matrixSize);
+
+        var heightMatrix = new Array(matrixSize);
+
+        heightMatrix[0] = new Array(matrixSize);
+        heightMatrix[1] = new Array(matrixSize);
+        heightMatrix[2] = new Array(matrixSize);
+        heightMatrix[3] = new Array(matrixSize);
+        heightMatrix[4] = new Array(matrixSize);
+        heightMatrix[5] = new Array(matrixSize);
+        heightMatrix[6] = new Array(matrixSize);
+        heightMatrix[7] = new Array(matrixSize);
+
+
+        levelWordList[0] = ["zero", "one", "two", "three", "four", "five"];
+        levelWordList[1] = ["kitchen", "red", "apples", "motion", "park", "crunch"];
+        levelWordList[2] = ["to", "be", "or", "not", "to", "be", "that", "is", "the", "question"];
+        levelWordList[3] = ["Neither", "a", "borrower", "nor", "a", "lender", "be"];
+
+        levelWordList[4] = ["The", "lady", "doth", "protest", "too", "much", "methinks"];
+        levelWordList[5] = ["Do", "you", "think", "I", "am", "easier", "to", "be", "played", "on", "than", "a", "pipe?"]
+        levelWordList[6] = ["evil", "live", "veil", "vile"];
+        levelWordList[7] = ["alpaca", "bandit", "cava", "tuba"];
+
+        levelWordList[8] = ["amaroid", "tressed", "animal", "diorama", "lamina", "dessert"];
+        levelWordList[9] = ["reflog", "gater", "knab", "golfer", "retag", "bank"];
+        levelWordList[10] = ["tuba", "carom", "bassist", "maraca"];
+        levelWordList[11] = ["biscuits", "crisps", "chocolates", "sweets"];
+
+
+        levelWordList[12] = ["Ryan", "Reynolds", "gifts", "Wrexham", "co-owner", "memorial", "urinal"];
+        levelWordList[13] = ["owls", "unwelcome", "contribution", "to", "news", "briefing"];
+        levelWordList[14] = ["manufacturer", "makes", "mistake", "on", "Queen", "memorabilia"];
+        levelWordList[15] = ["Lost", "dog", "rescued", "by", "sausage", "dangled", "from", "drone"];
+
+        levelWordList[16] = ["amoeba", "basilica", "tuba", "bassist", "balsa", "cab"];
+        levelWordList[17] = ["piranha", "harp", "cola", "laconic", "lapwing", "gala", "tombola", "last"];
+        levelWordList[18] = ["cinema", "magic", "dilemma", "maid", "dogma", "matted", "eczema", "maize"];
+        levelWordList[19] = ["stigma", "mains", "echidna", "name", "savanna", "nabs"];
+
+        // ["paprica","cart","tapioca","camp"]
+
+
+            // if we have beaten highest score = store best best 
+            bestWordStartX[wordID] = 0;
+            bestwordStartY[wordID] = 3;
+            bestWordDirectionX[wordID] = 0;
+            bestWordDirectionY[wordID] = -1;
+
+
+
+
+        //var days = Math.floor(delta / 86400);
+        //delta -= days * 86400;
+
+
+        var levelWordMinScore = new Array(totalLevels);
+        levelWordMinScore = [6, 5, 10, 7, 7, 11, 9, 5, 22, 17, 7, 4, 5, 4, 5, 7, 8, 14, 14, 11];
+        var score = 0;
+        var totalScore = 0;
+        var totalScoreStore = 0;
+        var levelWordOrder = null;
+        var levelWordDisplay = null;
+
+
+        //var wordColor = ["grey", "white", "blue", "green", "yellow", "orange", "orangered", "red"];
+        var wordColor = ["#555555", "#ffffff", "#0581a3", "04bf55", "#b9c211", "#cfa81b", "eb822d", "#ff0000"];
+        var wordColorHighlight = wordColor[1];
+        var phase = "frontScreen"; //frontScreen , readyForLevel, levelSetUp, level,   
+        var wordListLen = levelWordList[0].length;
+
+
+
+
+        console.log("hello there");
+        robot_setup();
+
+
+
+        function robot_setup() {
+
+            console.log("robot setup");
+            console.log(wordID);
+            console.log(wordListLen);
+            console.log(levelWordList[0]);
+
+
+            wordID = 0;
+
+            wordStartX[wordID] = 0;
+            wordStartY[wordID] = 0;
+            wordDirectionX[wordID] = 0;
+            wordDirectionY[wordID] = 1;
+
+            console.log("word 0");
+            placeWords_Robot(wordID);
+            console.log(letterMatrix);
+            console.log(totalScore);
+
+            wordID++;
+
+            wordStartX[wordID] = 0;
+            wordStartY[wordID] = 3;
+            wordDirectionX[wordID] = 0;
+            wordDirectionY[wordID] = -1;
+
+            console.log("word 1");
+            placeWords_Robot(wordID);
+            console.log(letterMatrix);
+            console.log(totalScore);
+
+
+        }
+
+        function placeWords_Robot(upToWord) {
+
+            score = 0;
+            totalScore = 0;
+
+            populateDefaultLetterMatrix(false);
+            for (var a = 0; a <= upToWord; a++) {
+
+                placeWord(levelWordList[level][a], wordStartX[a], wordStartY[a], wordDirectionX[a], wordDirectionY[a], 1, 1, 0, levelWordList[level][a].length, 0);
+                console.log(levelWordList[level][a]);
+
+            }
+        }
+
+        function populateDefaultLetterMatrix(setColor) {
+            for (x = 0; x < 8; x++) {
+                for (y = 0; y < 8; y++) {
+                    letterMatrix[x][y] = "#";
+                    heightMatrix[x][y] = 0;
+
+                    if (setColor) {
+                        displayMatrix[x][y].alpha = 0.0;
+                        displayMatrix[x][y].setColor(wordColor[0]);
+                    }
+
+                }
+            }
+
+        }
+
+
+
+        function placeWord(aWord, posX, posY, shiftX, shiftY, maskBit, scoreBit, startPos, wordLength, setHeight) {
+
+
+            var currentWord = aWord.split("");
+            var totalWordLen = aWord.length;
+            //var currentWordLen = placeNletters; 
+
+            if (shiftX + shiftY != 0) {
+
+                for (var a = 0; a < totalWordLen; a++) {
+
+                    if (letterMatrix[posX][posY] == currentWord[a] && startPos <= a && a < wordLength && scoreBit == 1) {  //&& 
+                        score += 1;
+                        totalScore += 1;
+                        if (setHeight == 1) {
+                            heightMatrix[posX][posY] = heightMatrix[posX][posY] + 1;
+                            isFadeOn = 1;
+                        }
+                    }
+                    // display potential points  /// should just fade when scored
+                    /*
+                    else if (letterMatrix[posX][posY] == currentWord[a] && startPos<=a && scoreBit == 0 ) {
+                        heightMatrix[posX][posY] = heightMatrix[posX][posY] + 1 ;
+                    }
+                    */
+                    else if (letterMatrix[posX][posY] != currentWord[a] && startPos <= a && a < wordLength) {
+                        letterMatrix[posX][posY] = currentWord[a];
+                    }
+
+
+
+
+
+                    posX = (posX + shiftX) % (matrixSize);
+                    posY = (posY + shiftY) % (matrixSize);
+
+
+                    if (posX < 0) {
+                        posX = matrixSize - 1
+                    }
+
+                    if (posY < 0) {
+                        posY = matrixSize - 1
+                    }
+
+
+                }
+
+
+                //userState = 'place';
+            }
+
+        }
+
+
+
+    </script>
+</body>
+
+</html>
