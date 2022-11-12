@@ -82,10 +82,17 @@
 
 
             // if we have beaten highest score = store best best 
+            var bestWordStartX = new Array(maxWords);
+            var bestWordStartY = new Array(maxWords);
+
+            var bestWordDirectionX = new Array (maxWords);
+            var bestWordDirectionY = new Array (maxWords);
+
             bestWordStartX[wordID] = 0;
-            bestwordStartY[wordID] = 3;
+            bestWordStartY[wordID] = 0;
             bestWordDirectionX[wordID] = 0;
-            bestWordDirectionY[wordID] = -1;
+            bestWordDirectionY[wordID] = 1;
+            var bestScore = 0;
 
 
 
@@ -97,6 +104,7 @@
         var levelWordMinScore = new Array(totalLevels);
         levelWordMinScore = [6, 5, 10, 7, 7, 11, 9, 5, 22, 17, 7, 4, 5, 4, 5, 7, 8, 14, 14, 11];
         var score = 0;
+        
         var totalScore = 0;
         var totalScoreStore = 0;
         var levelWordOrder = null;
@@ -125,6 +133,8 @@
             console.log(levelWordList[0]);
 
 
+            // word 0 always place the same location, as it has no affect on result 
+
             wordID = 0;
 
             wordStartX[wordID] = 0;
@@ -137,18 +147,79 @@
             console.log(letterMatrix);
             console.log(totalScore);
 
+
+
+
             wordID++;
 
-            wordStartX[wordID] = 0;
-            wordStartY[wordID] = 3;
-            wordDirectionX[wordID] = 0;
-            wordDirectionY[wordID] = -1;
 
-            console.log("word 1");
-            placeWords_Robot(wordID);
-            console.log(letterMatrix);
-            console.log(totalScore);
+            posX = 0;
+            posY = 0;
 
+            console.log(levelWordList[level][wordID]);
+            console.log(wordListLen);
+
+            for (wordID=1;wordID<wordListLen;wordID++) {
+
+                console.log(levelWordList[level][wordID]);
+
+                // loop through array possibilities for the placement of current word;
+                for (posX =0; posX<matrixSize; posX++) {
+                    
+                    wordStartX[wordID] =posX;
+
+                    for (posY =0; posY<matrixSize; posY++) {
+                        
+                        wordStartY[wordID] =posY;
+    
+                        for (direction =0; direction<4; direction++ ) {
+                            switch (direction) {
+                                case 0:
+                                wordDirectionX[wordID] = 0;
+                                wordDirectionY[wordID] = -1;
+                                break;
+                                case 1:
+                                wordDirectionX[wordID] = 0;
+                                wordDirectionY[wordID] = 1;
+                                break;
+                                case 2:
+                                wordDirectionX[wordID] = -1;
+                                wordDirectionY[wordID] = 0;
+                                break;
+                                case 3:
+                                wordDirectionX[wordID] = 1;
+                                wordDirectionY[wordID] = 0;
+                            } 
+
+                            
+                            /*
+                                placewords
+                                if best score , store 
+                            */ 
+                            placeWords_Robot(wordID);
+                            
+                            if (score>bestScore){
+                                storeBestScore();
+                                console.log("New best game output");
+                                console.log(wordStartX[0],wordStartY[0], wordStartX[1],wordStartY[1]);
+                                console.log(wordDirectionX[0],wordDirectionY[0],wordDirectionX[1],wordDirectionY[1]);
+                                //showAllState();
+
+                            }
+                            
+
+
+
+                        }
+                    }
+                    console.log("Pos X in loop:",posX);
+                }
+
+            }
+
+            showAllState();
+
+            showAllBestStateBrowser();
 
         }
 
@@ -161,7 +232,7 @@
             for (var a = 0; a <= upToWord; a++) {
 
                 placeWord(levelWordList[level][a], wordStartX[a], wordStartY[a], wordDirectionX[a], wordDirectionY[a], 1, 1, 0, levelWordList[level][a].length, 0);
-                console.log(levelWordList[level][a]);
+                //console.log(levelWordList[level][a]);
 
             }
         }
@@ -237,6 +308,61 @@
             }
 
         }
+
+        function storeBestScore () {
+            bestScore = score;
+            bestWordStartX = [...wordStartX];
+            bestWordStartY = [...wordStartY];
+            bestWordDirectionX = [...wordDirectionX];
+            bestWordDirectionY = [...wordDirectionY];
+
+            console.log ("best score found:");
+            console.log ("-----------------");
+            showAllStateBrowser();
+        }
+
+        function resetPlacement(){
+            wordStartX.fill(0);
+            wordStartY.fill(0);
+            wordDirectionX.fill(0);
+            wordDirectionY.fill(0);
+            score = 0;
+        }
+
+    
+        function showAllStateBrowser() {
+
+            console.table(levelWordList[0]); // fix 
+            console.log(score);
+            console.table(letterMatrix);
+            console.table(wordStartX);
+            console.table(wordStartY);
+            console.table(wordDirectionX);
+            console.table(wordDirectionY);
+        }
+
+        function showAllState() {
+
+            console.log(levelWordList[0]); // fix 
+            console.log(score);
+            console.log(letterMatrix);
+            console.log(wordStartX);
+            console.log(wordStartY);
+            console.log(wordDirectionX);
+            console.log(wordDirectionY);
+        }
+
+        function showAllBestStateBrowser() {
+
+            console.table(levelWordList[0]); // fix 
+            console.log(bestScore);
+            console.table(letterMatrix);
+            console.table(bestWordStartX);
+            console.table(bestWordStartY);
+            console.table(bestWordDirectionX);
+            console.table(bestWordDirectionY);
+        }
+
 
 
 
