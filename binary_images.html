@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+		}
+	</style>
+</head>
+
+<body>
+	<canvas id="myCanvas" width="640" height="360" style="border:0px solid #d3d3d3;">
+		Your browser does not support the HTML5 canvas tag.</canvas>
+	<script>
+
+		var xidmax = 16;
+		var yidmax = 9;
+		var xym = 40;
+		var bpos = 0;
+		var bmax = 144;
+		var bnum = new Array(bmax);
+		var c = document.getElementById("myCanvas");
+		var ctx = c.getContext("2d");		
+
+		for (bpos = 0; bpos <= bmax; bpos++) {
+			bnum[bpos] = 0;
+		}
+
+
+		bpos = 0;
+		// call bit_Inc based on Interval Frequency.. as often as possible
+		var myVar = setInterval(bit_Inc, 1);
+
+
+		function bit_Inc() {
+			bpos = 0;
+
+			while (bpos <= bmax) {
+				if (bnum[bpos] == 0) {
+					bnum[bpos] = 1;
+					bpos = bmax;
+				}
+				else if (bnum[bpos] == 1) {
+					bnum[bpos] = 0;
+					bpos++;
+				}
+			}
+
+			drawGrid();
+		}
+
+		function drawGrid() {
+
+			bpos = 0;
+
+			for (yid = 0; yid < yidmax; yid++) {
+				for (xid = 0; xid < xidmax; xid++) {
+
+					if (bnum[bpos] == 0) {
+						ctx.fillStyle = "white";
+					}
+					else {
+						ctx.fillStyle = "black";
+					}
+
+					ctx.fillRect(xid * xym, yid * xym, xym, xym);
+					bpos++;
+
+				}
+				xid = 0;
+			}
+		}
+
+	</script>
+
+</body>
+
+</html>

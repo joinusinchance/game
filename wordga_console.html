@@ -119,9 +119,30 @@
 
 
 
+        var totalIterations = 0 ;
+
+
 
         console.log("hello there");
+        
+        
+        
+        
+        
         robot_setup();
+
+
+        totalIterations = 0;
+        for (i=0;i<=1099511627776;i++) {
+        totalIterations+=1;
+        if  (totalIterations%1099511627) {
+            console.log ("getting there");
+            console.log (totalIterations);
+        }
+
+        }
+        console.log("finished");
+        console.log(totalIterations);
 
 
 
@@ -130,10 +151,12 @@
             console.log("robot setup");
             console.log(wordID);
             console.log(wordListLen);
+            console.log("word list");
             console.log(levelWordList[0]);
 
 
-            // word 0 always place the same location, as it has no affect on result 
+
+            // all words are in relation to word 0, as such, skip word 0 iteration 
 
             wordID = 0;
 
@@ -157,6 +180,7 @@
             posY = 0;
 
             console.log(levelWordList[level][wordID]);
+            console.log("word list length");
             console.log(wordListLen);
 
             for (wordID=1;wordID<wordListLen;wordID++) {
@@ -175,20 +199,25 @@
                         for (direction =0; direction<4; direction++ ) {
                             switch (direction) {
                                 case 0:
+                                console.log(" zero");
                                 wordDirectionX[wordID] = 0;
                                 wordDirectionY[wordID] = -1;
                                 break;
                                 case 1:
+                                console.log(" one");
                                 wordDirectionX[wordID] = 0;
                                 wordDirectionY[wordID] = 1;
                                 break;
                                 case 2:
+                                console.log(" two");
                                 wordDirectionX[wordID] = -1;
                                 wordDirectionY[wordID] = 0;
                                 break;
                                 case 3:
+                                    console.log(" three");
                                 wordDirectionX[wordID] = 1;
                                 wordDirectionY[wordID] = 0;
+                                break;
                             } 
 
                             
@@ -196,13 +225,14 @@
                                 placewords
                                 if best score , store 
                             */ 
+                            totalIterations+=1;
                             placeWords_Robot(wordID);
+              
                             
+
                             if (score>bestScore){
-                                storeBestScore();
                                 console.log("New best game output");
-                                console.log(wordStartX[0],wordStartY[0], wordStartX[1],wordStartY[1]);
-                                console.log(wordDirectionX[0],wordDirectionY[0],wordDirectionX[1],wordDirectionY[1]);
+                                storeBestScore();
                                 //showAllState();
 
                             }
@@ -217,10 +247,10 @@
 
             }
 
-            showAllState();
 
             showAllBestStateBrowser();
-
+            console.log("total iterations ");
+            console.log(totalIterations);
         }
 
         function placeWords_Robot(upToWord) {
@@ -318,7 +348,7 @@
 
             console.log ("best score found:");
             console.log ("-----------------");
-            showAllStateBrowser();
+            showAllBestStateBrowser();
         }
 
         function resetPlacement(){
@@ -332,13 +362,13 @@
     
         function showAllStateBrowser() {
 
-            console.table(levelWordList[0]); // fix 
+            console.log(levelWordList[0]); // fix 
             console.log(score);
             console.table(letterMatrix);
-            console.table(wordStartX);
-            console.table(wordStartY);
-            console.table(wordDirectionX);
-            console.table(wordDirectionY);
+            console.log(wordStartX);
+            console.log(wordStartY);
+            console.log(wordDirectionX);
+            console.log(wordDirectionY);
         }
 
         function showAllState() {
@@ -353,14 +383,18 @@
         }
 
         function showAllBestStateBrowser() {
-
-            console.table(levelWordList[0]); // fix 
+            console.log("word list");
+            console.log(levelWordList[0]); // fix 
+            console.log("best score");
             console.log(bestScore);
+            console.log("best letter matrix");
             console.table(letterMatrix);
-            console.table(bestWordStartX);
-            console.table(bestWordStartY);
-            console.table(bestWordDirectionX);
-            console.table(bestWordDirectionY);
+            console.log("best start position");
+            console.log(bestWordStartX);
+            console.log(bestWordStartY);
+            console.log("best directions");
+            console.log(bestWordDirectionX);
+            console.log(bestWordDirectionY);
         }
 
 
