@@ -6,8 +6,18 @@
 		body {
 			margin: 0;
 			padding: 0;
+			overflow: hidden;
+			background-color: black;
+		}
+
+		canvas {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
 		}
 	</style>
+
 </head>
 
 <body>
@@ -15,24 +25,22 @@
 		Your browser does not support the HTML5 canvas tag.</canvas>
 	<script>
 
-		var xidmax = 16;
-		var yidmax = 9;
+		var xidmax = 15;
+		var yidmax = 8;
 		var xym = 40;
 		var bpos = 0;
 		var bmax = 144;
 		var bnum = new Array(bmax);
 		var c = document.getElementById("myCanvas");
-		var ctx = c.getContext("2d");		
+		var ctx = c.getContext("2d");
 
 		for (bpos = 0; bpos <= bmax; bpos++) {
 			bnum[bpos] = 0;
 		}
 
-
 		bpos = 0;
 		// call bit_Inc based on Interval Frequency.. as often as possible
 		var myVar = setInterval(bit_Inc, 1);
-
 
 		function bit_Inc() {
 			bpos = 0;
@@ -52,22 +60,18 @@
 		}
 
 		function drawGrid() {
-
 			bpos = 0;
-
 			for (yid = 0; yid < yidmax; yid++) {
 				for (xid = 0; xid < xidmax; xid++) {
 
 					if (bnum[bpos] == 0) {
-						ctx.fillStyle = "white";
-					}
-					else {
 						ctx.fillStyle = "black";
 					}
-
+					else {
+						ctx.fillStyle = "white";
+					}
 					ctx.fillRect(xid * xym, yid * xym, xym, xym);
 					bpos++;
-
 				}
 				xid = 0;
 			}
