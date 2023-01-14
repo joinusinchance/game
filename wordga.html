@@ -94,7 +94,7 @@ git rm -r --cached .
 
         /*
             bootState
-            practice =  all levels 
+            practice =  all levels / url level read in
             daily = from day N ration 1 game per day
             others WIP
         */
@@ -135,7 +135,21 @@ git rm -r --cached .
         levelWordList[18] = ["cinema", "magic", "dilemma", "maid","dogma","matted","eczema","maize"];
         levelWordList[19] = ["stigma", "mains", "echidna","name", "savanna","nabs"];
 
+        levelWordList[20] = ["amoeba","basilica","tuba", "bassist","balsa","cab"];
+        levelWordList[21] = ["piranha", "harp", "cola", "laconic","lapwing","gala","tombola","last"];
+        levelWordList[22] = ["cinema", "magic", "dilemma", "maid","dogma","matted","eczema","maize"];
+        levelWordList[23] = ["stigma", "mains", "echidna","name", "savanna","nabs"];
+
+        levelWordList[24] = ["旅行", "行旅", "旅旅","行行", "今非昔比","说曹操","曹操到"];
+        levelWordList[25] =["turbo","gumbo","bowleg","bobcat","agog","graylag"];
+        levelWordList[26] = ["123","345","567","781","692"];
+        levelWordList[27] = ["aging","cat","lick","pill","top"];
+        
+        levelWordList[28] = ["nomad","adjoin","road","admirer"];
+        levelWordList[29] = ["echoed","device","eternal","scab","lacerate","abscess"];
+
         // ["paprica","cart","tapioca","camp"]
+
 
 
         //var days = Math.floor(delta / 86400);
@@ -143,7 +157,7 @@ git rm -r --cached .
 
 
         var levelWordMinScore = new Array(totalLevels);
-        levelWordMinScore = [6,5,10,7, 7,11,9,5, 22,17,7,4, 5,4,5,7, 8,14,14,11];
+        levelWordMinScore = [6,5,10,7, 7,11,9,5, 22,17,7,4, 5,4,5,7, 8,14,14,2, 11,11,4,6, 8,11];
         var score = 0;
         var totalScore = 0;
         var totalScoreStore = 0;
@@ -250,16 +264,18 @@ git rm -r --cached .
         // figure out whether we are using a url based level
 
 
-        //levelName = levelName.replace(/%20/g," ");
         searchValues = decodeURI(window.location.search);
-
-        // if no parameters are passed, run test script
 
         if (searchValues.length > 0) {
 
-            //window.location.serach
+            /*
+                Format of level via URL: 
+                wordga.html?MinScore;LevelName;comment;word1;word2;wordN
+                Example:
+                wordga.html?2;sample level;fancy one;slight;orange;bin
+            */
 
-            //reuseStart = searchValues.search("reuse=");
+
 
 
             delimeter = searchValues.search(";");
