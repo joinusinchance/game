@@ -202,8 +202,8 @@ function item_initialisation() {
                 , nextTo = ["home", "home"]
                 , layout = "info"
                 , text =  ["You are a budding entrepreneur who has decided to make and sell lemonade. However, you don't even have a lemon tree in your backyard. You have no sugar, no water, no cups, no stand, no customers...."
-    ,"But you have a big vision. You want to turn your dreams into not just a juice stand but an a multi-national thirst-quenching solution providor. You want to create the best franchise in the world - with different flavours, fruits, up-selling opportunities and multi-year lock-in subscriptions. You want to attract customers from all over the world and help them self actualize through your brand" 
-    ,"To achieve your vision, you need to overcome many challenges and obstacles. You need to find ways to get lemons, sugar, water, cups, and other items that will help you make your lemonade and other assorted beverages. You need to explore your neighbourhood and beyond, looking for opportunities, resources, and people who can help you. You need to interact with different characters who can teach, inspire or challenge you. You need to solve puzzles, mini-games, and quests that will test your skills, knowledge and creativity." 
+    ,"But you have a big vision. You want to turn your dreams into not just a juice stand but an a multi-national thirst-quenching solution provider. You want to create the best franchise in the world - with different flavours, fruits, up-selling opportunities and multi-year lock-in subscriptions. You want to attract customers from all over the world and help them self-actualize through your brand." 
+    ,"To achieve your vision, you need to overcome many challenges. You need to find ways to get lemons, sugar, water, cups, and other items that will help you make your lemonade and other assorted beverages. You need to explore your neighbourhood, looking for opportunities, resources, and people. You need to interact with characters who can teach, inspire or challenge you. You need to solve puzzles, mini-games, and quests that will test your skills, knowledge and creativity." 
     ,"Are you ready to take on this challenge? Are you ready to turn lemons into lemonade? Then get ready to start clicking! The world of juice awaits you!"]
                 
             ),
@@ -327,7 +327,7 @@ function item_initialisation() {
                 , items = ["a_lemon_tree_in_soil"]//,"bee_hive"]
                 , nextTo = ["a hole in the yard", "juice stand"]
                 , layout = "location"
-                , text = ["... You have got to your first milestone... you now have a lemon tree!!!... ","... What next?  Only time  will tell... Get ready for the next chapter of Juice Tycoon available soon!!"]
+                , text = ["... You have got to your first milestone... you now have a lemon tree!!!... (tap to continue) ","... What next?  Only time  will tell... Get ready for the next chapter of Juice Tycoon available soon!!"]
                 , sprite = undefined
                 , currentStatus = 'on shelf'
                 , previousStatus = ''
