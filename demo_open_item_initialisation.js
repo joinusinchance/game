@@ -327,7 +327,7 @@ function item_initialisation() {
                 , items = ["a_lemon_tree_in_soil"]//,"bee_hive"]
                 , nextTo = ["a hole in the yard", "juice stand"]
                 , layout = "location"
-                , text = ["... You have got to your first milestone... you now have a lemon tree!!!... (tap to continue) ","... What next?  Only time  will tell... Get ready for the next chapter of Juice Tycoon available soon!!"]
+                , text = ["... You have got to your first milestone... you now have a lemon tree!!!... (tap to continue) ","... What next?  Only time  will tell... Get ready for the next chapter of Juice Tycoon available soon!! (tap to continue)"," THE END... for now... where do you think the story should go next?"]
                 , sprite = undefined
                 , currentStatus = 'on shelf'
                 , previousStatus = ''
