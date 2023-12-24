@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.24.1/dist/phaser.min.js"></script>
+
+    <style>
+        body {
+            background-color: white;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="game"></div>
+    <script>
+
+
+
+preload ()
+    {
+        this.load.image('bunny', 'assets/opening_screen_clean.png');
+    }
+
+    create ()
+    {
+        this.bunny = this.add.sprite(-150, 300, 'bunny');
+    }
+
+    update ()
+    {
+        this.bunny.x += 2;
+
+        if (this.bunny.x > 950)
+        {
+            this.bunny.x = -150;
+        }
+    }
+
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>

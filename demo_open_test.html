@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script type="text/javascript" src="demo_open_data.js"></script>
+    <script type="text/javascript" src="demo_open_item.js"></script>
+    <script type="text/javascript" src="demo_open_item_initialisation.js"></script>
+    <script type="text/javascript" src="demo_open_player.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.24.1/dist/phaser.min.js"></script>
+
+    <style>
+        body {
+            background-color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game"></div>
+
+    <script>
+        console.log("TEST");
+
+
+        item_initialisation();
+
+
+
+
+        // aPlayer(name, image, currentItems, cash, currentLocationStage);
+        //player = new aPlayer("Bob", "Bob", items["opening screen clean"], [], 0.00);
+        // currentItem[0] is always player location (so both small items can upgrade locations)
+        player = new aPlayer("Bob", "Bob", [items["opening screen clean"]], 0.00);
+        // depreciate current location, use items [0] instead
+
+        player.currentItems.push(items["a broken TV"]);
+        console.log ("second held item" , player.currentItems[1]);
+
+
+        //player.currentItems = items[];
+
+        console.log(player.name, " current location is ", player.currentItems[0].name);
+
+        
+        
+
+        console.log("items next to ",items["opening screen clean"].name,  items["opening screen clean"].nextTo[0]);
+
+        console.log("items next to ", items["lemon tree in soil"].name, items["lemon tree in soil"].nextTo[0]);
+        console.log("current location next to", player.currentLocation.name , player.currentLocation.nextTo[0]);
+
+
+        console.log ("--move from home to juice stand--");
+        console.log (items["home"]);
+        player.currentLocation = items["home"];
+        console.log("current location ", player.currentLocation.name, "next to" , player.currentLocation.nextTo[0]);
+
+        player.currentLocation = items[player.currentLocation.nextTo[0]];
+
+        console.log (player.currentLocation);
+        console.log (player.currentLocation.name) ;//, '--', players.currentLocation.moveTo[0]);
+        console.log ("### add items to user ###");
+
+        //player.currentitems.push (items["a broken TV"]);
+        console.log (player.currentitems);
+
+    </script>
+
+</body>
+
+</html>
