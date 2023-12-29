@@ -24,13 +24,6 @@ const phaserConfig = {
     }
 }
 
-console.log("item home is ", items["home"]);
-console.log(Object.keys(items).length);
-
-
-
-
-
 const game = new Phaser.Game(phaserConfig);
 
 let old_game_state = "";
@@ -45,6 +38,10 @@ let click_state = 0;
 var current_location; // store current location
 
 
+// for the moment, only have a maaxof three items to pick up per location
+var item_1;
+var item_2;
+var item_3;
 
 var default_item_location = {};
 
@@ -89,30 +86,41 @@ function initScene() { }
 
 function preloadScene() {
     // navigation icons
-    /*
     this.load.image('left', 'assets/left_arrow_shiny.png');
     this.load.image('right', 'assets/right_arrow_shiny.png');
     this.load.image('icon experiments', 'assets/experiments_small.png');
-    */
-    // load rest of images via looking up image location in 
-    for (const prop in items) {
-        console.log(items[prop].name, "---", items[prop].image);
-        console.log(items[prop].currentStatus);
-    
-        if (items[prop].image !== undefined) {
-            console.log("item has an image");
-            if (items[prop].image.slice(-4) == '.png') {
-                console.log ("png file ready");
-                console.log("attempting to load ", items[prop].name, "---", items[prop].image);
-                this.load.image(items[prop].name, items[prop].image);
-            }
-        }
-        else {
-            console.log("item doesnt have an image");
-        }
-    }
-}
 
+
+    // special locations
+    this.load.image("opening screen clean", "assets/opening_screen_clean.png");
+    this.load.image('experiments', 'assets/background_experiments_light.png');
+    /// location images
+    this.load.image('an_empty_yard', 'assets/an_empty_yard.png');
+    this.load.image('a_lemon_tree_in_soil', 'assets/a_lemon_tree_in_soil.png');
+    this.load.image('home', 'assets/background_home_light.png');
+    this.load.image('road', 'assets/background_road_light.png');
+    this.load.image('juice stand', 'assets/juice_bar.png');
+    this.load.image('an empty yard', 'assets/an_empty_yard.png');
+    this.load.image('a hole in the yard', 'assets/a_hole_in_the_yard.png');
+    this.load.image('a hole in the yard closer up', 'assets/a_hole_in_the_yard_closer_up.png');
+    this.load.image('lemon tree in soil', 'assets/a_lemon_tree_in_soil.png');
+
+
+    // small items you can pick up
+    this.load.image('spanner', 'assets/spanner_small.png');
+    this.load.image('broken_tv', 'assets/broken_tv_small.png');
+    this.load.image('bored_old_man', 'assets/bored_old_man_small.png');
+    this.load.image('slightly_used_tv', 'assets/slightly_used_tv_small.png');
+    this.load.image('lemon_seeds', 'assets/lemon_seeds_small.png');
+    this.load.image('manure', 'assets/manure_small.png');
+    this.load.image('lemon_tree', 'assets/lemon_tree_small.png');
+
+
+
+
+
+
+}
 
 function createScene() {
 
@@ -121,26 +129,11 @@ function createScene() {
 
     this_background = this.add.image(0, 0, "");
 
+    icon_left = this.add.sprite(50, 300, 'left').setInteractive();
+    icon_right = this.add.sprite(750, 300, 'right').setInteractive();
+    icon_experiments = this.add.sprite(700, 50, 'icon experiments').setInteractive();
 
 
-    // load all configurable locations and items based on info in ..item_initialisation.js
-    for (const prop in items) {
-        console.log(items[prop].name, "---", items[prop].image);
-        console.log(items[prop].currentStatus);
-    
-        if (items[prop].image !== undefined) {
-            console.log("item has an image");
-            if (items[prop].image.slice(-4) == '.png') {
-                console.log ("png file ready");
-                console.log("attempting to load ", items[prop].name, "---", items[prop].image);
-                this.load.image(items[prop].name, items[prop].image);
-            }
-        }
-        else {
-            console.log("item doesnt have an image");
-        }
-    
-    }
 
     this_text = this.add.text(40, 100, "..", {
         fontSize: '32px',
@@ -156,6 +149,22 @@ function createScene() {
     default_item_location.x = [100, 200, 300];
     default_item_location.y = [500, 500, 500];
 
+    // items for locations
+    /*
+    item_1 = this.add.sprite(default_item_location.x[0], default_item_location.y[0], 'lemon_seeds').setInteractive(); // set default images -- should do this dynamically 
+    item_2 = this.add.sprite(default_item_location.x[1], default_item_location.y[1], 'lemon_seeds').setInteractive();
+    item_3 = this.add.sprite(default_item_location.x[2], default_item_location.y[2], 'lemon_seeds').setInteractive();
+
+    item_here.push(item_1);
+    item_here.push(item_2);
+    item_here.push(item_3);
+
+
+
+    item_1.visible = false;
+    item_2.visible = false;
+    item_3.visible = false;
+    */
 
     shelf_space.x = [100, 200, 300, 400, 500, 600, 100, 200];
     shelf_space.y = [100, 100, 100, 100, 100, 100, 200, 200];
@@ -166,10 +175,7 @@ function createScene() {
     target.y = 400;//pointer.y;
 
 
-    //default navigation icons
-    icon_left = this.add.sprite(50, 300, 'left').setInteractive();
-    icon_right = this.add.sprite(750, 300, 'right').setInteractive();
-    icon_experiments = this.add.sprite(700, 50, 'icon experiments').setInteractive();
+    //background = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, '');
 
     //background.setTexture('experiments');
 

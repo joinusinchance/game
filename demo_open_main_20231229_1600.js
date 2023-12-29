@@ -45,6 +45,10 @@ let click_state = 0;
 var current_location; // store current location
 
 
+// for the moment, only have a maaxof three items to pick up per location
+var item_1;
+var item_2;
+var item_3;
 
 var default_item_location = {};
 
@@ -89,12 +93,10 @@ function initScene() { }
 
 function preloadScene() {
     // navigation icons
-    /*
     this.load.image('left', 'assets/left_arrow_shiny.png');
     this.load.image('right', 'assets/right_arrow_shiny.png');
     this.load.image('icon experiments', 'assets/experiments_small.png');
-    */
-    // load rest of images via looking up image location in 
+    // small items you can pick up
     for (const prop in items) {
         console.log(items[prop].name, "---", items[prop].image);
         console.log(items[prop].currentStatus);
@@ -121,7 +123,9 @@ function createScene() {
 
     this_background = this.add.image(0, 0, "");
 
-
+    icon_left = this.add.sprite(50, 300, 'left').setInteractive();
+    icon_right = this.add.sprite(750, 300, 'right').setInteractive();
+    icon_experiments = this.add.sprite(700, 50, 'icon experiments').setInteractive();
 
     // load all configurable locations and items based on info in ..item_initialisation.js
     for (const prop in items) {
@@ -166,10 +170,7 @@ function createScene() {
     target.y = 400;//pointer.y;
 
 
-    //default navigation icons
-    icon_left = this.add.sprite(50, 300, 'left').setInteractive();
-    icon_right = this.add.sprite(750, 300, 'right').setInteractive();
-    icon_experiments = this.add.sprite(700, 50, 'icon experiments').setInteractive();
+    //background = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, '');
 
     //background.setTexture('experiments');
 

@@ -5,18 +5,79 @@ function item_initialisation() {
     // so we can keep the lookups simple, location names = image names -- eventually only have one field for name & image
 
     items = {
+
+
+        // navigation items 
+        "left": new aItem
+            (
+                type = "navigation"
+                , name = "left"
+                , image = "assets/left_arrow_shiny.png"
+                , upgradeTo = "slightly_used_tv"
+                , combineWith = undefined
+                , addItems = undefined
+                , addLocations = undefined
+                , upgradeLocation = undefined
+                , drawPosition = [] 
+                , items = undefined
+                , nextTo = undefined
+                , layout = undefined
+                , text = undefined
+                , sprite = undefined
+                , currentStatus = undefined
+                , previousStatus = ''
+            ) ,
+            "right": new aItem
+            (
+                type = "navigation"
+                , name = "right"
+                , image = "assets/right_arrow_shiny.png"
+                , upgradeTo = undefined
+                , combineWith = undefined
+                , addItems = undefined
+                , addLocations = undefined
+                , upgradeLocation = undefined
+                , drawPosition = [] 
+                , items = undefined
+                , nextTo = undefined
+                , layout = undefined
+                , text = undefined
+                , sprite = undefined
+                , currentStatus = undefined
+                , previousStatus = ''
+            ) ,
+            "icon experiments": new aItem
+            (
+                type = "small_item"
+                , name = "icon experiments"
+                , image = "assets/experiments_small.png"
+                , upgradeTo = undefined
+                , combineWith = undefined
+                , addItems = undefined
+                , addLocations = undefined
+                , upgradeLocation = undefined
+                , drawPosition = [] 
+                , items = undefined
+                , nextTo = undefined
+                , layout = undefined
+                , text = undefined
+                , sprite = undefined
+                , currentStatus = undefined
+                , previousStatus = ''
+            ) ,
+
         // items we can pick up
         "broken_tv": new aItem
             (
                 type = "small_item"
                 , name = "broken_tv"
-                , image = undefined
+                , image = "assets/broken_tv_small.png"
                 , upgradeTo = "slightly_used_tv"
                 , combineWith = "spanner"
                 , addItems = undefined
                 , addLocations = undefined
                 , upgradeLocation = undefined
-                , drawPosition = [] // consider depreciating as covered by sprite object
+                , drawPosition = [] 
                 , items = undefined
                 , nextTo = undefined
                 , layout = undefined
@@ -31,13 +92,13 @@ function item_initialisation() {
             (
                 type = "small_item"
                 , name = "slightly_used_tv"
-                , image = undefined
+                , image = "assets/slightly_used_tv_small.png"
                 , upgradeTo = undefined
                 , combineWith = undefined
                 , addItems = undefined
                 , addLocations = undefined
                 , upgradeLocation = undefined
-                , drawPosition = [] //[shelf_space.x[2], shelf_space.y[2]] // consider depreciating as covered by sprite object
+                , drawPosition = [] 
                 , items = undefined
                 , nextTo = undefined
                 , layout = undefined
@@ -51,13 +112,13 @@ function item_initialisation() {
             (
                 type = "small_item"
                 , name = "spanner"
-                , image = undefined
+                , image = "assets/spanner_small.png"
                 , upgradeTo = undefined
                 , combineWith = "broken_tv"
                 , addItems = undefined
                 , addLocations = undefined
                 , upgradeLocation = undefined
-                , drawPosition = [] // consider depreciating as covered by sprite object
+                , drawPosition = [] 
                 , items = undefined
                 , nextTo = undefined
                 , layout = undefined
@@ -71,13 +132,13 @@ function item_initialisation() {
             (
                 type = "small_item"
                 , name = "manure"
-                , image = undefined
+                , image = "assets/manure_small.png"
                 , upgradeTo = undefined
                 , combineWith = undefined
                 , addItems = undefined
                 , addLocations = undefined
                 , upgradeLocation = undefined
-                , drawPosition = [400, 400] //[shelf_space.x[2], shelf_space.y[2]] // consider depreciating as covered by sprite object
+                , drawPosition = [400, 400] 
                 , items = undefined
                 , nextTo = undefined
                 , layout = undefined
@@ -92,7 +153,7 @@ function item_initialisation() {
             (
                 type = "small_item"
                 , name = "bored_old_man"
-                , image = undefined
+                , image = "assets/bored_old_man_small.png"
                 , upgradeTo = "lemon_seeds"
                 , combineWith = "slightly_used_tv"
                 , addItems = undefined
@@ -112,7 +173,7 @@ function item_initialisation() {
             (
                 type = "small_item"
                 , name = "lemon_seeds"
-                , image = undefined
+                , image = "assets/lemon_seeds_small.png"
                 , upgradeTo = "lemon_tree"
                 , combineWith = "manure"
                 , addItems = undefined
@@ -131,7 +192,7 @@ function item_initialisation() {
             (
                 type = "small_item"
                 , name = "lemon_tree"
-                , image = undefined
+                , image = "assets/lemon_tree_small.png"
                 , upgradeTo = undefined
                 , combineWith = undefined
                 , addItems = undefined
@@ -191,7 +252,7 @@ function item_initialisation() {
             (
                 type = "location"
                 , name = "opening screen clean"
-                , image = "opening screen clean"
+                , image = "assets/opening_screen_clean.png"
                 , upgradeTo = undefined
                 , combineWith = undefined
                 , addItems = undefined
@@ -212,7 +273,7 @@ function item_initialisation() {
             (
                 type = "location"
                 , name = "experiments"
-                , image = "experiments"
+                , image = "assets/background_experiments_light.png"
                 , upgradeTo = undefined
                 , combineWith = undefined
                 , addItems = undefined
@@ -229,7 +290,7 @@ function item_initialisation() {
             (
                 type = "location"
                 , name = "home"
-                , image = "home"
+                , image = "assets/background_home_light.png"
                 , upgradeTo = undefined
                 , combineWith = undefined
                 , addItems = undefined
@@ -248,7 +309,7 @@ function item_initialisation() {
             (
                 type = "location"
                 , name = "juice stand"
-                , image = "juice stand"
+                , image = "assets/juice_bar.png"
                 , upgradeTo = undefined
                 , combineWith = undefined
                 , addItems = undefined
@@ -263,13 +324,13 @@ function item_initialisation() {
             (
                 type = "location"
                 , name = "an_empty_yard"
-                , image = undefined
+                , image = "assets/an_empty_yard.png"
                 , upgradeTo = "a_lemon_tree_in_soil"
                 , combineWith = "lemon_tree"
                 , addItems = undefined
                 , addLocations = undefined
                 , upgradeLocation = undefined
-                , drawPosition = [] // consider depreciating as covered by sprite object
+                , drawPosition = [] // could be repursposed as default draw position 
                 , items = ["an_empty_yard"]
                 , nextTo = ["a hole in the yard", "juice stand"]
                 , layout = "location"
@@ -277,16 +338,12 @@ function item_initialisation() {
                 , sprite = undefined
                 , currentStatus = 'on shelf'
                 , previousStatus = ''
-            )
-
-
-
-
-        , "a hole in the yard": new aItem
+            ),
+            "a hole in the yard": new aItem
             (
                 type = "location"
                 , name = "a hole in the yard"
-                , image = "a hole in the yard"
+                , image = "assets/a_hole_in_the_yard.png"
                 , upgradeTo = undefined
                 , combineWith = undefined
                 , addItems = undefined
@@ -301,7 +358,7 @@ function item_initialisation() {
             (
                 type = "location"
                 , name = "a hole in the yard closer up"
-                , image = "a hole in the yard closer up"
+                , image = "assets/a_hole_in_the_yard_closer_up.png"
                 , upgradeTo = undefined
                 , combineWith = undefined
                 , addItems = undefined
@@ -317,13 +374,13 @@ function item_initialisation() {
             (
                 type = "location"
                 , name = "a_lemon_tree_in_soil"
-                , image = "a_lemon_tree_in_soil"
+                , image = "assets/a_lemon_tree_in_soil.png"
                 , upgradeTo = undefined
                 , combineWith = undefined
                 , addItems = undefined
                 , addLocations = undefined
                 , upgradeLocation = undefined
-                , drawPosition = [] // consider depreciating as covered by sprite object
+                , drawPosition = [] // could be repursposed as default draw position 
                 , items = ["a_lemon_tree_in_soil"]//,"bee_hive"]
                 , nextTo = ["road", "juice stand"]
                 , layout = "location"
@@ -337,7 +394,7 @@ function item_initialisation() {
             (
                 type = "location"
                 , name = "road"
-                , image = "road"
+                , image = "assets/background_road_light.png"
                 , upgradeTo = undefined
                 , combineWith = undefined
                 , addItems = undefined
