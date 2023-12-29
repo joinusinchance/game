@@ -94,7 +94,8 @@ function preloadScene() {
     this.load.image('right', 'assets/right_arrow_shiny.png');
     this.load.image('icon experiments', 'assets/experiments_small.png');
     */
-    // load rest of images via looking up image location in 
+    // load rest of images via looking up image location in ..initialisation.js 
+
     for (const prop in items) {
         console.log(items[prop].name, "---", items[prop].image);
         console.log(items[prop].currentStatus);
@@ -559,18 +560,27 @@ function set_up_location(a_scene, a_location) {
 function progress_game_state(layout, layout_stage) {
 
     if (current_location.text !== undefined) {
-        this_text.text.visible = true;
+        this_text.text.visible = true; 
 
-        console.log(current_location.text);
+        console.log("##-#",current_location.layout ,"# -progress game state text -#", layout_state,"#", current_location.text.length);
         //if (layout == "info" && layout_state < current_location.text.length) 
         if (layout_state < current_location.text.length) {
             layout_state += 1;
             this_text.text = current_location.text[layout_stage];
             console.log(current_game_state_stage, current_location.text[current_game_state_stage]);
         }
-        else if (current_location.layout = 'info')  // if all text click are used up and location  = info .. go to next location
+        else if (current_location.layout == 'info' && layout_state == current_location.text.length)  // if an info location... if all text click are used up and location  = info .. go to next location
         {
             set_up_location(this, current_location.nextTo[0]);
+        }
+        else if (current_location.layout == 'location' && layout_state == current_location.text.length)
+        {
+            // set current location text as empty... for now --- to do handle this in a non destructive manner
+            console.log ("clear text for level... we'll need to fix this");
+            current_location.text = undefined;
+        }
+        else {
+            console.log ("progress state unknown");
         }
     }
     else { // if location does not have text hide text object
