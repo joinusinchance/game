@@ -325,7 +325,7 @@ function item_initialisation() {
                 , upgradeLocation = undefined
                 , drawPosition = [] // consider depreciating as covered by sprite object
                 , items = ["a_lemon_tree_in_soil"]//,"bee_hive"]
-                , nextTo = ["a hole in the yard", "juice stand"]
+                , nextTo = ["road", "juice stand"]
                 , layout = "location"
                 , text = ["... You have got to your first milestone... you now have a lemon tree!!!... ","... What next?  Only time  will tell... Get ready for the next chapter of Juice Tycoon available soon!!"]
                 , sprite = undefined

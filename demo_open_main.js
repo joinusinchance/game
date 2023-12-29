@@ -448,8 +448,6 @@ function set_up_location(a_scene, a_location) {
     layout_state = 0;
 
 
-    console.log("set up locations - ", current_location);
-
     //this_background = a_scene.add.image(0, 0, items[a_location].name);
     //this_background = a_scene.add.image(0, 0, items[a_location].name);
 
@@ -479,6 +477,12 @@ function set_up_location(a_scene, a_location) {
 
 
 
+
+        items[current_location.nextTo[0]].nextTo[1] = current_location.name;
+        items[current_location.nextTo[1]].nextTo[0] = current_location.name;
+    
+    
+        console.log("set up locations - ", current_location,'##' ,items[current_location.nextTo[0]].nextTo[1], '-##-');
 
         console.log(collected_items.length, '<< collected items');
 
