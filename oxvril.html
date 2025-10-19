@@ -187,7 +187,8 @@
                 </tr>
             </thead>
             <tbody>
-                <tr><td>🐍</td><td>**WormaTron**: +1 Score. Miss = -1 Life.</td></tr>
+                <!-- UPDATED EMOJI HERE -->
+                <tr><td>🐛</td><td>**WormaTron**: +1 Score. Miss = -1 Life.</td></tr>
                 <tr><td>🍞</td><td>**Bread**: +1 Life.</td></tr>
                 <tr><td>🥑</td><td>**Avocado**: +10 Score bonus.</td></tr>
                 <tr><td>🧈</td><td>**Butter**: Ox size x2 for 10s.</td></tr>
@@ -250,7 +251,7 @@
         
         // --- Item Constants and Types ---
         const ITEM_TYPES = { 
-            WORM_A_TRON: '🐍', 
+            WORM_A_TRON: '🐛', // CHANGED FROM 🐍 TO 🐛 
             POWER_UP_LIFE: '🍞',   // Bread = +1 Life
             POWER_UP_SCORE: '🥑',  // Avocado = +10 Score
             POWER_UP_SIZE: '🧈',   // Butter = Size x2
@@ -481,15 +482,24 @@
                 itemElement.style.borderRadius = '20%'; 
             }
 
-            // Horizontal Position: Use GAME_WIDTH for responsiveness
+            // Horizontal Position: Use GAME_WIDTH to calculate a percentage position for stability
             const maxLeft = GAME_WIDTH - itemSize; 
             const randomX = Math.floor(Math.random() * maxLeft);
             
-            itemElement.style.left = randomX + 'px';
+            // FIX: Convert the random pixel position to a percentage of the game width.
+            // Using '%' is generally more stable than fixed 'px' values in fluid layouts.
+            const randomXPercent = (randomX / GAME_WIDTH) * 100;
+
+            itemElement.style.left = randomXPercent + '%';
             
             // Y Position: Start above the screen
             const initialY = -itemSize - (Math.random() * 50); 
             itemElement.style.top = initialY + 'px'; 
+            
+            // Individual speed based on current global speed
+            const itemSpeed = wormATronSpeed + (Math.random() * 0.5); 
+            
+            itemElement.style.boxShadow = 'none'; // Reset to prevent visual issues
             
             // Apply different styling based on type (Only power-ups glow)
             let glowColor = 'none'; 
@@ -518,16 +528,14 @@
 
             container.appendChild(itemElement);
             
-            // Individual speed based on current global speed
-            const itemSpeed = wormATronSpeed + (Math.random() * 0.5); 
-            
             const newItem = { 
                 element: itemElement, 
                 y: initialY,
                 width: itemSize, 
                 height: itemSize, 
                 type: type, 
-                initialX: randomX, 
+                // Store the percentage, although the element's style is already set. 
+                initialX: randomXPercent, 
                 speed: itemSpeed, 
             };
             items.push(newItem); 
@@ -559,7 +567,8 @@
                 item.y += item.speed;
                 item.element.style.top = item.y + 'px';
 
-                // Check for CATCH (Collision with Ox)
+                // Collision Check uses item.element.offsetLeft, which is the rendered pixel position
+                // derived from the percentage, so this check remains accurate.
                 const isCatch = (
                     item.y + item.height >= container.clientHeight - ox.clientHeight && 
                     item.element.offsetLeft + item.element.clientWidth > oxX && 
