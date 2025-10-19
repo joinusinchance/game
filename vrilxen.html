@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VrilXen - Wormatron Invasion</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+            font-family: monospace;
+            color: #fff;
+        }
+
+        #game-container {
+            width: 400px;
+            height: 600px;
+            border: 5px solid #ff0000; /* Red border for a vibrant look */
+            background-color: #001f3f; /* Dark blue sky */
+            position: relative;
+            overflow: hidden; /* Keep game elements inside */
+        }
+
+        /* Styling for the Bull (Player) */
+        #bull {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            bottom: 10px;
+            background-color: #8b4513; /* Brown for the bull */
+            border-radius: 10px;
+            text-align: center;
+            line-height: 50px;
+            font-size: 30px;
+            cursor: grab;
+            user-select: none;
+            left: 50%; /* Initial centered position */
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        /* Styling for the Worms */
+        .worm {
+            position: absolute;
+            width: 20px;
+            height: 40px;
+            background-color: #3cb371; /* Medium sea green */
+            border-radius: 50%;
+            top: -40px; /* Start off-screen */
+            text-align: center;
+            line-height: 40px;
+            font-size: 20px;
+            z-index: 5;
+        }
+
+        /* Game Info & HUD */
+        #game-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 1.2em;
+            z-index: 20;
+        }
+
+        /* Game Over Screen */
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            padding-top: 200px;
+            font-size: 2em;
+            z-index: 100;
+        }
+
+        #game-over button {
+            padding: 10px 20px;
+            font-size: 0.5em;
+            cursor: pointer;
+            margin-top: 20px;
+            background-color: #ff4500;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="game-info">
+            Score: <span id="score">0</span> | Lives: <span id="lives">3</span>
+        </div>
+        <div id="bull">🐂</div>
+        
+        <div id="game-over">
+            GAME OVER<br>
+            <span id="final-score"></span><br>
+            <button onclick="window.location.reload()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME CONSTANTS AND STATE ---
+        const container = document.getElementById('game-container');
+        const bull = document.getElementById('bull');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreDisplay = document.getElementById('final-score');
+        
+        const GAME_WIDTH = container.clientWidth;
+        const BULL_WIDTH = bull.clientWidth;
+        const WORM_HEIGHT = 40;
+        
+        let bullX = GAME_WIDTH / 2 - BULL_WIDTH / 2; // Initial position
+        let score = 0;
+        let lives = 3;
+        let worms = [];
+        let gameLoopInterval;
+        let wormSpawnInterval;
+        let wormSpeed = 2; // Initial speed
+
+        // --- GAME LOGIC FUNCTIONS ---
+
+        /** Updates the bull's position in the DOM. */
+        function updateBullPosition() {
+            bull.style.left = bullX + 'px';
+        }
+
+        /** Moves the bull left or right, ensuring it stays within bounds. */
+        function moveBull(direction) {
+            const movement = 15; // pixels per move
+            if (direction === 'left') {
+                bullX = Math.max(0, bullX - movement);
+            } else if (direction === 'right') {
+                bullX = Math.min(GAME_WIDTH - BULL_WIDTH, bullX + movement);
+            }
+            updateBullPosition();
+        }
+
+        /** Creates a new worm element at a random X position. */
+        function createWorm() {
+            const worm = document.createElement('div');
+            worm.classList.add('worm');
+            worm.innerHTML = '🐛'; // Worm emoji
+            
+            // Random x position, ensuring it stays within the container
+            const maxLeft = GAME_WIDTH - worm.clientWidth;
+            const randomX = Math.floor(Math.random() * maxLeft);
+            worm.style.left = randomX + 'px';
+            
+            container.appendChild(worm);
+            
+            // Store worm object with its current Y position
+            worms.push({ element: worm, y: -WORM_HEIGHT });
+        }
+
+        /** Handles the main game loop logic. */
+        function gameLoop() {
+            // 1. Move Worms and Check for Collisions/Misses
+            worms.forEach((worm, index) => {
+                // Move the worm down
+                worm.y += wormSpeed;
+                worm.element.style.top = worm.y + 'px';
+
+                // Check for CATCH (Collision with Bull)
+                const isCatch = (
+                    worm.y + WORM_HEIGHT >= container.clientHeight - BULL_WIDTH && // Worm is at bull's height
+                    worm.element.offsetLeft + worm.element.clientWidth > bullX && // Worm's right edge is past bull's left edge
+                    worm.element.offsetLeft < bullX + BULL_WIDTH // Worm's left edge is before bull's right edge
+                );
+
+                if (isCatch) {
+                    // Catch logic
+                    container.removeChild(worm.element);
+                    worms.splice(index, 1);
+                    score++;
+                    scoreDisplay.textContent = score;
+                    
+                    // Increase speed every 10 points
+                    if (score % 10 === 0) {
+                        wormSpeed += 0.5;
+                    }
+                } 
+                // Check for MISS (Worm hit the bottom)
+                else if (worm.y > container.clientHeight) {
+                    // Miss logic
+                    container.removeChild(worm.element);
+                    worms.splice(index, 1);
+                    lives--;
+                    livesDisplay.textContent = lives;
+
+                    if (lives <= 0) {
+                        endGame();
+                    }
+                }
+            });
+            
+            // Re-render the array after splicing to avoid index issues in the loop
+            worms = worms.filter(worm => container.contains(worm.element)); 
+        }
+
+        /** Ends the game, stops intervals, and shows the game over screen. */
+        function endGame() {
+            clearInterval(gameLoopInterval);
+            clearInterval(wormSpawnInterval);
+            finalScoreDisplay.textContent = `Score: ${score}`;
+            gameOverScreen.style.display = 'block';
+        }
+
+        /** Starts the game by initializing intervals and event listeners. */
+        function startGame() {
+            // Initial position update
+            updateBullPosition();
+
+            // Set up keyboard control
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') {
+                    moveBull('left');
+                } else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') {
+                    moveBull('right');
+                }
+            });
+
+            // Touch/Mouse drag control for mobile and desktop
+            let isDragging = false;
+            let startX = 0;
+            let initialBullX = 0;
+
+            bull.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                initialBullX = bullX;
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const deltaX = e.clientX - startX;
+                
+                // Calculate new position
+                let newX = initialBullX + deltaX;
+
+                // Clamp new position to boundaries
+                bullX = Math.min(GAME_WIDTH - BULL_WIDTH, Math.max(0, newX));
+                
+                updateBullPosition();
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            
+            // Touch events for mobile
+            bull.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                // Use the first touch point
+                startX = e.touches[0].clientX;
+                initialBullX = bullX;
+                e.preventDefault();
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const deltaX = e.touches[0].clientX - startX;
+                let newX = initialBullX + deltaX;
+                bullX = Math.min(GAME_WIDTH - BULL_WIDTH, Math.max(0, newX));
+                updateBullPosition();
+            });
+
+            document.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+
+
+            // Start the main game loop (runs 60 times per second)
+            gameLoopInterval = setInterval(gameLoop, 1000 / 60);
+
+            // Start spawning worms (every 1.5 seconds)
+            wormSpawnInterval = setInterval(createWorm, 1500); 
+        }
+
+        // --- START THE GAME ---
+        startGame();
+    </script>
+
+</body>
+</html>
