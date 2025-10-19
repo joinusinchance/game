@@ -49,6 +49,13 @@
         }
 
         /* --- Scrolling Background Styling (Matrix Rain effect) --- */
+        @keyframes scrollDownVisual {
+            /* Start near the top of the 200% content (negative Y) */
+            0% { transform: translateY(-50%); } 
+            /* Scroll down to the bottom of the 200% content (positive Y) */
+            100% { transform: translateY(0%); } 
+        }
+
         #scrolling-background {
             position: absolute;
             top: 0;
@@ -60,16 +67,14 @@
             pointer-events: none; 
             white-space: pre-wrap; 
             word-break: break-all;
-            line-height: 50px; 
-            font-size: 40px; 
+            
+            /* Increased Density Styling */
+            line-height: 35px; 
+            font-size: 30px; 
             color: #222;
+            
             transform: translateY(0%); 
-            animation: scrollDown 60s linear infinite;
-        }
-
-        @keyframes scrollDown {
-            0% { transform: translateY(0%); }
-            100% { transform: translateY(-50%); } 
+            animation: scrollDownVisual 40s linear infinite; /* Changed direction and speed */
         }
 
         /* Styling for the Ox (Player) */
@@ -246,13 +251,12 @@
         // --- Item Constants and Types ---
         const ITEM_TYPES = { 
             WORM_A_TRON: '🐍', 
-            POWER_UP_LIFE: '🍞',   // Bread = +1 Life (Updated from Baguette)
+            POWER_UP_LIFE: '🍞',   // Bread = +1 Life
             POWER_UP_SCORE: '🥑',  // Avocado = +10 Score
             POWER_UP_SIZE: '🧈',   // Butter = Size x2
             POWER_UP_SHIELD: '🍅', // Tomato = RedOx Mode
             POWER_UP_CLEAR: '💣',  // Bomb = Clear Screen
             DEBUFF_DEATH: '💀'     // Skull = Instant Death
-            // POWER_UP_TOAST (🍞) removed as a separate item
         };
         
         // Weights for power-up selection (All non-Worm-A-Tron items have equal weight)
@@ -420,10 +424,11 @@
         }
         
         function initializeScrollingBackground() {
-            // Only food-based emojis for background scroll
-            const SCROLL_EMOJIS = ' 🍎 🥦 🥕 🌽 🥬 🌶️ 🍇 🥝 🍄 🥥 🍚 🥗 🍕 🍔 🍟 ';
+            // Denser emoji string without spaces for a solid fill
+            const SCROLL_EMOJIS = '🍎🥦🥕🌽🥬🌶️🍇🥝🍄🥥🍚🥗🍕🍔🍟🍎🥦🥕🌽🥬🌶️🍇🥝🍄🥥🍚🥗🍕🍔🍟';
             let bgContent = '';
-            for (let i = 0; i < 50; i++) { 
+            // Increased iteration count for greater vertical density
+            for (let i = 0; i < 80; i++) { 
                 bgContent += SCROLL_EMOJIS + '\n';
             }
             scrollBg.textContent = bgContent;
@@ -494,7 +499,7 @@
             } else if (isGiant) {
                 glowColor = 'rgba(255, 204, 0, 1.0)'; // Giant is Gold
             } else if (type === ITEM_TYPES.POWER_UP_LIFE) { // Bread
-                glowColor = 'rgba(255, 175, 50, 0.9)'; // Using Toast glow color for Bread
+                glowColor = 'rgba(255, 175, 50, 0.9)'; 
             } else if (type === ITEM_TYPES.POWER_UP_SCORE) { // Avocado
                 glowColor = 'rgba(168, 203, 50, 0.7)';
             } else if (type === ITEM_TYPES.POWER_UP_SIZE) { // Butter
