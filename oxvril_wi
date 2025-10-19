@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vrilxen - Wormatron Invasion</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+            font-family: monospace;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* --- Intro Screen Styling --- */
+        #intro-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #intro-screen h1 { margin-bottom: 5px; }
+        
+        #intro-screen h2 { 
+            font-size: 1.2em; 
+            color: #ffcc00; 
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        #intro-screen ul {
+            list-style: none; 
+            padding: 0; 
+            text-align: left; 
+            font-size: 0.9em; 
+            max-width: 350px;
+        }
+        
+        #intro-screen li {
+            margin-bottom: 8px;
+            padding: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        #intro-screen img {
+            max-width: 90%;
+            max-height: 70vh;
+            border: 2px solid #ff0000;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+        }
+
+        #intro-screen button {
+            margin-top: 30px;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            cursor: pointer;
+            background-color: #ff4500;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        #intro-screen button:hover {
+            background-color: #e03c00;
+        }
+
+
+        /* --- Game Container Styling --- */
+        #game-container {
+            width: 400px;
+            height: 600px;
+            background-color: #000000; /* Default Black background */
+            position: relative;
+            overflow: hidden;
+            display: none;
+            transition: background-color 0.1s; 
+        }
+        
+        /* --- Scrolling Background Styling --- */
+        #scrolling-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1200px; /* Twice the container height (600px) */
+            opacity: 0.3; /* 30% opacity */
+            z-index: 1; 
+            pointer-events: none; 
+            white-space: pre-wrap; 
+            word-break: break-all;
+            line-height: 80px; 
+            font-size: 60px; 
+            color: #333; /* Dark gray for visibility on black/red background */
+            
+            /* Initial position: 50% below the top of the container */
+            transform: translateY(-50%); 
+            
+            /* Animation: Scroll down infinitely */
+            animation: scrollDown 60s linear infinite;
+        }
+
+        @keyframes scrollDown {
+            0% { transform: translateY(-50%); }
+            100% { transform: translateY(0%); }
+        }
+
+        /* Styling for the Ox (Player) */
+        #ox {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            bottom: 10px;
+            background-color: transparent; /* Default Transparent */
+            border-radius: 10px;
+            text-align: center;
+            line-height: 50px;
+            font-size: 30px;
+            cursor: grab;
+            user-select: none;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            transition: all 0.1s; 
+        }
+        
+        /* Styling for the Snames and Items */
+        .sname {
+            position: absolute;
+            width: 20px; 
+            height: 80px; /* Increased for vertical spacing */
+            background-color: transparent; 
+            border-radius: 50%;
+            top: 0; 
+            text-align: center;
+            line-height: 80px; /* Adjusted line height */
+            font-size: 20px;
+            z-index: 5;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2); 
+            transition: box-shadow 0.1s; 
+        }
+        
+        /* New styling for power-up items (1.4375x larger, transparent background) */
+        .special-item {
+            background-color: transparent !important; 
+            width: 29px !important;
+            height: 58px !important;
+            line-height: 58px !important;
+            font-size: 29px !important; 
+            border-radius: 5px !important; 
+            box-shadow: none !important;
+        }
+
+
+        /* Game Info & HUD */
+        #game-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 1.2em;
+            z-index: 20;
+        }
+
+        /* --- Game Over Screen Styling --- */
+        #game-over {
+            display: none; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            text-align: center;
+            padding-top: 200px;
+            font-size: 2em;
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #game-over h2 {
+            margin-bottom: 5px;
+            font-size: 1.5em;
+        }
+        
+        #ranking-text {
+            color: #ffcc00; 
+            font-weight: bold;
+            margin-bottom: 20px;
+            font-size: 0.8em;
+        }
+
+        #game-over button {
+            padding: 10px 20px;
+            font-size: 0.5em;
+            cursor: pointer;
+            margin-top: 15px;
+            background-color: #ff4500;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: transform 0.1s;
+        }
+        
+        #game-over button:active {
+            transform: scale(0.98);
+        }
+
+        #share-status {
+            font-size: 0.4em;
+            color: #3cb371;
+            margin-top: 5px;
+            height: 20px; 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Intro Screen -->
+    <div id="intro-screen">
+        <img id="intro-image" src="intro.png" alt="Vrilxen - Wormatron Invasion Intro" style="display: none;">
+        <h1>Vrilxen - Wormatron Invasion</h1>
+        <p>Catch the Snames and survive the invasion! (Use Mouse/Touch Drag)</p>
+        
+        <!-- NEW POWER-UP GUIDE -->
+        <h2>Item Guide</h2>
+        <ul style="list-style: none; padding: 0; text-align: left; font-size: 0.9em; margin-top: 15px; max-width: 350px;">
+            <li>🏺 **Jar:** Clears ALL current Snames from the screen.</li>
+            <li>🍅 **Tomato:** Activates **Red-Ox Shield** for 10s! Grants **temporary Sname immunity**.</li>
+            <li>🥑 **Avocado:** Grants **+1 Life**.</li>
+            <li>🍞 **Bread:** Gives an instant **+10 Score** bonus.</li>
+            <li>🧈 **Butter:** **Doubles the Ox size** for 10s (Easier Catching!).</li>
+            <li>🐍 **Massive Sname:** Drops at score 50 & 100. Catch for **+20 points**.</li>
+            <li style="background-color: rgba(255, 0, 0, 0.2); color: #f00;">💀 **Insta-Death:** Game Over, Score -1, Rank: **Burnt Toast**!</li>
+        </ul>
+        
+        <button onclick="hideIntroAndStartGame()">Start Game</button>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container">
+        <!-- New Scrolling Background Layer -->
+        <div id="scrolling-background"></div>
+        
+        <div id="game-info">
+            Score: <span id="score">0</span> | Lives: <span id="lives">3</span>
+        </div>
+        <div id="ox">🐂</div>
+        
+        <!-- Game Over Screen -->
+        <div id="game-over">
+            <h2>GAME OVER</h2>
+            <span id="final-score"></span>
+            <span id="ranking-text"></span>
+            
+            <button onclick="window.location.reload()">Play Again</button>
+            <button id="share-button" onclick="shareScore()">Share My Score</button>
+            <div id="share-status"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME CONSTANTS AND STATE ---
+        const container = document.getElementById('game-container');
+        const ox = document.getElementById('ox'); 
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const rankingText = document.getElementById('ranking-text');
+        const introScreen = document.getElementById('intro-screen');
+        const introImage = document.getElementById('intro-image');
+        const shareStatus = document.getElementById('share-status');
+        const scrollBg = document.getElementById('scrolling-background'); 
+        
+        let GAME_WIDTH = 400; 
+        let OX_WIDTH = 50;  
+        
+        // --- SPACING AND SIZING CONSTANTS ---
+        const SNAME_VISUAL_WIDTH_BASE = 20; 
+        const SNAME_HEIGHT_BASE = 80; // Increased for better vertical separation
+        const MIN_HORIZONTAL_SPACING = 75; // Minimum horizontal distance between item centers
+        
+        // --- Difficulty Constants (ADJUSTED FOR SLOWER SPEED RAMP) ---
+        const SCORE_PER_SPEED_JUMP = 12; 
+        const FIBONACCI_SCALE = 0.2;     
+        const FIBONACCI_NUMBERS = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55]; 
+        
+        // Density Scaling
+        const SCORE_PER_DENSITY_JUMP = 15; 
+        const INITIAL_SNAME_DENSITY = 6;
+        const MAX_SNAME_DENSITY = 14; 
+        
+        // Drop pattern constants
+        const DROP_PATTERNS = ['STRAIGHT', 'ZIGZAG', 'BOUNCE']; 
+        const ZIGZAG_AMPLITUDE = 20; 
+        const WAVE_FREQUENCY = 0.05; 
+        const BOUNCE_HORIZONTAL_SPEED = 2.5; 
+
+        // Item constants (renamed WORM keys to SNAME keys)
+        const ITEM_TYPES = {
+            SNAME: '🐍', 
+            MASSIVE_SNAME: '🐍', 
+            JAR: '🏺',
+            TOMATO: '🍅',
+            AVOCADO: '🥑',
+            BREAD: '🍞',
+            BUTTER: '🧈',
+            INSTA_DEATH: '💀' // NEW Power-Down
+        };
+        const SPECIAL_ITEM_PROBABILITY = 1 / 12; 
+        const INSTA_DEATH_PROBABILITY = 1 / 30; // NEW Insta-Death rarity
+        
+        // Scrolling Background Emojis
+        const SCROLL_EMOJIS = ' 🍕 🍔 🍟 🍗 🍦 🍩 🍪 🥑 🍅 🍞 🧈 🏺 💀 ';
+
+        // Power-up state variables
+        let oxOriginalWidth; 
+        let tomatoEffectTimer = null; 
+        let butterEffectTimer = null; 
+        let isTomatoActive = false; // NEW: Immunity flag
+
+        // Massive Sname State 
+        let lastMassiveSnameScore = 0; 
+        
+        // Game State
+        let oxX = 0; 
+        let score = 0;
+        let lives = 3;
+        // Stores { element, y, height, type, initialX, directionX, speed, dropPattern, patternSeed }
+        let items = []; // RENAMED: from worms to items
+        let gameLoopInterval;
+        
+        // Dynamic Difficulty State
+        let snameSpeed = 1.5; // RENAMED: from wormSpeed to snameSpeed
+        let difficultyLevel = 0; 
+        let lastDifficultyScore = 0;
+        let totalItemsGenerated = 0; 
+        let targetSnameCount = INITIAL_SNAME_DENSITY; // RENAMED: from targetWormCount
+        let lastDensityIncreaseScore = 0;
+        
+        // ** CONTROL VARIABLES **
+        let isDragging = false;
+        let startX = 0;
+        let initialOxX = 0; 
+
+        // --- INTRO SCREEN LOGIC ---
+        function hideIntroAndStartGame() {
+            introScreen.style.display = 'none';
+            container.style.display = 'block'; 
+
+            // Set dynamic dimensions after container is visible
+            GAME_WIDTH = container.clientWidth;
+            OX_WIDTH = ox.clientWidth; 
+            oxX = (GAME_WIDTH / 2) - (OX_WIDTH / 2); 
+            
+            updateOxPosition(); 
+            startGame();
+        }
+
+        // Check if intro.png exists
+        introImage.onload = () => {
+            introImage.style.display = 'block'; 
+            document.querySelector('#intro-screen h1').style.display = 'none';
+            document.querySelector('#intro-screen p').style.display = 'none';
+        };
+        introImage.onerror = () => {
+            introImage.style.display = 'none';
+        };
+        // Trigger load/error check
+        introImage.src = 'intro.png';
+
+        // --- GAME LOGIC FUNCTIONS ---
+        
+        /** Updates the ox's position in the DOM. */
+        function updateOxPosition() {
+            ox.style.left = oxX + 'px'; 
+        }
+        
+        /** Initializes the scrolling background with emoji content. */
+        function initializeScrollingBackground() {
+            let bgContent = '';
+            for (let i = 0; i < 50; i++) { 
+                bgContent += SCROLL_EMOJIS + '\n';
+            }
+            scrollBg.textContent = bgContent;
+        }
+
+
+        /** * Creates a new falling item (Sname or special item). 
+         * Returns the newly created item object for position manipulation.
+         */
+        function createItem(overrideType = null) {
+            let itemType = overrideType || ITEM_TYPES.SNAME;
+
+            // Check for Insta-Death Power-Down spawn first (1 in 30 chance)
+            if (!overrideType && Math.random() < INSTA_DEATH_PROBABILITY) {
+                itemType = ITEM_TYPES.INSTA_DEATH;
+            }
+            // Check for other special item spawn (1 in 12 chance)
+            else if (!overrideType && Math.random() < SPECIAL_ITEM_PROBABILITY) {
+                // Filter out standard Sname, Massive Sname, and Insta-Death for random special item selection
+                const itemKeys = Object.keys(ITEM_TYPES).filter(key => 
+                    key !== 'SNAME' && key !== 'MASSIVE_SNAME' && key !== 'INSTA_DEATH'
+                );
+                const randomIndex = Math.floor(Math.random() * itemKeys.length);
+                itemType = ITEM_TYPES[itemKeys[randomIndex]];
+            }
+
+            const itemElement = document.createElement('div');
+            // Standard Sname class
+            itemElement.classList.add('sname'); 
+            itemElement.dataset.type = itemType; 
+            
+            let itemVisualWidth = SNAME_VISUAL_WIDTH_BASE;
+            let itemHeight = SNAME_HEIGHT_BASE;
+            let isMassive = false;
+
+            if (itemType === ITEM_TYPES.MASSIVE_SNAME && overrideType) {
+                isMassive = true;
+                // Massive Sname is twice the size of the Ox 
+                itemVisualWidth = OX_WIDTH * 2; 
+                itemHeight = OX_WIDTH * 2; 
+                
+                // Massive Sname Styling
+                itemElement.style.width = itemVisualWidth + 'px';
+                itemElement.style.height = itemHeight + 'px';
+                itemElement.style.lineHeight = itemHeight + 'px';
+                itemElement.style.fontSize = (itemHeight * 0.9) + 'px'; 
+                itemElement.style.borderRadius = '5px';
+                itemElement.style.backgroundColor = 'transparent'; 
+                itemElement.style.color = '#ffcc00'; 
+                itemElement.style.boxShadow = '0 0 20px #ffcc00'; 
+                
+                itemElement.innerHTML = ITEM_TYPES.MASSIVE_SNAME; 
+                
+            } else if (itemType !== ITEM_TYPES.SNAME) {
+                // Special Item Styling & Sizing (1.4375x larger)
+                itemElement.classList.add('special-item');
+                itemVisualWidth = 29; 
+                itemHeight = 58; 
+                
+                // Set inline styles to ensure DOM elements have correct size before collision checks
+                itemElement.style.width = itemVisualWidth + 'px';
+                itemElement.style.height = itemHeight + 'px';
+                itemElement.style.lineHeight = itemHeight + 'px';
+                itemElement.style.fontSize = (itemHeight * 0.5) + 'px'; 
+                itemElement.style.borderRadius = '5px'; 
+                itemElement.innerHTML = ITEM_TYPES[Object.keys(ITEM_TYPES).find(key => ITEM_TYPES[key] === itemType)];
+
+                // Insta-Death specific styling
+                if (itemType === ITEM_TYPES.INSTA_DEATH) {
+                    itemElement.style.color = '#ff0000'; // Skull is red
+                }
+
+            } else {
+                 // Standard Sname
+                 itemElement.style.borderRadius = '50%';
+                 itemElement.innerHTML = ITEM_TYPES.SNAME;
+                 // Set height based on increased SNAME_HEIGHT_BASE
+                 itemElement.style.height = SNAME_HEIGHT_BASE + 'px'; 
+                 itemElement.style.lineHeight = SNAME_HEIGHT_BASE + 'px';
+            }
+
+            // --- Horizontal Position Logic (with spacing check) ---
+            let randomX;
+            let attempts = 0;
+            let isValidPosition = false;
+            
+            if (isMassive) {
+                // Massive Sname is intentionally centered
+                randomX = (GAME_WIDTH / 2) - (itemElement.clientWidth / 2); 
+                isValidPosition = true;
+            } else {
+                const maxLeft = GAME_WIDTH - itemElement.clientWidth;
+
+                // Loop to find a position with sufficient horizontal spacing
+                while (!isValidPosition && attempts < 20) {
+                    // Generate a random position between 0 and maxLeft
+                    randomX = Math.floor(Math.random() * (maxLeft + 1)); 
+                    isValidPosition = true; 
+                    
+                    // Check against all existing items
+                    for (const existingItem of items) {
+                        // Check if the center of the new item is too close to the center of an existing item
+                        if (Math.abs(existingItem.initialX - randomX) < MIN_HORIZONTAL_SPACING) {
+                            isValidPosition = false;
+                            break;
+                        }
+                    }
+                    attempts++;
+                }
+                // Fallback if 20 attempts fail (prevents infinite loop if space is truly saturated)
+                if (!isValidPosition) {
+                    randomX = Math.floor(Math.random() * (maxLeft + 1));
+                }
+            }
+            itemElement.style.left = randomX + 'px';
+            
+            
+            // --- Y Position Logic (Always spawn just off top edge) ---
+            let initialY = -itemHeight; 
+            
+            // Set the initial DOM position 
+            itemElement.style.top = initialY + 'px'; 
+            // --- END Y Position Logic ---
+
+            container.appendChild(itemElement);
+            
+            // --- INDIVIDUAL BEHAVIOR ASSIGNMENT ---
+            const snameDropPattern = DROP_PATTERNS[Math.floor(Math.random() * DROP_PATTERNS.length)];
+            const patternSeed = Math.random() * 2 * Math.PI; 
+
+            // --- INDIVIDUAL SPEED ASSIGNMENT ---
+            const itemSpeed = snameSpeed + (Math.random() * 0.5); 
+            
+            // Add initialX and directionX for pattern movement calculation
+            const newItem = { 
+                element: itemElement, 
+                y: initialY,
+                height: itemHeight, 
+                type: itemType, 
+                initialX: randomX, // Store the starting X position for pattern calculation
+                directionX: (Math.random() < 0.5 ? 1 : -1), 
+                dropPattern: snameDropPattern, 
+                patternSeed: patternSeed,
+                speed: itemSpeed, 
+            };
+            items.push(newItem); // Pushing to 'items' array
+
+            // Increment the total item count generated
+            totalItemsGenerated++;
+            
+            return newItem;
+        }
+
+        /** Resets the red Ox background and clears the tomato timer. */
+        function resetTomatoEffect() {
+            // --- IMMUNITY FLAG REVERT ---
+            isTomatoActive = false; 
+            
+            // Revert Ox background to transparent
+            ox.style.backgroundColor = 'transparent'; 
+            
+            // Clear timer
+            clearTimeout(tomatoEffectTimer);
+            tomatoEffectTimer = null;
+        }
+
+        /** Resets the ox's size and clears the butter timer. */
+        function resetButterEffect() {
+            // Restore original dimensions
+            ox.style.width = oxOriginalWidth; 
+            ox.style.height = oxOriginalWidth; 
+            ox.style.lineHeight = oxOriginalWidth; 
+            
+            // Recalculate font size based on original width 
+            const originalWidthNum = parseInt(oxOriginalWidth);
+            ox.style.fontSize = (originalWidthNum / 50 * 30) + 'px'; 
+
+            // Re-calculate OX_WIDTH based on reset size for accurate collision
+            OX_WIDTH = ox.clientWidth; 
+            clearTimeout(butterEffectTimer);
+            butterEffectTimer = null;
+        }
+
+        /** Handles the effect of catching a special item (power-up). */
+        function handleSpecialItem(type) {
+            switch (type) {
+                case ITEM_TYPES.JAR:
+                    // 1. Flash effect (Flash white)
+                    container.style.backgroundColor = 'white';
+                    setTimeout(() => {
+                        // Revert to black background
+                        container.style.backgroundColor = '#000000'; 
+                    }, 100);
+
+                    // 2. Remove all existing Snames 
+                    items.forEach(w => {
+                        // Check if the element still exists before attempting to remove it
+                        if (w.type === ITEM_TYPES.SNAME && container.contains(w.element)) {
+                            container.removeChild(w.element);
+                        }
+                    });
+                    items = items.filter(w => w.type !== ITEM_TYPES.SNAME); 
+
+                    // 3. Status message
+                    shareStatus.textContent = 'Captured! Snames cleared.';
+                    setTimeout(() => { shareStatus.textContent = ''; }, 2000);
+                    break;
+
+                case ITEM_TYPES.TOMATO:
+                    // Clear any existing tomato effect first
+                    if (tomatoEffectTimer) resetTomatoEffect(); 
+                    
+                    // --- EFFECT: IMMUNITY & RED OX ---
+                    isTomatoActive = true; 
+                    ox.style.backgroundColor = '#ff4500'; // Apply red background directly
+
+                    tomatoEffectTimer = setTimeout(resetTomatoEffect, 10000);
+                    
+                    shareStatus.textContent = 'Tomato Power! Red Ox Shield Activated! (Immunity: 10s)'; 
+                    setTimeout(() => { shareStatus.textContent = ''; }, 2000);
+                    break;
+
+                case ITEM_TYPES.AVOCADO:
+                    // Effect: Adds a life
+                    lives++;
+                    livesDisplay.textContent = lives;
+                    
+                    shareStatus.textContent = 'Avocado: +1 Life!';
+                    setTimeout(() => { shareStatus.textContent = ''; }, 2000);
+                    break;
+
+                case ITEM_TYPES.BREAD:
+                    // Effect: Adds 10 points
+                    score += 10;
+                    scoreDisplay.textContent = score;
+                    
+                    shareStatus.textContent = 'Bread! +10 Points!';
+                    setTimeout(() => { shareStatus.textContent = ''; }, 2000);
+                    break;
+
+                case ITEM_TYPES.BUTTER:
+                    // Clear any existing butter effect first
+                    if (butterEffectTimer) resetButterEffect();
+
+                    // Store original size if not done yet
+                    if (!oxOriginalWidth) oxOriginalWidth = ox.style.width; 
+
+                    // Effect: Doubles size for 10s
+                    const doubledWidthNum = parseInt(oxOriginalWidth) * 2; 
+                    const doubledWidth = doubledWidthNum + 'px';
+                    
+                    ox.style.width = doubledWidth; 
+                    ox.style.height = doubledWidth; 
+                    ox.style.lineHeight = doubledWidth; 
+                    
+                    // Keep emoji proportional
+                    ox.style.fontSize = (doubledWidthNum / 50 * 30) + 'px'; 
+
+                    // Update global OX_WIDTH for collision detection
+                    OX_WIDTH = ox.clientWidth; 
+
+                    butterEffectTimer = setTimeout(resetButterEffect, 10000);
+                    
+                    shareStatus.textContent = 'Butter! Ox size doubled!'; 
+                    setTimeout(() => { shareStatus.textContent = ''; }, 2000);
+                    break;
+            }
+        }
+
+        /** Handles the main game loop logic. */
+        function gameLoop() {
+            
+            // 1. Difficulty Scaling (Fibonacci-based Speed Floor Increase)
+            if (score > lastDifficultyScore && score % SCORE_PER_SPEED_JUMP === 0) {
+                
+                if (difficultyLevel < FIBONACCI_NUMBERS.length - 1) {
+                    difficultyLevel++;
+                    
+                    const fibonacciDelta = FIBONACCI_NUMBERS[difficultyLevel]; 
+                    const speedIncrease = fibonacciDelta * FIBONACCI_SCALE;
+                    
+                    if (speedIncrease > 0) {
+                        snameSpeed += speedIncrease; // RENAMED: snameSpeed
+                        shareStatus.textContent = `Speed Level ${difficultyLevel} Activated! Floor Speed: ${snameSpeed.toFixed(1)}`;
+                        setTimeout(() => { shareStatus.textContent = ''; }, 2000);
+                    }
+                    
+                    lastDifficultyScore = score;
+                }
+            }
+            
+            // 2. Progressive Density Increase
+            if (score >= lastDensityIncreaseScore + SCORE_PER_DENSITY_JUMP && targetSnameCount < MAX_SNAME_DENSITY) {
+                targetSnameCount++;
+                lastDensityIncreaseScore = score;
+                shareStatus.textContent = `Density Increased! Max Snames: ${targetSnameCount}`;
+                setTimeout(() => { shareStatus.textContent = ''; }, 2000);
+            }
+
+            // 3. Check for Massive Sname Spawn (Now repeating every 50 points)
+            while (score >= lastMassiveSnameScore + 50) {
+                
+                // Clear all current items to make way for the boss
+                items.forEach(w => {
+                    // Safety check before removal
+                    if (container.contains(w.element)) {
+                        container.removeChild(w.element);
+                    }
+                });
+                items = []; 
+                createItem(ITEM_TYPES.MASSIVE_SNAME);
+                
+                lastMassiveSnameScore += 50; 
+                
+                let message = `SCORE ${lastMassiveSnameScore} REACHED! MASSIVE SNAME INCOMING!`; 
+                
+                shareStatus.textContent = message;
+                setTimeout(() => { shareStatus.textContent = ''; }, 3000);
+            }
+
+            // 4. Move Items and Check for Collisions/Misses
+            for (let i = items.length - 1; i >= 0; i--) {
+                const item = items[i]; 
+                
+                if (!item) {
+                    continue; 
+                }
+
+                // Read the pattern from the individual item object
+                let effectivePattern = item.dropPattern;
+                const isStandardSname = item.type === ITEM_TYPES.SNAME;
+                const isMassiveSname = item.type === ITEM_TYPES.MASSIVE_SNAME;
+
+                // Special items and Massive Snames always drop straight 
+                if (!isStandardSname && !isMassiveSname) {
+                    effectivePattern = 'STRAIGHT';
+                }
+
+                // Move the item down using its INDIVIDUAL SPEED
+                item.y += item.speed;
+                
+                // Calculate Horizontal Position
+                let newX = item.element.offsetLeft; 
+                
+                if (effectivePattern === 'STRAIGHT') {
+                    if (isMassiveSname) {
+                        newX = (GAME_WIDTH / 2) - (item.element.clientWidth / 2);
+                    } else {
+                        newX = item.initialX; 
+                    }
+                } else if (effectivePattern === 'ZIGZAG') {
+                    // ZIGZAG uses the item's individual patternSeed for offset
+                    const xOffset = ZIGZAG_AMPLITUDE * Math.sin(item.y * WAVE_FREQUENCY + item.patternSeed);
+                    newX = item.initialX + xOffset;
+                    
+                    const minX = 0;
+                    const maxX = GAME_WIDTH - item.element.clientWidth;
+                    newX = Math.min(maxX, Math.max(minX, newX));
+
+                } else if (effectivePattern === 'BOUNCE') {
+                    newX += BOUNCE_HORIZONTAL_SPEED * item.directionX;
+                    const itemWidth = item.element.clientWidth;
+
+                    if (newX <= 0) {
+                        newX = 0;
+                        item.directionX = 1; 
+                    } else if (newX + itemWidth >= GAME_WIDTH) {
+                        newX = GAME_WIDTH - itemWidth;
+                        item.directionX = -1; 
+                    }
+                }
+                
+                // Apply New Position
+                item.element.style.left = newX + 'px';
+                item.element.style.top = item.y + 'px';
+
+                // Check for CATCH (Collision with Ox)
+                const isCatch = (
+                    // Item bottom is past or touching Ox top
+                    item.y + item.height >= container.clientHeight - ox.clientHeight && 
+                    // Item horizontal position aligns with Ox
+                    item.element.offsetLeft + item.element.clientWidth > oxX && 
+                    item.element.offsetLeft < oxX + ox.clientWidth 
+                );
+
+                if (isCatch) {
+                    // CATCH LOGIC
+                    // Safety check before removal
+                    if (container.contains(item.element)) {
+                         container.removeChild(item.element);
+                    }
+                    items.splice(i, 1);
+
+                    if (item.type === ITEM_TYPES.INSTA_DEATH) { // <--- NEW INSTA-DEATH CATCH
+                        score = -1;
+                        lives = 0;
+                        endGame(); // Triggers Burnt Toast rank
+                        return; // Stop the loop immediately
+                    }
+                    
+                    if (item.type === ITEM_TYPES.SNAME) {
+                        score++;
+                        scoreDisplay.textContent = score;
+                    } else if (item.type === ITEM_TYPES.MASSIVE_SNAME) {
+                        score += 20;
+                        scoreDisplay.textContent = score;
+                        shareStatus.textContent = 'MASSIVE CATCH! +20 Points!';
+                        setTimeout(() => { shareStatus.textContent = ''; }, 2000);
+                    } else {
+                        handleSpecialItem(item.type);
+                    }
+                } 
+                // Check for MISS (Item hit the bottom)
+                else if (item.y > container.clientHeight) {
+                    // Safety check before removal
+                    if (container.contains(item.element)) {
+                        container.removeChild(item.element);
+                    }
+                    items.splice(i, 1);
+
+                    // Only lose a life if a SNAME or Massive Sname was missed (Power-ups do not penalize misses)
+                    if (item.type === ITEM_TYPES.SNAME || item.type === ITEM_TYPES.MASSIVE_SNAME) {
+                        if (!isTomatoActive) { // CHECK FOR IMMUNITY
+                            lives--;
+                            livesDisplay.textContent = lives;
+                        } else {
+                            // Tomato active, item still removed but no life lost
+                            shareStatus.textContent = 'Tomato Shield blocked a Sname!';
+                            setTimeout(() => { shareStatus.textContent = ''; }, 2000);
+                        }
+                    }
+
+                    if (lives <= 0) {
+                        endGame();
+                        return;
+                    }
+                }
+            }
+            
+            // 5. Maintain Target Density 
+            const isMassiveSnameFalling = items.some(w => w.type === ITEM_TYPES.MASSIVE_SNAME);
+            
+            if (!isMassiveSnameFalling) {
+                // Fill the screen instantly up to the target density
+                while (items.length < targetSnameCount) {
+                    createItem();
+                }
+            }
+        }
+
+        /** Determines the player's ranking based on their final score. */
+        function getRanking(finalScore) {
+            if (finalScore === -1) return "Burnt Toast"; // NEW Insta-Death Rank
+            if (finalScore >= 101) return "OxVril!!";
+            if (finalScore >= 76) return "Toast, Tomato, and Avocado";
+            if (finalScore >= 51) return "Toast with Tomato";
+            if (finalScore >= 21) return "Toast with Butter";
+            if (finalScore >= 11) return "On Toast";
+            return "No Toast";
+        }
+
+        /** Ends the game, stops intervals, and shows the game over screen. */
+        function endGame() {
+            clearInterval(gameLoopInterval);
+            resetTomatoEffect(); 
+            resetButterEffect();
+
+            const finalRank = getRanking(score);
+            
+            finalScoreDisplay.textContent = `Final Score: ${score}`;
+            // Changed "Ranking: " to "Rank: " per user request
+            rankingText.textContent = `Rank: ${finalRank}`;
+            gameOverScreen.style.display = 'flex'; 
+
+            // Prepare share message for the button
+            document.getElementById('share-button').dataset.shareText = 
+                `I scored ${score} (${finalRank}) on Vrilxen - Wormatron Invasion! Can you beat my high score? #VrilxenWormatron`;
+        }
+
+        // --- CONTROL HANDLERS ---
+        function handleMove(clientX) {
+            if (!isDragging) return;
+            
+            const containerRect = container.getBoundingClientRect();
+            // Calculate movement relative to the container's left edge
+            const newX = clientX - containerRect.left - (ox.clientWidth / 2); 
+
+            // Clamp new position to boundaries of the game container
+            const maxOxX = GAME_WIDTH - OX_WIDTH; 
+            oxX = Math.min(maxOxX, Math.max(0, newX)); 
+            
+            updateOxPosition(); 
+        }
+
+        // MOUSE/TOUCH START
+        function startDrag(clientX) {
+            isDragging = true;
+            const containerRect = container.getBoundingClientRect();
+            // Calculate where the ox should be positioned based on the touch/click point
+            initialOxX = clientX - containerRect.left - (ox.clientWidth / 2); 
+            // Clamp initial position
+            const maxOxX = GAME_WIDTH - OX_WIDTH; 
+            oxX = Math.min(maxOxX, Math.max(0, initialOxX)); 
+            updateOxPosition(); 
+            
+            // Update startX to match the current touch/mouse position for tracking delta
+            startX = clientX;
+            
+            // Set initial oxX for accurate drag calculation
+            initialOxX = oxX; 
+        }
+
+        // MOUSE CONTROLS
+        ox.addEventListener('mousedown', (e) => { 
+            startDrag(e.clientX);
+            e.preventDefault(); 
+        });
+        document.addEventListener('mousemove', (e) => {
+            handleMove(e.clientX);
+        });
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        // TOUCH CONTROLS
+        ox.addEventListener('touchstart', (e) => { 
+            startDrag(e.touches[0].clientX);
+            e.preventDefault();
+        });
+        document.addEventListener('touchmove', (e) => {
+            handleMove(e.touches[0].clientX);
+        }, { passive: false });
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // --- SOCIAL MEDIA SHARE FUNCTION ---
+        function shareScore() {
+            const shareText = document.getElementById('share-button').dataset.shareText;
+            
+            // Use a temporary textarea to hold the text for copy command
+            const tempInput = document.createElement('textarea');
+            tempInput.value = shareText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                const msg = successful ? 'Copied to clipboard!' : 'Failed to copy.';
+                shareStatus.textContent = msg;
+            } catch (err) {
+                shareStatus.textContent = 'Copy failed. Browser restriction.';
+            }
+            
+            document.body.removeChild(tempInput);
+            
+            // Clear status after a short delay
+            setTimeout(() => {
+                shareStatus.textContent = '';
+            }, 3000);
+        }
+
+        /** Starts the game by initializing intervals and event listeners. */
+        function startGame() {
+            // --- Initial setup for power-ups ---
+            oxOriginalWidth = window.getComputedStyle(ox).width; 
+            
+            // --- INITIALIZE BACKGROUND ---
+            initializeScrollingBackground();
+
+            // Start the main game loop (runs 60 times per second)
+            gameLoopInterval = setInterval(gameLoop, 1000 / 60);
+        }
+    </script>
+
+</body>
+</html>
