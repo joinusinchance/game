@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OxVril - Attack of the WormaTrons</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; 
+            margin: 0;
+            background-color: #000; /* Pure Black Body */
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* --- Game Container Styling (Made Responsive and Transparent Bounding) --- */
+        #game-container {
+            max-width: 450px; 
+            width: 95vw; 
+            aspect-ratio: 4 / 6; 
+            
+            background-color: #000; /* Pure Black Game Background */
+            position: relative;
+            overflow: hidden;
+            
+            /* REMOVED all default bounding/shadow effects */
+            border-radius: 0; 
+            box-shadow: none; 
+            border: none; 
+            
+            transition: background-color 0.1s, box-shadow 0.3s; 
+        }
+        
+        /* Flash Overlay CSS */
+        #flash-overlay {
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: white; 
+            opacity: 0; 
+            z-index: 101; 
+            pointer-events: none;
+        }
+
+        /* --- Scrolling Background Styling (Matrix Rain effect) --- */
+        @keyframes scrollDownVisual {
+            /* FIX: Use a slightly adjusted value to prevent the loop stutter/snap */
+            0% { transform: translateY(-50.001%); } 
+            /* Scroll down to the bottom of the 200% content (positive Y) */
+            100% { transform: translateY(0%); } 
+        }
+
+        #scrolling-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200%; 
+            opacity: 0.2;
+            z-index: 1; 
+            pointer-events: none; 
+            white-space: pre-wrap; 
+            word-break: break-all;
+            
+            /* Increased Density Styling */
+            line-height: 35px; 
+            font-size: 30px; 
+            color: #222;
+            
+            transform: translateY(0%); 
+            animation: scrollDownVisual 40s linear infinite; /* Changed direction and speed */
+            
+            /* FIX: Force hardware acceleration to smooth the scrolling */
+            will-change: transform; 
+        }
+
+        /* Styling for the Ox (Player) */
+        #ox {
+            position: absolute;
+            width: 50px; 
+            height: 50px;
+            bottom: 10px;
+            background-color: transparent; 
+            border-radius: 10px;
+            text-align: center;
+            line-height: 50px;
+            font-size: 30px;
+            cursor: grab;
+            user-select: none;
+            left: 50%;
+            transform: translateX(-50%) scaleX(1); 
+            z-index: 10;
+            transition: all 0.1s, transform 0.3s; 
+        }
+        
+        /* Styling for the Worm-A-Trons and Power-ups */
+        .falling-item { 
+            position: absolute;
+            background-color: transparent; 
+            border-radius: 50%;
+            top: 0; 
+            text-align: center;
+            z-index: 5;
+        }
+        
+        /* Game Info & HUD */
+        #game-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #ffcc00;
+            font-size: 1.2em;
+            z-index: 20;
+            font-weight: bold;
+        }
+
+        /* --- Game Over Screen Styling --- */
+        #game-over {
+            display: none; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            text-align: center;
+            padding-top: 20%; 
+            font-size: 2em;
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #game-over button {
+            padding: 10px 20px;
+            font-size: 0.5em;
+            cursor: pointer;
+            margin-top: 15px;
+            background-color: #ff4500; 
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: transform 0.1s;
+        }
+
+        /* --- Intro Screen Table Styling --- */
+        #intro-screen table {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 90%;
+            max-width: 350px;
+            font-size: 0.8em;
+            text-align: left;
+        }
+        #intro-screen th, #intro-screen td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #intro-screen th {
+            color: #ffcc00;
+        }
+        #intro-screen td:first-child {
+            font-size: 1.2em;
+            text-align: center;
+            width: 15%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Intro Screen -->
+    <div id="intro-screen" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; text-align: center; padding: 20px;">
+        <h1 style="color: #ff4500; font-size: 2.5em; margin-bottom: 10px;">OxVril - Attack of the WormaTrons</h1>
+        
+        <!-- Attract screen subtitle -->
+        <p style="color: #ccc; font-size: 1.1em; max-width: 400px; margin-bottom: 15px;">The battle for global dominance</p>
+        
+        <!-- Power-up Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th colspan="2" style="text-align: center; font-size: 1.2em;">SYSTEM POWER-UPS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- UPDATED EMOJI HERE -->
+                <tr><td>🐛</td><td>**WormaTron**: +1 Score. Miss = -1 Life.</td></tr>
+                <tr><td>🍞</td><td>**Bread**: +1 Life.</td></tr>
+                <tr><td>🥑</td><td>**Avocado**: +10 Score bonus.</td></tr>
+                <tr><td>🧈</td><td>**Butter**: Ox size x2 for 10s.</td></tr>
+                <tr><td>🍅</td><td>**Tomato**: **RedOx mode** (Shield) for 10s.</td></tr>
+                <tr><td>💣</td><td>**Bomb**: Clears all items on screen.</td></tr>
+                <tr><td>💀</td><td>**Skull**: INSTANT DEATH! Score set to -1.</td></tr>
+            </tbody>
+        </table>
+
+        <button style="margin-top: 30px; padding: 15px 30px; font-size: 1.5em; cursor: pointer; background-color: #ff4500; color: white; border: none; border-radius: 8px;" onclick="hideIntroAndStartGame()">Start Invasion</button>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container" style="display: none;">
+        <div id="scrolling-background"></div>
+        
+        <!-- Flash Overlay -->
+        <div id="flash-overlay"></div>
+
+        <div id="game-info">
+            Score: <span id="score">0</span> | Lives: <span id="lives">3</span>
+        </div>
+        <div id="status-message"></div>
+        
+        <!-- Toast Message Container for Rank Ups and Power-ups (Transparent BG, High Visibility Text) -->
+        <div id="toast-message" style="position: absolute; top: 10%; left: 50%; transform: translateX(-50%) translateY(-20px); color: white; font-weight: bold; opacity: 0; transition: opacity 0.5s, transform 0.5s; z-index: 50; pointer-events: none; text-shadow: 0 0 8px black, 0 0 5px orange;"></div>
+
+        <div id="ox">🐂</div>
+        
+        <!-- Game Over Screen -->
+        <div id="game-over">
+            <h2>GAME OVER</h2>
+            <span id="final-score"></span>
+            <span id="ranking-text" style="font-size: 0.6em; color: #ff4500; margin-top: 10px;"></span> 
+            <button onclick="window.location.reload()">Restart Game</button>
+            
+            <button id="shareButton" onclick="shareScore()" style="margin-top: 10px; background-color: #ff4500; color: white;">Share</button>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME CONSTANTS AND STATE ---
+        const container = document.getElementById('game-container');
+        const ox = document.getElementById('ox'); 
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const introScreen = document.getElementById('intro-screen');
+        const scrollBg = document.getElementById('scrolling-background'); 
+        const rankingText = document.getElementById('ranking-text'); 
+        const toastMessage = document.getElementById('toast-message'); 
+        const flashOverlay = document.getElementById('flash-overlay'); 
+        
+        let GAME_WIDTH = 0; 
+        
+        // --- Difficulty Constants ---
+        const BASE_WORM_A_TRON_SPEED = 1.0; 
+        const CONTINUOUS_SPEED_INCREASE_PER_POINT = 0.03; 
+        
+        // --- Item Constants and Types ---
+        const ITEM_TYPES = { 
+            WORM_A_TRON: '🐛', // CHANGED FROM 🐍 TO 🐛 
+            POWER_UP_LIFE: '🍞',   // Bread = +1 Life
+            POWER_UP_SCORE: '🥑',  // Avocado = +10 Score
+            POWER_UP_SIZE: '🧈',   // Butter = Size x2
+            POWER_UP_SHIELD: '🍅', // Tomato = RedOx Mode
+            POWER_UP_CLEAR: '💣',  // Bomb = Clear Screen
+            DEBUFF_DEATH: '💀'     // Skull = Instant Death
+        };
+        
+        // Weights for power-up selection (All non-Worm-A-Tron items have equal weight)
+        const POWER_UP_WEIGHTS = [
+            { type: ITEM_TYPES.POWER_UP_LIFE, weight: 1.0 },    
+            { type: ITEM_TYPES.POWER_UP_SCORE, weight: 1.0 },   
+            { type: ITEM_TYPES.POWER_UP_SIZE, weight: 1.0 },    
+            { type: ITEM_TYPES.POWER_UP_SHIELD, weight: 1.0 },  
+            { type: ITEM_TYPES.POWER_UP_CLEAR, weight: 1.0 },   
+            { type: ITEM_TYPES.DEBUFF_DEATH, weight: 1.0 },     
+        ];
+        const TOTAL_POWER_UP_WEIGHT = POWER_UP_WEIGHTS.reduce((sum, item) => sum + item.weight, 0); // Total is 6.0
+
+        // Size constants
+        const WORM_A_TRON_SIZE_PX = 25;
+        const POWER_UP_SIZE_PX = 38; 
+        const GIANT_WORM_A_TRON_SIZE_FACTOR = 4; 
+        
+        // Power-up settings
+        const POWER_UP_CHANCE = 0.10; 
+        const SHIELD_DURATION = 10000; 
+        const BUTTER_DURATION = 10000; 
+
+        // --- Timers and Power-Up State ---
+        let isShieldActive = false;
+        let isButterActive = false;
+        let butterTimeout;
+        let tomatoTimeout;
+        
+        // --- Time-Based Density Schedule ---
+        const SPAWN_SCHEDULE = [
+            { time: 0, count: 1 },
+            { time: 3, count: 2 },
+            { time: 5, count: 3 },
+            { time: 8, count: 4 },
+            { time: 12, count: 5 },
+            { time: 17, count: 7 },
+            { time: 25, count: 9 },
+            { time: 35, count: 12 },
+            { time: 55, count: 15 }
+        ];
+        
+        // --- Ranking Schedule for Toast Messages ---
+        const RANK_SCHEDULE = [
+            { score: 11, message: "Rank Up! Toast with Butter." }, 
+            { score: 31, message: "Rank Up! Toast, Butter and Tomato." }, 
+            { score: 61, message: "Rank Up! Toast, Butter, Tomato and Avocado." }, 
+            { score: 100, message: "Rank Up! Oxvril! Ultimate Swarm Control." } 
+        ];
+        
+        // Game State
+        let oxX = 0; 
+        let score = 0;
+        let lives = 3;
+        let lastRankAnnouncedScore = 0; 
+        // Stores { element, y, width, height, type, initialX, speed }
+        let items = []; 
+        let gameLoopInterval;
+        let gameStartTime = 0; 
+        let wormATronSpeed = BASE_WORM_A_TRON_SPEED; 
+        let targetWormATronCount = SPAWN_SCHEDULE[0].count; 
+        let isDragging = false;
+
+        // --- POWER UP HANDLERS ---
+        
+        function activateButter() {
+            if (isButterActive) {
+                clearTimeout(butterTimeout);
+            }
+            isButterActive = true;
+            ox.style.transform = 'translateX(-50%) scaleX(2)'; 
+            showToast("BUTTER SLIDE! Ox size increased (10s).");
+            
+            butterTimeout = setTimeout(() => {
+                isButterActive = false;
+                ox.style.transform = 'translateX(-50%) scaleX(1)'; 
+                showToast("Butter Wears Off.");
+            }, BUTTER_DURATION);
+        }
+
+        function activateTomato() {
+            if (isShieldActive) {
+                clearTimeout(tomatoTimeout);
+            }
+            isShieldActive = true;
+            // Shield Glow: Using intense red shadow for clear indication (RedOx Mode)
+            container.style.boxShadow = '0 0 40px 10px rgba(255, 0, 0, 0.9)'; 
+            ox.style.backgroundColor = 'rgba(255, 0, 0, 0.5)'; 
+            showToast("REDOX MODE ACTIVE! Misses won't hurt (10s).");
+            
+            tomatoTimeout = setTimeout(() => {
+                isShieldActive = false;
+                // Restore to truly transparent state
+                container.style.boxShadow = 'none'; 
+                ox.style.backgroundColor = 'transparent';
+                showToast("RedOx Mode Down.");
+            }, SHIELD_DURATION);
+        }
+
+        function activateBomb() {
+            // 1. Clear items
+            items.forEach(i => {
+                if (container.contains(i.element)) {
+                    container.removeChild(i.element);
+                }
+            });
+            items = []; 
+            showToast("BOMB DETONATED! Screen cleared.");
+            
+            // 2. Flash Effect
+            flashOverlay.style.transition = 'opacity 0.05s ease-in-out';
+            flashOverlay.style.opacity = 1;
+
+            setTimeout(() => {
+                flashOverlay.style.transition = 'opacity 0.15s ease-in-out';
+                flashOverlay.style.opacity = 0;
+            }, 50); 
+            
+            return;
+        }
+
+        // --- TOAST AND RANKING LOGIC ---
+
+        /** Shows a temporary on-screen message (toast). */
+        function showToast(message) {
+            toastMessage.textContent = message;
+            toastMessage.style.opacity = 1;
+            toastMessage.style.transform = 'translateX(-50%) translateY(0)';
+
+            setTimeout(() => {
+                toastMessage.style.opacity = 0;
+                toastMessage.style.transform = 'translateX(-50%) translateY(-20px)';
+            }, 3000);
+        }
+
+        function checkScoreRank() {
+            for (const rank of RANK_SCHEDULE) {
+                if (score >= rank.score && rank.score > lastRankAnnouncedScore) {
+                    showToast(rank.message); 
+                    lastRankAnnouncedScore = rank.score;
+                    break; 
+                }
+            }
+        }
+        
+        /** Ensures internal GAME_WIDTH matches container size on start/resize */
+        function updateGameDimensions() {
+             GAME_WIDTH = container.clientWidth;
+        }
+
+        // --- INTRO SCREEN LOGIC ---
+        function hideIntroAndStartGame() {
+            introScreen.style.display = 'none';
+            container.style.display = 'block'; 
+
+            updateGameDimensions(); // Set initial dimensions
+            oxX = (GAME_WIDTH / 2) - (ox.clientWidth / 2); 
+            
+            updateOxPosition(); 
+            startGame();
+        }
+
+        function updateOxPosition() {
+            ox.style.left = oxX + 'px'; 
+        }
+        
+        function initializeScrollingBackground() {
+            // Denser emoji string without spaces for a solid fill
+            const SCROLL_EMOJIS = '🍎🥦🥕🌽🥬🌶️🍇🥝🍄🥥🍚🥗🍕🍔🍟🍎🥦🥕🌽🥬🌶️🍇🥝🍄🥥🍚🥗🍕🍔🍟';
+            let bgContent = '';
+            // Increased iteration count for greater vertical density
+            for (let i = 0; i < 80; i++) { 
+                bgContent += SCROLL_EMOJIS + '\n';
+            }
+            scrollBg.textContent = bgContent;
+        }
+
+        /** Utility to select a power-up type based on defined weights. */
+        function selectWeightedPowerUp() {
+            let random = Math.random() * TOTAL_POWER_UP_WEIGHT;
+            for (const item of POWER_UP_WEIGHTS) {
+                if (random < item.weight) {
+                    return item.type;
+                }
+                random -= item.weight;
+            }
+            // Fallback 
+            return ITEM_TYPES.WORM_A_TRON; 
+        }
+
+        /** Creates a new falling item (Worm-A-Tron or Power-Up). */
+        function createItem() {
+            let type = ITEM_TYPES.WORM_A_TRON;
+            let itemSize = WORM_A_TRON_SIZE_PX;
+            let isPowerUp = Math.random() < POWER_UP_CHANCE;
+            let isGiant = false; 
+
+            // Determine if the item is a power-up/debuff
+            if (isPowerUp) {
+                itemSize = POWER_UP_SIZE_PX;
+                type = selectWeightedPowerUp();
+            } else {
+                // Check for Giant WormaTron
+                if ((score + 1) % 50 === 0 && score > 0) {
+                    isGiant = true;
+                    itemSize = WORM_A_TRON_SIZE_PX * GIANT_WORM_A_TRON_SIZE_FACTOR;
+                    showToast("ALERT! GIANT WORM-A-TRON INCOMING!");
+                }
+            }
+            
+            const itemElement = document.createElement('div');
+            itemElement.classList.add('falling-item'); 
+            itemElement.dataset.type = type; 
+            itemElement.innerHTML = type; 
+            
+            // Set size and font size
+            itemElement.style.width = itemSize + 'px';
+            itemElement.style.height = itemSize + 'px';
+            itemElement.style.lineHeight = itemSize + 'px';
+            itemElement.style.fontSize = (itemSize * 0.8) + 'px';
+            if (isGiant) {
+                itemElement.style.borderRadius = '20%'; 
+            }
+
+            // Horizontal Position: Use GAME_WIDTH to calculate a percentage position for stability
+            const maxLeft = GAME_WIDTH - itemSize; 
+            const randomX = Math.floor(Math.random() * maxLeft);
+            
+            // Convert the random pixel position to a percentage of the game width for stability.
+            const randomXPercent = (randomX / GAME_WIDTH) * 100;
+
+            itemElement.style.left = randomXPercent + '%';
+            
+            // Y Position: Start above the screen
+            const initialY = -itemSize - (Math.random() * 50); 
+            itemElement.style.top = initialY + 'px'; 
+            
+            // Individual speed based on current global speed
+            const itemSpeed = wormATronSpeed + (Math.random() * 0.5); 
+            
+            itemElement.style.boxShadow = 'none'; // Reset to prevent visual issues
+            
+            // Apply different styling based on type (Only power-ups glow)
+            let glowColor = 'none'; 
+
+            if (type === ITEM_TYPES.WORM_A_TRON) {
+                glowColor = 'none'; // No glow for standard worms as requested
+            } else if (isGiant) {
+                glowColor = 'rgba(255, 204, 0, 1.0)'; // Giant is Gold
+            } else if (type === ITEM_TYPES.POWER_UP_LIFE) { // Bread
+                glowColor = 'rgba(255, 175, 50, 0.9)'; 
+            } else if (type === ITEM_TYPES.POWER_UP_SCORE) { // Avocado
+                glowColor = 'rgba(168, 203, 50, 0.7)';
+            } else if (type === ITEM_TYPES.POWER_UP_SIZE) { // Butter
+                glowColor = 'rgba(255, 235, 59, 0.7)';
+            } else if (type === ITEM_TYPES.POWER_UP_SHIELD) { // Tomato
+                glowColor = 'rgba(255, 99, 71, 0.7)';
+            } else if (type === ITEM_TYPES.POWER_UP_CLEAR) { // Bomb
+                glowColor = 'rgba(100, 100, 100, 0.9)';
+            } else if (type === ITEM_TYPES.DEBUFF_DEATH) { // Skull
+                glowColor = 'rgba(255, 0, 0, 1.0)';
+            }
+            
+            if (glowColor && glowColor !== 'none') {
+                itemElement.style.boxShadow = `0 0 10px ${glowColor}`;
+            }
+
+            container.appendChild(itemElement);
+            
+            const newItem = { 
+                element: itemElement, 
+                y: initialY,
+                width: itemSize, 
+                height: itemSize, 
+                type: type, 
+                // Store the percentage, although the element's style is already set. 
+                initialX: randomXPercent, 
+                speed: itemSpeed, 
+            };
+            items.push(newItem); 
+        }
+
+        /** Handles the main game loop logic. */
+        function gameLoop() {
+            
+            // 1. Calculate Elapsed Time & Determine Target Density
+            const elapsedTimeSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+            let requiredCount = SPAWN_SCHEDULE[0].count; 
+
+            for (let i = SPAWN_SCHEDULE.length - 1; i >= 0; i--) {
+                const level = SPAWN_SCHEDULE[i];
+                if (elapsedTimeSeconds >= level.time) {
+                    requiredCount = level.count;
+                    targetWormATronCount = requiredCount;
+                    break;
+                }
+            }
+            
+            // 2. Move Items and Check for Collisions/Misses
+            const oxRenderedWidth = ox.getBoundingClientRect().width; 
+
+            for (let i = items.length - 1; i >= 0; i--) {
+                const item = items[i]; 
+                
+                // Move the item down
+                item.y += item.speed;
+                item.element.style.top = item.y + 'px';
+
+                // Collision Check uses item.element.offsetLeft, which is the rendered pixel position
+                // derived from the percentage, so this check remains accurate.
+                const isCatch = (
+                    item.y + item.height >= container.clientHeight - ox.clientHeight && 
+                    item.element.offsetLeft + item.element.clientWidth > oxX && 
+                    item.element.offsetLeft < oxX + oxRenderedWidth 
+                );
+
+                if (isCatch) {
+                    // CATCH LOGIC: Remove item immediately
+                    if (container.contains(item.element)) {
+                         container.removeChild(item.element);
+                    }
+                    items.splice(i, 1);
+                    
+                    switch (item.type) {
+                        case ITEM_TYPES.WORM_A_TRON:
+                            score++;
+                            wormATronSpeed += CONTINUOUS_SPEED_INCREASE_PER_POINT; 
+                            scoreDisplay.textContent = score;
+                            checkScoreRank(); 
+                            break;
+                        case ITEM_TYPES.POWER_UP_LIFE: // BREAD
+                            lives = Math.min(3, lives + 1); 
+                            livesDisplay.textContent = lives;
+                            showToast("BREAD BONUS! (+1 Life)"); 
+                            break;
+                        case ITEM_TYPES.POWER_UP_SCORE: // AVOCADO
+                            score += 10;
+                            scoreDisplay.textContent = score;
+                            showToast("AVOCADO BOOST! (+10 Score)");
+                            checkScoreRank();
+                            break;
+                        case ITEM_TYPES.POWER_UP_SIZE: // BUTTER
+                            activateButter();
+                            break;
+                        case ITEM_TYPES.POWER_UP_SHIELD: // TOMATO (REDOX)
+                            activateTomato();
+                            break;
+                        case ITEM_TYPES.POWER_UP_CLEAR: // BOMB
+                            activateBomb();
+                            return; 
+                        case ITEM_TYPES.DEBUFF_DEATH: // SKULL
+                            endGame(true); 
+                            return; 
+                    }
+
+                } 
+                // Check for MISS (Item hit the bottom)
+                else if (item.y > container.clientHeight) {
+                    if (container.contains(item.element)) {
+                        container.removeChild(item.element);
+                    }
+                    items.splice(i, 1);
+                    
+                    if (item.type === ITEM_TYPES.WORM_A_TRON) {
+                         if (!isShieldActive) {
+                            lives--;
+                            livesDisplay.textContent = lives;
+                         } else {
+                            // Shield (RedOx Mode) is active, prevent life loss
+                            showToast("RedOx Mode Engaged! Miss averted.");
+                         }
+                    } 
+                    
+                    if (lives <= 0) {
+                        endGame();
+                        return;
+                    }
+                }
+            }
+            
+            // 3. Maintain Target Density
+            const currentItemCount = items.length;
+            
+            if (currentItemCount < targetWormATronCount) {
+                const itemsToSpawn = targetWormATronCount - currentItemCount;
+                for (let j = 0; j < itemsToSpawn; j++) {
+                    createItem();
+                }
+            }
+        }
+
+        /** Determines the player's ranking based on their final score. */
+        function getRanking(finalScore) {
+            if (finalScore < 0) return "Burnt Toast"; 
+            if (finalScore <= 10) return "No Toast";
+            if (finalScore <= 30) return "Toast with Butter";
+            if (finalScore <= 60) return "Toast, Butter and Tomato";
+            if (finalScore <= 99) return "Toast, Butter, Tomato and Avocado";
+            return "Oxvril!";
+        }
+
+        /** Ends the game, stops intervals, and shows the game over screen. */
+        function endGame(instantDeath = false) {
+            clearInterval(gameLoopInterval);
+            
+            // Clean up power-up state
+            clearTimeout(butterTimeout);
+            clearTimeout(tomatoTimeout);
+            ox.style.transform = 'translateX(-50%) scaleX(1)';
+            // Restore to truly transparent state
+            container.style.boxShadow = 'none'; 
+            ox.style.backgroundColor = 'transparent';
+
+            let finalRank;
+            let finalScoreText;
+            
+            if (instantDeath) {
+                finalScoreText = score; 
+                score = -1; // Set score to -1 as per user request for Skull instant death
+                finalRank = getRanking(score); // Will be "Burnt Toast"
+                finalScoreText = score;
+            } else {
+                finalScoreText = score;
+                finalRank = getRanking(score);
+            }
+            
+            finalScoreDisplay.textContent = `Final Score: ${finalScoreText}`;
+            rankingText.textContent = `Rank: ${finalRank}.`; 
+            gameOverScreen.style.display = 'flex'; 
+        }
+
+        /** Shares the final score and ranking using the Web Share API. */
+        function shareScore() {
+            const finalScore = document.getElementById('final-score').textContent;
+            const finalRank = document.getElementById('ranking-text').textContent;
+            
+            const scoreValue = finalScore.replace('Final Score: ', '');
+            const rankValue = finalRank.replace('Rank: ', '').replace('.', '');
+
+            // Construct the share message
+            const shareText = `I scored ${scoreValue} in OxVril - Attack of the WormaTrons! My rank is ${rankValue}. Can you beat my score? #OxVrilGame`;
+            
+            // Check for Web Share API support
+            if (navigator.share) {
+                navigator.share({
+                    title: 'OxVril Game Score',
+                    text: shareText,
+                    url: window.location.href 
+                }).catch((error) => console.log('Error sharing:', error));
+            } else {
+                // Fallback for browsers that don't support the Web Share API
+                prompt("Sharing is not supported on this browser. Copy this text to share your score:", shareText);
+            }
+        }
+
+        // --- CONTROL HANDLERS ---
+        function handleMove(clientX) {
+            if (!isDragging) return;
+            
+            const containerRect = container.getBoundingClientRect();
+            const oxRenderedWidth = ox.getBoundingClientRect().width; 
+            
+            // Calculate new X based on touch/mouse position relative to the container
+            const newX = clientX - containerRect.left - (oxRenderedWidth / 2); 
+
+            const maxOxX = GAME_WIDTH - oxRenderedWidth; 
+            oxX = Math.min(maxOxX, Math.max(0, newX)); 
+            
+            updateOxPosition(); 
+        }
+
+        // MOUSE/TOUCH START
+        function startDrag(clientX) {
+            isDragging = true;
+            updateGameDimensions(); // Re-read width on start for accuracy
+            const oxRenderedWidth = ox.getBoundingClientRect().width;
+            
+            const containerRect = container.getBoundingClientRect();
+            oxX = clientX - containerRect.left - (oxRenderedWidth / 2);
+            
+            const maxOxX = GAME_WIDTH - oxRenderedWidth; 
+            oxX = Math.min(maxOxX, Math.max(0, oxX)); 
+            updateOxPosition(); 
+        }
+
+        // MOUSE CONTROLS
+        ox.addEventListener('mousedown', (e) => { 
+            startDrag(e.clientX);
+            e.preventDefault(); 
+        });
+        document.addEventListener('mousemove', (e) => {
+            handleMove(e.clientX);
+        });
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        // TOUCH CONTROLS
+        ox.addEventListener('touchstart', (e) => { 
+            startDrag(e.touches[0].clientX);
+            e.preventDefault();
+        });
+        document.addEventListener('touchmove', (e) => {
+            handleMove(e.touches[0].clientX);
+        }, { passive: false });
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+        
+        // Handle window resize for fluid width
+        window.addEventListener('resize', () => {
+             // Only update dimensions if the game has started
+             if (container.style.display !== 'none') {
+                updateGameDimensions(); 
+             }
+        });
+
+        /** Starts the game by initializing intervals and event listeners. */
+        function startGame() {
+            gameStartTime = Date.now();
+            initializeScrollingBackground();
+            createItem();
+            gameLoopInterval = setInterval(gameLoop, 1000 / 60);
+        }
+    </script>
+</body>
+</html>
