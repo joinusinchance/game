@@ -1,3 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vrilxen - Wormatron Invasion</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+            font-family: monospace;
+            color: #fff;
+            overflow: hidden; /* Prevent body scroll if intro screen is larger */
+        }
+
+        #intro-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex; /* Changed from none to flex for initial display */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200; /* Ensure it's on top */
+            text-align: center;
+        }
+
+        #intro-screen img {
+            max-width: 90%;
+            max-height: 70vh;
+            border: 2px solid #ff0000;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+        }
+
+        #intro-screen button {
+            margin-top: 30px;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            cursor: pointer;
+            background-color: #ff4500;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        #intro-screen button:hover {
+            background-color: #e03c00;
+        }
+
+
+        #game-container {
+            width: 400px;
+            height: 600px;
+            border: 5px solid #ff0000; /* Red border for a vibrant look */
+            background-color: #001f3f; /* Dark blue sky */
+            position: relative;
+            overflow: hidden; /* Keep game elements inside */
+            display: none; /* Game container hidden initially */
+        }
+
+        /* Styling for the Bull (Player) */
+        #bull {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            bottom: 10px;
+            background-color: #000000; /* Black for the bull background */
+            border-radius: 10px;
+            text-align: center;
+            line-height: 50px;
+            font-size: 30px;
+            cursor: grab;
+            user-select: none;
+            left: 50%; /* Initial centered position */
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        /* Styling for the Worms */
+        .worm {
+            position: absolute;
+            width: 20px;
+            height: 40px;
+            background-color: #A9A9A9; /* Metallic Grey */
+            border-radius: 50%;
+            top: -40px; /* Start off-screen */
+            text-align: center;
+            line-height: 40px;
+            font-size: 20px;
+            z-index: 5;
+        }
+
+        /* Game Info & HUD */
+        #game-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 1.2em;
+            z-index: 20;
+        }
+
+        /* Game Over Screen */
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-align: center;
+            padding-top: 200px;
+            font-size: 2em;
+            z-index: 100;
+        }
+
+        #game-over button {
+            padding: 10px 20px;
+            font-size: 0.5em;
+            cursor: pointer;
+            margin-top: 20px;
+            background-color: #ff4500;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="intro-screen">
+        <img id="intro-image" src="intro.png" alt="Vrilxen - Wormatron Invasion Intro" style="display: none;">
+        <h1>Vrilxen - Wormatron Invasion</h1>
+        <p>Catch the metallic worms and survive the invasion!</p>
+        <button onclick="hideIntroAndStartGame()">Start Game</button>
+    </div>
+
+    <div id="game-container">
+        <div id="game-info">
+            Score: <span id="score">0</span> | Lives: <span id="lives">3</span>
+        </div>
+        <div id="bull">🐂</div>
+        
+        <div id="game-over">
+            GAME OVER<br>
+            <span id="final-score"></span><br>
+            <button onclick="window.location.reload()">Play Again</button>
+        </div>
+    </div>
+
 <script>
         // --- GAME CONSTANTS AND STATE ---
         const container = document.getElementById('game-container');
@@ -194,3 +354,6 @@
             wormSpawnInterval = setInterval(createWorm, 1500); 
         }
     </script>
+
+</body>
+</html>
