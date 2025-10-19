@@ -9,23 +9,29 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            height: 100vh; 
             margin: 0;
-            background-color: #000;
+            background-color: #000; /* Pure Black Body */
             font-family: 'Inter', sans-serif;
             color: #fff;
             overflow: hidden;
         }
 
-        /* --- Game Container Styling --- */
+        /* --- Game Container Styling (Made Responsive and Transparent Bounding) --- */
         #game-container {
-            width: 400px;
-            height: 600px;
-            background-color: #1a0000; /* Dark, intense background */
+            max-width: 450px; 
+            width: 95vw; 
+            aspect-ratio: 4 / 6; 
+            
+            background-color: #000; /* Pure Black Game Background */
             position: relative;
             overflow: hidden;
-            border-radius: 10px;
-            box-shadow: 0 0 30px rgba(255, 69, 0, 0.7); /* Subtle orange glow */
+            
+            /* REMOVED all default bounding/shadow effects */
+            border-radius: 0; 
+            box-shadow: none; 
+            border: none; 
+            
             transition: background-color 0.1s, box-shadow 0.3s; 
         }
         
@@ -43,33 +49,38 @@
         }
 
         /* --- Scrolling Background Styling (Matrix Rain effect) --- */
+        @keyframes scrollDownVisual {
+            /* Start near the top of the 200% content (negative Y) */
+            0% { transform: translateY(-50%); } 
+            /* Scroll down to the bottom of the 200% content (positive Y) */
+            100% { transform: translateY(0%); } 
+        }
+
         #scrolling-background {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: 1200px; 
+            height: 200%; 
             opacity: 0.2;
             z-index: 1; 
             pointer-events: none; 
             white-space: pre-wrap; 
             word-break: break-all;
-            line-height: 50px; 
-            font-size: 40px; 
+            
+            /* Increased Density Styling */
+            line-height: 35px; 
+            font-size: 30px; 
             color: #222;
+            
             transform: translateY(0%); 
-            animation: scrollDown 60s linear infinite;
-        }
-
-        @keyframes scrollDown {
-            0% { transform: translateY(0%); }
-            100% { transform: translateY(-50%); } 
+            animation: scrollDownVisual 40s linear infinite; /* Changed direction and speed */
         }
 
         /* Styling for the Ox (Player) */
         #ox {
             position: absolute;
-            width: 50px;
+            width: 50px; 
             height: 50px;
             bottom: 10px;
             background-color: transparent; 
@@ -80,7 +91,7 @@
             cursor: grab;
             user-select: none;
             left: 50%;
-            transform: translateX(-50%) scaleX(1); /* Base transform for scale effect */
+            transform: translateX(-50%) scaleX(1); 
             z-index: 10;
             transition: all 0.1s, transform 0.3s; 
         }
@@ -88,12 +99,10 @@
         /* Styling for the Worm-A-Trons and Power-ups */
         .falling-item { 
             position: absolute;
-            /* width/height set dynamically in JS */
             background-color: transparent; 
             border-radius: 50%;
             top: 0; 
             text-align: center;
-            /* line-height/font-size set dynamically in JS */
             z-index: 5;
         }
         
@@ -108,16 +117,6 @@
             font-weight: bold;
         }
 
-        #status-message {
-             /* Kept for potential future use, but content will remain empty */
-             position: absolute;
-             top: 10px;
-             right: 10px;
-             color: #ff4500; 
-             font-size: 0.9em;
-             z-index: 20;
-        }
-
         /* --- Game Over Screen Styling --- */
         #game-over {
             display: none; 
@@ -129,7 +128,7 @@
             background-color: rgba(0, 0, 0, 0.9);
             color: #fff;
             text-align: center;
-            padding-top: 200px;
+            padding-top: 20%; 
             font-size: 2em;
             z-index: 100;
             flex-direction: column;
@@ -141,7 +140,6 @@
             font-size: 0.5em;
             cursor: pointer;
             margin-top: 15px;
-            /* Default Restart button color */
             background-color: #ff4500; 
             color: white;
             border: none;
@@ -190,12 +188,12 @@
             </thead>
             <tbody>
                 <tr><td>🐍</td><td>**WormaTron**: +1 Score. Miss = -1 Life.</td></tr>
-                <tr><td>💖</td><td>**Heart**: +1 Life.</td></tr>
+                <tr><td>🍞</td><td>**Bread**: +1 Life.</td></tr>
                 <tr><td>🥑</td><td>**Avocado**: +10 Score bonus.</td></tr>
                 <tr><td>🧈</td><td>**Butter**: Ox size x2 for 10s.</td></tr>
-                <tr><td>🍅</td><td>**Tomato**: Shield for 10s (Misses don't remove lives).</td></tr>
+                <tr><td>🍅</td><td>**Tomato**: **RedOx mode** (Shield) for 10s.</td></tr>
                 <tr><td>💣</td><td>**Bomb**: Clears all items on screen.</td></tr>
-                <tr><td>💀</td><td>**Skull**: INSTANT DEATH! Score set to -1 ("Burnt Toast").</td></tr>
+                <tr><td>💀</td><td>**Skull**: INSTANT DEATH! Score set to -1.</td></tr>
             </tbody>
         </table>
 
@@ -214,8 +212,8 @@
         </div>
         <div id="status-message"></div>
         
-        <!-- Toast Message Container for Rank Ups and Power-ups (Updated for transparency) -->
-        <div id="toast-message" style="position: absolute; top: 100px; left: 50%; transform: translateX(-50%) translateY(-20px); color: white; font-weight: bold; opacity: 0; transition: opacity 0.5s, transform 0.5s; z-index: 50; pointer-events: none; text-shadow: 0 0 5px black;"></div>
+        <!-- Toast Message Container for Rank Ups and Power-ups (Transparent BG, High Visibility Text) -->
+        <div id="toast-message" style="position: absolute; top: 10%; left: 50%; transform: translateX(-50%) translateY(-20px); color: white; font-weight: bold; opacity: 0; transition: opacity 0.5s, transform 0.5s; z-index: 50; pointer-events: none; text-shadow: 0 0 8px black, 0 0 5px orange;"></div>
 
         <div id="ox">🐂</div>
         
@@ -226,7 +224,6 @@
             <span id="ranking-text" style="font-size: 0.6em; color: #ff4500; margin-top: 10px;"></span> 
             <button onclick="window.location.reload()">Restart Game</button>
             
-            <!-- Share button updated to "Share" and changed to orange color -->
             <button id="shareButton" onclick="shareScore()" style="margin-top: 10px; background-color: #ff4500; color: white;">Share</button>
         </div>
     </div>
@@ -239,14 +236,13 @@
         const livesDisplay = document.getElementById('lives');
         const gameOverScreen = document.getElementById('game-over');
         const finalScoreDisplay = document.getElementById('final-score');
-        const statusMessage = document.getElementById('status-message');
         const introScreen = document.getElementById('intro-screen');
         const scrollBg = document.getElementById('scrolling-background'); 
         const rankingText = document.getElementById('ranking-text'); 
         const toastMessage = document.getElementById('toast-message'); 
         const flashOverlay = document.getElementById('flash-overlay'); 
         
-        let GAME_WIDTH = 400; 
+        let GAME_WIDTH = 0; 
         
         // --- Difficulty Constants ---
         const BASE_WORM_A_TRON_SPEED = 1.0; 
@@ -255,14 +251,25 @@
         // --- Item Constants and Types ---
         const ITEM_TYPES = { 
             WORM_A_TRON: '🐍', 
-            POWER_UP_LIFE: '💖',   // Heart
-            POWER_UP_SCORE: '🥑',  // Avocado
-            POWER_UP_SIZE: '🧈',   // Butter
-            POWER_UP_SHIELD: '🍅', // Tomato
-            POWER_UP_CLEAR: '💣',  // Bomb
-            DEBUFF_DEATH: '💀'     // Skull
+            POWER_UP_LIFE: '🍞',   // Bread = +1 Life
+            POWER_UP_SCORE: '🥑',  // Avocado = +10 Score
+            POWER_UP_SIZE: '🧈',   // Butter = Size x2
+            POWER_UP_SHIELD: '🍅', // Tomato = RedOx Mode
+            POWER_UP_CLEAR: '💣',  // Bomb = Clear Screen
+            DEBUFF_DEATH: '💀'     // Skull = Instant Death
         };
         
+        // Weights for power-up selection (All non-Worm-A-Tron items have equal weight)
+        const POWER_UP_WEIGHTS = [
+            { type: ITEM_TYPES.POWER_UP_LIFE, weight: 1.0 },    
+            { type: ITEM_TYPES.POWER_UP_SCORE, weight: 1.0 },   
+            { type: ITEM_TYPES.POWER_UP_SIZE, weight: 1.0 },    
+            { type: ITEM_TYPES.POWER_UP_SHIELD, weight: 1.0 },  
+            { type: ITEM_TYPES.POWER_UP_CLEAR, weight: 1.0 },   
+            { type: ITEM_TYPES.DEBUFF_DEATH, weight: 1.0 },     
+        ];
+        const TOTAL_POWER_UP_WEIGHT = POWER_UP_WEIGHTS.reduce((sum, item) => sum + item.weight, 0); // Total is 6.0
+
         // Size constants
         const WORM_A_TRON_SIZE_PX = 25;
         const POWER_UP_SIZE_PX = 38; 
@@ -335,15 +342,17 @@
                 clearTimeout(tomatoTimeout);
             }
             isShieldActive = true;
+            // Shield Glow: Using intense red shadow for clear indication (RedOx Mode)
             container.style.boxShadow = '0 0 40px 10px rgba(255, 0, 0, 0.9)'; 
             ox.style.backgroundColor = 'rgba(255, 0, 0, 0.5)'; 
-            showToast("TOMATO SHIELD UP! Misses won't hurt (10s).");
+            showToast("REDOX MODE ACTIVE! Misses won't hurt (10s).");
             
             tomatoTimeout = setTimeout(() => {
                 isShieldActive = false;
-                container.style.boxShadow = '0 0 30px rgba(255, 69, 0, 0.7)'; 
+                // Restore to truly transparent state
+                container.style.boxShadow = 'none'; 
                 ox.style.backgroundColor = 'transparent';
-                showToast("Tomato Shield Down.");
+                showToast("RedOx Mode Down.");
             }, SHIELD_DURATION);
         }
 
@@ -364,9 +373,8 @@
             setTimeout(() => {
                 flashOverlay.style.transition = 'opacity 0.15s ease-in-out';
                 flashOverlay.style.opacity = 0;
-            }, 50); // Flash duration
+            }, 50); 
             
-            // Fix: Exit loop immediately after clearing the array
             return;
         }
 
@@ -374,7 +382,6 @@
 
         /** Shows a temporary on-screen message (toast). */
         function showToast(message) {
-            // NOTE: Background color is now handled by the transparent styling in HTML/CSS
             toastMessage.textContent = message;
             toastMessage.style.opacity = 1;
             toastMessage.style.transform = 'translateX(-50%) translateY(0)';
@@ -394,13 +401,18 @@
                 }
             }
         }
+        
+        /** Ensures internal GAME_WIDTH matches container size on start/resize */
+        function updateGameDimensions() {
+             GAME_WIDTH = container.clientWidth;
+        }
 
         // --- INTRO SCREEN LOGIC ---
         function hideIntroAndStartGame() {
             introScreen.style.display = 'none';
             container.style.display = 'block'; 
 
-            GAME_WIDTH = container.clientWidth;
+            updateGameDimensions(); // Set initial dimensions
             oxX = (GAME_WIDTH / 2) - (ox.clientWidth / 2); 
             
             updateOxPosition(); 
@@ -412,13 +424,27 @@
         }
         
         function initializeScrollingBackground() {
-            // Only food-based emojis for background scroll
-            const SCROLL_EMOJIS = ' 🍎 🥦 🥕 🌽 🥬 🌶️ 🍇 🥝 🍄 🥥 🍚 🥗 🍕 🍔 🍟 ';
+            // Denser emoji string without spaces for a solid fill
+            const SCROLL_EMOJIS = '🍎🥦🥕🌽🥬🌶️🍇🥝🍄🥥🍚🥗🍕🍔🍟🍎🥦🥕🌽🥬🌶️🍇🥝🍄🥥🍚🥗🍕🍔🍟';
             let bgContent = '';
-            for (let i = 0; i < 50; i++) { 
+            // Increased iteration count for greater vertical density
+            for (let i = 0; i < 80; i++) { 
                 bgContent += SCROLL_EMOJIS + '\n';
             }
             scrollBg.textContent = bgContent;
+        }
+
+        /** Utility to select a power-up type based on defined weights. */
+        function selectWeightedPowerUp() {
+            let random = Math.random() * TOTAL_POWER_UP_WEIGHT;
+            for (const item of POWER_UP_WEIGHTS) {
+                if (random < item.weight) {
+                    return item.type;
+                }
+                random -= item.weight;
+            }
+            // Fallback 
+            return ITEM_TYPES.WORM_A_TRON; 
         }
 
         /** Creates a new falling item (Worm-A-Tron or Power-Up). */
@@ -431,14 +457,9 @@
             // Determine if the item is a power-up/debuff
             if (isPowerUp) {
                 itemSize = POWER_UP_SIZE_PX;
-                const powerUpKeys = [
-                    ITEM_TYPES.POWER_UP_LIFE, ITEM_TYPES.POWER_UP_SCORE, 
-                    ITEM_TYPES.POWER_UP_SIZE, ITEM_TYPES.POWER_UP_SHIELD, 
-                    ITEM_TYPES.POWER_UP_CLEAR, ITEM_TYPES.DEBUFF_DEATH 
-                ];
-                type = powerUpKeys[Math.floor(Math.random() * powerUpKeys.length)];
+                type = selectWeightedPowerUp();
             } else {
-                // Check for Giant WormaTron: next catch will be a multiple of 50.
+                // Check for Giant WormaTron
                 if ((score + 1) % 50 === 0 && score > 0) {
                     isGiant = true;
                     itemSize = WORM_A_TRON_SIZE_PX * GIANT_WORM_A_TRON_SIZE_FACTOR;
@@ -460,7 +481,7 @@
                 itemElement.style.borderRadius = '20%'; 
             }
 
-            // Horizontal Position: 
+            // Horizontal Position: Use GAME_WIDTH for responsiveness
             const maxLeft = GAME_WIDTH - itemSize; 
             const randomX = Math.floor(Math.random() * maxLeft);
             
@@ -470,17 +491,30 @@
             const initialY = -itemSize - (Math.random() * 50); 
             itemElement.style.top = initialY + 'px'; 
             
-            // Apply different styling based on type
-            let glowColor = 'rgba(74, 222, 128, 0.5)'; // Worm-A-Tron default (Green)
-            if (isGiant) glowColor = 'rgba(255, 204, 0, 1.0)'; // Giant is Gold
-            else if (type === ITEM_TYPES.POWER_UP_LIFE) glowColor = 'rgba(255, 105, 180, 0.7)';
-            else if (type === ITEM_TYPES.POWER_UP_SCORE) glowColor = 'rgba(168, 203, 50, 0.7)';
-            else if (type === ITEM_TYPES.POWER_UP_SIZE) glowColor = 'rgba(255, 235, 59, 0.7)';
-            else if (type === ITEM_TYPES.POWER_UP_SHIELD) glowColor = 'rgba(255, 99, 71, 0.7)';
-            else if (type === ITEM_TYPES.POWER_UP_CLEAR) glowColor = 'rgba(100, 100, 100, 0.9)';
-            else if (type === ITEM_TYPES.DEBUFF_DEATH) glowColor = 'rgba(255, 0, 0, 1.0)';
+            // Apply different styling based on type (Only power-ups glow)
+            let glowColor = 'none'; 
 
-            itemElement.style.boxShadow = `0 0 10px ${glowColor}`;
+            if (type === ITEM_TYPES.WORM_A_TRON) {
+                glowColor = 'none'; // No glow for standard worms as requested
+            } else if (isGiant) {
+                glowColor = 'rgba(255, 204, 0, 1.0)'; // Giant is Gold
+            } else if (type === ITEM_TYPES.POWER_UP_LIFE) { // Bread
+                glowColor = 'rgba(255, 175, 50, 0.9)'; 
+            } else if (type === ITEM_TYPES.POWER_UP_SCORE) { // Avocado
+                glowColor = 'rgba(168, 203, 50, 0.7)';
+            } else if (type === ITEM_TYPES.POWER_UP_SIZE) { // Butter
+                glowColor = 'rgba(255, 235, 59, 0.7)';
+            } else if (type === ITEM_TYPES.POWER_UP_SHIELD) { // Tomato
+                glowColor = 'rgba(255, 99, 71, 0.7)';
+            } else if (type === ITEM_TYPES.POWER_UP_CLEAR) { // Bomb
+                glowColor = 'rgba(100, 100, 100, 0.9)';
+            } else if (type === ITEM_TYPES.DEBUFF_DEATH) { // Skull
+                glowColor = 'rgba(255, 0, 0, 1.0)';
+            }
+            
+            if (glowColor && glowColor !== 'none') {
+                itemElement.style.boxShadow = `0 0 10px ${glowColor}`;
+            }
 
             container.appendChild(itemElement);
             
@@ -546,10 +580,10 @@
                             scoreDisplay.textContent = score;
                             checkScoreRank(); 
                             break;
-                        case ITEM_TYPES.POWER_UP_LIFE:
+                        case ITEM_TYPES.POWER_UP_LIFE: // BREAD
                             lives = Math.min(3, lives + 1); 
                             livesDisplay.textContent = lives;
-                            showToast("LIFE RESTORED! (+1 Life)"); 
+                            showToast("BREAD BONUS! (+1 Life)"); 
                             break;
                         case ITEM_TYPES.POWER_UP_SCORE: // AVOCADO
                             score += 10;
@@ -560,7 +594,7 @@
                         case ITEM_TYPES.POWER_UP_SIZE: // BUTTER
                             activateButter();
                             break;
-                        case ITEM_TYPES.POWER_UP_SHIELD: // TOMATO
+                        case ITEM_TYPES.POWER_UP_SHIELD: // TOMATO (REDOX)
                             activateTomato();
                             break;
                         case ITEM_TYPES.POWER_UP_CLEAR: // BOMB
@@ -584,8 +618,8 @@
                             lives--;
                             livesDisplay.textContent = lives;
                          } else {
-                            // Shield is active, prevent life loss
-                            showToast("Shield Engaged! Miss averted.");
+                            // Shield (RedOx Mode) is active, prevent life loss
+                            showToast("RedOx Mode Engaged! Miss averted.");
                          }
                     } 
                     
@@ -625,7 +659,8 @@
             clearTimeout(butterTimeout);
             clearTimeout(tomatoTimeout);
             ox.style.transform = 'translateX(-50%) scaleX(1)';
-            container.style.boxShadow = '0 0 30px rgba(255, 69, 0, 0.7)';
+            // Restore to truly transparent state
+            container.style.boxShadow = 'none'; 
             ox.style.backgroundColor = 'transparent';
 
             let finalRank;
@@ -666,7 +701,6 @@
                 }).catch((error) => console.log('Error sharing:', error));
             } else {
                 // Fallback for browsers that don't support the Web Share API
-                // Uses a prompt to allow the user to manually copy the text.
                 prompt("Sharing is not supported on this browser. Copy this text to share your score:", shareText);
             }
         }
@@ -678,6 +712,7 @@
             const containerRect = container.getBoundingClientRect();
             const oxRenderedWidth = ox.getBoundingClientRect().width; 
             
+            // Calculate new X based on touch/mouse position relative to the container
             const newX = clientX - containerRect.left - (oxRenderedWidth / 2); 
 
             const maxOxX = GAME_WIDTH - oxRenderedWidth; 
@@ -689,6 +724,7 @@
         // MOUSE/TOUCH START
         function startDrag(clientX) {
             isDragging = true;
+            updateGameDimensions(); // Re-read width on start for accuracy
             const oxRenderedWidth = ox.getBoundingClientRect().width;
             
             const containerRect = container.getBoundingClientRect();
@@ -721,6 +757,14 @@
         }, { passive: false });
         document.addEventListener('touchend', () => {
             isDragging = false;
+        });
+        
+        // Handle window resize for fluid width
+        window.addEventListener('resize', () => {
+             // Only update dimensions if the game has started
+             if (container.style.display !== 'none') {
+                updateGameDimensions(); 
+             }
         });
 
         /** Starts the game by initializing intervals and event listeners. */
