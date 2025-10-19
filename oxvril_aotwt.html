@@ -32,7 +32,8 @@
             box-shadow: none; 
             border: none; 
             
-            transition: background-color 0.1s, box-shadow 0.3s; 
+            /* The 'filter' property is what we will dynamically change for the RedOx glow */
+            transition: background-color 0.1s, box-shadow 0.3s, filter 0.3s; 
         }
         
         /* Flash Overlay CSS */
@@ -346,15 +347,16 @@
                 clearTimeout(tomatoTimeout);
             }
             isShieldActive = true;
-            // Shield Glow: Using intense red shadow for clear indication (RedOx Mode)
-            container.style.boxShadow = '0 0 40px 10px rgba(255, 0, 0, 0.9)'; 
+            
+            // FIX: Use CSS Filter (drop-shadow) instead of box-shadow to prevent layout shifts.
+            container.style.filter = 'drop-shadow(0 0 20px rgba(255, 0, 0, 1))'; // RedOx Glow
             ox.style.backgroundColor = 'rgba(255, 0, 0, 0.5)'; 
             showToast("REDOX MODE ACTIVE! Misses won't hurt (10s).");
             
             tomatoTimeout = setTimeout(() => {
                 isShieldActive = false;
-                // Restore to truly transparent state
-                container.style.boxShadow = 'none'; 
+                // Restore container state (clear filter)
+                container.style.filter = 'none';
                 ox.style.backgroundColor = 'transparent';
                 showToast("RedOx Mode Down.");
             }, SHIELD_DURATION);
@@ -670,8 +672,9 @@
             clearTimeout(butterTimeout);
             clearTimeout(tomatoTimeout);
             ox.style.transform = 'translateX(-50%) scaleX(1)';
-            // Restore to truly transparent state
-            container.style.boxShadow = 'none'; 
+            
+            // FIX: Restore container state by clearing the filter
+            container.style.filter = 'none'; 
             ox.style.backgroundColor = 'transparent';
 
             let finalRank;
