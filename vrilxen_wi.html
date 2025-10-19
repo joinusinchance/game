@@ -112,7 +112,7 @@
 
         /* --- Game Over Screen Styling --- */
         #game-over {
-            display: none;
+            display: none; /* FIX: Ensure this is the only display property here */
             position: absolute;
             top: 0;
             left: 0;
@@ -124,7 +124,7 @@
             padding-top: 200px;
             font-size: 2em;
             z-index: 100;
-            display: flex;
+            /* display: flex; REMOVED as it caused the game over screen to always show */
             flex-direction: column;
             align-items: center;
         }
