@@ -1,164 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vrilxen - Wormatron Invasion</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #000;
-            font-family: monospace;
-            color: #fff;
-            overflow: hidden; /* Prevent body scroll if intro screen is larger */
-        }
-
-        #intro-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-            display: flex; /* Changed from none to flex for initial display */
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 200; /* Ensure it's on top */
-            text-align: center;
-        }
-
-        #intro-screen img {
-            max-width: 90%;
-            max-height: 70vh;
-            border: 2px solid #ff0000;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
-        }
-
-        #intro-screen button {
-            margin-top: 30px;
-            padding: 15px 30px;
-            font-size: 1.5em;
-            cursor: pointer;
-            background-color: #ff4500;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            transition: background-color 0.3s ease;
-        }
-
-        #intro-screen button:hover {
-            background-color: #e03c00;
-        }
-
-
-        #game-container {
-            width: 400px;
-            height: 600px;
-            border: 5px solid #ff0000; /* Red border for a vibrant look */
-            background-color: #001f3f; /* Dark blue sky */
-            position: relative;
-            overflow: hidden; /* Keep game elements inside */
-            display: none; /* Game container hidden initially */
-        }
-
-        /* Styling for the Bull (Player) */
-        #bull {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            bottom: 10px;
-            background-color: #000000; /* Black for the bull background */
-            border-radius: 10px;
-            text-align: center;
-            line-height: 50px;
-            font-size: 30px;
-            cursor: grab;
-            user-select: none;
-            left: 50%; /* Initial centered position */
-            transform: translateX(-50%);
-            z-index: 10;
-        }
-
-        /* Styling for the Worms */
-        .worm {
-            position: absolute;
-            width: 20px;
-            height: 40px;
-            background-color: #A9A9A9; /* Metallic Grey */
-            border-radius: 50%;
-            top: -40px; /* Start off-screen */
-            text-align: center;
-            line-height: 40px;
-            font-size: 20px;
-            z-index: 5;
-        }
-
-        /* Game Info & HUD */
-        #game-info {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: #fff;
-            font-size: 1.2em;
-            z-index: 20;
-        }
-
-        /* Game Over Screen */
-        #game-over {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            text-align: center;
-            padding-top: 200px;
-            font-size: 2em;
-            z-index: 100;
-        }
-
-        #game-over button {
-            padding: 10px 20px;
-            font-size: 0.5em;
-            cursor: pointer;
-            margin-top: 20px;
-            background-color: #ff4500;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="intro-screen">
-        <img id="intro-image" src="intro.png" alt="Vrilxen - Wormatron Invasion Intro" style="display: none;">
-        <h1>Vrilxen - Wormatron Invasion</h1>
-        <p>Catch the metallic worms and survive the invasion!</p>
-        <button onclick="hideIntroAndStartGame()">Start Game</button>
-    </div>
-
-    <div id="game-container">
-        <div id="game-info">
-            Score: <span id="score">0</span> | Lives: <span id="lives">3</span>
-        </div>
-        <div id="bull">🐂</div>
-        
-        <div id="game-over">
-            GAME OVER<br>
-            <span id="final-score"></span><br>
-            <button onclick="window.location.reload()">Play Again</button>
-        </div>
-    </div>
-
-    <script>
+<script>
         // --- GAME CONSTANTS AND STATE ---
         const container = document.getElementById('game-container');
         const bull = document.getElementById('bull');
@@ -180,11 +20,19 @@
         let gameLoopInterval;
         let wormSpawnInterval;
         let wormSpeed = 2; // Initial speed
+        
+        // ** CONTROL VARIABLES **
+        let isDragging = false;
+        let startX = 0;
+        let initialBullX = 0;
 
         // --- INTRO SCREEN LOGIC ---
         function hideIntroAndStartGame() {
             introScreen.style.display = 'none';
             container.style.display = 'block'; // Show game container
+            // Ensure the width is calculated after the container is visible
+            bullX = (container.clientWidth / 2) - (bull.clientWidth / 2);
+            updateBullPosition(); 
             startGame();
         }
 
@@ -196,8 +44,13 @@
         };
         introImage.onerror = () => {
             introImage.style.display = 'none'; // Hide image if it failed to load
-            console.log("intro.png not found or failed to load. Displaying default intro text.");
+            // Fallback for cases where image loading fails or is blocked
         };
+        // Trigger load/error check by setting the src (it's already in the HTML, this just ensures the check runs)
+        if (introImage.src.endsWith('intro.png')) {
+            // Attempt to load the image to trigger the onload/onerror handlers
+            introImage.src = 'intro.png'; 
+        }
 
         // --- GAME LOGIC FUNCTIONS ---
 
@@ -213,7 +66,7 @@
             worm.innerHTML = '🐛'; // Worm emoji
             
             // Random x position, ensuring it stays within the container
-            const maxLeft = GAME_WIDTH - worm.clientWidth;
+            const maxLeft = container.clientWidth - worm.clientWidth;
             const randomX = Math.floor(Math.random() * maxLeft);
             worm.style.left = randomX + 'px';
             
@@ -233,9 +86,9 @@
 
                 // Check for CATCH (Collision with Bull)
                 const isCatch = (
-                    worm.y + WORM_HEIGHT >= container.clientHeight - BULL_WIDTH && // Worm is at bull's height
+                    worm.y + WORM_HEIGHT >= container.clientHeight - bull.clientHeight && // Worm is at bull's height
                     worm.element.offsetLeft + worm.element.clientWidth > bullX && // Worm's right edge is past bull's left edge
-                    worm.element.offsetLeft < bullX + BULL_WIDTH // Worm's left edge is before bull's right edge
+                    worm.element.offsetLeft < bullX + bull.clientWidth // Worm's left edge is before bull's right edge
                 );
 
                 if (isCatch) {
@@ -264,7 +117,7 @@
                 }
             });
             
-            // Re-render the array after splicing to avoid index issues in the loop
+            // Filter out worms that were removed to clean the array
             worms = worms.filter(worm => container.contains(worm.element)); 
         }
 
@@ -276,72 +129,68 @@
             gameOverScreen.style.display = 'block';
         }
 
+        // --- CONTROL HANDLERS ---
+
+        /** General function to handle mouse/touch movement */
+        function handleMove(clientX) {
+            if (!isDragging) return;
+            
+            // Calculate movement relative to the start point
+            const deltaX = clientX - startX;
+            
+            // Calculate new position
+            let newX = initialBullX + deltaX;
+
+            // Clamp new position to boundaries of the game container
+            const maxBullX = container.clientWidth - bull.clientWidth;
+            bullX = Math.min(maxBullX, Math.max(0, newX));
+            
+            updateBullPosition();
+        }
+
+        // MOUSE CONTROLS (Starts on the bull)
+        bull.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            initialBullX = bullX;
+            e.preventDefault(); 
+        });
+
+        // MOUSE MOVE (Listens on the document while dragging is active)
+        document.addEventListener('mousemove', (e) => {
+            handleMove(e.clientX);
+        });
+
+        // MOUSE UP (Listens on the document to stop dragging anywhere)
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        // TOUCH CONTROLS (Starts on the bull)
+        bull.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            // Use the first touch point
+            startX = e.touches[0].clientX;
+            initialBullX = bullX;
+            e.preventDefault(); 
+        });
+
+        // TOUCH MOVE (Listens on the document while dragging is active)
+        document.addEventListener('touchmove', (e) => {
+            handleMove(e.touches[0].clientX);
+        }, { passive: false }); // Added {passive: false} to allow preventDefault on touchstart to work better
+
+        // TOUCH END (Listens on the document to stop dragging anywhere)
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
         /** Starts the game by initializing intervals and event listeners. */
         function startGame() {
-            // Initial position update
-            updateBullPosition();
-
-            // Touch/Mouse drag control for mobile and desktop
-            let isDragging = false;
-            let startX = 0;
-            let initialBullX = 0;
-
-            bull.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                startX = e.clientX;
-                initialBullX = bullX;
-                e.preventDefault(); // Prevent default browser drag behavior
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                const deltaX = e.clientX - startX;
-                
-                // Calculate new position
-                let newX = initialBullX + deltaX;
-
-                // Clamp new position to boundaries
-                bullX = Math.min(GAME_WIDTH - BULL_WIDTH, Math.max(0, newX));
-                
-                updateBullPosition();
-            });
-
-            document.addEventListener('mouseup', () => {
-                isDragging = false;
-            });
-            
-            // Touch events for mobile
-            bull.addEventListener('touchstart', (e) => {
-                isDragging = true;
-                // Use the first touch point
-                startX = e.touches[0].clientX;
-                initialBullX = bullX;
-                e.preventDefault(); // Prevent default mobile scroll behavior
-            });
-
-            document.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                const deltaX = e.touches[0].clientX - startX;
-                let newX = initialBullX + deltaX;
-                bullX = Math.min(GAME_WIDTH - BULL_WIDTH, Math.max(0, newX));
-                updateBullPosition();
-            });
-
-            document.addEventListener('touchend', () => {
-                isDragging = false;
-            });
-
-
             // Start the main game loop (runs 60 times per second)
             gameLoopInterval = setInterval(gameLoop, 1000 / 60);
 
             // Start spawning worms (every 1.5 seconds)
             wormSpawnInterval = setInterval(createWorm, 1500); 
         }
-
-        // The game won't start automatically; it waits for the intro screen button click
-        // or for the intro.png check to complete.
     </script>
-
-</body>
-</html>
