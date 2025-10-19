@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vrilxen - Wormatron Invasion</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+            font-family: monospace;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        /* --- Intro Screen Styling --- */
+        #intro-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            text-align: center;
+        }
+
+        #intro-screen img {
+            max-width: 90%;
+            max-height: 70vh;
+            border: 2px solid #ff0000;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+        }
+
+        #intro-screen button {
+            margin-top: 30px;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            cursor: pointer;
+            background-color: #ff4500;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        #intro-screen button:hover {
+            background-color: #e03c00;
+        }
+
+
+        /* --- Game Container Styling --- */
+        #game-container {
+            width: 400px;
+            height: 600px;
+            border: 5px solid #ff0000;
+            background-color: #001f3f; /* Dark blue sky */
+            position: relative;
+            overflow: hidden;
+            display: none;
+        }
+
+        /* Styling for the Bull (Player) */
+        #bull {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            bottom: 10px;
+            background-color: #000000; /* Black background */
+            border-radius: 10px;
+            text-align: center;
+            line-height: 50px;
+            font-size: 30px;
+            cursor: grab;
+            user-select: none;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        /* Styling for the Worms */
+        .worm {
+            position: absolute;
+            width: 20px;
+            height: 40px;
+            background-color: #A9A9A9; /* Metallic Grey */
+            border-radius: 50%;
+            top: -40px;
+            text-align: center;
+            line-height: 40px;
+            font-size: 20px;
+            z-index: 5;
+        }
+
+        /* Game Info & HUD */
+        #game-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 1.2em;
+            z-index: 20;
+        }
+
+        /* --- Game Over Screen Styling --- */
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            text-align: center;
+            padding-top: 200px;
+            font-size: 2em;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #game-over h2 {
+            margin-bottom: 5px;
+            font-size: 1.5em;
+        }
+        
+        #ranking-text {
+            color: #ffcc00; /* Gold color for ranking */
+            font-weight: bold;
+            margin-bottom: 20px;
+            font-size: 0.8em;
+        }
+
+        #game-over button {
+            padding: 10px 20px;
+            font-size: 0.5em;
+            cursor: pointer;
+            margin-top: 15px;
+            background-color: #ff4500;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: transform 0.1s;
+        }
+        
+        #game-over button:active {
+            transform: scale(0.98);
+        }
+
+        #share-status {
+            font-size: 0.4em;
+            color: #3cb371;
+            margin-top: 5px;
+            height: 20px; /* Reserve space */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Intro Screen -->
+    <div id="intro-screen">
+        <img id="intro-image" src="intro.png" alt="Vrilxen - Wormatron Invasion Intro" style="display: none;">
+        <h1>Vrilxen - Wormatron Invasion</h1>
+        <p>Catch the metallic worms and survive the invasion! (Use Mouse/Touch Drag)</p>
+        <button onclick="hideIntroAndStartGame()">Start Game</button>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container">
+        <div id="game-info">
+            Score: <span id="score">0</span> | Lives: <span id="lives">3</span>
+        </div>
+        <div id="bull">🐂</div>
+        
+        <!-- Game Over Screen -->
+        <div id="game-over">
+            <h2>GAME OVER</h2>
+            <span id="final-score"></span>
+            <span id="ranking-text"></span>
+            
+            <button onclick="window.location.reload()">Play Again</button>
+            <button id="share-button" onclick="shareScore()">Share My Score</button>
+            <div id="share-status"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- GAME CONSTANTS AND STATE ---
+        const container = document.getElementById('game-container');
+        const bull = document.getElementById('bull');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const rankingText = document.getElementById('ranking-text');
+        const introScreen = document.getElementById('intro-screen');
+        const introImage = document.getElementById('intro-image');
+        const shareStatus = document.getElementById('share-status');
+        
+        let GAME_WIDTH = 400; // Will be updated on start
+        let BULL_WIDTH = 50;  // Will be updated on start
+        const WORM_HEIGHT = 40;
+        
+        let bullX = 0; 
+        let score = 0;
+        let lives = 3;
+        let worms = [];
+        let gameLoopInterval;
+        let wormSpawnInterval;
+        let wormSpeed = 2; // Initial speed
+        let lastSpeedIncreaseScore = 0; // Tracks the last score when speed increased
+        
+        // ** CONTROL VARIABLES **
+        let isDragging = false;
+        let startX = 0;
+        let initialBullX = 0;
+
+        // --- INTRO SCREEN LOGIC ---
+        function hideIntroAndStartGame() {
+            introScreen.style.display = 'none';
+            container.style.display = 'block'; // Show game container
+
+            // Set dynamic dimensions after container is visible
+            GAME_WIDTH = container.clientWidth;
+            BULL_WIDTH = bull.clientWidth;
+            bullX = (GAME_WIDTH / 2) - (BULL_WIDTH / 2);
+            
+            updateBullPosition(); 
+            startGame();
+        }
+
+        // Check if intro.png exists
+        introImage.onload = () => {
+            introImage.style.display = 'block'; 
+            document.querySelector('#intro-screen h1').style.display = 'none';
+            document.querySelector('#intro-screen p').style.display = 'none';
+        };
+        introImage.onerror = () => {
+            introImage.style.display = 'none';
+        };
+        // Trigger load/error check
+        introImage.src = 'intro.png';
+
+        // --- GAME LOGIC FUNCTIONS ---
+
+        /** Updates the bull's position in the DOM. */
+        function updateBullPosition() {
+            bull.style.left = bullX + 'px';
+        }
+
+        /** Creates a new worm element at a random X position. */
+        function createWorm() {
+            const worm = document.createElement('div');
+            worm.classList.add('worm');
+            worm.innerHTML = '🐛'; // Worm emoji
+            
+            const maxLeft = GAME_WIDTH - worm.clientWidth;
+            const randomX = Math.floor(Math.random() * maxLeft);
+            worm.style.left = randomX + 'px';
+            
+            container.appendChild(worm);
+            
+            worms.push({ element: worm, y: -WORM_HEIGHT });
+        }
+
+        /** Handles the main game loop logic. */
+        function gameLoop() {
+            // 1. Move Worms and Check for Collisions/Misses
+            worms.forEach((worm, index) => {
+                // Move the worm down
+                worm.y += wormSpeed;
+                worm.element.style.top = worm.y + 'px';
+
+                // Check for CATCH (Collision with Bull)
+                const isCatch = (
+                    worm.y + WORM_HEIGHT >= container.clientHeight - bull.clientHeight && 
+                    worm.element.offsetLeft + worm.element.clientWidth > bullX &&
+                    worm.element.offsetLeft < bullX + bull.clientWidth 
+                );
+
+                if (isCatch) {
+                    // Catch logic
+                    container.removeChild(worm.element);
+                    worms.splice(index, 1);
+                    score++;
+                    scoreDisplay.textContent = score;
+                    
+                    // Progressive Speed Increase Check
+                    if (score > lastSpeedIncreaseScore && score % 10 === 0 && wormSpeed < 10) { 
+                        wormSpeed += 0.2; // Slow, consistent increase
+                        lastSpeedIncreaseScore = score; // Update threshold
+                    }
+                } 
+                // Check for MISS (Worm hit the bottom)
+                else if (worm.y > container.clientHeight) {
+                    // Miss logic
+                    container.removeChild(worm.element);
+                    worms.splice(index, 1);
+                    lives--;
+                    livesDisplay.textContent = lives;
+
+                    if (lives <= 0) {
+                        endGame();
+                    }
+                }
+            });
+            
+            // Filter out worms that were removed to clean the array
+            worms = worms.filter(worm => container.contains(worm.element)); 
+        }
+
+        /** Determines the player's ranking based on their final score. */
+        function getRanking(finalScore) {
+            if (finalScore >= 101) return "VrilXen!!";
+            if (finalScore >= 76) return "Toast, Tomato, and Avocado";
+            if (finalScore >= 51) return "Toast with Tomato";
+            if (finalScore >= 21) return "Toast with Butter";
+            if (finalScore >= 11) return "On Toast";
+            return "No Toast";
+        }
+
+        /** Ends the game, stops intervals, and shows the game over screen. */
+        function endGame() {
+            clearInterval(gameLoopInterval);
+            clearInterval(wormSpawnInterval);
+
+            const finalRank = getRanking(score);
+            
+            finalScoreDisplay.textContent = `Final Score: ${score}`;
+            rankingText.textContent = `Ranking: ${finalRank}`;
+            gameOverScreen.style.display = 'flex'; // Use flex for centering content
+
+            // Prepare share message for the button
+            document.getElementById('share-button').dataset.shareText = 
+                `I scored ${score} (${finalRank}) on Vrilxen - Wormatron Invasion! Can you beat my high score? #VrilxenWormatron`;
+        }
+
+        // --- CONTROL HANDLERS ---
+        function handleMove(clientX) {
+            if (!isDragging) return;
+            
+            const containerRect = container.getBoundingClientRect();
+            // Calculate movement relative to the container's left edge, not the document
+            const newX = clientX - containerRect.left - (bull.clientWidth / 2);
+
+            // Clamp new position to boundaries of the game container
+            const maxBullX = GAME_WIDTH - BULL_WIDTH;
+            bullX = Math.min(maxBullX, Math.max(0, newX));
+            
+            updateBullPosition();
+        }
+
+        // MOUSE/TOUCH START
+        function startDrag(clientX) {
+            isDragging = true;
+            const containerRect = container.getBoundingClientRect();
+            // Calculate where the bull should be positioned based on the touch/click point
+            initialBullX = clientX - containerRect.left - (bull.clientWidth / 2); 
+            // Clamp initial position
+            const maxBullX = GAME_WIDTH - BULL_WIDTH;
+            bullX = Math.min(maxBullX, Math.max(0, initialBullX));
+            updateBullPosition();
+            
+            // Update startX to match the current touch/mouse position for tracking delta
+            startX = clientX;
+            
+            // Set initial bullX for accurate drag calculation
+            initialBullX = bullX;
+        }
+
+        // MOUSE CONTROLS
+        bull.addEventListener('mousedown', (e) => {
+            startDrag(e.clientX);
+            e.preventDefault(); 
+        });
+        document.addEventListener('mousemove', (e) => {
+            handleMove(e.clientX);
+        });
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        // TOUCH CONTROLS
+        bull.addEventListener('touchstart', (e) => {
+            startDrag(e.touches[0].clientX);
+            e.preventDefault();
+        });
+        document.addEventListener('touchmove', (e) => {
+            handleMove(e.touches[0].clientX);
+        }, { passive: false });
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // --- SOCIAL MEDIA SHARE FUNCTION ---
+        function shareScore() {
+            const shareText = document.getElementById('share-button').dataset.shareText;
+            
+            // Use a temporary textarea to hold the text for copy command
+            const tempInput = document.createElement('textarea');
+            tempInput.value = shareText;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                const msg = successful ? 'Copied to clipboard!' : 'Failed to copy.';
+                shareStatus.textContent = msg;
+            } catch (err) {
+                shareStatus.textContent = 'Copy failed. Browser restriction.';
+            }
+            
+            document.body.removeChild(tempInput);
+            
+            // Clear status after a short delay
+            setTimeout(() => {
+                shareStatus.textContent = '';
+            }, 3000);
+        }
+
+        /** Starts the game by initializing intervals and event listeners. */
+        function startGame() {
+            // Start the main game loop (runs 60 times per second)
+            gameLoopInterval = setInterval(gameLoop, 1000 / 60);
+
+            // Start spawning worms (every 1.5 seconds)
+            wormSpawnInterval = setInterval(createWorm, 1500); 
+        }
+    </script>
+
+</body>
+</html>
