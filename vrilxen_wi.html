@@ -61,8 +61,8 @@
         #game-container {
             width: 400px;
             height: 600px;
-            border: 5px solid #ff0000;
-            background-color: #001f3f; /* Dark blue sky */
+            /* border: 5px solid #ff0000; REMOVED RED BORDER */
+            background-color: #000000; /* CHANGED BACKGROUND TO BLACK */
             position: relative;
             overflow: hidden;
             display: none;
@@ -112,7 +112,7 @@
 
         /* --- Game Over Screen Styling --- */
         #game-over {
-            display: none; /* FIX: Ensure this is the only display property here */
+            display: none; 
             position: absolute;
             top: 0;
             left: 0;
@@ -124,7 +124,6 @@
             padding-top: 200px;
             font-size: 2em;
             z-index: 100;
-            /* display: flex; REMOVED as it caused the game over screen to always show */
             flex-direction: column;
             align-items: center;
         }
@@ -295,8 +294,8 @@
                     score++;
                     scoreDisplay.textContent = score;
                     
-                    // Progressive Speed Increase Check
-                    if (score > lastSpeedIncreaseScore && score % 10 === 0 && wormSpeed < 10) { 
+                    // Progressive Speed Increase Check: Now every 5 points!
+                    if (score > lastSpeedIncreaseScore && score % 5 === 0 && wormSpeed < 10) { 
                         wormSpeed += 0.2; // Slow, consistent increase
                         lastSpeedIncreaseScore = score; // Update threshold
                     }
