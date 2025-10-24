@@ -2,19 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Copter</title>
+    <title>Pixel Copter Deluxe</title>
     <style>
-        body { margin: 0; background-color: #333; display: flex; flex-direction: column; align-items: center; }
-        canvas { border: 2px solid white; background-color: #000; }
-        .controls { margin-top: 10px; }
-        .control-button { padding: 10px 20px; font-size: 18px; cursor: pointer; }
+        body { 
+            margin: 0; 
+            background-color: #333; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            color: white;
+            font-family: monospace;
+        }
+        canvas { 
+            border: 2px solid white; 
+            background-color: #000; 
+            position: relative;
+        }
+        .controls-panel { 
+            display: flex; 
+            margin: 10px 0; 
+            gap: 15px; 
+            align-items: center;
+        }
+        .controls-panel label {
+            font-size: 14px;
+        }
+        .controls-panel input {
+            width: 50px;
+            padding: 3px;
+            text-align: center;
+        }
+        .mobile-controls {
+            margin-top: 10px;
+        }
+        .control-button { 
+            padding: 10px 20px; 
+            font-size: 18px; 
+            cursor: pointer; 
+        }
+
+        /* Attract Screen Styles */
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 800px; /* Match canvas width */
+            height: 400px; /* Match canvas height */
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 24px;
+        }
+        #startButton {
+            padding: 15px 30px;
+            font-size: 28px;
+            cursor: pointer;
+            margin-top: 20px;
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
-    <div class="controls">
-        <button id="upButton" class="control-button">⬆️ Up</button>
+    <h1>Pixel Copter Deluxe</h1>
+
+    <div class="controls-panel">
+        <label for="thrustInput">THRUST:</label>
+        <input type="number" id="thrustInput" value="6" step="0.1" min="1">
+        
+        <label for="gravityInput">GRAVITY:</label>
+        <input type="number" id="gravityInput" value="0.3" step="0.05" min="0.05">
+        
+        <label for="maxSpeedInput">MAX SPEED:</label>
+        <input type="number" id="maxSpeedInput" value="8" step="0.5" min="1">
+    </div>
+
+    <div style="position: relative;">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <div id="startScreen">
+            <h2 id="screenTitle">PIXEL COPTER</h2>
+            <p id="crashMessage" style="color: red; display: none;">CRASHED! Press Start to fly again.</p>
+            <button id="startButton">START GAME</button>
+            <p>Use **Arrow Up** or the **Up Button** to fly.</p>
+            <p style="font-size: 18px; margin-top: 10px;">Adjust values above for a challenge!</p>
         </div>
-    <script src="cc_game.js"></script>
+    </div>
+    
+    <div class="mobile-controls">
+        <button id="upButton" class="control-button">⬆️ Up</button>
+    </div>
+    
+    <script src="game.js"></script>
 </body>
 </html>
