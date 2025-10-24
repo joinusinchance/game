@@ -1,9 +1,24 @@
 // Game Setup
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-let gameLoopId;
+const startScreen = document.getElementById('startScreen');
+const startButton = document.getElementById('startButton');
+const crashMessage = document.getElementById('crashMessage');
 
-// Helicopter State (Simple Pixel Art: a rectangle)
+let gameLoopId;
+let gameRunning = false;
+
+// Input Elements
+const thrustInput = document.getElementById('thrustInput');
+const gravityInput = document.getElementById('gravityInput');
+const maxSpeedInput = document.getElementById('maxSpeedInput');
+
+// Game State Variables (Initialized from inputs later)
+let GRAVITY = parseFloat(gravityInput.value);
+let UP_THRUST = -parseFloat(thrustInput.value);
+let MAX_SPEED = parseFloat(maxSpeedInput.value);
+
+// Helicopter State
 const helicopter = {
     x: 50,
     y: canvas.height / 2,
@@ -13,37 +28,29 @@ const helicopter = {
     color: 'red'
 };
 
-// Physics Constants
-const GRAVITY = 0.3;
-const UP_THRUST = -6;
-const MAX_SPEED = 8;
-let isThrusting = false; // Flag for continuous up movement
-
-// Game Environment - Simple continuous obstacles (like the classic 'Copter' game)
-let walls = [];
+// Physics/Environment Constants
 const WALL_WIDTH = 50;
 const WALL_GAP_HEIGHT = 120;
 const WALL_SPEED = 3;
+let walls = [];
 let nextWallX = canvas.width;
+let isThrusting = false;
 
 // --- Helper Functions ---
 
-// Function to draw the helicopter
 function drawHelicopter() {
     ctx.fillStyle = helicopter.color;
     ctx.fillRect(helicopter.x, helicopter.y, helicopter.width, helicopter.height);
 }
 
-// Function to draw one wall segment
 function drawWall(wall) {
-    ctx.fillStyle = 'green'; // Destructive environment color
+    ctx.fillStyle = 'green';
     // Top Wall
     ctx.fillRect(wall.x, 0, WALL_WIDTH, wall.topHeight);
     // Bottom Wall
     ctx.fillRect(wall.x, wall.bottomY, WALL_WIDTH, canvas.height - wall.bottomY);
 }
 
-// Function to generate a new wall segment
 function generateWall() {
     const minHeight = 20;
     const maxHeight = canvas.height - WALL_GAP_HEIGHT - minHeight;
@@ -56,41 +63,41 @@ function generateWall() {
         bottomY: bottomY
     });
 
-    // Plan for the next wall position
-    nextWallX += WALL_WIDTH + 150; // Wall width + space between walls
+    nextWallX += WALL_WIDTH + 150;
 }
 
 // --- Game Logic ---
 
-function update() {
-    // 1. **Physics Update**
+function updatePhysics() {
+    // Read and update physics values from text boxes on every frame (allows "live" tuning)
+    GRAVITY = parseFloat(gravityInput.value) || 0.3;
+    UP_THRUST = -parseFloat(thrustInput.value) || -6;
+    MAX_SPEED = parseFloat(maxSpeedInput.value) || 8;
+
     if (isThrusting) {
         helicopter.dy = UP_THRUST;
     } else {
-        // Apply gravity
         helicopter.dy += GRAVITY;
     }
 
-    // Clamp speed (optional, for stability)
+    // Clamp speed
     helicopter.dy = Math.min(Math.max(helicopter.dy, -MAX_SPEED), MAX_SPEED);
-
-    // Apply velocity to position
     helicopter.y += helicopter.dy;
 
-    // 2. **Environment/Wall Update**
+    // Environment/Wall Update
     walls.forEach(wall => {
         wall.x -= WALL_SPEED;
     });
 
-    // Remove off-screen walls
     walls = walls.filter(wall => wall.x + WALL_WIDTH > 0);
 
     // Generate new walls
     if (nextWallX < canvas.width + WALL_WIDTH) {
         generateWall();
     }
+}
 
-    // 3. **Collision Detection**
+function checkCollision() {
     let isCrashed = false;
 
     // Screen Bounds Collision
@@ -98,51 +105,79 @@ function update() {
         isCrashed = true;
     }
 
-    // Wall Collision (Simple AABB-based detection)
+    // Wall Collision (AABB detection)
     walls.forEach(wall => {
         // Check for X overlap
         if (helicopter.x + helicopter.width > wall.x && helicopter.x < wall.x + WALL_WIDTH) {
-            // Check for Y overlap with TOP wall
-            if (helicopter.y < wall.topHeight) {
-                isCrashed = true;
-            }
-            // Check for Y overlap with BOTTOM wall
-            if (helicopter.y + helicopter.height > wall.bottomY) {
+            // Check for Y overlap with TOP wall OR BOTTOM wall
+            if (helicopter.y < wall.topHeight || helicopter.y + helicopter.height > wall.bottomY) {
                 isCrashed = true;
             }
         }
     });
 
     if (isCrashed) {
-        cancelAnimationFrame(gameLoopId);
-        alert('Crashed! Game Over. Press OK to restart.');
-        initGame(); // Simple restart
+        gameOver();
     }
 }
 
 function draw() {
-    // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw Walls
     walls.forEach(drawWall);
-
-    // Draw Helicopter
     drawHelicopter();
 }
 
 function loop() {
-    update();
+    if (!gameRunning) return;
+
+    updatePhysics();
+    checkCollision();
     draw();
     gameLoopId = requestAnimationFrame(loop);
 }
 
+// --- Game Flow Control ---
+
+function startGame() {
+    if (gameRunning) return;
+    
+    // Hide start screen and reset messages
+    startScreen.style.display = 'none';
+    crashMessage.style.display = 'none';
+    
+    // Reset state
+    helicopter.y = canvas.height / 2;
+    helicopter.dy = 0;
+    walls = [];
+    nextWallX = canvas.width;
+    isThrusting = false;
+    gameRunning = true;
+    
+    // Generate initial walls
+    generateWall(); 
+    generateWall();
+    
+    // Start the game loop
+    loop();
+}
+
+function gameOver() {
+    gameRunning = false;
+    cancelAnimationFrame(gameLoopId);
+    
+    // Show the attract screen with crash message
+    crashMessage.style.display = 'block';
+    startScreen.style.display = 'flex';
+}
+
 // --- Input Handling ---
 
-// Keyboard Events (Arrow Keys)
+// Keyboard Events
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowUp' || e.key === ' ') {
+    if (gameRunning && (e.key === 'ArrowUp' || e.key === ' ')) {
         isThrusting = true;
+    } else if (!gameRunning && e.key === ' '){
+        startGame(); // Start game with Spacebar from the attract screen
     }
 });
 
@@ -155,32 +190,25 @@ document.addEventListener('keyup', (e) => {
 // On-Screen Button Events
 const upButton = document.getElementById('upButton');
 
-upButton.addEventListener('mousedown', () => { isThrusting = true; });
+upButton.addEventListener('mousedown', () => { 
+    if (!gameRunning) startGame(); 
+    isThrusting = true; 
+});
 upButton.addEventListener('mouseup', () => { isThrusting = false; });
-upButton.addEventListener('touchstart', (e) => { e.preventDefault(); isThrusting = true; }, { passive: false });
-upButton.addEventListener('touchend', (e) => { e.preventDefault(); isThrusting = false; }, { passive: false });
+upButton.addEventListener('touchstart', (e) => { 
+    e.preventDefault(); 
+    if (!gameRunning) startGame();
+    isThrusting = true; 
+}, { passive: false });
+upButton.addEventListener('touchend', (e) => { 
+    e.preventDefault(); 
+    isThrusting = false; 
+}, { passive: false });
 
+// Start Button Handler
+startButton.addEventListener('click', startGame);
 
 // --- Initialization ---
-
-function initGame() {
-    // Reset state
-    helicopter.y = canvas.height / 2;
-    helicopter.dy = 0;
-    walls = [];
-    nextWallX = canvas.width;
-    isThrusting = false;
-    
-    // Generate initial walls
-    generateWall(); 
-    generateWall();
-    
-    // Start the game loop
-    if (gameLoopId) {
-        cancelAnimationFrame(gameLoopId);
-    }
-    loop();
-}
-
-// Start the game for the first time
-initGame();
+// Display the attract screen when the page loads
+draw(); 
+// The game will start when the user clicks the "START GAME" button.
