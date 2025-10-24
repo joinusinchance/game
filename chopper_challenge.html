@@ -2,101 +2,717 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Copter Deluxe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helitanker Lander V2 - Customizable Physics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { 
-            margin: 0; 
-            background-color: #333; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            color: white;
-            font-family: monospace;
+        /* Custom styles for the game area */
+        #gameCanvas {
+            border: 4px solid #1a202c; /* Dark border */
+            background-color: #0b1120; /* Deep blue night sky */
+            display: block;
+            touch-action: none; 
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            margin-top: 1rem;
         }
-        canvas { 
-            border: 2px solid white; 
-            background-color: #000; 
-            position: relative;
-        }
-        .controls-panel { 
-            display: flex; 
-            margin: 10px 0; 
-            gap: 15px; 
-            align-items: center;
-        }
-        .controls-panel label {
-            font-size: 14px;
-        }
-        .controls-panel input {
-            width: 50px;
-            padding: 3px;
-            text-align: center;
-        }
-        .mobile-controls {
-            margin-top: 10px;
-        }
-        .control-button { 
-            padding: 10px 20px; 
-            font-size: 18px; 
-            cursor: pointer; 
-        }
-
-        /* Attract Screen Styles */
-        #startScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 800px; /* Match canvas width */
-            height: 400px; /* Match canvas height */
-            background-color: rgba(0, 0, 0, 0.8);
+        .game-container {
+            width: 100%;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align: center;
-            font-size: 24px;
+            flex-direction: column;
+            padding: 1rem;
         }
-        #startButton {
-            padding: 15px 30px;
-            font-size: 28px;
-            cursor: pointer;
-            margin-top: 20px;
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            border-radius: 5px;
+        .hud-stat {
+            font-size: 0.875rem;
+            text-align: right;
+            font-weight: bold;
         }
     </style>
 </head>
-<body>
-    <h1>Pixel Copter Deluxe</h1>
+<body class="bg-gray-900 min-h-screen font-mono antialiased flex flex-col items-center p-4 text-white">
 
-    <div class="controls-panel">
-        <label for="thrustInput">THRUST:</label>
-        <input type="number" id="thrustInput" value="6" step="0.1" min="1">
-        
-        <label for="gravityInput">GRAVITY:</label>
-        <input type="number" id="gravityInput" value="0.3" step="0.05" min="0.05">
-        
-        <label for="maxSpeedInput">MAX SPEED:</label>
-        <input type="number" id="maxSpeedInput" value="8" step="0.5" min="1">
-    </div>
+    <!-- Tailwind Container -->
+    <div class="game-container max-w-4xl mx-auto rounded-xl shadow-2xl bg-gray-800">
+        <h1 class="text-3xl font-extrabold text-yellow-400 mb-4 border-b-2 border-yellow-400 pb-2 w-full text-center">
+            Helitanker Fire Lander
+        </h1>
 
-    <div style="position: relative;">
-        <canvas id="gameCanvas" width="800" height="400"></canvas>
-        <div id="startScreen">
-            <h2 id="screenTitle">PIXEL COPTER</h2>
-            <p id="crashMessage" style="color: red; display: none;">CRASHED! Press Start to fly again.</p>
-            <button id="startButton">START GAME</button>
-            <p>Use **Arrow Up** or the **Up Button** to fly.</p>
-            <p style="font-size: 18px; margin-top: 10px;">Adjust values above for a challenge!</p>
+        <!-- Instructions Panel -->
+        <div id="instructions" class="bg-blue-900 border-l-4 border-blue-400 text-blue-200 p-4 mb-6 rounded-lg w-full">
+            <p class="font-bold mb-1 text-white">Controls (Stable Flight):</p>
+            <ul class="list-disc list-inside text-sm">
+                <li><span class="bg-gray-600 px-1 rounded">UP Arrow</span>: Primary Vertical Thrust</li>
+                <li><span class="bg-gray-600 px-1 rounded">LEFT/RIGHT Arrows</span>: Horizontal Thrust</li>
+                <li><span class="bg-red-600 px-1 rounded">SPACEBAR</span>: Drop Water</li>
+                <li>**Objective:** Put out all fires and land safely.</li>
+            </ul>
+        </div>
+
+        <!-- Canvas for the Game -->
+        <canvas id="gameCanvas" width="800" height="600" class="rounded-lg"></canvas>
+
+        <!-- HUD Panel -->
+        <div id="hud" class="mt-4 p-3 bg-gray-900 text-white rounded-lg w-full max-w-xl">
+            <div class="flex justify-between items-center text-yellow-400">
+                <span class="hud-stat">FUEL: <span id="fuelLevel" class="text-green-400">100%</span></span>
+                <span class="hud-stat">WATER: <span id="waterLevel" class="text-blue-400">100%</span></span>
+                <span class="hud-stat">ALT: <span id="altitude" class="text-indigo-400">0 m</span></span>
+                <span class="hud-stat">V VEL: <span id="vVelocity" class="text-red-400">0.0 m/s</span></span>
+            </div>
+            <div id="messageBox" class="text-center mt-2 p-2 rounded-lg text-sm font-bold bg-yellow-900/50 text-yellow-300">
+                Welcome, Helitanker Pilot! Press UP to begin.
+            </div>
         </div>
     </div>
-    
-    <div class="mobile-controls">
-        <button id="upButton" class="control-button">⬆️ Up</button>
-    </div>
-    
-    <script src="game.js"></script>
+
+    <script type="module">
+        // --- FIREBASE BOILERPLATE (Required for the environment, not used for game state) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db, auth;
+        if (firebaseConfig) {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('Debug');
+                onAuthStateChanged(auth, async (user) => {
+                    if (!user) {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken).catch(e => { signInAnonymously(auth); });
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                });
+            } catch (error) { console.error("Firebase initialization failed:", error); }
+        }
+        // --- END FIREBASE SETUP ---
+
+        // --- GAME CORE LOGIC ---
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const WIDTH = canvas.width;
+        const HEIGHT = canvas.height;
+        
+        // Physics Constants (DEFAULT VALUES)
+        const BASE_GRAVITY = 0.005; 
+        const MAIN_THRUST = 0.008; 
+        const SIDE_THRUST = 0.003; 
+        const CRASH_VELOCITY = 0.15; // Max vertical speed for safe landing (pixels/ms)
+        const MAX_VELOCITY = 0.3; 
+        
+        // Water Drop Physics
+        const WATER_FALL_VELOCITY = 0.001;
+        const WATER_DROP_GRAVITY = 0.008;
+        
+        // Resource Constants
+        const MAX_FUEL = 1000;
+        const MAX_WATER = 500;
+        const FUEL_CONSUMPTION_MAIN = 3;
+        const FUEL_CONSUMPTION_SIDE = 1;
+        const WATER_CONSUMPTION_DROP = 50;
+        const WATER_PUTOUT_AMOUNT = 50;
+        const RESUPPLY_RATE = 20;
+
+        // Game State
+        const state = {
+            lander: {
+                x: WIDTH / 2,
+                y: 50,
+                vx: 0, 
+                vy: 0,
+                angle: 0, 
+                fuel: MAX_FUEL,
+                water: MAX_WATER,
+                crashed: false,
+                landed: false,
+            },
+            keys: {},
+            lastTime: 0,
+            fires: [], 
+            pads: [], 
+            waterDrops: [], 
+            message: "Welcome, Helitanker Pilot! Press UP to begin.",
+            messageTimeout: null,
+            score: 0,
+            gameState: 'menu', 
+            // CUSTOMIZABLE PHYSICS VALUES (Used in the game loop)
+            customGravity: BASE_GRAVITY, 
+            customCrashVelocity: CRASH_VELOCITY, 
+            customMainThrust: MAIN_THRUST,
+            customSideThrust: SIDE_THRUST,
+            // Blade oscillation state
+            bladeTimer: 0, 
+            bladeSpeed: 0.005, // Speed for oscillation based on dt
+            menuSelection: 0, 
+            optionSelection: 0, 
+        };
+
+        // DOM Elements
+        const fuelLevelEl = document.getElementById('fuelLevel');
+        const waterLevelEl = document.getElementById('waterLevel');
+        const altitudeEl = document.getElementById('altitude');
+        const vVelocityEl = document.getElementById('vVelocity');
+        const messageBox = document.getElementById('messageBox');
+
+        // --- GAME UTILITIES ---
+
+        function resetGame() {
+            state.lander = {
+                x: WIDTH / 2,
+                y: 50,
+                vx: 0,
+                vy: 0,
+                angle: 0, 
+                fuel: MAX_FUEL,
+                water: MAX_WATER,
+                crashed: false,
+                landed: false,
+            };
+            // Reset fires health
+            state.fires.forEach(f => f.health = 100);
+            state.waterDrops = [];
+            state.score = 0;
+            state.win = false;
+            state.gameState = 'playing'; 
+            state.bladeTimer = 0;
+        }
+
+        function setupWorld() {
+            // Landing Platform (blue for combined Refuel/Resupply)
+            state.pads.push({ x: WIDTH * 0.15, y: HEIGHT - 20, w: 100, type: 'resupply' });
+            state.pads.push({ x: WIDTH * 0.85, y: HEIGHT - 20, w: 100, type: 'resupply' });
+
+            // Fire locations
+            state.fires.push({ x: WIDTH * 0.35, health: 100 });
+            state.fires.push({ x: WIDTH * 0.55, health: 100 });
+            state.fires.push({ x: WIDTH * 0.70, health: 100 });
+        }
+
+        // Event Listeners
+        window.addEventListener('keydown', (e) => {
+            state.keys[e.key] = true;
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            state.keys[e.key] = false;
+        });
+
+        function displayMessage(text, isError = false) {
+            clearTimeout(state.messageTimeout);
+            messageBox.textContent = text;
+            messageBox.className = `text-center mt-2 p-2 rounded-lg text-sm font-bold w-full ${isError ? 'bg-red-900/50 text-red-300' : 'bg-yellow-900/50 text-yellow-300'}`;
+            if (!isError) {
+                state.messageTimeout = setTimeout(() => {
+                    messageBox.textContent = " "; 
+                    messageBox.className = "text-center mt-2 p-2 rounded-lg text-sm font-bold w-full";
+                }, 3000);
+            }
+        }
+        
+        // --- INPUT HANDLER FOR MENUS, OPTIONS, & END SCREENS ---
+        function handleMenuInput() {
+            
+            // 1. Handle Game Over/Win screen input (return to menu)
+            if (state.gameState === 'crashed' || state.gameState === 'win') {
+                if (state.keys[' '] || state.keys['r'] || state.keys['R']) {
+                    state.keys[' '] = false; state.keys['r'] = false; state.keys['R'] = false;
+                    state.gameState = 'menu';
+                    displayMessage("Ready for a new mission, Pilot.");
+                }
+                return;
+            }
+
+            if (state.keys[' ']) { // SPACEBAR to select/start
+                state.keys[' '] = false; 
+                if (state.gameState === 'menu') {
+                    if (state.menuSelection === 0) { // Start Game
+                        resetGame();
+                        displayMessage("Fires await! Land slowly to avoid crashing.");
+                    } else if (state.menuSelection === 1) { // Go to Options
+                        state.gameState = 'options';
+                        state.optionSelection = 0; 
+                    }
+                } else if (state.gameState === 'options') {
+                    if (state.optionSelection === 4) { // Back to Menu (Index 4)
+                        state.gameState = 'menu';
+                        state.menuSelection = 0;
+                    }
+                }
+            }
+
+            if (state.gameState === 'menu') {
+                if (state.keys['ArrowUp']) { state.menuSelection = Math.max(0, state.menuSelection - 1); state.keys['ArrowUp'] = false; }
+                if (state.keys['ArrowDown']) { state.menuSelection = Math.min(1, state.menuSelection + 1); state.keys['ArrowDown'] = false; }
+            } else if (state.gameState === 'options') {
+                 // Option navigation (0-4)
+                 if (state.keys['ArrowUp']) { state.optionSelection = Math.max(0, state.optionSelection - 1); state.keys['ArrowUp'] = false; }
+                 if (state.keys['ArrowDown']) { state.optionSelection = Math.min(4, state.optionSelection + 1); state.keys['ArrowDown'] = false; }
+
+                 // Change settings logic
+                 let prop, minVal, maxVal, step;
+                 const baseStep = 0.0005;
+
+                 switch (state.optionSelection) {
+                     case 0: // GRAVITY
+                         prop = 'customGravity'; minVal = 0.0005; maxVal = 0.02; step = baseStep; break;
+                     case 1: // CRASH VELOCITY
+                         prop = 'customCrashVelocity'; minVal = 0.05; maxVal = 0.5; step = 0.01; break; // Larger step for visible change
+                     case 2: // MAIN THRUST
+                         prop = 'customMainThrust'; minVal = 0.001; maxVal = 0.05; step = baseStep * 2; break; 
+                     case 3: // SIDE THRUST
+                         prop = 'customSideThrust'; minVal = 0.0005; maxVal = 0.01; step = baseStep; break; 
+                     default: return;
+                 }
+                 
+                 // Apply changes
+                 if (state.keys['ArrowLeft']) {
+                     state[prop] = Math.max(minVal, state[prop] - step);
+                     state.keys['ArrowLeft'] = false;
+                 }
+                 if (state.keys['ArrowRight']) {
+                     state[prop] = Math.min(maxVal, state[prop] + step);
+                     state.keys['ArrowRight'] = false;
+                 }
+            }
+        }
+        
+        // --- UPDATE LOGIC ---
+        function update(timestamp) {
+            
+            if (state.gameState !== 'playing') {
+                state.lastTime = timestamp;
+                handleMenuInput();
+                requestAnimationFrame(update);
+                return;
+            }
+
+            const dt = timestamp - state.lastTime;
+            if (dt === 0) {
+                state.lastTime = timestamp;
+                requestAnimationFrame(update);
+                return;
+            }
+            state.lastTime = timestamp;
+
+            const lander = state.lander;
+            
+            // 1. Apply Gravity (using customizable value)
+            lander.vy += state.customGravity * dt;
+            
+            // Update blade oscillation timer based on time delta
+            state.bladeTimer += dt * state.bladeSpeed;
+
+            // 2. Handle Input and Thrust
+            let isThrusting = false;
+            
+            if (lander.fuel > 0) {
+                
+                // Vertical Thrust (Uses customMainThrust)
+                if (state.keys['ArrowUp']) {
+                    lander.vy -= state.customMainThrust * dt; 
+                    lander.fuel -= FUEL_CONSUMPTION_MAIN;
+                    isThrusting = true;
+                }
+                
+                // Horizontal Movement (Uses customSideThrust)
+                if (state.keys['ArrowLeft']) {
+                    lander.vx -= state.customSideThrust * dt;
+                    lander.fuel -= FUEL_CONSUMPTION_SIDE;
+                }
+                if (state.keys['ArrowRight']) {
+                    lander.vx += state.customSideThrust * dt;
+                    lander.fuel -= FUEL_CONSUMPTION_SIDE;
+                }
+                
+                if (lander.fuel < 0) lander.fuel = 0;
+            } else {
+                displayMessage("OUT OF FUEL! Gravity is your only co-pilot.", true);
+            }
+            
+            // 3. Update Position and Clamp Velocity (Max velocity is fixed)
+            lander.vx = Math.min(Math.max(lander.vx, -MAX_VELOCITY), MAX_VELOCITY);
+            lander.vy = Math.min(Math.max(lander.vy, -MAX_VELOCITY), MAX_VELOCITY);
+            
+            lander.x += lander.vx * dt;
+            lander.y += lander.vy * dt;
+
+            // Clamp horizontal position (wrap around)
+            if (lander.x < 0) lander.x = WIDTH;
+            if (lander.x > WIDTH) lander.x = 0;
+            
+            // 4. Ground Collision and Landing Check
+            const groundY = HEIGHT - 20;
+            if (lander.y + 10 >= groundY) {
+                lander.y = groundY - 10;
+                lander.landed = true;
+                lander.vx = 0;
+                
+                // Crash Check (Uses customCrashVelocity)
+                if (Math.abs(lander.vy) > state.customCrashVelocity) {
+                    state.gameState = 'crashed';
+                    lander.crashed = true;
+                    lander.vy = 0;
+                    lander.angle = Math.PI / 2;
+                    displayMessage(`CRASHED! Impact Velocity: ${Math.abs(lander.vy).toFixed(2)} m/s. Max allowed: ${state.customCrashVelocity.toFixed(2)} m/s.`, true);
+                } else {
+                    lander.vy = 0;
+                    lander.angle = 0;
+                    
+                    // Resupply Check
+                    let onPad = false;
+                    for (const pad of state.pads) {
+                        if (lander.x > pad.x - pad.w / 2 && lander.x < pad.x + pad.w / 2) {
+                            onPad = true;
+                            lander.fuel = Math.min(MAX_FUEL, lander.fuel + RESUPPLY_RATE);
+                            lander.water = Math.min(MAX_WATER, lander.water + RESUPPLY_RATE);
+                            displayMessage(`Resupplying: Fuel/Water +${RESUPPLY_RATE}!`, false);
+                            break;
+                        }
+                    }
+                    if (!onPad) {
+                         displayMessage("Landed safely, but not on a resupply pad. Be careful!", false);
+                    }
+                }
+
+            } else {
+                lander.landed = false;
+            }
+
+            // 5. Water Drop Creation
+            if (state.keys[' '] && lander.water >= WATER_CONSUMPTION_DROP && !lander.landed) {
+                state.keys[' '] = false;
+                lander.water -= WATER_CONSUMPTION_DROP;
+
+                state.waterDrops.push({
+                    x: lander.x,
+                    y: lander.y + 10,
+                    vx: lander.vx * 0.5, 
+                    vy: WATER_FALL_VELOCITY,
+                    size: 3, 
+                    mass: WATER_PUTOUT_AMOUNT
+                });
+
+                displayMessage("Water dropped! Aim for the fire!", false);
+
+            } else if (state.keys[' '] && lander.water < WATER_CONSUMPTION_DROP) {
+                 state.keys[' '] = false;
+                 displayMessage("Water tank empty! Land on a blue pad to refill.", true);
+            }
+            
+            // 6. Water Drop Physics and Fire Interaction
+            const remainingDrops = [];
+            
+            for (let i = 0; i < state.waterDrops.length; i++) {
+                const drop = state.waterDrops[i];
+
+                drop.vy += WATER_DROP_GRAVITY * dt;
+                drop.x += drop.vx * dt;
+                drop.y += drop.vy * dt;
+
+                let hitGround = drop.y + drop.size >= groundY;
+                let hitFire = false;
+
+                if (!hitGround) {
+                    for (const fire of state.fires) {
+                        if (fire.health > 0 && 
+                            drop.x > fire.x - 30 && drop.x < fire.x + 30 && 
+                            drop.y > groundY - 50 && drop.y < groundY) 
+                        {
+                            fire.health -= drop.mass;
+                            hitFire = true;
+                            
+                            if (fire.health <= 0) {
+                                fire.health = 0;
+                                state.score += 100;
+                                displayMessage(`Fire extinguished! Score: ${state.score}`, false);
+                            } else {
+                                displayMessage(`Fire hit! Health remaining: ${fire.health}`, false);
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                if (!hitGround && !hitFire) {
+                    remainingDrops.push(drop);
+                }
+            }
+            state.waterDrops = remainingDrops;
+
+            // Check Win Condition
+            if (state.fires.every(f => f.health <= 0) && !state.win) {
+                state.gameState = 'win';
+                state.win = true;
+                displayMessage(`MISSION COMPLETE! All fires extinguished! Final Score: ${state.score}`, false);
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        // --- DRAW MENU/OPTIONS/END SCREEN ---
+
+        function drawMenu(ctx) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+            ctx.fillStyle = '#FFD700'; // Gold
+            ctx.font = 'bold 48px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('HELITANKER LANDER', WIDTH / 2, HEIGHT / 3);
+            
+            const options = ["START GAME", "OPTIONS"];
+            for (let i = 0; i < options.length; i++) {
+                const isSelected = state.menuSelection === i;
+                ctx.fillStyle = isSelected ? '#3B82F6' : '#E5E7EB'; // Blue if selected, white otherwise
+                ctx.font = isSelected ? 'bold 30px monospace' : '24px monospace';
+                ctx.fillText(options[i], WIDTH / 2, HEIGHT / 2 + i * 50);
+            }
+
+            ctx.fillStyle = '#6EE7B7'; // Green
+            ctx.font = '16px monospace';
+            ctx.fillText('Use UP/DOWN to navigate, SPACE to select', WIDTH / 2, HEIGHT - 50);
+        }
+
+        function drawOptions(ctx) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+            ctx.fillStyle = '#60A5FA'; // Blue
+            ctx.font = 'bold 36px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('CUSTOMIZE PHYSICS', WIDTH / 2, HEIGHT / 4);
+
+            const options = [
+                `GRAVITY: ${state.customGravity.toFixed(4)}`,
+                `CRASH VELOCITY: ${state.customCrashVelocity.toFixed(3)}`, 
+                `MAIN THRUST: ${state.customMainThrust.toFixed(4)}`, 
+                `SIDE THRUST: ${state.customSideThrust.toFixed(4)}`, 
+                "BACK TO MENU"
+            ];
+
+            for (let i = 0; i < options.length; i++) {
+                const isSelected = state.optionSelection === i;
+                ctx.fillStyle = isSelected ? '#FFD700' : '#E5E7EB'; 
+                ctx.font = isSelected ? 'bold 24px monospace' : '20px monospace';
+                ctx.fillText(options[i], WIDTH / 2, HEIGHT / 3 + 60 + i * 50);
+
+                // Draw arrows for editable settings (indices 0, 1, 2, 3)
+                if (i >= 0 && i <= 3 && isSelected) {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillText('<', WIDTH / 2 - 200, HEIGHT / 3 + 60 + i * 50);
+                    ctx.fillText('>', WIDTH / 2 + 200, HEIGHT / 3 + 60 + i * 50);
+                    ctx.font = '14px monospace';
+                    ctx.fillStyle = '#9CA3AF'; // Gray text for hint
+                    ctx.fillText('Use LEFT/RIGHT arrows to change', WIDTH / 2, HEIGHT / 3 + 60 + i * 50 + 25);
+                }
+            }
+        }
+        
+        function drawEndScreen(ctx) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+            ctx.textAlign = 'center';
+
+            if (state.gameState === 'crashed') {
+                ctx.fillStyle = '#EF4444'; 
+                ctx.font = 'bold 64px monospace';
+                ctx.fillText('MISSION FAILED!', WIDTH / 2, HEIGHT / 3);
+
+                ctx.fillStyle = '#FBBF24'; 
+                ctx.font = 'bold 28px monospace';
+                
+                const messageText = messageBox.textContent;
+                const causeStartIndex = messageText.indexOf(':') > -1 ? messageText.indexOf(':') + 1 : 0;
+                const crashReason = messageBox.textContent.substring(causeStartIndex).trim() || "Landing failure.";
+
+                ctx.fillText(`CAUSE: ${crashReason}`, WIDTH / 2, HEIGHT / 3 + 60);
+
+            } else if (state.gameState === 'win') {
+                ctx.fillStyle = '#10B981'; 
+                ctx.font = 'bold 64px monospace';
+                ctx.fillText('MISSION SUCCESS!', WIDTH / 2, HEIGHT / 3);
+
+                ctx.fillStyle = '#60A5FA'; 
+                ctx.font = 'bold 36px monospace';
+                ctx.fillText(`FINAL SCORE: ${state.score}`, WIDTH / 2, HEIGHT / 3 + 60);
+            }
+
+            ctx.fillStyle = '#E5E7EB'; 
+            ctx.font = '20px monospace';
+            ctx.fillText('Press SPACE or R to return to Main Menu', WIDTH / 2, HEIGHT - 100);
+        }
+        
+        // --- DRAW LOGIC ---
+
+        function drawHelicopter(ctx, lander, isThrusting) {
+            ctx.save();
+            ctx.translate(lander.x, lander.y);
+            ctx.rotate(lander.crashed ? Math.PI / 2 : lander.angle); 
+
+            // Body
+            ctx.fillStyle = '#6e7f80';
+            ctx.fillRect(-10, -10, 20, 20);
+            
+            // Cockpit
+            ctx.fillStyle = '#ADD8E6';
+            ctx.fillRect(-8, -8, 8, 8);
+
+            // Landing Skids
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-15, 10, 30, 3);
+            
+            // Main Rotor (Oscillating Motion - The requested change)
+            const maxOscillationAngle = 30; // Max left/right swing in degrees
+            const oscillationAngleRad = Math.sin(state.bladeTimer) * maxOscillationAngle * (Math.PI / 180);
+
+            ctx.save();
+            // Apply the oscillation to the blade's rotation
+            ctx.rotate(oscillationAngleRad); 
+            
+            // Draw the blade (longer and thinner)
+            const rotorLength = 100;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillRect(-rotorLength / 2, -15, rotorLength, 2); 
+            
+            ctx.restore();
+
+
+            // Thrust Flame
+            if (isThrusting && lander.fuel > 0) {
+                ctx.fillStyle = (Math.random() > 0.5) ? 'orange' : 'yellow';
+                ctx.beginPath();
+                ctx.moveTo(-5, 13);
+                ctx.lineTo(5, 13);
+                ctx.lineTo(0, 13 + 15 * Math.random());
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+        
+        function drawFire(ctx, fire) {
+            if (fire.health <= 0) return;
+
+            const maxH = 20;
+            const height = maxH * (fire.health / 100);
+            const groundY = HEIGHT - 20;
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+            ctx.fillRect(fire.x - 20, groundY - 5, 40, 5);
+
+            for (let i = 0; i < 5; i++) {
+                const flameHeight = height * (0.5 + Math.random() * 0.5);
+                const flameWidth = 5 + Math.random() * 5;
+                const offset = Math.random() * 10 - 5;
+                const base = groundY - 5;
+
+                ctx.fillStyle = Math.random() < 0.5 ? 'orange' : 'red';
+                ctx.beginPath();
+                ctx.moveTo(fire.x + offset, base);
+                ctx.lineTo(fire.x + offset + flameWidth, base);
+                ctx.lineTo(fire.x + offset + flameWidth / 2, base - flameHeight);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+        
+        function drawWaterDrops(ctx) {
+             for (const drop of state.waterDrops) {
+                ctx.fillStyle = 'rgba(0, 191, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(drop.x, drop.y, drop.size, 0, Math.PI * 2); 
+                ctx.fill();
+             }
+        }
+
+
+        function draw() {
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+            // 1. Draw Ground
+            ctx.fillStyle = '#4B5563'; 
+            ctx.fillRect(0, HEIGHT - 20, WIDTH, 20);
+
+            // 2. Draw Pads
+            for (const pad of state.pads) {
+                ctx.fillStyle = '#3B82F6'; 
+                ctx.fillRect(pad.x - pad.w / 2, pad.y, pad.w, HEIGHT - pad.y);
+                
+                ctx.fillStyle = '#E5E7EB';
+                ctx.font = '10px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('RESUPPLY', pad.x, pad.y + 10);
+            }
+
+            // 3. Draw Fires
+            for (const fire of state.fires) {
+                drawFire(ctx, fire);
+            }
+            
+            if (state.gameState === 'menu') {
+                drawMenu(ctx);
+            } else if (state.gameState === 'options') {
+                drawOptions(ctx);
+            } else if (state.gameState === 'crashed' || state.gameState === 'win') {
+                drawEndScreen(ctx);
+            } else {
+                // Main game drawing logic
+                
+                // 4. Draw Falling Water Drops
+                drawWaterDrops(ctx);
+
+                // 5. Draw Helicopter
+                const isThrusting = state.keys['ArrowUp'];
+                drawHelicopter(ctx, state.lander, isThrusting);
+                
+                // 6. Update HUD
+                const lander = state.lander;
+                const fuelPercent = (lander.fuel / MAX_FUEL) * 100;
+                const waterPercent = (lander.water / MAX_WATER) * 100;
+                const vVel = lander.vy * 100; 
+                const altitude = HEIGHT - lander.y - 30;
+
+                fuelLevelEl.textContent = `${Math.max(0, fuelPercent).toFixed(0)}%`;
+                fuelLevelEl.style.color = fuelPercent < 20 ? '#EF4444' : '#10B981';
+                
+                waterLevelEl.textContent = `${Math.max(0, waterPercent).toFixed(0)}%`;
+                waterLevelEl.style.color = waterPercent < 20 ? '#F97316' : '#60A5FA';
+                
+                altitudeEl.textContent = `${Math.max(0, altitude).toFixed(0)} m`;
+
+                vVelocityEl.textContent = `${vVel.toFixed(2)} m/s`;
+                // Velocity visual feedback uses the custom crash velocity
+                vVelocityEl.style.color = Math.abs(vVel) > state.customCrashVelocity * 100 ? '#EF4444' : '#10B981';
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        // Initialization
+        window.onload = function () {
+            setupWorld();
+            state.lastTime = performance.now(); 
+            requestAnimationFrame(update);
+            requestAnimationFrame(draw);
+            displayMessage("Select START GAME to begin, or OPTIONS to change gravity.");
+        };
+        
+    </script>
 </body>
 </html>
