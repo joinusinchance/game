@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordga</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cell-size: 10vw;
+        }
+        @media (min-width: 640px) {
+            :root {
+                --cell-size: 50px;
+            }
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+            color: #1f2937;
+        }
+        .grid-cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            line-height: var(--cell-size);
+            font-size: 5vw;
+            text-transform: uppercase;
+            font-weight: 700;
+            border: 1px solid #d1d5db;
+            transition: all 0.1s ease-in-out;
+            cursor: pointer;
+            user-select: none;
+            text-align: center;
+        }
+        @media (min-width: 640px) {
+            .grid-cell {
+                font-size: 24px;
+            }
+        }
+        .filled-cell {
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+        .start-cell {
+            background-color: #fcd34d !important; /* Amber-400 */
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(252, 211, 77, 0.8);
+        }
+        .possible-cell {
+            background-color: #6ee7b7; /* Emerald-300 */
+        }
+        .placement-valid {
+            background-color: #34d399 !important; /* Emerald-400 - Used for non-scoring overwrites */
+        }
+        .overlap-cell {
+            background-color: #f97316 !important; /* Orange-600 for scoring overlap */
+            color: white !important;
+        }
+        .message-box {
+            min-height: 4rem;
+            line-height: 1.25;
+        }
+        .button-confirm {
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .button-confirm:hover:not(:disabled) {
+            background-color: #059669;
+        }
+        .button-confirm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        /* Word selection buttons */
+        .word-btn {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-radius: 9999px; /* Pill shape */
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .word-btn:hover {
+            opacity: 0.8;
+        }
+        .word-btn-default {
+            background-color: #3b82f6; /* Blue-500 */
+            color: white;
+        }
+        .word-btn-selected {
+            background-color: #10b981; /* Emerald-500 */
+            color: white;
+            border-color: #fcd34d; /* Amber border */
+            transform: scale(1.05);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+        }
+    </style>
+</head>
+<body class="p-4 flex flex-col items-center min-h-screen">
+
+    <div class="max-w-xl w-full">
+        <h1 class="text-3xl font-bold text-center mb-4 text-gray-800">Wordga</h1>
+
+        <!-- Score and Word Selection -->
+        <div class="bg-white p-4 rounded-xl shadow-lg mb-4 flex flex-col border border-gray-200">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Current Score</p>
+                    <p id="score" class="text-3xl font-extrabold text-indigo-600">0</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-500 font-medium">Selected Word</p>
+                    <p id="current-word" class="text-3xl font-extrabold text-gray-800 tracking-wider">-</p>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-100 pt-3">
+                <p class="text-sm text-gray-500 font-medium mb-2 text-center">Words Remaining (<span id="words-count">0</span>)</p>
+                <div id="word-list-container" class="flex flex-wrap justify-center gap-2">
+                    <!-- Words will go here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Level & Target Info -->
+        <div id="level-info" class="text-center mb-4 bg-yellow-100 p-2 rounded-lg border border-yellow-300">
+            <p class="text-lg font-semibold text-gray-700">Level <span id="current-level" class="text-yellow-700">1</span>: Achieve <span id="target-score" class="text-red-600">25</span> points using all words!</p>
+        </div>
+
+        <!-- Game Grid -->
+        <div id="game-grid" class="grid grid-cols-8 border border-gray-300 rounded-lg overflow-hidden shadow-2xl mb-4 mx-auto">
+            <!-- Cells generated by JavaScript -->
+        </div>
+
+        <!-- Messaging & Controls -->
+        <div class="bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+            <div id="message-box" class="message-box text-center text-gray-700 mb-4 font-semibold">
+                Please select a word from the list above to begin placement.
+            </div>
+
+            <div id="placement-controls" class="flex justify-center space-x-4">
+                <button id="undo-btn" class="bg-red-400 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-red-500" disabled>
+                    Undo
+                </button>
+                <button id="confirm-btn" class="button-confirm bg-emerald-500 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:shadow-lg" disabled>
+                    Place Word (+0)
+                </button>
+                <button id="reset-btn" class="bg-gray-400 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-500 hidden">
+                    Reset Selection
+                </button>
+            </div>
+        </div>
+        
+        <!-- General Controls / Debug -->
+        <div class="flex justify-between space-x-4 mt-4">
+             <button id="new-game-btn" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-indigo-700 flex-1 hidden">
+                Start New Game
+            </button>
+            <button id="open-debug-btn" class="bg-gray-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-gray-700 w-full">
+                Debug / Levels
+            </button>
+        </div>
+        
+        <!-- Debug Modal Overlay -->
+        <div id="debug-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center hidden">
+            <!-- Modal Content -->
+            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full m-4">
+                <h2 class="text-2xl font-bold mb-4 text-indigo-600">Debug & Level Settings</h2>
+                
+                <!-- Level Selector -->
+                <div class="mb-4">
+                    <label for="level-select" class="block text-sm font-medium text-gray-700 mb-1">Select Level to Edit/Play:</label>
+                    <select id="level-select" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></select>
+                </div>
+
+                <!-- Word Editor -->
+                <div class="mb-4">
+                    <label for="level-words" class="block text-sm font-medium text-gray-700 mb-1">Words (Comma Separated, Uppercase):</label>
+                    <textarea id="level-words" rows="3" class="w-full p-2 border border-gray-300 rounded-lg font-mono text-sm"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">Example: WORD1,WORD2,LONGWORD (Max 8 letters each)</p>
+                </div>
+
+                <!-- Min Score Editor -->
+                <div class="mb-6">
+                    <label for="min-score" class="block text-sm font-medium text-gray-700 mb-1">Minimum Score to Pass:</label>
+                    <input type="number" id="min-score" class="w-full p-2 border border-gray-300 rounded-lg" min="0">
+                </div>
+
+                <!-- Actions -->
+                <div class="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0 sm:space-x-3">
+                    <button id="add-level-btn" class="bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-600 transition flex-1">
+                        Add New Level
+                    </button>
+                    <button id="save-level-btn" class="bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 transition flex-1">
+                        Save Changes
+                    </button>
+                    <button id="start-level-btn" class="bg-indigo-500 text-white font-bold py-2 rounded-lg hover:bg-indigo-600 transition flex-1">
+                        Start Selected Level
+                    </button>
+                    <button id="close-debug-btn" class="bg-gray-300 text-gray-800 font-bold py-2 rounded-lg hover:bg-gray-400 transition flex-1">
+                        Close
+                    </button>
+                </div>
+                <p id="debug-message" class="text-center mt-3 text-sm font-medium hidden"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Game Setup ---
+        const GRID_SIZE = 8;
+        const OVERLAP_BONUS = 5; // Points for reusing an existing letter
+        const BASE_SCORE_PER_LETTER = 0; // Base score is 0, only overlap gives points
+
+        // Added Levels 4 and 5
+        const LEVELS = [
+            {
+                level: 1,
+                words: ["JUMBLE", "SCORE", "REUSE", "WORDS"],
+                minScore: 25, 
+            },
+            {
+                level: 2,
+                words: ["QUANTUM", "PUZZLE", "BONUS", "MOBILE"],
+                minScore: 25, 
+            },
+            {
+                level: 3,
+                words: ["OVERLAP", "WORDGRID", "CHALLENGE"],
+                minScore: 20, 
+            },
+            {
+                level: 4,
+                words: ["GRID", "PUZZLE", "PLAY", "HIGH"],
+                minScore: 15, 
+            },
+            {
+                level: 5,
+                words: ["CHESS", "ROOK", "KING", "QUEEN", "PAWN"],
+                minScore: 30, 
+            }
+        ];
+
+        // Global State
+        let grid = [];
+        let score = 0;
+        let wordsToPlace = []; // Words for the current level
+        let currentWord = ''; // The currently SELECTED word
+        let gameState = 'selecting_start'; // 'selecting_start', 'selecting_direction', 'review_placement', 'game_over'
+        let currentLevelIndex = 0; // 0-indexed
+        let minScoreTarget = 0;
+
+        let startPos = null;
+        let endPos = null;
+        let calculatedDirection = null;
+        let placementResult = null; // Stores validity, score, and overlap info
+        let placementHistory = []; // Stores past states for undo
+
+        // --- DOM Elements ---
+        const gridContainer = document.getElementById('game-grid');
+        const scoreDisplay = document.getElementById('score');
+        const wordDisplay = document.getElementById('current-word');
+        const messageBox = document.getElementById('message-box');
+        const confirmBtn = document.getElementById('confirm-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const undoBtn = document.getElementById('undo-btn');
+        const newGameBtn = document.getElementById('new-game-btn');
+        const openDebugBtn = document.getElementById('open-debug-btn');
+        const currentLevelDisplay = document.getElementById('current-level');
+        const targetScoreDisplay = document.getElementById('target-score');
+        const wordListContainer = document.getElementById('word-list-container');
+        const wordsCountDisplay = document.getElementById('words-count');
+        
+        // Debug Modal Elements
+        const debugModal = document.getElementById('debug-modal');
+        const closeDebugBtn = document.getElementById('close-debug-btn');
+        const levelSelect = document.getElementById('level-select');
+        const levelWordsInput = document.getElementById('level-words');
+        const minScoreInput = document.getElementById('min-score');
+        const addLevelBtn = document.getElementById('add-level-btn'); 
+        const saveLevelBtn = document.getElementById('save-level-btn');
+        const startLevelBtn = document.getElementById('start-level-btn');
+        const debugMessage = document.getElementById('debug-message');
+
+
+        // --- Utility Functions ---
+
+        /** Utility function to wrap coordinates (for toroidal grid). */
+        function wrapCoord(coord) {
+            const size = GRID_SIZE;
+            return (coord % size + size) % size;
+        }
+
+        /**
+         * Calculates the wrapped direction component (-1, 0, or 1) for a single axis.
+         * Returns null if the move is not adjacent (wrapped or unwrapped).
+         * @param {number} rawDiff - The raw difference between end and start coordinates (e.g., endR - startR).
+         * @returns {number | null} - The wrapped direction component (-1, 0, 1) or null if invalid.
+         */
+        function getWrappedDirectionComponent(rawDiff) {
+            const N = GRID_SIZE;
+            
+            // Check for standard adjacency: -1, 0, or 1
+            if (rawDiff >= -1 && rawDiff <= 1) return rawDiff;
+            
+            // Check for wrap-around adjacency: (N-1) or -(N-1)
+            if (rawDiff === (N - 1)) return -1;
+            if (rawDiff === -(N - 1)) return 1; 
+            
+            return null; // Invalid distance
+        }
+
+
+        // --- Core Functions ---
+
+        /** Initializes the game state and UI. */
+        function initGame() {
+            grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(''));
+            score = 0;
+            currentLevelIndex = 0; 
+            currentWord = ''; // No word selected initially
+            loadLevel(currentLevelIndex);
+            gameState = 'selecting_start';
+            placementHistory = [];
+            renderGrid(); 
+            renderUI();
+            updateUndoButtonState();
+            showMessage('Welcome! **Select a word** from the list above to begin placement.');
+        }
+        
+        /** Loads the words and target score for a specific level. */
+        function loadLevel(index) {
+            if (index >= LEVELS.length) {
+                gameState = 'game_over';
+                currentWord = 'CHALLENGE COMPLETE';
+                showMessage(`You have completed all levels! Final Score: ${score}`);
+                return;
+            }
+            
+            const levelData = LEVELS[index];
+            minScoreTarget = levelData.minScore;
+            
+            // Reset grid for a new level, but keep score for overall challenge
+            if (index > 0 || score === 0) { // Reset on new level or new game start (score=0)
+                grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(''));
+            }
+            
+            // Shuffle and load the new word list
+            wordsToPlace = [...levelData.words].sort(() => 0.5 - Math.random());
+            currentWord = ''; // Ensure no word is selected when the level loads
+        }
+        
+        /** Renders the list of words available for placement, making them clickable. */
+        function renderWordList() {
+            wordListContainer.innerHTML = '';
+            wordsCountDisplay.textContent = wordsToPlace.length;
+
+            wordsToPlace.forEach(word => {
+                const btn = document.createElement('button');
+                btn.textContent = word;
+                btn.classList.add('word-btn');
+
+                if (word === currentWord) {
+                    btn.classList.add('word-btn-selected');
+                } else {
+                    btn.classList.add('word-btn-default');
+                    btn.addEventListener('click', () => selectWord(word));
+                }
+
+                wordListContainer.appendChild(btn);
+            });
+        }
+        
+        /** Selects a word for placement. */
+        function selectWord(word) {
+            // Reset any active placement attempt
+            startPos = null;
+            endPos = null;
+            calculatedDirection = null;
+            placementResult = null;
+
+            currentWord = word;
+            gameState = 'selecting_start';
+            showMessage(`Word **${currentWord}** selected. **Step 1:** Click any cell on the grid to choose the starting position.`);
+            
+            renderGrid();
+            renderUI();
+        }
+
+        /** Renders the current state of the grid. */
+        function renderGrid() {
+            gridContainer.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell flex items-center justify-center rounded-sm';
+                    cell.id = `cell-${r}-${c}`;
+                    cell.textContent = grid[r][c];
+
+                    // Styling based on content
+                    if (grid[r][c]) {
+                        cell.classList.add('filled-cell');
+                    } else {
+                        cell.classList.remove('filled-cell');
+                    }
+
+                    // Styling based on game state
+                    if (gameState === 'selecting_start' && startPos && startPos.r === r && startPos.c === c) {
+                        cell.classList.add('start-cell');
+                    } else if (gameState === 'selecting_direction' && startPos && startPos.r === r && startPos.c === c) {
+                        cell.classList.add('start-cell');
+                    } else if (gameState === 'review_placement' && placementResult && placementResult.placements.some(p => p.r === r && p.c === c)) {
+                        const placement = placementResult.placements.find(p => p.r === r && p.c === c);
+                        if (placement.isOverlap) {
+                            cell.classList.add('overlap-cell');
+                        } else {
+                            // Highlight non-scoring overwrites differently
+                            cell.classList.add('placement-valid');
+                        }
+                    } else if (gameState === 'selecting_direction' && startPos) {
+                        // Highlight potential second-letter spots (adjacent, non-diagonal, wrapped or not)
+                        const drRaw = r - startPos.r;
+                        const dcRaw = c - startPos.c;
+                        const dr = getWrappedDirectionComponent(drRaw);
+                        const dc = getWrappedDirectionComponent(dcRaw);
+
+                        const isDirectionValid = dr !== null && dc !== null && (dr === 0 || dc === 0) && (dr !== 0 || dc !== 0);
+
+                        if (isDirectionValid) {
+                             cell.classList.add('possible-cell');
+                        }
+                    }
+
+                    cell.addEventListener('click', () => handleCellClick(r, c));
+                    gridContainer.appendChild(cell);
+                }
+            }
+        }
+
+        /** Updates non-grid UI elements. */
+        function renderUI() {
+            scoreDisplay.textContent = score;
+            wordDisplay.textContent = currentWord || "-";
+
+            const currentLevelData = LEVELS[currentLevelIndex];
+            if (currentLevelData) {
+                currentLevelDisplay.textContent = currentLevelData.level;
+                targetScoreDisplay.textContent = currentLevelData.minScore;
+            } else {
+                 currentLevelDisplay.textContent = 'MAX';
+                 targetScoreDisplay.textContent = '---';
+            }
+
+            renderWordList(); // Render the list of remaining words
+
+            if (gameState === 'review_placement' && placementResult) {
+                confirmBtn.textContent = `Place Word (+${placementResult.totalScore})`;
+                confirmBtn.disabled = !placementResult.isValid; // isValid should always be true now, but keep for safety
+                resetBtn.classList.remove('hidden');
+            } else {
+                confirmBtn.textContent = `Place Word (+0)`;
+                confirmBtn.disabled = true;
+                resetBtn.classList.add('hidden');
+            }
+
+            // Show new game button on game over
+            if (gameState === 'game_over') {
+                 confirmBtn.disabled = true;
+                 resetBtn.disabled = true;
+                 newGameBtn.classList.remove('hidden');
+                 openDebugBtn.classList.add('hidden'); // Hide debug when new game is an option
+            } else {
+                 newGameBtn.classList.add('hidden');
+                 openDebugBtn.classList.remove('hidden'); // Show debug otherwise
+            }
+        }
+        
+        /** Updates the disabled state of the Undo button based on history. */
+        function updateUndoButtonState() {
+            undoBtn.disabled = placementHistory.length === 0;
+        }
+
+        /**
+         * Checks if a word placement is valid and calculates the score.
+         * @returns {object} { isValid: boolean, totalScore: number, overlapCount: number, placements: array }
+         */
+        function checkPlacement(word, startR, startC, direction) {
+            const length = word.length;
+            const [dr, dc] = direction;
+            let isValid = true; 
+            let overlapCount = 0;
+            let totalScore = 0;
+            const placements = [];
+
+            for (let i = 0; i < length; i++) {
+                const rRaw = startR + i * dr;
+                const cRaw = startC + i * dc;
+
+                // 1. Wrap coordinates (Toroidal Grid Logic)
+                const r = wrapCoord(rRaw);
+                const c = wrapCoord(cRaw);
+                
+                const letter = word[i];
+                const existingLetter = grid[r][c] || '';
+
+                // 2. Check overlap for scoring
+                let isOverlap = false;
+                if (existingLetter) {
+                    if (existingLetter === letter) {
+                        isOverlap = true;
+                        overlapCount++;
+                        totalScore += OVERLAP_BONUS;
+                    }
+                    // Clashes (different letters) are allowed but do not score.
+                } else {
+                    // Placing in an empty cell
+                    totalScore += BASE_SCORE_PER_LETTER; 
+                }
+
+                placements.push({ r, c, letter, isOverlap });
+            }
+
+            return { isValid, totalScore, overlapCount, placements };
+        }
+
+        /** Checks if the level minimum score has been met. */
+        function checkLevelCompletion() {
+            const currentLevel = LEVELS[currentLevelIndex];
+            
+            // Check if level was successfully passed
+            if (score >= currentLevel.minScore) {
+                // Advance to next level
+                currentLevelIndex++;
+                
+                // Clear temporary states
+                startPos = null;
+                endPos = null;
+                calculatedDirection = null;
+                placementResult = null;
+                
+                if (currentLevelIndex < LEVELS.length) {
+                    loadLevel(currentLevelIndex);
+                    gameState = 'selecting_start';
+                    // Reset history for the new level grid (as grid resets)
+                    placementHistory = [];
+                    showMessage(`Level ${currentLevel.level} Passed! Score ${score} / Target ${currentLevel.minScore}. Now starting Level ${LEVELS[currentLevelIndex].level}!`);
+                } else {
+                    // Game victory
+                    gameState = 'game_over';
+                    currentWord = 'CHALLENGE COMPLETE';
+                    showMessage(`Fantastic! You beat all levels! Final Score: ${score}`);
+                }
+            } else {
+                // Level failure
+                gameState = 'game_over';
+                currentWord = 'LEVEL FAILED';
+                showMessage(`<span class="text-red-600 font-bold">Level ${currentLevel.level} Failed!</span> You scored ${score} but needed ${currentLevel.minScore}. Try starting a New Game!`);
+            }
+        }
+
+
+        /** Updates the grid and score with the placed word. */
+        function placeWord() {
+            if (!placementResult || !placementResult.isValid) return;
+
+            // 1. SAVE STATE FOR UNDO
+            const savedGrid = grid.map(row => [...row]); 
+            const savedWordsToPlace = [...wordsToPlace]; 
+            const savedCurrentWord = currentWord;
+            const savedScore = score;
+            
+            placementHistory.push({
+                grid: savedGrid,
+                score: savedScore,
+                wordsToPlace: savedWordsToPlace,
+                currentWord: savedCurrentWord,
+                currentLevelIndex: currentLevelIndex,
+            });
+            
+            const placedScore = placementResult.totalScore; 
+
+            // 2. APPLY PLACEMENT
+            placementResult.placements.forEach(p => {
+                grid[p.r][p.c] = p.letter;
+            });
+
+            score += placedScore;
+
+            // 3. CHECK NEXT WORD / LEVEL COMPLETION
+            // Remove the placed word from the list of words to place
+            const placedWordIndex = wordsToPlace.indexOf(currentWord);
+            if (placedWordIndex > -1) {
+                wordsToPlace.splice(placedWordIndex, 1);
+            }
+            
+            currentWord = ''; // Deselect word
+
+            if (wordsToPlace.length > 0) {
+                gameState = 'selecting_start';
+                startPos = null;
+                endPos = null;
+                calculatedDirection = null;
+                
+                showMessage(`Great move! Score +${placedScore}. Now, **select your next word** from the list below.`); 
+                
+                placementResult = null; // Reset state after score is used
+            } else {
+                // All words for the current level are placed
+                checkLevelCompletion(); 
+            }
+
+            updateUndoButtonState();
+            renderGrid();
+            renderUI();
+        }
+        
+        /** Reverts the game state to the state before the last successful word placement. */
+        function undoLastPlacement() {
+            if (placementHistory.length === 0) return;
+
+            const lastState = placementHistory.pop();
+            
+            grid = lastState.grid;
+            score = lastState.score;
+            wordsToPlace = lastState.wordsToPlace;
+            currentWord = lastState.currentWord;
+            currentLevelIndex = lastState.currentLevelIndex; // Restore level index
+            minScoreTarget = LEVELS[currentLevelIndex].minScore;
+            
+            // Reset temporary placement state
+            startPos = null;
+            endPos = null;
+            calculatedDirection = null;
+            placementResult = null;
+            
+            // Revert to selecting_start state
+            gameState = 'selecting_start';
+            
+            const messageWord = currentWord ? currentWord : 'a word';
+            showMessage(`Undo successful! Please **select ${messageWord}** to re-place.`);
+            
+            updateUndoButtonState();
+            renderGrid();
+            renderUI();
+        }
+
+
+        /** Handles the click on any grid cell, driving the state machine. */
+        function handleCellClick(r, c) {
+            if (gameState === 'game_over') return;
+
+            if (gameState === 'selecting_start') {
+                if (!currentWord) {
+                     showMessage('Please **select a word** from the list above before choosing a starting cell.');
+                     return;
+                }
+                
+                // Any cell is a valid start cell.
+                startPos = { r, c };
+                gameState = 'selecting_direction';
+                showMessage(`**Step 2:** Select an **adjacent cell** (H or V) to set the direction for the remaining letters of **${currentWord}**.`);
+            } else if (gameState === 'selecting_direction') {
+                endPos = { r, c }; // This is the *second* letter's position
+
+                const drRaw = endPos.r - startPos.r;
+                const dcRaw = endPos.c - startPos.c;
+
+                // Calculate the wrapped direction components
+                const dr = getWrappedDirectionComponent(drRaw);
+                const dc = getWrappedDirectionComponent(dcRaw);
+                
+                // Check if both components are valid (not null), and ensure it's a straight move (one component is 0) 
+                // and a non-zero move (not starting and ending on the same cell)
+                const isDirectionValid = dr !== null && dc !== null && (dr === 0 || dc === 0) && (dr !== 0 || dc !== 0);
+                
+                let errorMessage = '';
+
+                if (!isDirectionValid) {
+                    errorMessage = 'Invalid direction! You must select a cell that is **immediately adjacent** (horizontally or vertically) to the start cell, including wrap-around.';
+                    showMessage(`<span class="text-red-600 font-bold">Placement Failed:</span> ${errorMessage}`);
+                    return; // Stay in selecting_direction state, waiting for a better second click
+                }
+                
+                // dr and dc now hold the correct wrapped direction components (-1, 0, or 1)
+                calculatedDirection = [dr, dc];
+                placementResult = checkPlacement(currentWord, startPos.r, startPos.c, [dr, dc]);
+
+                // Placement is always valid now (no clash check)
+                gameState = 'review_placement';
+                showMessage(`Placement ready. Overlaps: <span class="text-orange-600 font-bold">${placementResult.overlapCount}</span>. Total score: <span class="text-emerald-600 font-bold"> +${placementResult.totalScore}</span>. Press 'Place Word' to confirm.`);
+                
+            } else if (gameState === 'review_placement') {
+                // If the user clicks on the grid during review, they might be trying to reset
+                resetPlacement();
+            }
+
+            renderGrid();
+            renderUI();
+        }
+
+        /** Resets the current word placement attempt. */
+        function resetPlacement() {
+            startPos = null;
+            endPos = null;
+            calculatedDirection = null;
+            placementResult = null;
+            gameState = 'selecting_start';
+            showMessage(`Placement reset. Select a starting cell for the word: <span class="text-indigo-600">${currentWord}</span>`);
+            renderGrid();
+            renderUI();
+        }
+
+        /** Displays a message in the message box. */
+        function showMessage(htmlText) {
+            messageBox.innerHTML = htmlText;
+        }
+
+        // --- Debug / Level Setting Functions ---
+        
+        function displayDebugMessage(message, isError) {
+             debugMessage.textContent = message;
+             debugMessage.classList.remove('hidden', 'text-red-500', 'text-green-500');
+             debugMessage.classList.add(isError ? 'text-red-500' : 'text-green-500');
+        }
+
+        /** Populates the level selector dropdown. */
+        function populateLevelSelector() {
+            levelSelect.innerHTML = '';
+            // Ensure levels are sorted numerically
+            LEVELS.sort((a, b) => a.level - b.level).forEach(levelData => {
+                const option = document.createElement('option');
+                option.value = levelData.level;
+                option.textContent = `Level ${levelData.level}`;
+                levelSelect.appendChild(option);
+            });
+        }
+
+        function loadLevelDataToEditor(levelNumber) {
+            const levelData = LEVELS.find(l => l.level === parseInt(levelNumber));
+            if (levelData) {
+                levelWordsInput.value = levelData.words.join(', ');
+                minScoreInput.value = levelData.minScore;
+            } else {
+                levelWordsInput.value = '';
+                minScoreInput.value = '';
+            }
+            debugMessage.classList.add('hidden'); // Clear previous message
+        }
+        
+        /** Adds a new level to the LEVELS array with default settings. */
+        function addNewLevel() {
+            // Determine the next available level number
+            const newLevelNumber = LEVELS.length > 0 ? Math.max(...LEVELS.map(l => l.level)) + 1 : 1;
+            
+            const newLevelData = {
+                level: newLevelNumber,
+                words: ["NEW", "LEVEL", "EDIT", "ME"], // Default words
+                minScore: 10, // Default minimum score
+            };
+            
+            LEVELS.push(newLevelData);
+            
+            populateLevelSelector();
+            
+            // Select the new level in the dropdown
+            levelSelect.value = newLevelNumber;
+            loadLevelDataToEditor(newLevelNumber);
+            
+            displayDebugMessage(`New Level ${newLevelNumber} created. Edit the words/score and press 'Save Changes'.`, false);
+        }
+
+        function saveLevelChanges() {
+            const levelNumber = parseInt(levelSelect.value);
+            const levelIndex = LEVELS.findIndex(l => l.level === levelNumber);
+            
+            if (levelIndex === -1) return;
+
+            const newWords = levelWordsInput.value.split(',')
+                .map(w => w.trim().toUpperCase())
+                .filter(w => w.length > 0 && w.length <= GRID_SIZE); // Basic validation: must be non-empty and fit grid
+            
+            const newMinScore = parseInt(minScoreInput.value);
+
+            if (newWords.length === 0) {
+                 displayDebugMessage("Error: Word list cannot be empty or words are too long (max 8 letters).", true);
+                 return;
+            }
+            if (isNaN(newMinScore) || newMinScore < 0) {
+                 displayDebugMessage("Error: Minimum score must be a non-negative number.", true);
+                 return;
+            }
+            
+            // Update the in-memory array
+            LEVELS[levelIndex].words = newWords;
+            LEVELS[levelIndex].minScore = newMinScore;
+            
+            displayDebugMessage(`Level ${levelNumber} updated successfully!`, false);
+            // Re-render the level display in case the current level was edited
+            renderUI(); 
+        }
+
+        function startSelectedLevel() {
+            const levelNumber = parseInt(levelSelect.value);
+            const levelIndex = LEVELS.findIndex(l => l.level === levelNumber);
+
+            if (levelIndex !== -1) {
+                // Ensure latest changes are saved before starting
+                saveLevelChanges();
+
+                // Reset game state and load the selected level
+                score = 0; 
+                currentLevelIndex = levelIndex;
+                loadLevel(currentLevelIndex); 
+                gameState = 'selecting_start';
+                placementHistory = [];
+                closeDebugScreen();
+                renderGrid();
+                renderUI();
+                showMessage(`Debug: Starting game at **Level ${levelNumber}** with target score **${LEVELS[levelIndex].minScore}**.`);
+            }
+        }
+
+        function openDebugScreen() {
+            debugModal.classList.remove('hidden');
+            populateLevelSelector();
+            
+            // Try to select the current level being played, otherwise default to the first level
+            const levelToLoad = LEVELS[currentLevelIndex] ? LEVELS[currentLevelIndex].level : (LEVELS[0] ? LEVELS[0].level : 1); 
+            
+            // If LEVELS is empty (unlikely with defaults, but safe)
+            if (LEVELS.length === 0) {
+                addNewLevel();
+            } else {
+                 levelSelect.value = levelToLoad; 
+                 loadLevelDataToEditor(levelToLoad);
+            }
+        }
+
+        function closeDebugScreen() {
+            debugModal.classList.add('hidden');
+        }
+
+
+        // --- Event Listeners ---
+        confirmBtn.addEventListener('click', () => {
+            if (gameState === 'review_placement') {
+                placeWord();
+            }
+        });
+
+        resetBtn.addEventListener('click', resetPlacement);
+        undoBtn.addEventListener('click', undoLastPlacement);
+        newGameBtn.addEventListener('click', initGame);
+
+        // Debug Controls
+        openDebugBtn.addEventListener('click', openDebugScreen);
+        closeDebugBtn.addEventListener('click', closeDebugScreen);
+        levelSelect.addEventListener('change', (e) => loadLevelDataToEditor(e.target.value));
+        addLevelBtn.addEventListener('click', addNewLevel); 
+        saveLevelBtn.addEventListener('click', saveLevelChanges);
+        startLevelBtn.addEventListener('click', startSelectedLevel);
+
+
+        // --- Start Game on Load ---
+        window.onload = initGame;
+    </script>
+</body>
+</html>
