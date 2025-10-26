@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Helitanker Rescue - On Foot Mode</title>
+    <title>Helitanker Heros</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom styles for the game environment */
@@ -194,12 +194,13 @@
         terrain: [],
         fires: [],
         drops: [], 
-        heli: null, // The helicopter object (also holds player state when on ground)
-        fuelBarrel: null, // New object
+        heli: null, 
+        fuelBarrel: null, 
         cameraX: 0,
         missionStage: 1, 
         fireBaseCount: 4, 
-        playerMode: 'heli', // New state: 'heli' or 'ground'
+        playerMode: 'heli', // State: 'heli' or 'ground'
+        heliLandingPos: { x: 0, y: 0 }, // NEW: Stores the position of the abandoned heli
         
         // Pad Definitions (fixed world coordinates)
         padA: { x: 50, y: 0, width: 80, label: "Left Pad" }, 
@@ -214,8 +215,8 @@
     function HeliTanker() {
         this.x = 0; 
         this.y = 50;
-        this.vx = 0; // Only used in heli mode
-        this.vy = 0; // Used in both modes (heli physics, or ground jump/fall)
+        this.vx = 0; 
+        this.vy = 0; 
         this.fuel = CONFIG.MAX_FUEL;
         this.water = CONFIG.MAX_WATER;
     }
@@ -337,7 +338,7 @@
             this.vy = 0;
         }
 
-        // Reset landing state check (not strictly needed, but keeps state clean)
+        // Reset landing state check 
         game.isLanded = true; 
     }
 
@@ -346,44 +347,72 @@
 
     HeliTanker.prototype.draw = function() {
         if (game.playerMode === 'heli') {
-            this.drawHeli();
+            this.drawHeli(this.x, this.y, 1.0); // Full opacity when controlled
         } else if (game.playerMode === 'ground') {
             this.drawStickFigure();
-            // Draw a subtle marker for the helicopter's location
-            this.drawHeliMarker();
+            // REMOVED drawHeliMarker - The main loop will call drawLandedHeli instead
         }
     };
     
-    HeliTanker.prototype.drawHeli = function() {
-        const x = this.x - game.cameraX;
-        const y = this.y;
+    // Unified Heli Drawing function (used for controlled heli and landed heli)
+    HeliTanker.prototype.drawHeli = function(xPos, yPos, opacity) {
+        const x = xPos - game.cameraX;
+        const y = yPos;
 
         // Draw the main yellow block (Helitanker body)
-        ctx.fillStyle = '#facc15';
+        ctx.fillStyle = `rgba(250, 204, 21, ${opacity})`;
         ctx.fillRect(x - CONFIG.PLAYER_SIZE / 2, y - CONFIG.PLAYER_SIZE / 2, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
 
-        // Simple rotor effect (horizontal wobble)
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        
-        const wobbleFactor = 0.5;
-        const wobbleAmplitude = CONFIG.PLAYER_SIZE * 0.3;
-        const wobbleOffset = Math.sin(Date.now() * 0.01 * wobbleFactor) * wobbleAmplitude; 
-        
-        const rotorY = y - CONFIG.PLAYER_SIZE / 2 - 5;
-        const rotorSpan = CONFIG.PLAYER_SIZE * 1.5;
-        
-        ctx.moveTo(x - rotorSpan / 2 + wobbleOffset, rotorY);
-        ctx.lineTo(x + rotorSpan / 2 + wobbleOffset, rotorY);
-        
-        ctx.stroke();
+        // Simple rotor effect (only wobble if full opacity, i.e., controlled)
+        if (opacity > 0.9) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            const wobbleFactor = 0.5;
+            const wobbleAmplitude = CONFIG.PLAYER_SIZE * 0.3;
+            const wobbleOffset = Math.sin(Date.now() * 0.01 * wobbleFactor) * wobbleAmplitude; 
+            
+            const rotorY = y - CONFIG.PLAYER_SIZE / 2 - 5;
+            const rotorSpan = CONFIG.PLAYER_SIZE * 1.5;
+            
+            ctx.moveTo(x - rotorSpan / 2 + wobbleOffset, rotorY);
+            ctx.lineTo(x + rotorSpan / 2 + wobbleOffset, rotorY);
+            
+            ctx.stroke();
+        } else {
+            // Static rotor line for landed heli
+            ctx.strokeStyle = '#9ca3af';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const rotorY = y - CONFIG.PLAYER_SIZE / 2 - 5;
+            const rotorSpan = CONFIG.PLAYER_SIZE * 1.5;
+            ctx.moveTo(x - rotorSpan / 2, rotorY);
+            ctx.lineTo(x + rotorSpan / 2, rotorY);
+            ctx.stroke();
+        }
 
         // Draw water payload indicator
         ctx.fillStyle = '#3b82f6';
         const waterHeight = CONFIG.PLAYER_SIZE * (this.water / CONFIG.MAX_WATER) * 0.5;
         ctx.fillRect(x - 5, y + CONFIG.PLAYER_SIZE / 2 - waterHeight, 10, waterHeight);
     };
+
+    // NEW: Function to draw the inert helicopter at its fixed landing spot
+    function drawLandedHeli() {
+        if (game.heliLandingPos) {
+            game.heli.drawHeli(game.heliLandingPos.x, game.heliLandingPos.y, 0.6); // 60% opacity
+            
+            // Draw helpful text
+            const x = game.heliLandingPos.x - game.cameraX;
+            const y = game.heliLandingPos.y;
+            ctx.font = '10px Inter';
+            ctx.fillStyle = '#9ca3af';
+            ctx.textAlign = 'center';
+            ctx.fillText("[LANDED HELI]", x, y - CONFIG.PLAYER_SIZE/2 - 10);
+            ctx.textAlign = 'left'; // Reset
+        }
+    }
 
     HeliTanker.prototype.drawStickFigure = function() {
         const x = this.x - game.cameraX;
@@ -430,20 +459,6 @@
         ctx.fillStyle = '#3b82f6';
         ctx.fillRect(x - backpackWidth/2 + 1, y - waterHeight - 1, backpackWidth - 2, waterHeight);
     };
-
-    HeliTanker.prototype.drawHeliMarker = function() {
-        const x = game.heli.x - game.cameraX;
-        const y = game.heli.y;
-        
-        // Draw a simple gray outline to show where the heli is
-        ctx.strokeStyle = 'rgba(156, 163, 175, 0.5)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x - CONFIG.PLAYER_SIZE / 2, y - CONFIG.PLAYER_SIZE / 2, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
-        
-        ctx.font = '10px Inter';
-        ctx.fillStyle = 'rgba(156, 163, 175, 0.7)';
-        ctx.fillText("HELI", x - 12, y - CONFIG.PLAYER_SIZE/2 - 5);
-    }
     
     // --- Water Drop/Squirt Mechanic ---
 
@@ -550,16 +565,13 @@
 
     // --- Pad and Barrel Interaction Helpers ---
 
+    // UPDATED: Now checks player position (game.heli.x) against the saved heli landing spot (game.heliLandingPos.x)
     function isNearHeli() {
-        // Check if stick figure is close enough to re-enter
-        const heliX = game.heli.x;
-        const heliY = getGroundY(heliX) - CONFIG.PLAYER_SIZE/2; // Heli center Y when landed
-        
-        const dx = Math.abs(heliX - game.heli.x); // Should always be 0 as heli uses the same coordinates
-        
-        // When on ground, game.heli.x is the stick figure's position
-        const dx_player = Math.abs(game.heli.x - heliX); 
-        return dx_player < CONFIG.PLAYER_SIZE * 0.75; 
+        const heliX = game.heliLandingPos.x;
+        const playerX = game.heli.x; // Stick figure position
+
+        const dx = Math.abs(heliX - playerX); 
+        return dx < CONFIG.PLAYER_SIZE * 1.5; // Allow a wider margin for re-entry
     }
     
     function checkFuelPickup() {
@@ -784,6 +796,10 @@
         // Set Y to sit directly on the pad (refuel.y is the terrain height)
         game.heli.y = refuel.y - CONFIG.PLAYER_SIZE / 2; 
 
+        // Initialize landing pos to the starting pad
+        game.heliLandingPos.x = game.heli.x;
+        game.heliLandingPos.y = game.heli.y;
+
         game.heli.fuel = CONFIG.MAX_FUEL;
         game.heli.water = CONFIG.MAX_WATER;
 
@@ -912,7 +928,13 @@
             
             drawTerrain();
             drawDrops(); 
-            if(game.heli) game.heli.draw();
+            
+            // Draw the landed helicopter FIRST if the player is on ground
+            if (game.playerMode === 'ground') {
+                drawLandedHeli();
+            }
+
+            if(game.heli) game.heli.draw(); // Draws the stick figure OR the flying heli
 
             // Game Over/Win Overlay
             if (game.isCrash || game.isWin) {
@@ -964,23 +986,28 @@
             
             if (key === 'e') {
                 if (game.playerMode === 'heli' && game.isLanded && game.isRunning) {
+                    // SAVE Heli position to landing spot
+                    game.heliLandingPos.x = game.heli.x;
+                    game.heliLandingPos.y = game.heli.y;
+
                     game.playerMode = 'ground';
-                    // Center stick figure slightly below heli body
+                    // Stick figure starts near the heli
                     game.heli.y = getGroundY(game.heli.x) - 10; 
                     gameMessage.textContent = "Exited Helicopter. Use A/D to walk, E to re-enter.";
                     gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-cyan-400";
                 } else if (game.playerMode === 'ground' && game.isRunning) {
                     if (isNearHeli()) {
                         game.playerMode = 'heli';
-                        // Re-align heli position
-                        game.heli.y = getGroundY(game.heli.x) - CONFIG.PLAYER_SIZE / 2;
+                        // RE-ENTER: Set player (heli) position to the saved landing spot
+                        game.heli.x = game.heliLandingPos.x; 
+                        game.heli.y = game.heliLandingPos.y; 
                         game.heli.vy = 0;
                         game.heli.vx = 0;
                         game.isLanded = true;
                         gameMessage.textContent = "Entered Helicopter. Ready for flight (W)!";
                         gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-cyan-400";
                     } else {
-                        gameMessage.textContent = "Move closer to the helicopter (HELI marker) to re-enter.";
+                        gameMessage.textContent = "Move closer to the landed helicopter to re-enter.";
                         gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-red-400";
                     }
                 }
