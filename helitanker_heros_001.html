@@ -216,7 +216,7 @@
     }
 
     HeliTanker.prototype.update = function() {
-        // FIX: The early return when game.isLanded was preventing take-off thrust.
+        // The early return when game.isLanded was causing the take-off bug.
         // We now allow thrust input to be processed, which can unset game.isLanded.
         if (!game.isRunning || game.isCrash) return; 
 
@@ -548,7 +548,7 @@
                         gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-green-400";
                     }
                 } else if (landedPad === game.currentEndPad) {
-                    // End Pad Logic (BUG FIX & Next Stage Trigger)
+                    // End Pad Logic 
                     if (game.fires.length === 0) {
                         // All fires are out - Trigger the next mission stage!
                         nextMission();
@@ -570,7 +570,6 @@
     function setupMission(stage) {
         // Reset flight state
         game.isRunning = true;
-        game.isLanded = false;
         game.isCrash = false;
 
         // 1. Determine Pad Roles based on Stage (The Swap)
@@ -583,9 +582,17 @@
         
         // 2. Setup Heli (Reset position, fuel, and water)
         game.heli = new HeliTanker();
+        
+        // Set X to the center of the refuel pad
         game.heli.x = refuel.x + refuel.width / 2;
+        // Set Y to sit directly on the pad (refuel.y is the terrain height)
+        game.heli.y = refuel.y - CONFIG.PLAYER_SIZE / 2; // <-- MODIFIED: Start on the pad
+
         game.heli.fuel = CONFIG.MAX_FUEL;
         game.heli.water = CONFIG.MAX_WATER;
+
+        // Ensure the helicopter starts in a landed state
+        game.isLanded = true; // <-- MODIFIED: Start in a landed state so it doesn't fall immediately
 
         // 3. Generate Fires (re-generate)
         game.fires = generateFires(game.fireBaseCount);
@@ -638,7 +645,6 @@
         showScreen('game');
     }
     
-    // (loadOptions and saveOptions remain unchanged from previous response)
     function loadOptions() {
         document.getElementById('opt-gravity').value = CONFIG.GRAVITY;
         document.getElementById('gravity-value').textContent = CONFIG.GRAVITY.toFixed(2);
@@ -701,7 +707,7 @@
              ctx.clearRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
             
             drawTerrain();
-            drawDrops(); // This function call now correctly points to the added drawDrops function.
+            drawDrops(); 
             if(game.heli) game.heli.draw();
 
             // Game Over/Win Overlay
