@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helitanker Lander</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the game environment */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1f2937; /* Dark background */
+        }
+        #gameCanvas {
+            border: 2px solid #374151;
+            background-color: #0b111a; /* Very dark background for the sky */
+            display: block;
+            margin: 0 auto;
+        }
+        .resource-bar {
+            transition: width 0.3s ease-out;
+        }
+        .input-range {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #4b5563;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+        .input-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            box-shadow: 0 0 5px #3b82f6;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="p-4 sm:p-6 min-h-screen flex flex-col items-center">
+    <h1 class="text-3xl font-bold text-yellow-400 mb-4 tracking-wider">HELITANKER RESCUE</h1>
+    
+    <!-- Start Screen -->
+    <div id="start-screen" class="w-full max-w-sm bg-gray-800 p-8 rounded-xl shadow-2xl text-center text-white space-y-6">
+        <h2 class="text-2xl font-semibold text-green-400">Welcome, Pilot!</h2>
+        <button onclick="startGame()" class="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg text-lg font-bold shadow-md transition duration-200">
+            Start Mission
+        </button>
+        <button onclick="showScreen('options')" class="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-lg font-bold shadow-md transition duration-200">
+            Options
+        </button>
+        <p class="text-sm text-gray-400 pt-4">Press W/Up to fly, Space to drop water.</p>
+    </div>
+
+    <!-- Options Screen -->
+    <div id="options-screen" class="w-full max-w-sm bg-gray-800 p-8 rounded-xl shadow-2xl text-white hidden">
+        <h2 class="text-2xl font-semibold text-blue-400 mb-6 text-center">Game Options</h2>
+        <div class="space-y-4">
+            <!-- Gravity -->
+            <div>
+                <label for="opt-gravity" class="block text-sm font-medium text-gray-400 mb-1">Gravity Strength: <span id="gravity-value" class="text-yellow-300"></span></label>
+                <input type="range" id="opt-gravity" min="0.01" max="0.3" step="0.01" class="input-range" oninput="document.getElementById('gravity-value').textContent = this.value">
+            </div>
+            <!-- Thrust Rate -->
+            <div>
+                <label for="opt-thrust" class="block text-sm font-medium text-gray-400 mb-1">Thrust Rate: <span id="thrust-value" class="text-yellow-300"></span></label>
+                <input type="range" id="opt-thrust" min="0.05" max="0.3" step="0.01" class="input-range" oninput="document.getElementById('thrust-value').textContent = this.value">
+            </div>
+            <!-- Crash Speed -->
+            <div>
+                <label for="opt-crash-speed" class="block text-sm font-medium text-gray-400 mb-1">Max Safe Vertical Speed: <span id="crash-speed-value" class="text-yellow-300"></span></label>
+                <input type="range" id="opt-crash-speed" min="0.5" max="2.5" step="0.1" class="input-range" oninput="document.getElementById('crash-speed-value').textContent = this.value">
+            </div>
+        </div>
+        
+        <div class="mt-8 flex justify-between space-x-4">
+            <button onclick="showScreen('start')" class="flex-1 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg font-semibold transition duration-200">
+                Cancel
+            </button>
+            <button onclick="saveOptions()" class="flex-1 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-bold shadow-md transition duration-200">
+                Save & Back
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Content (Status Panel and Canvas) -->
+    <div id="game-content" class="w-full max-w-4xl flex flex-col items-center hidden">
+        <!-- Game Status and Controls Display -->
+        <div id="status-panel" class="w-full bg-gray-800 p-3 sm:p-4 rounded-xl shadow-2xl mb-4 text-white">
+            <div id="game-message" class="text-center text-lg font-bold h-6 mb-2 text-green-400">Ready to Fly</div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs sm:text-sm">
+                <!-- Fuel Status -->
+                <div class="flex flex-col">
+                    <span class="font-semibold text-gray-400">Fuel: <span id="fuel-display">100%</span></span>
+                    <div class="w-full bg-gray-700 h-3 rounded-full overflow-hidden mt-1">
+                        <div id="fuel-bar" class="resource-bar bg-green-500 h-full" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Water Status -->
+                <div class="flex flex-col">
+                    <span class="font-semibold text-gray-400">Water: <span id="water-display">100%</span></span>
+                    <div class="w-full bg-gray-700 h-3 rounded-full overflow-hidden mt-1">
+                        <div id="water-bar" class="resource-bar bg-blue-500 h-full" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Velocity Indicators -->
+                <div class="flex flex-col">
+                    <span class="font-semibold text-gray-400">Horizontal Speed: <span id="vx-display" class="text-yellow-400">0.00</span></span>
+                    <span class="font-semibold text-gray-400">Vertical Speed: <span id="vy-display" class="text-red-400">0.00</span></span>
+                </div>
+                
+                <!-- Controls Legend -->
+                <div class="text-gray-400 text-right">
+                    <span class="block">Controls: **W/Up** (Thrust)</span>
+                    <span class="block">**A/D/Left/Right** (Side Thrust)</span>
+                    <span class="block">**Space** (Drop Water)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <canvas id="gameCanvas" width="800" height="400" class="rounded-xl shadow-xl"></canvas>
+    </div>
+</div>
+
+<script>
+    // --- Constants and Configuration ---
+    const CONFIG = {
+        CANVAS_WIDTH: 800,
+        CANVAS_HEIGHT: 400,
+        WORLD_WIDTH: 4000, // Total width of the scrolling level
+        
+        // Customizable Options (Defaults)
+        GRAVITY: 0.05,
+        THRUST_RATE: 0.1,
+        CRASH_VELOCITY_Y: 1.0, // Max safe vertical speed for landing
+
+        // Fixed/Derived Options
+        SIDE_THRUST_RATE: 0.05,
+        FUEL_BURN: 0.05,
+        WATER_DROP_COST: 5,
+        MAX_VELOCITY: 5.0,
+        PLAYER_SIZE: 20,
+        MAX_FUEL: 100,
+        MAX_WATER: 100,
+        FIRE_RANGE: 40,     // Radius of water effectiveness
+        WATER_DAMAGE_PER_DROP: 15, 
+        SMALL_FIRE_LIFE: 15,       // Requires 1 drop
+        LARGE_FIRE_LIFE: 60,       // Requires 4 drops (60 / 15 = 4)
+    };
+
+    // --- DOM Element References ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const fuelBar = document.getElementById('fuel-bar');
+    const waterBar = document.getElementById('water-bar');
+    const fuelDisplay = document.getElementById('fuel-display');
+    const waterDisplay = document.getElementById('water-display');
+    const vxDisplay = document.getElementById('vx-display');
+    const vyDisplay = document.getElementById('vy-display');
+    const gameMessage = document.getElementById('game-message');
+    
+    // New Screen Refs
+    const startScreen = document.getElementById('start-screen');
+    const optionsScreen = document.getElementById('options-screen');
+    const gameContent = document.getElementById('game-content');
+
+    // --- Game State ---
+    let game = {
+        screen: 'start', // 'start', 'options', 'game'
+        isRunning: true,
+        isLanded: false,
+        isWin: false,
+        isCrash: false,
+        keys: {},
+        terrain: [],
+        fires: [],
+        drops: [], 
+        heli: null,
+        cameraX: 0,
+        startPad: { x: 50, y: 0, width: 80, isFueling: true, isRefilling: true },
+        endPad: { x: CONFIG.WORLD_WIDTH - 100, y: 0, width: 100, isEnd: true },
+    };
+
+    // --- Helitanker Object ---
+    function HeliTanker() {
+        this.x = game.startPad.x + game.startPad.width / 2;
+        this.y = 50;
+        this.vx = 0;
+        this.vy = 0;
+        this.fuel = CONFIG.MAX_FUEL;
+        this.water = CONFIG.MAX_WATER;
+    }
+
+    HeliTanker.prototype.update = function() {
+        if (!game.isRunning) return;
+
+        let thrustApplied = false;
+
+        // Apply vertical thrust (W or Up Arrow)
+        if (game.keys['w'] || game.keys['ArrowUp']) {
+            if (this.fuel > 0) {
+                this.vy -= CONFIG.THRUST_RATE;
+                this.fuel -= CONFIG.FUEL_BURN;
+                thrustApplied = true;
+            }
+        }
+
+        // Apply side thrust (A/Left and D/Right)
+        if (game.keys['a'] || game.keys['ArrowLeft']) {
+            if (this.fuel > 0) {
+                this.vx -= CONFIG.SIDE_THRUST_RATE;
+                this.fuel -= CONFIG.FUEL_BURN * 0.5; // less fuel burn for side thrust
+                thrustApplied = true;
+            }
+        }
+        if (game.keys['d'] || game.keys['ArrowRight']) {
+            if (this.fuel > 0) {
+                this.vx += CONFIG.SIDE_THRUST_RATE;
+                this.fuel -= CONFIG.FUEL_BURN * 0.5;
+                thrustApplied = true;
+            }
+        }
+
+        // Apply Gravity (uses configurable GRAVITY)
+        this.vy += CONFIG.GRAVITY;
+
+        // Check fuel level
+        if (this.fuel <= 0) {
+            this.fuel = 0;
+            // No thrust possible, gravity takes over
+            if (thrustApplied) {
+                gameMessage.textContent = "CRITICAL: Out of Fuel! Gravity Pull.";
+                gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-red-500";
+            }
+        }
+
+        // Apply velocity (Clamp velocity to prevent super-speed)
+        this.vx = Math.max(-CONFIG.MAX_VELOCITY, Math.min(CONFIG.MAX_VELOCITY, this.vx));
+        this.vy = Math.max(-CONFIG.MAX_VELOCITY, Math.min(CONFIG.MAX_VELOCITY, this.vy));
+        
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Prevent flying out of the world boundaries
+        this.x = Math.max(CONFIG.PLAYER_SIZE / 2, Math.min(CONFIG.WORLD_WIDTH - CONFIG.PLAYER_SIZE / 2, this.x));
+    };
+
+    HeliTanker.prototype.draw = function() {
+        const x = this.x - game.cameraX;
+        const y = this.y;
+
+        // Draw the main yellow block (Helitanker)
+        ctx.fillStyle = '#facc15'; // Tailwind yellow-400
+        ctx.fillRect(x - CONFIG.PLAYER_SIZE / 2, y - CONFIG.PLAYER_SIZE / 2, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
+
+        // Simple rotor effect (horizontal wobble)
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        // Calculate horizontal position based on time
+        const wobbleFactor = 0.5; // Controls speed
+        const wobbleAmplitude = CONFIG.PLAYER_SIZE * 0.3; // Controls how far it moves left/right
+        const wobbleOffset = Math.sin(Date.now() * 0.01 * wobbleFactor) * wobbleAmplitude; 
+        
+        const rotorY = y - CONFIG.PLAYER_SIZE / 2 - 5; // Fixed Y position slightly above the heli block
+        const rotorSpan = CONFIG.PLAYER_SIZE * 1.5;
+        
+        // Draw a horizontal line that shifts left and right
+        ctx.moveTo(x - rotorSpan / 2 + wobbleOffset, rotorY);
+        ctx.lineTo(x + rotorSpan / 2 + wobbleOffset, rotorY);
+        
+        ctx.stroke();
+
+        // Draw water payload indicator (small blue square at the bottom)
+        ctx.fillStyle = '#3b82f6'; // Tailwind blue-500
+        const waterHeight = CONFIG.PLAYER_SIZE * (this.water / CONFIG.MAX_WATER) * 0.5;
+        ctx.fillRect(x - 5, y + CONFIG.PLAYER_SIZE / 2 - waterHeight, 10, waterHeight);
+    };
+
+    // --- Water Drop Mechanic ---
+    function dropWater() {
+        if (!game.heli || !game.isRunning || game.isLanded) return;
+
+        if (game.heli.water >= CONFIG.WATER_DROP_COST) {
+            game.heli.water -= CONFIG.WATER_DROP_COST;
+            
+            // Create a small, visible water drop to be tracked in the game state
+            const drop = {
+                x: game.heli.x,
+                y: game.heli.y + CONFIG.PLAYER_SIZE / 2,
+                vy: 2, // Drops quickly
+                radius: 3, // Smaller radius for the drop visual
+                isHit: false // Flag to mark if the drop hit a fire/ground
+            };
+            game.drops.push(drop); // Add the drop to the active drops array
+
+        } else {
+            gameMessage.textContent = "Water Empty! Find a pad to refill.";
+            gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-red-400";
+        }
+    }
+    
+    // --- Drop Update Logic ---
+    function updateDrops() {
+        // Filter out drops that have hit the ground or a fire
+        game.drops = game.drops.filter(drop => {
+            if (drop.isHit) return false;
+
+            // 1. Apply drop movement (simple constant velocity)
+            drop.y += drop.vy;
+
+            // 2. Check for fire hits
+            let hitFire = false;
+            game.fires = game.fires.filter(fire => {
+                // Check if the drop is within the fire's effective range (FIRE_RANGE)
+                const distSq = (fire.x - drop.x) ** 2 + (fire.y - drop.y) ** 2;
+                if (distSq < (CONFIG.FIRE_RANGE * CONFIG.FIRE_RANGE)) {
+                    // Drop hit a fire!
+                    fire.life -= CONFIG.WATER_DAMAGE_PER_DROP; 
+                    hitFire = true;
+                    drop.isHit = true; // Mark drop for removal
+
+                    // Keep fire if life > 0, otherwise filter it out
+                    return fire.life > 0;
+                }
+                return true; // Keep the fire if no hit
+            });
+
+            if (hitFire) return false; // Remove drop that hit a fire
+
+            // 3. Check for ground hit (find terrain y at the drop's x position)
+            let terrainY = CONFIG.CANVAS_HEIGHT; 
+            for (let i = 0; i < game.terrain.length - 1; i++) {
+                const p1 = game.terrain[i];
+                const p2 = game.terrain[i+1];
+                if (drop.x >= p1.x && drop.x < p2.x) {
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const ratio = (drop.x - p1.x) / dx;
+                    // Interpolate terrain Y
+                    terrainY = p1.y + dy * ratio; 
+                    break;
+                }
+            }
+
+            if (drop.y + drop.radius >= terrainY) {
+                // Hit the ground
+                return false; 
+            }
+
+            // Keep the drop if it hasn't hit anything yet
+            return true;
+        });
+    }
+
+    function drawDrops() {
+        ctx.fillStyle = '#3b82f6'; // Blue for water
+        game.drops.forEach(drop => {
+            const x = drop.x - game.cameraX;
+            const y = drop.y;
+            ctx.beginPath();
+            ctx.arc(x, y, drop.radius, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    // --- Level Generation and Drawing ---
+
+    function generateTerrain() {
+        const worldPoints = [];
+        const segmentLength = 50; 
+        let y = CONFIG.CANVAS_HEIGHT * 0.8; 
+        let variance = 0;
+
+        // Simple Perlin-like noise generator for terrain
+        for (let x = 0; x <= CONFIG.WORLD_WIDTH + segmentLength; x += segmentLength) {
+            // Apply noise for variation
+            variance += Math.random() * 8 - 4; 
+            variance = Math.max(-50, Math.min(50, variance)); // Limit variance
+
+            y = CONFIG.CANVAS_HEIGHT * 0.8 + Math.sin(x / 300) * 40 + variance;
+            worldPoints.push({ x: x, y: y });
+        }
+        game.terrain = worldPoints;
+        
+        // Place pads on flat ground (find flat segments)
+        const findLandingY = (padX) => {
+            for(let i=0; i < game.terrain.length - 1; i++) {
+                if (game.terrain[i].x <= padX && game.terrain[i+1].x > padX) {
+                    // Interpolate Y value
+                    const dx = game.terrain[i+1].x - game.terrain[i].x;
+                    const dy = game.terrain[i+1].y - game.terrain[i].y;
+                    const ratio = (padX - game.terrain[i].x) / dx;
+                    return game.terrain[i].y + dy * ratio;
+                }
+            }
+            return CONFIG.CANVAS_HEIGHT * 0.8;
+        }
+
+        game.startPad.y = findLandingY(game.startPad.x);
+        game.endPad.y = findLandingY(game.endPad.x);
+
+        // Place fires (fire object now includes initialLife to calculate intensity)
+        // Fire 1 (Small: 1 drop to extinguish)
+        game.fires.push({ x: 500, y: findLandingY(500), initialLife: CONFIG.SMALL_FIRE_LIFE, life: CONFIG.SMALL_FIRE_LIFE });
+        // Fire 2 (Large: 4 drops to extinguish)
+        game.fires.push({ x: 1200, y: findLandingY(1200), initialLife: CONFIG.LARGE_FIRE_LIFE, life: CONFIG.LARGE_FIRE_LIFE });
+        // Fire 3 (Small: 1 drop to extinguish)
+        game.fires.push({ x: 2800, y: findLandingY(2800), initialLife: CONFIG.SMALL_FIRE_LIFE, life: CONFIG.SMALL_FIRE_LIFE });
+        // Fire 4 (Large: 4 drops to extinguish)
+        game.fires.push({ x: 3500, y: findLandingY(3500), initialLife: CONFIG.LARGE_FIRE_LIFE, life: CONFIG.LARGE_FIRE_LIFE });
+    }
+
+    function drawTerrain() {
+        ctx.fillStyle = '#4b5563'; // Gray-600 for terrain
+        ctx.beginPath();
+        
+        // Start from bottom left corner
+        ctx.moveTo(-game.cameraX, CONFIG.CANVAS_HEIGHT); 
+
+        // Draw terrain line
+        for (const point of game.terrain) {
+            ctx.lineTo(point.x - game.cameraX, point.y);
+        }
+
+        // Complete the shape to the bottom right and back to start
+        ctx.lineTo(CONFIG.WORLD_WIDTH - game.cameraX, CONFIG.CANVAS_HEIGHT);
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw landing pads
+        [game.startPad, game.endPad].forEach(pad => {
+            ctx.fillStyle = pad.isEnd ? '#dc2626' : '#22c55e'; // Red for End, Green for Start
+            ctx.fillRect(pad.x - game.cameraX, pad.y, pad.width, 10);
+            
+            // Draw Pad Label
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Inter';
+            const label = pad.isEnd ? "END" : "START / REFUEL";
+            ctx.fillText(label, pad.x + pad.width/2 - ctx.measureText(label).width/2 - game.cameraX, pad.y + 25);
+        });
+
+        // Draw fires
+        game.fires.forEach(fire => {
+            const x = fire.x - game.cameraX;
+            const y = fire.y;
+            // Use initialLife for intensity scaling
+            const intensity = fire.life / fire.initialLife;
+
+            // Simple fire drawing (flickering orange/red dots)
+            ctx.fillStyle = `rgba(252, 165, 16, ${0.5 * intensity + (Math.random() * 0.3)})`; // Orange-400
+            ctx.beginPath();
+            ctx.arc(x, y - 10, 10 * intensity, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = `rgba(239, 68, 68, ${0.7 * intensity + (Math.random() * 0.2)})`; // Red-500
+            ctx.beginPath();
+            ctx.arc(x, y - 5, 5 * intensity, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+
+    // --- Collision Detection ---
+    function checkCollisions() {
+        const heli = game.heli;
+        
+        // 1. Terrain Collision Check
+        for (let i = 0; i < game.terrain.length - 1; i++) {
+            const p1 = game.terrain[i];
+            const p2 = game.terrain[i+1];
+
+            // Only check segments close to the helicopter's x-position
+            if (heli.x > p1.x - 50 && heli.x < p2.x + 50) {
+                // Calculate the Y position of the terrain directly under the helicopter
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                let terrainY = p1.y;
+
+                if (dx > 0) {
+                    const ratio = (heli.x - p1.x) / dx;
+                    terrainY = p1.y + dy * ratio;
+                }
+
+                // Collision detected if helicopter bottom is at or below terrain
+                if (heli.y + CONFIG.PLAYER_SIZE / 2 >= terrainY) {
+                    // Ground hit!
+                    if (Math.abs(heli.vy) > CONFIG.CRASH_VELOCITY_Y) { // Uses configurable CRASH_VELOCITY_Y
+                        game.isCrash = true;
+                        endGame("CRASH LANDING! Vertical speed was too high.", 'text-red-600');
+                    } else {
+                        // Safe landing
+                        heli.vy = 0;
+                        heli.vx *= 0.99; // Slight friction
+                        heli.y = terrainY - CONFIG.PLAYER_SIZE / 2;
+                        game.isLanded = true;
+                        gameMessage.textContent = "Landed Safely. Check pads for refueling/mission end.";
+                        gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-green-400";
+                    }
+                    return; // Exit function after ground collision
+                } else {
+                    game.isLanded = false;
+                }
+            }
+        }
+        
+        // If not grounded, check for pad interactions
+        if (!game.isLanded) {
+            // Nothing to do, player is flying
+        } else {
+            // 2. Pad Interaction Check (if landed)
+            [game.startPad, game.endPad].forEach(pad => {
+                if (heli.x >= pad.x && heli.x <= pad.x + pad.width) {
+                    if (pad.isFueling) {
+                        // Refueling and refilling water
+                        if (heli.fuel < CONFIG.MAX_FUEL) {
+                            heli.fuel = Math.min(CONFIG.MAX_FUEL, heli.fuel + 0.5);
+                            gameMessage.textContent = "Refueling and Resupplying Water...";
+                            gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-blue-400";
+                        }
+                        if (heli.water < CONFIG.MAX_WATER) {
+                            heli.water = Math.min(CONFIG.MAX_WATER, heli.water + 1.0);
+                        }
+                    }
+
+                    if (pad.isEnd) {
+                        if (game.fires.length === 0) {
+                            game.isWin = true;
+                            endGame("MISSION SUCCESS! All fires extinguished and landed at the End Pad.", 'text-yellow-400');
+                        } else {
+                            gameMessage.textContent = `Must extinguish ${game.fires.length} fires before finishing!`;
+                            gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-red-400";
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+
+    // --- Screen Management Functions ---
+
+    function showScreen(screenName) {
+        game.screen = screenName;
+
+        startScreen.classList.add('hidden');
+        optionsScreen.classList.add('hidden');
+        gameContent.classList.add('hidden');
+        
+        if (screenName === 'start') {
+            startScreen.classList.remove('hidden');
+        } else if (screenName === 'options') {
+            optionsScreen.classList.remove('hidden');
+            loadOptions();
+        } else if (screenName === 'game') {
+            gameContent.classList.remove('hidden');
+            initGame(); // Initialize the game state when transitioning to the game screen
+        }
+    }
+
+    function startGame() {
+        showScreen('game');
+    }
+
+    function loadOptions() {
+        // Set range input values from CONFIG and update display spans
+        document.getElementById('opt-gravity').value = CONFIG.GRAVITY;
+        document.getElementById('gravity-value').textContent = CONFIG.GRAVITY.toFixed(2);
+        
+        document.getElementById('opt-thrust').value = CONFIG.THRUST_RATE;
+        document.getElementById('thrust-value').textContent = CONFIG.THRUST_RATE.toFixed(2);
+        
+        document.getElementById('opt-crash-speed').value = CONFIG.CRASH_VELOCITY_Y;
+        document.getElementById('crash-speed-value').textContent = CONFIG.CRASH_VELOCITY_Y.toFixed(1);
+    }
+
+    function saveOptions() {
+        // Saving options from range inputs
+        const gravityInput = parseFloat(document.getElementById('opt-gravity').value);
+        const thrustInput = parseFloat(document.getElementById('opt-thrust').value);
+        const crashSpeedInput = parseFloat(document.getElementById('opt-crash-speed').value);
+        
+        // Simple validation based on input min/max attributes (optional, as ranges enforce limits)
+        if (gravityInput && gravityInput > 0) CONFIG.GRAVITY = gravityInput;
+        if (thrustInput && thrustInput > 0) CONFIG.THRUST_RATE = thrustInput;
+        if (crashSpeedInput && crashSpeedInput > 0) CONFIG.CRASH_VELOCITY_Y = crashSpeedInput;
+        
+        // Use console.log to confirm settings without an alert box
+        console.log(`Settings Saved: Gravity=${CONFIG.GRAVITY.toFixed(2)}, Thrust=${CONFIG.THRUST_RATE.toFixed(2)}, CrashSpeed=${CONFIG.CRASH_VELOCITY_Y.toFixed(1)}`);
+
+        showScreen('start');
+    }
+
+
+    // --- Game Loop and Render ---
+
+    function updateCamera() {
+        // Keep the helicopter centered horizontally on the screen
+        let targetCameraX = game.heli.x - CONFIG.CANVAS_WIDTH / 2;
+        
+        // Clamp the camera view to the world boundaries
+        targetCameraX = Math.max(0, targetCameraX);
+        targetCameraX = Math.min(CONFIG.WORLD_WIDTH - CONFIG.CANVAS_WIDTH, targetCameraX);
+
+        // Smooth camera movement
+        game.cameraX += (targetCameraX - game.cameraX) * 0.1;
+    }
+
+    function updateUI() {
+        const heli = game.heli;
+
+        const fuelPercent = (heli.fuel / CONFIG.MAX_FUEL) * 100;
+        const waterPercent = (heli.water / CONFIG.MAX_WATER) * 100;
+
+        // Update Fuel Bar
+        fuelBar.style.width = `${fuelPercent}%`;
+        fuelDisplay.textContent = `${Math.round(fuelPercent)}%`;
+        if (fuelPercent < 20) {
+            fuelBar.className = "resource-bar bg-red-500 h-full";
+        } else if (fuelPercent < 50) {
+            fuelBar.className = "resource-bar bg-yellow-500 h-full";
+        } else {
+            fuelBar.className = "resource-bar bg-green-500 h-full";
+        }
+
+        // Update Water Bar
+        waterBar.style.width = `${waterPercent}%`;
+        waterDisplay.textContent = `${Math.round(waterPercent)}%`;
+
+        // Update Speed Displays (Absolute values for clarity in UI)
+        vxDisplay.textContent = Math.abs(heli.vx).toFixed(2);
+        vyDisplay.textContent = Math.abs(heli.vy).toFixed(2);
+        
+        // Dynamic message if flying
+        if (!game.isLanded && !game.isCrash && !game.isWin) {
+            if (game.fires.length > 0) {
+                gameMessage.textContent = `Active Fires: ${game.fires.length} | Reach Red Pad to Finish.`;
+                gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-yellow-300";
+            } else {
+                gameMessage.textContent = "All fires out! Head to the Red Pad.";
+                gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-green-300";
+            }
+        }
+    }
+
+    function gameLoop() {
+        // 1. Update
+        if (game.screen === 'game' && game.isRunning) {
+            game.heli.update();
+            updateDrops(); 
+            checkCollisions();
+            updateCamera();
+            updateUI();
+        }
+        
+        // 2. Render - Only render the canvas contents if we are in the game screen
+        if (game.screen === 'game') {
+             ctx.clearRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+            
+            drawTerrain();
+            drawDrops(); 
+            game.heli.draw();
+
+            // If crashed or won, draw a game-over screen overlay
+            if (game.isCrash || game.isWin) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+                
+                ctx.textAlign = 'center';
+                ctx.font = '36px Inter';
+                ctx.fillStyle = game.isCrash ? '#ef4444' : '#facc15';
+                const message = game.isCrash ? 'MISSION FAILED' : 'MISSION COMPLETE';
+                ctx.fillText(message, CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 - 30);
+                
+                ctx.font = '18px Inter';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(gameMessage.textContent, CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 10);
+                
+                ctx.font = '14px Inter';
+                ctx.fillStyle = '#9ca3af';
+                ctx.fillText('Press R to Restart', CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 40);
+            }
+        } else {
+            // Clear the canvas when not in the game screen
+             ctx.clearRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+        }
+
+
+        // 3. Loop
+        requestAnimationFrame(gameLoop);
+    }
+
+    function endGame(message, colorClass) {
+        game.isRunning = false;
+        gameMessage.textContent = message;
+        gameMessage.className = `text-center text-lg font-bold h-6 mb-2 ${colorClass}`;
+    }
+
+    // --- Input Handlers ---
+    function handleKeyDown(e) {
+        const key = e.key.toLowerCase();
+        
+        if (game.screen === 'game') {
+            game.keys[key] = true;
+            if (key === ' ' || key === 'spacebar') {
+                e.preventDefault(); // Prevent space bar scrolling
+                dropWater();
+            }
+
+            if (key === 'r' && (game.isCrash || game.isWin)) {
+                // Restart the game by going back to the start screen
+                showScreen('start');
+            }
+        }
+    }
+
+    function handleKeyUp(e) {
+        if (game.screen === 'game') {
+            const key = e.key.toLowerCase();
+            game.keys[key] = false;
+        }
+    }
+
+    // --- Initialization ---
+
+    function initGame() {
+        canvas.width = CONFIG.CANVAS_WIDTH;
+        canvas.height = CONFIG.CANVAS_HEIGHT;
+
+        // Reset game state
+        game.isRunning = true;
+        game.isLanded = false;
+        game.isWin = false;
+        game.isCrash = false;
+        game.keys = {};
+        game.cameraX = 0;
+        game.terrain = [];
+        game.fires = []; 
+        game.drops = []; 
+
+        // Generate level and place helicopter
+        generateTerrain();
+        game.heli = new HeliTanker();
+        
+        updateUI(); // Initial UI draw
+        gameMessage.textContent = "Find and extinguish all fires, then land at the Red Pad.";
+        gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-yellow-300";
+    }
+
+    // Attach Event Listeners on load
+    window.onload = function() {
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+        
+        // Start the game loop and show the start screen
+        showScreen('start');
+        gameLoop();
+    };
+
+</script>
+
+</body>
+</html>
