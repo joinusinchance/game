@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Helitanker Lander - Multi-Stage</title>
+    <title>Helitanker Rescue - On Foot Mode</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom styles for the game environment */
@@ -59,7 +59,7 @@
         <button onclick="showScreen('options')" class="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-lg font-bold shadow-md transition duration-200">
             Options
         </button>
-        <p class="text-sm text-gray-400 pt-4">Press W/Up to fly, Space to drop water.</p>
+        <p class="text-sm text-gray-400 pt-4">Controls: **W/Up** (Thrust), **A/D** (Lateral/Walk), **E** (Exit/Enter), **Space** (Water Drop/Squirt).</p>
     </div>
 
     <!-- Options Screen -->
@@ -102,7 +102,7 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs sm:text-sm">
                 <!-- Mission Stage Display -->
                 <div class="flex flex-col">
-                    <span class="font-semibold text-gray-400">Mission Stage: <span id="stage-display" class="text-cyan-400 font-bold">1</span></span>
+                    <span class="font-semibold text-gray-400">Mode: <span id="mode-display" class="text-cyan-400 font-bold">HELI</span></span>
                     <span class="font-semibold text-gray-400">Fires Remaining: <span id="fires-display" class="text-red-400 font-bold">0</span></span>
                 </div>
                 
@@ -151,12 +151,16 @@
         SIDE_THRUST_RATE: 0.05,
         FUEL_BURN: 0.05,
         WATER_DROP_COST: 5,
+        WATER_SQUIRT_COST: 1, // Less water used for ground squirt
+        FUEL_PICKUP_AMOUNT: 20, // Fuel restored by barrel
+        GROUND_SPEED: 2.0, // New constant for stick figure speed
         MAX_VELOCITY: 5.0,
-        PLAYER_SIZE: 20,
+        PLAYER_SIZE: 20, // Heli box size
         MAX_FUEL: 100,
         MAX_WATER: 100,
         FIRE_RANGE: 40,
         WATER_DAMAGE_PER_DROP: 15, 
+        WATER_DAMAGE_PER_SQUIRT: 5, // Less damage from ground squirt
         SMALL_FIRE_LIFE: 15,
         LARGE_FIRE_LIFE: 60,
     };
@@ -171,7 +175,7 @@
     const vxDisplay = document.getElementById('vx-display');
     const vyDisplay = document.getElementById('vy-display');
     const firesDisplay = document.getElementById('fires-display');
-    const stageDisplay = document.getElementById('stage-display');
+    const modeDisplay = document.getElementById('mode-display');
     const gameMessage = document.getElementById('game-message');
     
     // New Screen Refs
@@ -190,43 +194,67 @@
         terrain: [],
         fires: [],
         drops: [], 
-        heli: null,
+        heli: null, // The helicopter object (also holds player state when on ground)
+        fuelBarrel: null, // New object
         cameraX: 0,
-        missionStage: 1, // 1 or 2 (determines pad roles)
-        fireBaseCount: 4, // Initial number of fires
+        missionStage: 1, 
+        fireBaseCount: 4, 
+        playerMode: 'heli', // New state: 'heli' or 'ground'
         
         // Pad Definitions (fixed world coordinates)
-        padA: { x: 50, y: 0, width: 80, label: "Left Pad" }, // Original Start Pad
-        padB: { x: CONFIG.WORLD_WIDTH - 130, y: 0, width: 80, label: "Right Pad" }, // Original End Pad
+        padA: { x: 50, y: 0, width: 80, label: "Left Pad" }, 
+        padB: { x: CONFIG.WORLD_WIDTH - 130, y: 0, width: 80, label: "Right Pad" }, 
         
         // Dynamic Pad Roles based on missionStage
         currentRefuelPad: null, 
         currentEndPad: null,
     };
 
-    // --- Helitanker Object ---
+    // --- Helitanker Object (Represents the player state, even when on ground) ---
     function HeliTanker() {
-        // Position will be set dynamically in setupMission
         this.x = 0; 
         this.y = 50;
-        this.vx = 0;
-        this.vy = 0;
+        this.vx = 0; // Only used in heli mode
+        this.vy = 0; // Used in both modes (heli physics, or ground jump/fall)
         this.fuel = CONFIG.MAX_FUEL;
         this.water = CONFIG.MAX_WATER;
     }
 
     HeliTanker.prototype.update = function() {
-        // The early return when game.isLanded was causing the take-off bug.
-        // We now allow thrust input to be processed, which can unset game.isLanded.
-        if (!game.isRunning || game.isCrash) return; 
+        if (!game.isRunning || game.isCrash) return;
 
+        if (game.playerMode === 'heli') {
+            this.updateHeli();
+        } else if (game.playerMode === 'ground') {
+            this.updateStickFigure();
+        }
+    };
+    
+    // --- Helper to find ground Y position for current X ---
+    function getGroundY(xPos) {
+        let terrainY = CONFIG.CANVAS_HEIGHT; 
+        for (let i = 0; i < game.terrain.length - 1; i++) {
+            const p1 = game.terrain[i];
+            const p2 = game.terrain[i+1];
+            if (xPos > p1.x && xPos <= p2.x) {
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const ratio = (xPos - p1.x) / dx;
+                terrainY = p1.y + dy * ratio; 
+                break;
+            }
+        }
+        return terrainY;
+    }
+
+    // --- Helicopter Mode Update ---
+    HeliTanker.prototype.updateHeli = function() {
         let thrustApplied = false;
         const isThrustingUp = game.keys['w'] || game.keys['ArrowUp'];
 
-        // 1. Vertical Thrust Check (Allowed even when landed to initiate take-off)
+        // 1. Vertical Thrust Check (Allows takeoff)
         if (isThrustingUp) {
             if (this.fuel > 0) {
-                // If landed and thrust is applied, we take off.
                 if (game.isLanded) {
                     game.isLanded = false; 
                 }
@@ -236,7 +264,7 @@
             }
         }
 
-        // 2. If still landed (i.e., didn't press 'W' or 'Up'), stop movement and skip physics.
+        // 2. If landed and not thrusting up, stop movement and skip physics.
         if (game.isLanded) {
             this.vx = 0; 
             this.vy = 0; 
@@ -245,7 +273,7 @@
 
         // 3. Normal Flight Physics (Only runs if !game.isLanded)
         
-        // Apply side thrust (A/Left and D/Right)
+        // Apply side thrust
         if (game.keys['a'] || game.keys['ArrowLeft']) {
             if (this.fuel > 0) {
                 this.vx -= CONFIG.SIDE_THRUST_RATE;
@@ -261,7 +289,7 @@
             }
         }
 
-        // Apply Gravity (uses configurable GRAVITY)
+        // Apply Gravity
         this.vy += CONFIG.GRAVITY;
 
         // Check fuel level
@@ -281,11 +309,56 @@
         this.x = Math.max(CONFIG.PLAYER_SIZE / 2, Math.min(CONFIG.WORLD_WIDTH - CONFIG.PLAYER_SIZE / 2, this.x));
     };
 
+    // --- Stick Figure Mode Update ---
+    HeliTanker.prototype.updateStickFigure = function() {
+        // Apply Gravity to the stick figure
+        this.vy += CONFIG.GRAVITY;
+        this.y += this.vy;
+
+        // Walking movement
+        if (game.keys['a'] || game.keys['ArrowLeft']) {
+            this.x -= CONFIG.GROUND_SPEED;
+            checkFuelPickup(); 
+        }
+        if (game.keys['d'] || game.keys['ArrowRight']) {
+            this.x += CONFIG.GROUND_SPEED;
+            checkFuelPickup(); 
+        }
+
+        // Boundary Check
+        this.x = Math.max(1, Math.min(CONFIG.WORLD_WIDTH - 1, this.x));
+        
+        // Collision with terrain (Grounding the stick figure)
+        const groundY = getGroundY(this.x);
+        const playerBottomY = this.y + 10; // Stick figure is 20 units tall (head at Y, feet at Y+10)
+        
+        if (playerBottomY >= groundY) {
+            this.y = groundY - 10; // Snap player's feet to the ground
+            this.vy = 0;
+        }
+
+        // Reset landing state check (not strictly needed, but keeps state clean)
+        game.isLanded = true; 
+    }
+
+
+    // --- Drawing Functions ---
+
     HeliTanker.prototype.draw = function() {
+        if (game.playerMode === 'heli') {
+            this.drawHeli();
+        } else if (game.playerMode === 'ground') {
+            this.drawStickFigure();
+            // Draw a subtle marker for the helicopter's location
+            this.drawHeliMarker();
+        }
+    };
+    
+    HeliTanker.prototype.drawHeli = function() {
         const x = this.x - game.cameraX;
         const y = this.y;
 
-        // Draw the main yellow block (Helitanker)
+        // Draw the main yellow block (Helitanker body)
         ctx.fillStyle = '#facc15';
         ctx.fillRect(x - CONFIG.PLAYER_SIZE / 2, y - CONFIG.PLAYER_SIZE / 2, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
 
@@ -312,62 +385,148 @@
         ctx.fillRect(x - 5, y + CONFIG.PLAYER_SIZE / 2 - waterHeight, 10, waterHeight);
     };
 
-    // --- Water Drop Mechanic ---
-    function dropWater() {
-        if (!game.heli || !game.isRunning || game.isLanded) return;
+    HeliTanker.prototype.drawStickFigure = function() {
+        const x = this.x - game.cameraX;
+        const y = this.y; // Y is now the head/center of the body
 
-        if (game.heli.water >= CONFIG.WATER_DROP_COST) {
-            game.heli.water -= CONFIG.WATER_DROP_COST;
-            
-            const drop = {
-                x: game.heli.x,
-                y: game.heli.y + CONFIG.PLAYER_SIZE / 2,
-                vy: 2,
-                radius: 3,
-                isHit: false
-            };
-            game.drops.push(drop);
+        // Stick Figure size parameters
+        const headRadius = 4;
+        const bodyHeight = 10;
+        const legLength = 6;
+        const legWobble = Math.sin(Date.now() * 0.05) * 2; // Walking animation
 
-        } else {
-            gameMessage.textContent = "Water Empty! Find the REFUEL pad.";
-            gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-red-400";
-        }
+        // Body color (Firefighter orange/red)
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+
+        // 1. Head (circle)
+        ctx.beginPath();
+        ctx.arc(x, y - headRadius, headRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 2. Body (line)
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + bodyHeight);
+        ctx.stroke();
+        
+        // 3. Legs
+        ctx.beginPath();
+        // Left Leg
+        ctx.moveTo(x, y + bodyHeight);
+        ctx.lineTo(x - legWobble, y + bodyHeight + legLength);
+        // Right Leg
+        ctx.moveTo(x, y + bodyHeight);
+        ctx.lineTo(x + legWobble, y + bodyHeight + legLength);
+        ctx.stroke();
+
+        // 4. Firefighting Backpack (Water indicator)
+        const backpackWidth = 8;
+        const waterHeight = (this.water / CONFIG.MAX_WATER) * 10;
+        ctx.fillStyle = '#1d4ed8'; // Blue backpack
+        ctx.fillRect(x - backpackWidth/2, y, backpackWidth, -10); // Backpack sits behind body, high up
+        
+        // Water level on backpack
+        ctx.fillStyle = '#3b82f6';
+        ctx.fillRect(x - backpackWidth/2 + 1, y - waterHeight - 1, backpackWidth - 2, waterHeight);
+    };
+
+    HeliTanker.prototype.drawHeliMarker = function() {
+        const x = game.heli.x - game.cameraX;
+        const y = game.heli.y;
+        
+        // Draw a simple gray outline to show where the heli is
+        ctx.strokeStyle = 'rgba(156, 163, 175, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x - CONFIG.PLAYER_SIZE / 2, y - CONFIG.PLAYER_SIZE / 2, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
+        
+        ctx.font = '10px Inter';
+        ctx.fillStyle = 'rgba(156, 163, 175, 0.7)';
+        ctx.fillText("HELI", x - 12, y - CONFIG.PLAYER_SIZE/2 - 5);
     }
     
-    // --- Drop Update Logic (Simplified for space) ---
+    // --- Water Drop/Squirt Mechanic ---
+
+    function dropWater() {
+        if (!game.heli || !game.isRunning || game.isLanded) return;
+        if (game.heli.water < CONFIG.WATER_DROP_COST) {
+            gameMessage.textContent = "Water Empty! Find the REFUEL pad.";
+            gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-red-400";
+            return;
+        }
+
+        // Heli drop logic (vertical)
+        game.heli.water -= CONFIG.WATER_DROP_COST;
+        const drop = {
+            x: game.heli.x,
+            y: game.heli.y + CONFIG.PLAYER_SIZE / 2,
+            vx: game.heli.vx * 0.5, // Inherit some horizontal speed
+            vy: 2,
+            radius: 3,
+            isSquirt: false
+        };
+        game.drops.push(drop);
+    }
+
+    function squirtWater() {
+        if (!game.heli || !game.isRunning || game.playerMode !== 'ground') return;
+        if (game.heli.water < CONFIG.WATER_SQUIRT_COST) {
+            gameMessage.textContent = "Water Empty! Pick up fuel barrels or fly to the pad.";
+            gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-red-400";
+            return;
+        }
+
+        // Stick figure squirt logic (horizontal)
+        game.heli.water -= CONFIG.WATER_SQUIRT_COST;
+        
+        // Determine direction based on last movement or default (right)
+        let direction = 1; 
+        if (game.keys['a'] || game.keys['ArrowLeft']) { direction = -1; } 
+        else if (game.keys['d'] || game.keys['ArrowRight']) { direction = 1; }
+
+        const squirt = {
+            x: game.heli.x + direction * 5, // Start point near the figure
+            y: game.heli.y + 5, // Waist height
+            vx: direction * 5, // Fast horizontal velocity
+            vy: 0,
+            radius: 2,
+            isSquirt: true,
+            life: 50 // Squirt particles expire after this
+        };
+        game.drops.push(squirt);
+    }
+
+    // --- Drop Update Logic ---
     function updateDrops() {
         game.drops = game.drops.filter(drop => {
-            if (drop.isHit) return false;
-            drop.y += drop.vy;
+            if (drop.isSquirt) {
+                // Ground squirt physics
+                drop.x += drop.vx;
+                drop.y += drop.vy;
+                drop.life--;
+                if (drop.life <= 0) return false;
+            } else {
+                // Heli drop physics
+                drop.y += drop.vy;
+            }
 
-            let hitFire = false;
+            // Fire Hit Check (Water damage is adjusted by drop type)
+            let damage = drop.isSquirt ? CONFIG.WATER_DAMAGE_PER_SQUIRT : CONFIG.WATER_DAMAGE_PER_DROP;
+
             game.fires = game.fires.filter(fire => {
                 const distSq = (fire.x - drop.x) ** 2 + (fire.y - drop.y) ** 2;
                 if (distSq < (CONFIG.FIRE_RANGE * CONFIG.FIRE_RANGE)) {
-                    fire.life -= CONFIG.WATER_DAMAGE_PER_DROP; 
-                    hitFire = true;
+                    fire.life -= damage; 
                     drop.isHit = true;
                     return fire.life > 0;
                 }
                 return true;
             });
 
-            if (hitFire) return false;
+            if (drop.isHit) return false;
 
-            // Check for ground hit 
-            let terrainY = CONFIG.CANVAS_HEIGHT; 
-            for (let i = 0; i < game.terrain.length - 1; i++) {
-                const p1 = game.terrain[i];
-                const p2 = game.terrain[i+1];
-                if (drop.x >= p1.x && drop.x < p2.x) {
-                    const dx = p2.x - p1.x;
-                    const dy = p2.y - p1.y;
-                    const ratio = (drop.x - p1.x) / dx;
-                    terrainY = p1.y + dy * ratio; 
-                    break;
-                }
-            }
-
+            // Ground Collision Check
+            const terrainY = getGroundY(drop.x);
             if (drop.y + drop.radius >= terrainY) {
                 return false; 
             }
@@ -377,19 +536,56 @@
         firesDisplay.textContent = game.fires.length;
     }
     
-    // --- Drop Drawing Logic (FIX: Added missing function) ---
+    // --- Drop Drawing Logic ---
     function drawDrops() {
         game.drops.forEach(drop => {
             const x = drop.x - game.cameraX;
             const y = drop.y;
-            ctx.fillStyle = '#3b82f6'; // Blue for water
+            ctx.fillStyle = drop.isSquirt ? '#60a5fa' : '#3b82f6'; // Light blue for squirt
             ctx.beginPath();
             ctx.arc(x, y, drop.radius, 0, Math.PI * 2);
             ctx.fill();
         });
     }
 
-    // --- Level Generation and Drawing ---
+    // --- Pad and Barrel Interaction Helpers ---
+
+    function isNearHeli() {
+        // Check if stick figure is close enough to re-enter
+        const heliX = game.heli.x;
+        const heliY = getGroundY(heliX) - CONFIG.PLAYER_SIZE/2; // Heli center Y when landed
+        
+        const dx = Math.abs(heliX - game.heli.x); // Should always be 0 as heli uses the same coordinates
+        
+        // When on ground, game.heli.x is the stick figure's position
+        const dx_player = Math.abs(game.heli.x - heliX); 
+        return dx_player < CONFIG.PLAYER_SIZE * 0.75; 
+    }
+    
+    function checkFuelPickup() {
+        if (!game.fuelBarrel || !game.fuelBarrel.isAvailable) return;
+
+        const barrel = game.fuelBarrel;
+        const playerX = game.heli.x;
+
+        // Simple bounding box check
+        if (playerX > barrel.x - barrel.width && 
+            playerX < barrel.x + barrel.width) 
+        {
+            game.heli.fuel = Math.min(CONFIG.MAX_FUEL, game.heli.fuel + CONFIG.FUEL_PICKUP_AMOUNT);
+            barrel.isAvailable = false;
+            gameMessage.textContent = `Fuel Barrel collected! +${CONFIG.FUEL_PICKUP_AMOUNT} Fuel.`;
+            gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-yellow-500";
+            
+            // Barrel respawns after a delay
+            setTimeout(() => {
+                barrel.isAvailable = true;
+                gameMessage.textContent = "Fuel Barrel is available again.";
+            }, 10000); 
+        }
+    }
+
+    // --- Terrain, Fire, Pad Drawing (Same as before, with Fuel Barrel added) ---
 
     function generateTerrain() {
         const worldPoints = [];
@@ -424,22 +620,11 @@
     
     function generateFires(count) {
         const newFires = [];
-        const gap = (CONFIG.WORLD_WIDTH - 300) / count; // Spread fires across the middle of the map
-        const findLandingY = (x) => {
-            // Re-finding Y for fire placement
-            for(let i=0; i < game.terrain.length - 1; i++) {
-                if (game.terrain[i].x <= x && game.terrain[i+1].x > x) {
-                    const dx = game.terrain[i+1].x - game.terrain[i].x;
-                    const dy = game.terrain[i+1].y - game.terrain[i].y;
-                    const ratio = (x - game.terrain[i].x) / dx;
-                    return game.terrain[i].y + dy * ratio;
-                }
-            }
-            return CONFIG.CANVAS_HEIGHT * 0.8;
-        }
-
+        const gap = (CONFIG.WORLD_WIDTH - 300) / count; 
+        const findLandingY = getGroundY; // Use the dedicated helper
+        
         for (let i = 0; i < count; i++) {
-            const fireX = 150 + i * gap + (Math.random() * 50 - 25); // Add some randomness
+            const fireX = 150 + i * gap + (Math.random() * 50 - 25); 
             const life = i % 2 === 0 ? CONFIG.LARGE_FIRE_LIFE : CONFIG.SMALL_FIRE_LIFE;
             newFires.push({ 
                 x: fireX, 
@@ -478,6 +663,23 @@
             ctx.fillText(label, pad.x + pad.width/2 - ctx.measureText(label).width/2 - game.cameraX, pad.y + 25);
         });
 
+        // Draw Fuel Barrel
+        if (game.fuelBarrel && game.fuelBarrel.isAvailable) {
+            const barrel = game.fuelBarrel;
+            const x = barrel.x - game.cameraX;
+            const y = barrel.y;
+            
+            ctx.fillStyle = '#facc15'; // Yellow barrel
+            ctx.fillRect(x - barrel.width/2, y - barrel.height, barrel.width, barrel.height);
+            ctx.fillStyle = '#1f2937'; // Black stripes
+            ctx.fillRect(x - barrel.width/2, y - barrel.height + 3, barrel.width, 2);
+            ctx.fillRect(x - barrel.width/2, y - 5, barrel.width, 2);
+            
+            ctx.font = '10px Inter';
+            ctx.fillStyle = '#facc15';
+            ctx.fillText("FUEL", x - 10, y - barrel.height - 5);
+        }
+
         // Draw fires
         game.fires.forEach(fire => {
             const x = fire.x - game.cameraX;
@@ -500,66 +702,59 @@
     function checkCollisions() {
         const heli = game.heli;
         
-        // 1. Terrain Collision Check (simplified terrain lookup)
-        let terrainY = CONFIG.CANVAS_HEIGHT; 
-        for (let i = 0; i < game.terrain.length - 1; i++) {
-            const p1 = game.terrain[i];
-            const p2 = game.terrain[i+1];
-            if (heli.x > p1.x - 50 && heli.x < p2.x + 50) {
-                const dx = p2.x - p1.x;
-                const ratio = dx > 0 ? (heli.x - p1.x) / dx : 0;
-                terrainY = p1.y + (p2.y - p1.y) * ratio;
-                break;
-            }
-        }
-        
-        if (heli.y + CONFIG.PLAYER_SIZE / 2 >= terrainY) {
-            // Ground hit!
-            if (Math.abs(heli.vy) > CONFIG.CRASH_VELOCITY_Y) {
-                game.isCrash = true;
-                endGame("CRASH LANDING! Vertical speed was too high.", 'text-red-600');
-            } else {
-                // Safe landing
-                heli.vy = 0;
-                heli.vx *= 0.99;
-                heli.y = terrainY - CONFIG.PLAYER_SIZE / 2;
-                game.isLanded = true;
-            }
-        } else {
-            game.isLanded = false;
-        }
-
-        // 2. Pad Interaction Check (only if landed safely and not crashed)
-        if (game.isLanded && !game.isCrash) {
-            const landedPad = [game.currentRefuelPad, game.currentEndPad].find(pad => 
-                heli.x >= pad.x && heli.x <= pad.x + pad.width
-            );
-
-            if (landedPad) {
-                if (landedPad === game.currentRefuelPad) {
-                    // Refueling Pad Logic
-                    if (heli.fuel < CONFIG.MAX_FUEL || heli.water < CONFIG.MAX_WATER) {
-                        heli.fuel = Math.min(CONFIG.MAX_FUEL, heli.fuel + 0.5);
-                        heli.water = Math.min(CONFIG.MAX_WATER, heli.water + 1.0);
-                        gameMessage.textContent = "Refueling and Resupplying Water...";
-                        gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-blue-400";
-                    } else {
-                        gameMessage.textContent = "Ready to fly. Land on the Red Pad to finish.";
-                        gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-green-400";
-                    }
-                } else if (landedPad === game.currentEndPad) {
-                    // End Pad Logic 
-                    if (game.fires.length === 0) {
-                        // All fires are out - Trigger the next mission stage!
-                        nextMission();
-                    } else {
-                        gameMessage.textContent = `Must extinguish ${game.fires.length} fires before finishing!`;
-                        gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-red-400";
-                    }
+        // Only run collision/landing checks if in heli mode
+        if (game.playerMode === 'heli') {
+            // 1. Terrain Collision Check
+            const terrainY = getGroundY(heli.x);
+            
+            if (heli.y + CONFIG.PLAYER_SIZE / 2 >= terrainY) {
+                // Ground hit!
+                if (Math.abs(heli.vy) > CONFIG.CRASH_VELOCITY_Y) {
+                    game.isCrash = true;
+                    endGame("CRASH LANDING! Vertical speed was too high.", 'text-red-600');
+                } else {
+                    // Safe landing
+                    heli.vy = 0;
+                    heli.vx *= 0.99;
+                    heli.y = terrainY - CONFIG.PLAYER_SIZE / 2;
+                    game.isLanded = true;
                 }
             } else {
-                 gameMessage.textContent = "Landed safely on terrain. Take off to move!";
-                 gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-green-400";
+                game.isLanded = false;
+            }
+
+            // 2. Pad Interaction Check (only if landed safely and not crashed)
+            if (game.isLanded && !game.isCrash) {
+                const landedPad = [game.currentRefuelPad, game.currentEndPad].find(pad => 
+                    heli.x >= pad.x && heli.x <= pad.x + pad.width
+                );
+
+                if (landedPad) {
+                    if (landedPad === game.currentRefuelPad) {
+                        // Refueling Pad Logic
+                        if (heli.fuel < CONFIG.MAX_FUEL || heli.water < CONFIG.MAX_WATER) {
+                            heli.fuel = Math.min(CONFIG.MAX_FUEL, heli.fuel + 0.5);
+                            heli.water = Math.min(CONFIG.MAX_WATER, heli.water + 1.0);
+                            gameMessage.textContent = "Refueling and Resupplying Water...";
+                            gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-blue-400";
+                        } else {
+                            gameMessage.textContent = "Ready to fly. Land on the Red Pad to finish.";
+                            gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-green-400";
+                        }
+                    } else if (landedPad === game.currentEndPad) {
+                        // End Pad Logic 
+                        if (game.fires.length === 0) {
+                            // All fires are out - Trigger the next mission stage!
+                            nextMission();
+                        } else {
+                            gameMessage.textContent = `Must extinguish ${game.fires.length} fires before finishing!`;
+                            gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-red-400";
+                        }
+                    }
+                } else {
+                     gameMessage.textContent = "Landed safely on terrain. Take off (W) or Exit (E)!";
+                     gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-green-400";
+                }
             }
         }
     }
@@ -571,11 +766,12 @@
         // Reset flight state
         game.isRunning = true;
         game.isCrash = false;
+        game.playerMode = 'heli'; // Always start in the heli
 
         // 1. Determine Pad Roles based on Stage (The Swap)
         const [refuel, end] = stage === 1 
-            ? [game.padA, game.padB] // Stage 1: Left is Refuel, Right is End
-            : [game.padB, game.padA]; // Stage 2: Right is Refuel, Left is End
+            ? [game.padA, game.padB] 
+            : [game.padB, game.padA]; 
 
         game.currentRefuelPad = refuel;
         game.currentEndPad = end;
@@ -586,26 +782,34 @@
         // Set X to the center of the refuel pad
         game.heli.x = refuel.x + refuel.width / 2;
         // Set Y to sit directly on the pad (refuel.y is the terrain height)
-        game.heli.y = refuel.y - CONFIG.PLAYER_SIZE / 2; // <-- MODIFIED: Start on the pad
+        game.heli.y = refuel.y - CONFIG.PLAYER_SIZE / 2; 
 
         game.heli.fuel = CONFIG.MAX_FUEL;
         game.heli.water = CONFIG.MAX_WATER;
 
-        // Ensure the helicopter starts in a landed state
-        game.isLanded = true; // <-- MODIFIED: Start in a landed state so it doesn't fall immediately
+        game.isLanded = true; // Start in a landed state
 
-        // 3. Generate Fires (re-generate)
+        // 3. Setup Fuel Barrel
+        game.fuelBarrel = {
+            x: refuel.x + refuel.width + 50,
+            y: getGroundY(refuel.x + refuel.width + 50),
+            width: 15,
+            height: 20,
+            isAvailable: true
+        };
+
+        // 4. Generate Fires (re-generate)
         game.fires = generateFires(game.fireBaseCount);
         game.drops = [];
 
-        // 4. Update UI Messages
-        const message = `Stage ${stage}: Extinguish ${game.fires.length} fires. Head to the Red Pad (End) to finish.`;
+        // 5. Update UI Messages
+        const message = `Stage ${stage}: Extinguish ${game.fires.length} fires. Land on the Red Pad (End) to finish.`;
         gameMessage.textContent = message;
         gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-yellow-300";
     }
 
     function nextMission() {
-        game.isRunning = false; // Pause briefly
+        game.isRunning = false; 
         
         // 1. Advance Stage & Increase Fire Count (+2 more)
         game.missionStage = game.missionStage === 1 ? 2 : 1;
@@ -637,7 +841,7 @@
             loadOptions();
         } else if (screenName === 'game') {
             gameContent.classList.remove('hidden');
-            initGame(); // Initialize the game state when transitioning to the game screen
+            initGame(); 
         }
     }
 
@@ -687,10 +891,10 @@
         waterDisplay.textContent = `${Math.round(waterPercent)}%`;
 
         // Update other displays
+        modeDisplay.textContent = game.playerMode.toUpperCase();
         vxDisplay.textContent = Math.abs(heli.vx).toFixed(2);
         vyDisplay.textContent = Math.abs(heli.vy).toFixed(2);
         firesDisplay.textContent = game.fires.length;
-        stageDisplay.textContent = game.missionStage;
     }
 
     function gameLoop() {
@@ -748,14 +952,43 @@
         
         if (game.screen === 'game') {
             game.keys[key] = true;
+            
             if (key === ' ' || key === 'spacebar') {
                 e.preventDefault();
-                dropWater();
+                if (game.playerMode === 'heli') {
+                    dropWater();
+                } else if (game.playerMode === 'ground') {
+                    squirtWater();
+                }
+            }
+            
+            if (key === 'e') {
+                if (game.playerMode === 'heli' && game.isLanded && game.isRunning) {
+                    game.playerMode = 'ground';
+                    // Center stick figure slightly below heli body
+                    game.heli.y = getGroundY(game.heli.x) - 10; 
+                    gameMessage.textContent = "Exited Helicopter. Use A/D to walk, E to re-enter.";
+                    gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-cyan-400";
+                } else if (game.playerMode === 'ground' && game.isRunning) {
+                    if (isNearHeli()) {
+                        game.playerMode = 'heli';
+                        // Re-align heli position
+                        game.heli.y = getGroundY(game.heli.x) - CONFIG.PLAYER_SIZE / 2;
+                        game.heli.vy = 0;
+                        game.heli.vx = 0;
+                        game.isLanded = true;
+                        gameMessage.textContent = "Entered Helicopter. Ready for flight (W)!";
+                        gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-cyan-400";
+                    } else {
+                        gameMessage.textContent = "Move closer to the helicopter (HELI marker) to re-enter.";
+                        gameMessage.className = "text-center text-lg font-bold h-6 mb-2 text-red-400";
+                    }
+                }
             }
 
             if (key === 'r' && (game.isCrash || game.isWin)) {
-                game.missionStage = 1; // Reset stage for restart
-                game.fireBaseCount = 4; // Reset fire count
+                game.missionStage = 1; 
+                game.fireBaseCount = 4; 
                 showScreen('start');
             }
         }
@@ -779,7 +1012,7 @@
         game.isWin = false;
         game.isCrash = false;
 
-        generateTerrain(); // Only need to generate terrain once
+        generateTerrain(); 
         setupMission(game.missionStage);
         updateUI(); 
     }
