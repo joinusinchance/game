@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Helitanker Heros</title>
+    <title>Helitanker Rescue - On Foot Mode</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom styles for the game environment */
@@ -194,13 +194,14 @@
         terrain: [],
         fires: [],
         drops: [], 
+        explosions: [], // NEW: Array to hold particle effects
         heli: null, 
         fuelBarrel: null, 
         cameraX: 0,
         missionStage: 1, 
         fireBaseCount: 4, 
         playerMode: 'heli', // State: 'heli' or 'ground'
-        heliLandingPos: { x: 0, y: 0 }, // NEW: Stores the position of the abandoned heli
+        heliLandingPos: { x: 0, y: 0 }, // Stores the position of the abandoned heli
         
         // Pad Definitions (fixed world coordinates)
         padA: { x: 50, y: 0, width: 80, label: "Left Pad" }, 
@@ -350,7 +351,6 @@
             this.drawHeli(this.x, this.y, 1.0); // Full opacity when controlled
         } else if (game.playerMode === 'ground') {
             this.drawStickFigure();
-            // REMOVED drawHeliMarker - The main loop will call drawLandedHeli instead
         }
     };
     
@@ -398,7 +398,7 @@
         ctx.fillRect(x - 5, y + CONFIG.PLAYER_SIZE / 2 - waterHeight, 10, waterHeight);
     };
 
-    // NEW: Function to draw the inert helicopter at its fixed landing spot
+    // Function to draw the inert helicopter at its fixed landing spot
     function drawLandedHeli() {
         if (game.heliLandingPos) {
             game.heli.drawHeli(game.heliLandingPos.x, game.heliLandingPos.y, 0.6); // 60% opacity
@@ -563,6 +563,52 @@
         });
     }
 
+    // --- Explosion Mechanics ---
+
+    // Function to generate explosion particles
+    function generateExplosion(x, y) {
+        const numParticles = 80; // Increased particle count for a larger visual
+        for (let i = 0; i < numParticles; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 8 + 2; // Increased speed for wider spread
+            game.explosions.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 2, // Initial upward lift
+                life: 150 + Math.random() * 50, // Increased life for longer duration (max 200 frames)
+                radius: Math.random() * 4 + 3, // Slightly larger base radius
+                // Alternate between orange and yellow for fire effect
+                color: Math.random() < 0.5 ? 'rgba(255, 100, 0, ' : 'rgba(255, 255, 0, ', 
+            });
+        }
+    }
+
+    // Function to update explosion particles
+    function updateExplosions() {
+        game.explosions = game.explosions.filter(p => {
+            p.vy += CONFIG.GRAVITY; // Apply gravity
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life--;
+            return p.life > 0; // Remove particles when life runs out
+        });
+    }
+
+    // Function to draw explosion particles
+    function drawExplosions() {
+        const MAX_PARTICLE_LIFE = 200; // Based on the new max life in generateExplosion
+        game.explosions.forEach(p => {
+            const opacity = p.life / MAX_PARTICLE_LIFE; // Slower fade out over time
+            ctx.fillStyle = p.color + opacity + ')';
+            
+            ctx.beginPath();
+            // Scale radius down as particle fades
+            ctx.arc(p.x - game.cameraX, p.y, p.radius * opacity, 0, Math.PI * 2); 
+            ctx.fill();
+        });
+    }
+
     // --- Pad and Barrel Interaction Helpers ---
 
     // UPDATED: Now checks player position (game.heli.x) against the saved heli landing spot (game.heliLandingPos.x)
@@ -723,6 +769,10 @@
                 // Ground hit!
                 if (Math.abs(heli.vy) > CONFIG.CRASH_VELOCITY_Y) {
                     game.isCrash = true;
+                    // NEW: Generate explosion on crash
+                    if (game.explosions.length === 0) { 
+                        generateExplosion(heli.x, heli.y);
+                    }
                     endGame("CRASH LANDING! Vertical speed was too high.", 'text-red-600');
                 } else {
                     // Safe landing
@@ -779,6 +829,7 @@
         game.isRunning = true;
         game.isCrash = false;
         game.playerMode = 'heli'; // Always start in the heli
+        game.explosions = []; // Reset explosions array
 
         // 1. Determine Pad Roles based on Stage (The Swap)
         const [refuel, end] = stage === 1 
@@ -920,6 +971,11 @@
             checkCollisions();
             updateCamera();
             updateUI();
+        } 
+        
+        // Always update explosions if we are in game screen (even if crashed)
+        if (game.screen === 'game' && game.isCrash) {
+             updateExplosions();
         }
         
         // Render
@@ -935,6 +991,8 @@
             }
 
             if(game.heli) game.heli.draw(); // Draws the stick figure OR the flying heli
+            
+            drawExplosions(); // Draw explosion particles
 
             // Game Over/Win Overlay
             if (game.isCrash || game.isWin) {
@@ -1038,6 +1096,7 @@
         game.fireBaseCount = 4;
         game.isWin = false;
         game.isCrash = false;
+        game.explosions = []; // Clear explosions on initialization
 
         generateTerrain(); 
         setupMission(game.missionStage);
