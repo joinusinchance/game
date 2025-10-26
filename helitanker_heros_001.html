@@ -216,19 +216,35 @@
     }
 
     HeliTanker.prototype.update = function() {
-        if (!game.isRunning || game.isLanded) return;
+        // FIX: The early return when game.isLanded was preventing take-off thrust.
+        // We now allow thrust input to be processed, which can unset game.isLanded.
+        if (!game.isRunning || game.isCrash) return; 
 
         let thrustApplied = false;
+        const isThrustingUp = game.keys['w'] || game.keys['ArrowUp'];
 
-        // Apply vertical thrust (W or Up Arrow)
-        if (game.keys['w'] || game.keys['ArrowUp']) {
+        // 1. Vertical Thrust Check (Allowed even when landed to initiate take-off)
+        if (isThrustingUp) {
             if (this.fuel > 0) {
+                // If landed and thrust is applied, we take off.
+                if (game.isLanded) {
+                    game.isLanded = false; 
+                }
                 this.vy -= CONFIG.THRUST_RATE;
                 this.fuel = Math.max(0, this.fuel - CONFIG.FUEL_BURN);
                 thrustApplied = true;
             }
         }
 
+        // 2. If still landed (i.e., didn't press 'W' or 'Up'), stop movement and skip physics.
+        if (game.isLanded) {
+            this.vx = 0; 
+            this.vy = 0; 
+            return; 
+        }
+
+        // 3. Normal Flight Physics (Only runs if !game.isLanded)
+        
         // Apply side thrust (A/Left and D/Right)
         if (game.keys['a'] || game.keys['ArrowLeft']) {
             if (this.fuel > 0) {
@@ -443,7 +459,7 @@
         for (const point of game.terrain) {
             ctx.lineTo(point.x - game.cameraX, point.y);
         }
-        ctx.lineTo(CONFIG.WORLD_WIDTH - game.cameraX, CONFIG.CANVAS_HEIGHT);
+        ctx.lineTo(CONFIG.WORLD_WIDTH - game.cameraX, CONFIG.CANVAS_WIDTH);
         ctx.closePath();
         ctx.fill();
 
