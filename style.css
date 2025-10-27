@@ -1,0 +1,97 @@
+/* EXTENSIBILITY: Define CSS Custom Properties (Variables) for easy theme changes */
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --background-color: #ecf0f1;
+    --text-color: #333;
+    --card-hover-color: #2980b9;
+    --mobile-padding: 1rem;
+}
+
+/* Base Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+/* Main Content: Responsive Layout Container */
+.game-list-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: var(--mobile-padding);
+    /* RESPONSIVENESS: Uses CSS Grid for a flexible layout */
+    display: grid;
+    /* Default: Single column for mobile screens */
+    grid-template-columns: 1fr;
+    gap: 15px; 
+}
+
+/* Touch-Friendly Game Cards */
+.game-card {
+    /* MOBILE USABILITY: Ensures a large, block-level, touchable area */
+    display: block; 
+    text-decoration: none;
+    background-color: white;
+    border: 2px solid var(--primary-color);
+    padding: 1.5rem;
+    text-align: center;
+    border-radius: 8px;
+    transition: background-color 0.3s, transform 0.2s;
+    min-height: 80px; /* Ensures decent height for touch */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.game-card:hover, .game-card:focus {
+    background-color: var(--card-hover-color);
+    color: white;
+    transform: translateY(-3px);
+}
+
+.game-title {
+    /* Uses relative unit (rem) for better font scaling on different devices */
+    font-size: 1.25rem; 
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.game-card:hover .game-title {
+    color: white;
+}
+
+
+/* MOBILE USABILITY: Media Queries for scaling the layout */
+
+/* Tablet Layout (600px and up) */
+@media (min-width: 600px) {
+    .game-list-container {
+        /* Two columns on tablets */
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+}
+
+/* Desktop Layout (1024px and up) */
+@media (min-width: 1024px) {
+    .game-list-container {
+        /* Three columns on desktop */
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Header/Footer Styling */
+.site-header {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 2rem var(--mobile-padding);
+    text-align: center;
+}
+
+.site-footer {
+    text-align: center;
+    padding: 1rem;
+    background-color: var(--secondary-color);
+    color: #ecf0f1;
+    margin-top: 30px;
+}
