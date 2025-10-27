@@ -169,8 +169,11 @@
                 </div>
                 
                 <!-- 2. Game Over (Failure/Final Victory) Control -->
-                <div id="game-over-failure" class="hidden">
-                    <button id="try-again-btn" class="bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-indigo-700 text-base w-full">
+                <div id="game-over-failure" class="flex justify-center space-x-3 hidden">
+                    <button id="share-failure-btn" class="bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-yellow-600 text-sm flex-1">
+                        Share Score
+                    </button>
+                    <button id="try-again-btn" class="bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-indigo-700 text-base flex-1">
                         Unsuccessful, try again?
                     </button>
                 </div>
@@ -319,6 +322,7 @@
         const standardControls = document.getElementById('standard-controls');
         const gameOverFailure = document.getElementById('game-over-failure');
         const tryAgainBtn = document.getElementById('try-again-btn'); // Replaces old new-game-btn
+        const shareFailureBtn = document.getElementById('share-failure-btn'); // NEW: For failure/game over screen
         const levelSuccessControls = document.getElementById('level-success-controls');
         const shareSuccessBtn = document.getElementById('share-success-btn');
         const nextLevelBtn = document.getElementById('next-level-btn');
@@ -681,7 +685,7 @@
          * Handles sharing the score via the Web Share API with a clipboard fallback.
          */
         async function shareScore() {
-            const level = LEVELS[currentLevelIndex].level;
+            const level = currentLevelIndex < LEVELS.length ? LEVELS[currentLevelIndex].level : 'MAX';
             // Message format: "I scored X on level Y in wordga can you beat my score?"
             const shareText = `I scored ${score} on level ${level} in Wordga. Can you beat my score?`;
             const shareUrl = window.location.href;
@@ -709,19 +713,18 @@
                 // Clipboard Fallback (if navigator.share is not supported)
                 const fallbackMessage = `${shareText} Play the game here: ${shareUrl}`;
 
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(fallbackMessage).then(() => {
-                        showMessage(`Web Share not supported. Score message copied to clipboard!`);
-                    }).catch(() => {
-                        // Older document.execCommand fallback
-                        document.execCommand('copy', false, fallbackMessage); 
-                        showMessage(`Web Share not supported. Score message copied to clipboard (fallback)!`);
-                    });
-                } else {
-                    // Final fallback using document.execCommand
-                    document.execCommand('copy', false, fallbackMessage); 
-                    showMessage(`Web Share not supported. Score message copied to clipboard (manual)!`);
-                }
+                // Use document.execCommand('copy') as a more reliable fallback in iFrame contexts
+                const el = document.createElement('textarea');
+                el.value = fallbackMessage;
+                el.setAttribute('readonly', '');
+                el.style.position = 'absolute';
+                el.style.left = '-9999px';
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+
+                showMessage(`Web Share not supported. Score message copied to clipboard!`);
             }
         }
 
@@ -934,6 +937,7 @@
         tryAgainBtn.addEventListener('click', initGame); // Used for both failure and final victory
         nextLevelBtn.addEventListener('click', goToNextLevel);
         shareSuccessBtn.addEventListener('click', shareScore);
+        shareFailureBtn.addEventListener('click', shareScore); // NEW: Listen to the failure share button
 
         // Debug Controls
         openDebugBtn.addEventListener('click', openDebugScreen);
