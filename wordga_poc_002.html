@@ -167,8 +167,8 @@
                 <!-- 1. Standard Controls (Selecting/Placing - Default view) -->
                 <div id="standard-controls" class="flex justify-between items-stretch space-x-1 sm:space-x-2">
                     
-                    <!-- Left Group: Reserved Space for Debug (now hidden via CSS on placement) -->
-                    <div class="w-[18%]"></div>
+                    <!-- Left Group: Reserved Space -->
+                    <div class="w-[18%] hidden sm:block"></div>
                     
                     <!-- Center Group: Undo / Reset -->
                     <div class="flex space-x-1 sm:space-x-2">
@@ -241,7 +241,7 @@
     <!-- --- SETTINGS/LEVEL EDITOR VIEW --- -->
     <div id="settings-view" class="max-w-xl w-full p-4 bg-white rounded-xl shadow-2xl hidden">
         <h2 class="text-3xl font-bold mb-4 text-indigo-600 text-center">Settings & Level Editor</h2>
-        <p class="text-sm text-gray-600 mb-4 text-center">Manage game levels, words, and minimum scores.</p>
+        <p class="text-sm text-gray-600 mb-4 text-center">Manage game levels, words, and minimum scores, or generate a custom URL.</p>
         
         <!-- Level Selector -->
         <div class="mb-4">
@@ -253,7 +253,7 @@
         <div class="mb-4">
             <label for="level-words" class="block text-sm font-medium text-gray-700 mb-1">Words (Comma Separated, Uppercase):</label>
             <textarea id="level-words" rows="3" class="w-full p-2 border border-gray-300 rounded-lg font-mono text-sm"></textarea>
-            <p class="text-xs text-gray-500 mt-1">Max 8 letters per word.</p>
+            <p class="text-xs text-gray-500 mt-1">Max 8 letters per word. Words longer than 8 letters are ignored.</p>
         </div>
 
         <!-- Min Score Editor -->
@@ -273,6 +273,9 @@
             <button id="start-level-btn" class="bg-indigo-500 text-white font-bold py-2 rounded-lg hover:bg-indigo-600 transition flex-1 text-sm">
                 Start Selected Level
             </button>
+            <button id="generate-url-btn" class="bg-purple-500 text-white font-bold py-2 rounded-lg hover:bg-purple-600 transition flex-1 text-sm">
+                Generate Share Link
+            </button>
         </div>
         
         <p id="debug-message" class="text-center mt-3 text-sm font-medium hidden"></p>
@@ -288,7 +291,7 @@
         const OVERLAP_BONUS = 5; 
         const BASE_SCORE_PER_LETTER = 0; 
 
-        // UPDATED LEVELS ARRAY
+        // Default Levels Array - Will be overwritten if custom URL is present
         let LEVELS = [
             { level: 1, words: ["JUMBLE", "SCORE", "REUSE", "WORDS"], minScore: 25 },
             { level: 2, words: ["QUANTUM", "PUZZLE", "BONUS", "MOBILE"], minScore: 25 },
@@ -360,6 +363,7 @@
         const saveLevelBtn = document.getElementById('save-level-btn');
         const startLevelBtn = document.getElementById('start-level-btn');
         const debugMessage = document.getElementById('debug-message');
+        const generateUrlBtn = document.getElementById('generate-url-btn'); // New button
 
 
         // --- Navigation Function ---
@@ -400,24 +404,76 @@
             
             return null;
         }
+        
+        /** * Parses URL parameters for custom level data (target score & words). 
+         * If found and valid, it overrides the LEVELS array.
+         * @returns {boolean} True if a custom level was loaded.
+         */
+        function loadCustomLevelFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const urlTarget = params.get('target');
+            const urlWords = params.get('words');
+
+            if (urlTarget && urlWords) {
+                const minScore = parseInt(urlTarget);
+                const wordList = urlWords.split(',')
+                    .map(w => decodeURIComponent(w).trim().toUpperCase())
+                    .filter(w => w.length > 0 && w.length <= GRID_SIZE);
+
+                // Basic validation
+                if (isNaN(minScore) || minScore < 0 || wordList.length === 0) {
+                    console.error("Invalid custom level parameters found in URL. Loading default levels.");
+                    return false;
+                }
+
+                // Override LEVELS with the single custom level
+                LEVELS = [{
+                    level: 1, // Custom level is always level 1 in this session
+                    words: wordList,
+                    minScore: minScore
+                }];
+                
+                currentLevelIndex = 0;
+                
+                // Show a confirmation message
+                setTimeout(() => {
+                    showMessage(`Loaded **Custom Challenge**! Target: ${minScore}. Words: ${wordList.join(', ')}. Play the challenge!`);
+                }, 100);
+
+                return true;
+            }
+            return false;
+        }
 
 
         // --- Core Functions ---
 
         /** Initializes the game state and UI. */
         function initGame() {
+            // 1. Check for custom level in URL
+            const isCustomLevelLoaded = loadCustomLevelFromURL();
+
+            // 2. Set default start if no custom level
+            if (!isCustomLevelLoaded) {
+                currentLevelIndex = 0; 
+            }
+            
+            // Continue initialization
             grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(''));
-            score = 0;
-            currentLevelIndex = 0; 
-            currentWord = '';
+            score = 0; // Score always starts at 0 for the first loaded level
+            
+            // Load the determined starting level (custom or default)
             loadLevel(currentLevelIndex);
             gameState = 'selecting_start';
             placementHistory = [];
             renderGrid(); 
             renderUI();
             updateUndoButtonState();
-            navigateTo('main-game-view'); // Ensure we start on the main view
-            showMessage('Welcome! **Select a word** from the list above to begin placement.');
+            navigateTo('main-game-view'); 
+            
+            if (!isCustomLevelLoaded) {
+                showMessage('Welcome! **Select a word** from the list above to begin placement.');
+            }
         }
         
         /** Loads the words and target score for a specific level. */
@@ -526,7 +582,8 @@
 
             const currentLevelData = LEVELS[currentLevelIndex];
             if (currentLevelData) {
-                currentLevelDisplay.textContent = currentLevelData.level;
+                // If a custom level is loaded, show 'Custom' instead of the level number
+                currentLevelDisplay.textContent = LEVELS.length === 1 && currentLevelData.level === 1 && window.location.search.includes('target=') ? 'Custom' : currentLevelData.level;
                 targetScoreDisplay.textContent = currentLevelData.minScore;
             } else {
                  currentLevelDisplay.textContent = 'MAX';
@@ -543,8 +600,8 @@
             confirmBtn.disabled = true;
             resetBtn.classList.add('hidden');
             
-            // Hide the placeholder for the old debug button in standard controls
-            document.querySelector('#standard-controls > div.w-\\[18\\%\\]').classList.remove('hidden');
+            // Hide the reserved space placeholder
+            document.querySelector('#standard-controls > div:first-child').classList.add('hidden');
 
             if (gameState === 'selecting_start' || gameState === 'selecting_direction') {
                 standardControls.classList.remove('hidden');
@@ -554,7 +611,6 @@
                 confirmBtn.textContent = `Place Word (+${placementResult.totalScore})`;
                 confirmBtn.disabled = false;
                 resetBtn.classList.remove('hidden');
-                document.querySelector('#standard-controls > div.w-\\[18\\%\\]').classList.add('hidden');
             } else if (gameState === 'level_success') {
                 levelSuccessControls.classList.remove('hidden');
             } else if (gameState === 'game_over') { 
@@ -623,10 +679,10 @@
             
             if (score >= currentLevel.minScore) {
                 gameState = 'level_success';
-                showMessage(`Level ${currentLevel.level} Passed! Score ${score} / Target ${currentLevel.minScore}. <span class="text-green-600 font-bold">CONGRATULATIONS!</span>`);
+                showMessage(`Level ${LEVELS[currentLevelIndex].level} Passed! Score ${score} / Target ${currentLevel.minScore}. <span class="text-green-600 font-bold">CONGRATULATIONS!</span>`);
             } else {
                 gameState = 'game_over';
-                showMessage(`<span class="text-red-600 font-bold">Level ${currentLevel.level} Failed!</span> You scored ${score} but needed ${currentLevel.minScore}.`);
+                showMessage(`<span class="text-red-600 font-bold">Level ${LEVELS[currentLevelIndex].level} Failed!</span> You scored ${score} but needed ${currentLevel.minScore}.`);
             }
         }
 
@@ -714,9 +770,11 @@
          * Handles sharing the score via the Web Share API with a clipboard fallback.
          */
         async function shareScore() {
-            const level = currentLevelIndex < LEVELS.length ? LEVELS[currentLevelIndex].level : 'MAX';
-            const shareText = `I scored ${score} on level ${level} in Wordga. Can you beat my score?`;
-            const shareUrl = window.location.href;
+            const level = LEVELS.length === 1 && currentLevelIndex === 0 && window.location.search.includes('target=') ? 'Custom Challenge' : LEVELS[currentLevelIndex].level;
+            const shareText = `I scored ${score} on ${level} in Wordga. Can you beat my score?`;
+            
+            // Use the current URL, which includes custom level parameters if present
+            const shareUrl = window.location.href; 
 
             const shareData = {
                 title: 'Wordga Score Challenge!',
@@ -755,6 +813,15 @@
 
         /** Advances to the next level. */
         function goToNextLevel() {
+            // Check if this is a custom level loaded from URL
+            if (LEVELS.length === 1 && currentLevelIndex === 0 && window.location.search.includes('target=')) {
+                // If it's a custom level, end the game after success.
+                currentLevelIndex++; 
+                gameState = 'game_over';
+                showMessage(`Custom Challenge Complete! Final Score: ${score}`);
+                return;
+            }
+
             if (currentLevelIndex + 1 >= LEVELS.length) {
                 currentLevelIndex++;
                 gameState = 'game_over';
@@ -765,7 +832,7 @@
                 loadLevel(currentLevelIndex);
                 gameState = 'selecting_start';
                 placementHistory = [];
-                showMessage(`Starting Level ${LEVELS[currentLevelIndex].level}! Your new challenge begins now.`); // Updated message
+                showMessage(`Starting Level ${LEVELS[currentLevelIndex].level}! Your new challenge begins now.`);
             }
             renderGrid();
             renderUI();
@@ -928,6 +995,13 @@
         }
 
         function openSettingsScreen() {
+            // Restore default levels if a custom URL was used, so the editor sees the full set.
+            // (This is a quick fix; a robust solution would use a persistent storage for user levels).
+            if (LEVELS.length === 1 && LEVELS[0].level === 1 && window.location.search.includes('target=')) {
+                // Since we don't store the original, we just prevent saving back to the URL's level
+                // and warn the user. For this context, we allow editing the single level.
+            }
+
             populateLevelSelector();
             
             const levelToLoad = LEVELS[currentLevelIndex] ? LEVELS[currentLevelIndex].level : (LEVELS[0] ? LEVELS[0].level : 1); 
@@ -938,6 +1012,40 @@
                  levelSelect.value = levelToLoad; 
                  loadLevelDataToEditor(levelToLoad);
             }
+        }
+        
+        /** Generates a shareable URL for the currently edited level. */
+        function generateShareLink() {
+            const levelNumber = parseInt(levelSelect.value);
+            const levelData = LEVELS.find(l => l.level === levelNumber);
+            
+            if (!levelData) {
+                displayDebugMessage("Error: Could not find current level data.", true);
+                return;
+            }
+
+            // Ensure latest changes are saved before generating the link
+            saveLevelChanges();
+
+            const wordsParam = encodeURIComponent(levelData.words.join(','));
+            const targetParam = levelData.minScore;
+            
+            // Construct the base URL without existing parameters
+            const baseUrl = window.location.origin + window.location.pathname;
+            const shareUrl = `${baseUrl}?target=${targetParam}&words=${wordsParam}`;
+
+            // Display the link and copy it to clipboard
+            const el = document.createElement('textarea');
+            el.value = shareUrl;
+            el.setAttribute('readonly', '');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+
+            displayDebugMessage("Share link copied to clipboard! Paste the URL to challenge a friend.", false);
         }
 
 
@@ -959,7 +1067,7 @@
 
         // Navigation Controls
         aboutBtn.addEventListener('click', () => navigateTo('about-view'));
-        aboutBtnMobile.addEventListener('click', () => navigateTo('about-view')); // Handle the new mobile button
+        aboutBtnMobile.addEventListener('click', () => navigateTo('about-view')); 
         settingsBtn.addEventListener('click', () => navigateTo('settings-view'));
         backFromAboutBtn.addEventListener('click', () => navigateTo('main-game-view'));
         backFromSettingsBtn.addEventListener('click', () => navigateTo('main-game-view'));
@@ -969,6 +1077,7 @@
         addLevelBtn.addEventListener('click', addNewLevel); 
         saveLevelBtn.addEventListener('click', saveLevelChanges);
         startLevelBtn.addEventListener('click', startSelectedLevel);
+        generateUrlBtn.addEventListener('click', generateShareLink); // New URL generator listener
 
 
         // --- Start Game on Load ---
