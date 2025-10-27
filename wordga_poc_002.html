@@ -431,10 +431,8 @@
             const levelData = LEVELS[index];
             minScoreTarget = levelData.minScore;
             
-            // Reset grid for a new level
-            if (index > 0 || score === 0) { 
-                grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(''));
-            }
+            // Always reset the grid when loading a new level configuration
+            grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(''));
             
             wordsToPlace = [...levelData.words].sort(() => 0.5 - Math.random());
             currentWord = '';
@@ -763,10 +761,11 @@
                 showMessage(`Fantastic! You beat all levels! Final Score: ${score}`);
             } else {
                 currentLevelIndex++;
+                score = 0; // Reset score for the new level
                 loadLevel(currentLevelIndex);
                 gameState = 'selecting_start';
                 placementHistory = [];
-                showMessage(`Starting Level ${LEVELS[currentLevelIndex].level}! Score from previous levels persists.`);
+                showMessage(`Starting Level ${LEVELS[currentLevelIndex].level}! Your new challenge begins now.`); // Updated message
             }
             renderGrid();
             renderUI();
@@ -916,7 +915,7 @@
             if (levelIndex !== -1) {
                 saveLevelChanges();
 
-                score = 0; 
+                score = 0; // Score reset for starting a specific level
                 currentLevelIndex = levelIndex;
                 loadLevel(currentLevelIndex); 
                 gameState = 'selecting_start';
