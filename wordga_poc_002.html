@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wordga</title>
+    <title>Wordga Challenge</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght%40400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -58,7 +58,7 @@
             color: white !important;
         }
         .message-box {
-            min-height: 3rem; /* Reduced height for compactness */
+            min-height: 3rem; 
             line-height: 1.25;
         }
         .button-confirm {
@@ -73,11 +73,11 @@
         }
         /* Word selection buttons */
         .word-btn {
-            padding: 0.5rem 0.75rem; /* Reduced padding */
-            font-size: 0.875rem; /* Reduced font size */
+            padding: 0.5rem 0.75rem; 
+            font-size: 0.875rem; 
             font-weight: 600;
             text-transform: uppercase;
-            border-radius: 9999px; /* Pill shape */
+            border-radius: 9999px; 
             transition: all 0.15s ease;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             cursor: pointer;
@@ -87,13 +87,13 @@
             opacity: 0.8;
         }
         .word-btn-default {
-            background-color: #3b82f6; /* Blue-500 */
+            background-color: #3b82f6; 
             color: white;
         }
         .word-btn-selected {
-            background-color: #10b981; /* Emerald-500 */
+            background-color: #10b981; 
             color: white;
-            border-color: #fcd34d; /* Amber border */
+            border-color: #fcd34d; 
             transform: scale(1.05);
             box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
         }
@@ -101,31 +101,55 @@
 </head>
 <body class="p-3 flex flex-col items-center min-h-screen">
 
-    <div class="max-w-xl w-full">
-        <h1 class="text-2xl font-bold text-center mb-3 text-gray-800">Wordga</h1>
-
-        <!-- Stats Row: Level | Score | Target -->
-        <div class="flex justify-between items-center text-center mb-3 p-3 bg-white rounded-xl shadow-md border border-gray-100">
-            <!-- Current Level -->
-            <div>
-                <p class="text-xs text-gray-500 font-medium">Level</p>
-                <p id="current-level" class="text-xl font-extrabold text-yellow-700">1</p>
-            </div>
-            <!-- Current Score -->
-            <div>
-                <p class="text-xs text-gray-500 font-medium">Score</p>
-                <p id="score" class="text-xl font-extrabold text-indigo-600">0</p>
-            </div>
-            <!-- Target Score -->
-            <div>
-                <p class="text-xs text-gray-500 font-medium">Target</p>
-                <p id="target-score" class="text-xl font-extrabold text-red-600">25</p>
-            </div>
-        </div>
+    <!-- --- MAIN GAME VIEW --- -->
+    <div id="main-game-view" class="max-w-xl w-full">
         
+        <!-- Combined Navigation and Stats Header -->
+        <div class="flex justify-between items-center mb-4 p-2 bg-white rounded-xl shadow-lg border border-gray-100">
+            
+            <!-- 1. About Button -->
+            <!-- Desktop button (text) -->
+            <button id="about-btn" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-full shadow-md hover:bg-gray-300 text-sm transition hidden sm:block">
+                About
+            </button>
+            <!-- Mobile button (icon) -->
+            <button id="about-btn-mobile" class="sm:hidden bg-gray-200 text-gray-700 font-bold p-2 rounded-full shadow-md hover:bg-gray-300 transition text-sm flex items-center justify-center w-8 h-8">
+                i
+            </button>
+
+            <!-- 2. Stats Block (Level | Score | Target) -->
+            <div class="flex justify-around items-center text-center flex-grow mx-2">
+                 <!-- Current Level -->
+                <div class="min-w-[20%]">
+                    <p class="text-[10px] sm:text-xs text-gray-500 font-medium">LEVEL</p>
+                    <p id="current-level" class="text-base sm:text-xl font-extrabold text-yellow-700">1</p>
+                </div>
+                <!-- Current Score -->
+                <div class="min-w-[30%]">
+                    <p class="text-[10px] sm:text-xs text-gray-500 font-medium">SCORE</p>
+                    <p id="score" class="text-base sm:text-xl font-extrabold text-indigo-600">0</p>
+                </div>
+                <!-- Target Score -->
+                <div class="min-w-[20%]">
+                    <p class="text-[10px] sm:text-xs text-gray-500 font-medium">TARGET</p>
+                    <p id="target-score" class="text-base sm:text-xl font-extrabold text-red-600">25</p>
+                </div>
+            </div>
+
+            <!-- 3. Settings Button -->
+            <button id="settings-btn" class="bg-indigo-500 text-white font-bold py-2 px-3 rounded-full shadow-md hover:bg-indigo-600 transition text-sm flex items-center justify-center w-10 h-10">
+                <!-- Gear Icon SVG -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.39a2 2 0 0 0 .73 2.73l.15.08a2 2 0 0 1 1 1.73v.5a2 2 0 0 1-1 1.73l-.15.08a2 2 0 0 0-.73 2.73l.22.39a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.73v-.5a2 2 0 0 1 1-1.73l.15-.08a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+        </div>
+
+        <!-- Main Status Display -->
+        <div id="main-status-display" class="message-box bg-white p-3 rounded-xl shadow-md mb-3 text-center text-sm font-semibold text-gray-700 border border-gray-100">
+            <!-- Initial message placed by JavaScript -->
+        </div>
+
         <!-- Word Selection Buttons -->
         <div class="bg-white p-2 rounded-xl shadow-lg mb-3 flex flex-col border border-gray-200">
-            <p class="text-center text-xs text-gray-500 font-medium mb-2">Select a Word to Place:</p>
             <div id="word-list-container" class="flex flex-wrap justify-center gap-2">
                 <!-- Words will go here -->
             </div>
@@ -135,22 +159,16 @@
         <div id="game-grid" class="grid grid-cols-8 border border-gray-300 rounded-lg overflow-hidden shadow-2xl mb-3 mx-auto">
             <!-- Cells generated by JavaScript -->
         </div>
-
-        <!-- Messaging & Controls (Combined for Mobile) -->
+        
+        <!-- Controls -->
         <div class="bg-white p-3 rounded-xl shadow-lg border border-gray-200 relative">
             <div id="status-message-controls" class="relative">
-                <!-- Message Box -->
-                <div id="message-box" class="message-box text-center text-sm text-gray-700 mb-3 font-semibold">
-                    Please select a word from the list above to begin placement.
-                </div>
-
+                
                 <!-- 1. Standard Controls (Selecting/Placing - Default view) -->
                 <div id="standard-controls" class="flex justify-between items-stretch space-x-1 sm:space-x-2">
                     
-                    <!-- Left Group: Debug/Levels -->
-                    <button id="open-debug-btn" class="bg-gray-600 text-white font-bold py-2 px-1 rounded-lg shadow-md hover:bg-gray-700 text-[10px] sm:text-sm whitespace-nowrap min-w-[18%]">
-                        Levels
-                    </button>
+                    <!-- Left Group: Reserved Space for Debug (now hidden via CSS on placement) -->
+                    <div class="w-[18%]"></div>
                     
                     <!-- Center Group: Undo / Reset -->
                     <div class="flex space-x-1 sm:space-x-2">
@@ -174,7 +192,7 @@
                         Share Score
                     </button>
                     <button id="try-again-btn" class="bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-indigo-700 text-base flex-1">
-                        Unsuccessful, try again?
+                        Try Again
                     </button>
                 </div>
 
@@ -189,50 +207,79 @@
                 </div>
             </div>
         </div>
+    </div>
+
+
+    <!-- --- ABOUT VIEW --- -->
+    <div id="about-view" class="max-w-xl w-full p-4 bg-white rounded-xl shadow-2xl hidden">
+        <h1 class="text-3xl font-bold text-center mb-4 text-indigo-600">The Worga Challenge</h1>
+        <p class="text-gray-700 mb-4">Worga is a strategy word-placement game where your goal is to place a set of words onto an 8x8 grid to achieve a target score.</p>
         
-        <!-- Debug Modal Overlay (minimal changes needed here, just updating button classes for consistency) -->
-        <div id="debug-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center hidden">
-            <!-- Modal Content -->
-            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-lg w-full m-4">
-                <h2 class="text-2xl font-bold mb-4 text-indigo-600">Debug & Level Settings</h2>
-                
-                <!-- Level Selector -->
-                <div class="mb-4">
-                    <label for="level-select" class="block text-sm font-medium text-gray-700 mb-1">Select Level to Edit/Play:</label>
-                    <select id="level-select" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></select>
-                </div>
+        <h2 class="text-xl font-semibold mb-2 text-gray-800 border-b pb-1">How Scoring Works</h2>
+        <ul class="list-disc list-inside space-y-2 mb-6 text-gray-700">
+            <li>**Overlap Bonus:** You earn **5 points** for every letter in your word that is placed on top of an existing, matching letter on the grid. This is the primary way to score!</li>
+            <li>**Placement:** Words must be placed horizontally or vertically.</li>
+            <li>**Toroidal Grid:** The grid wraps around. A word placed on the edge can continue on the opposite side (e.g., from row 7 to row 0).</li>
+        </ul>
 
-                <!-- Word Editor -->
-                <div class="mb-4">
-                    <label for="level-words" class="block text-sm font-medium text-gray-700 mb-1">Words (Comma Separated, Uppercase):</label>
-                    <textarea id="level-words" rows="3" class="w-full p-2 border border-gray-300 rounded-lg font-mono text-sm"></textarea>
-                    <p class="text-xs text-gray-500 mt-1">Example: WORD1,WORD2,LONGWORD (Max 8 letters each)</p>
-                </div>
+        <h2 class="text-xl font-semibold mb-2 text-gray-800 border-b pb-1">Game Flow</h2>
+        <ol class="list-decimal list-inside space-y-2 mb-6 text-gray-700">
+            <li>Select one of your available words.</li>
+            <li>Click a cell to set the **start position**. (Highlighted in <span class="text-yellow-600 font-bold">yellow</span>)</li>
+            <li>Click an **adjacent** cell (up, down, left, or right) to set the **direction**. (Possible cells are <span class="text-emerald-500 font-bold">green</span>)</li>
+            <li>Review the placement. Overlapping letters are highlighted in <span class="text-orange-600 font-bold">orange</span>.</li>
+            <li>Press **Place Word** to confirm and add the score.</li>
+            <li>Complete all words to meet the target score and advance!</li>
+        </ol>
 
-                <!-- Min Score Editor -->
-                <div class="mb-6">
-                    <label for="min-score" class="block text-sm font-medium text-gray-700 mb-1">Minimum Score to Pass:</label>
-                    <input type="number" id="min-score" class="w-full p-2 border border-gray-300 rounded-lg" min="0">
-                </div>
+        <button id="back-from-about-btn" class="w-full bg-indigo-600 text-white font-bold py-3 mt-6 rounded-lg shadow-lg hover:bg-indigo-700 transition">
+            Back to Game
+        </button>
+    </div>
 
-                <!-- Actions -->
-                <div class="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0 sm:space-x-3">
-                    <button id="add-level-btn" class="bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-600 transition flex-1 text-sm">
-                        Add New Level
-                    </button>
-                    <button id="save-level-btn" class="bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 transition flex-1 text-sm">
-                        Save Changes
-                    </button>
-                    <button id="start-level-btn" class="bg-indigo-500 text-white font-bold py-2 rounded-lg hover:bg-indigo-600 transition flex-1 text-sm">
-                        Start Selected Level
-                    </button>
-                    <button id="close-debug-btn" class="bg-gray-300 text-gray-800 font-bold py-2 rounded-lg hover:bg-gray-400 transition flex-1 text-sm">
-                        Close
-                    </button>
-                </div>
-                <p id="debug-message" class="text-center mt-3 text-sm font-medium hidden"></p>
-            </div>
+
+    <!-- --- SETTINGS/LEVEL EDITOR VIEW --- -->
+    <div id="settings-view" class="max-w-xl w-full p-4 bg-white rounded-xl shadow-2xl hidden">
+        <h2 class="text-3xl font-bold mb-4 text-indigo-600 text-center">Settings & Level Editor</h2>
+        <p class="text-sm text-gray-600 mb-4 text-center">Manage game levels, words, and minimum scores.</p>
+        
+        <!-- Level Selector -->
+        <div class="mb-4">
+            <label for="level-select" class="block text-sm font-medium text-gray-700 mb-1">Select Level to Edit/Play:</label>
+            <select id="level-select" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></select>
         </div>
+
+        <!-- Word Editor -->
+        <div class="mb-4">
+            <label for="level-words" class="block text-sm font-medium text-gray-700 mb-1">Words (Comma Separated, Uppercase):</label>
+            <textarea id="level-words" rows="3" class="w-full p-2 border border-gray-300 rounded-lg font-mono text-sm"></textarea>
+            <p class="text-xs text-gray-500 mt-1">Max 8 letters per word.</p>
+        </div>
+
+        <!-- Min Score Editor -->
+        <div class="mb-6">
+            <label for="min-score" class="block text-sm font-medium text-gray-700 mb-1">Minimum Score to Pass:</label>
+            <input type="number" id="min-score" class="w-full p-2 border border-gray-300 rounded-lg" min="0">
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0 sm:space-x-3">
+            <button id="add-level-btn" class="bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-600 transition flex-1 text-sm">
+                Add New Level
+            </button>
+            <button id="save-level-btn" class="bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 transition flex-1 text-sm">
+                Save Changes
+            </button>
+            <button id="start-level-btn" class="bg-indigo-500 text-white font-bold py-2 rounded-lg hover:bg-indigo-600 transition flex-1 text-sm">
+                Start Selected Level
+            </button>
+        </div>
+        
+        <p id="debug-message" class="text-center mt-3 text-sm font-medium hidden"></p>
+
+        <button id="back-from-settings-btn" class="w-full bg-gray-400 text-gray-800 font-bold py-3 mt-6 rounded-lg shadow-md hover:bg-gray-500 transition">
+            Back to Current Game
+        </button>
     </div>
 
     <script>
@@ -242,86 +289,21 @@
         const BASE_SCORE_PER_LETTER = 0; 
 
         // UPDATED LEVELS ARRAY
-        const LEVELS = [
-            // Standard Levels (1-9)
-            {
-                level: 1,
-                words: ["JUMBLE", "SCORE", "REUSE", "WORDS"],
-                minScore: 25, 
-            },
-            {
-                level: 2,
-                words: ["QUANTUM", "PUZZLE", "BONUS", "MOBILE"],
-                minScore: 25, 
-            },
-            {
-                level: 3,
-                words: ["OVERLAP", "WORDGRID", "CHALLENGE"],
-                minScore: 20, 
-            },
-            {
-                level: 4,
-                words: ["GRID", "PUZZLE", "PLAY", "HIGH"],
-                minScore: 15, 
-            },
-            {
-                level: 5,
-                words: ["CHESS", "ROOK", "KING", "QUEEN", "PAWN"],
-                minScore: 30, 
-            },
-            {
-                level: 6,
-                words: ["HERES", "LOOKING", "AT", "YOU", "KID"],
-                minScore: 25,
-            },
-            {
-                level: 7,
-                words: ["CALL", "ME", "ISHMAEL", "WHALE", "STORY"],
-                minScore: 30,
-            },
-            {
-                level: 8,
-                words: ["MAY", "THE", "FORCE", "BE", "WITH", "YOU"],
-                minScore: 25,
-            },
-            {
-                level: 9,
-                words: ["BEST", "WORST", "TIMES", "WAS", "CITIES", "TALE"],
-                minScore: 40,
-            },
-            
-            // --- NEW WORDPLAY LEVELS ---
-            
-            // Level 10: Portmanteaus (Word 1, Word 2, Combination)
-            {
-                level: 10,
-                words: ["BREAKFAST", "LUNCH", "BRUNCH", "SMOKE", "FOG", "SMOG"],
-                minScore: 40, 
-            },
-            // Level 11: Anagrams (Words that can be rearranged)
-            {
-                level: 11,
-                words: ["PARADE", "DRAPES", "SPAR", "READ"],
-                minScore: 35, 
-            },
-            // Level 12: Levidromes (Words that spell another word when reversed)
-            {
-                level: 12,
-                words: ["STRESSED", "DESSERTS", "RECALL", "LACKER"],
-                minScore: 45, 
-            },
-            // Level 13: Interlocking (Simulating Mesostic/Word Squares for maximum overlap)
-            {
-                level: 13,
-                words: ["CENTRAL", "LETTER", "WORDS", "AXIS"],
-                minScore: 30,
-            },
-            // Level 14: Complex Interlock (Longer words for maximum density)
-            {
-                level: 14,
-                words: ["ROPE", "OLIVE", "PIECES", "EVES", "CORE"],
-                minScore: 50, 
-            }
+        let LEVELS = [
+            { level: 1, words: ["JUMBLE", "SCORE", "REUSE", "WORDS"], minScore: 25 },
+            { level: 2, words: ["QUANTUM", "PUZZLE", "BONUS", "MOBILE"], minScore: 25 },
+            { level: 3, words: ["OVERLAP", "WORDGRID", "CHALLENGE"], minScore: 20 },
+            { level: 4, words: ["GRID", "PUZZLE", "PLAY", "HIGH"], minScore: 15 },
+            { level: 5, words: ["CHESS", "ROOK", "KING", "QUEEN", "PAWN"], minScore: 30 },
+            { level: 6, words: ["HERES", "LOOKING", "AT", "YOU", "KID"], minScore: 25 },
+            { level: 7, words: ["CALL", "ME", "ISHMAEL", "WHALE", "STORY"], minScore: 30 },
+            { level: 8, words: ["MAY", "THE", "FORCE", "BE", "WITH", "YOU"], minScore: 25 },
+            { level: 9, words: ["BEST", "WORST", "TIMES", "WAS", "CITIES", "TALE"], minScore: 40 },
+            { level: 10, words: ["BREAKFAST", "LUNCH", "BRUNCH", "SMOKE", "FOG", "SMOG"], minScore: 40 },
+            { level: 11, words: ["PARADE", "DRAPES", "SPAR", "READ"], minScore: 35 },
+            { level: 12, words: ["STRESSED", "DESSERTS", "RECALL", "LACKER"], minScore: 45 },
+            { level: 13, words: ["CENTRAL", "LETTER", "WORDS", "AXIS"], minScore: 30 },
+            { level: 14, words: ["ROPE", "OLIVE", "PIECES", "EVES", "CORE"], minScore: 50 }
         ];
 
         // Global State
@@ -329,7 +311,6 @@
         let score = 0;
         let wordsToPlace = [];
         let currentWord = '';
-        // Added 'level_success' state
         let gameState = 'selecting_start'; // 'selecting_start', 'selecting_direction', 'review_placement', 'game_over', 'level_success'
         let currentLevelIndex = 0;
         let minScoreTarget = 0;
@@ -341,29 +322,37 @@
         let placementHistory = [];
 
         // --- DOM Elements ---
+        const mainGameView = document.getElementById('main-game-view');
+        const aboutView = document.getElementById('about-view');
+        const settingsView = document.getElementById('settings-view');
+
         const gridContainer = document.getElementById('game-grid');
         const scoreDisplay = document.getElementById('score');
-        const messageBox = document.getElementById('message-box');
+        const messageBox = document.getElementById('main-status-display'); 
         const confirmBtn = document.getElementById('confirm-btn');
         const resetBtn = document.getElementById('reset-btn');
         const undoBtn = document.getElementById('undo-btn');
-        const openDebugBtn = document.getElementById('open-debug-btn');
+        
+        // Navigation Buttons (updated to include mobile version)
+        const aboutBtn = document.getElementById('about-btn'); 
+        const aboutBtnMobile = document.getElementById('about-btn-mobile');
+        const settingsBtn = document.getElementById('settings-btn'); 
+        
         const currentLevelDisplay = document.getElementById('current-level');
         const targetScoreDisplay = document.getElementById('target-score');
         const wordListContainer = document.getElementById('word-list-container');
         
-        // New/Updated Control Elements
         const standardControls = document.getElementById('standard-controls');
         const gameOverFailure = document.getElementById('game-over-failure');
-        const tryAgainBtn = document.getElementById('try-again-btn'); // Replaces old new-game-btn
-        const shareFailureBtn = document.getElementById('share-failure-btn'); // NEW: For failure/game over screen
+        const tryAgainBtn = document.getElementById('try-again-btn');
+        const shareFailureBtn = document.getElementById('share-failure-btn');
         const levelSuccessControls = document.getElementById('level-success-controls');
         const shareSuccessBtn = document.getElementById('share-success-btn');
         const nextLevelBtn = document.getElementById('next-level-btn');
         
-        // Debug Modal Elements
-        const debugModal = document.getElementById('debug-modal');
-        const closeDebugBtn = document.getElementById('close-debug-btn');
+        // Settings View Elements
+        const backFromAboutBtn = document.getElementById('back-from-about-btn');
+        const backFromSettingsBtn = document.getElementById('back-from-settings-btn');
         const levelSelect = document.getElementById('level-select');
         const levelWordsInput = document.getElementById('level-words');
         const minScoreInput = document.getElementById('min-score');
@@ -371,6 +360,25 @@
         const saveLevelBtn = document.getElementById('save-level-btn');
         const startLevelBtn = document.getElementById('start-level-btn');
         const debugMessage = document.getElementById('debug-message');
+
+
+        // --- Navigation Function ---
+
+        /** Switches the currently visible view. */
+        function navigateTo(viewId) {
+            const views = [mainGameView, aboutView, settingsView];
+            views.forEach(view => view.classList.add('hidden'));
+
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+            }
+            
+            // Special initialization for settings view
+            if (viewId === 'settings-view') {
+                openSettingsScreen();
+            }
+        }
 
 
         // --- Utility Functions ---
@@ -381,12 +389,7 @@
             return (coord % size + size) % size;
         }
 
-        /**
-         * Calculates the wrapped direction component (-1, 0, or 1) for a single axis.
-         * Returns null if the move is not adjacent (wrapped or unwrapped).
-         * @param {number} rawDiff - The raw difference between end and start coordinates (e.g., endR - startR).
-         * @returns {number | null} - The wrapped direction component (-1, 0, 1) or null if invalid.
-         */
+        /** Calculates the wrapped direction component (-1, 0, or 1) for a single axis. */
         function getWrappedDirectionComponent(rawDiff) {
             const N = GRID_SIZE;
             
@@ -413,6 +416,7 @@
             renderGrid(); 
             renderUI();
             updateUndoButtonState();
+            navigateTo('main-game-view'); // Ensure we start on the main view
             showMessage('Welcome! **Select a word** from the list above to begin placement.');
         }
         
@@ -540,7 +544,9 @@
             
             confirmBtn.disabled = true;
             resetBtn.classList.add('hidden');
-            openDebugBtn.classList.remove('hidden'); // Default visible
+            
+            // Hide the placeholder for the old debug button in standard controls
+            document.querySelector('#standard-controls > div.w-\\[18\\%\\]').classList.remove('hidden');
 
             if (gameState === 'selecting_start' || gameState === 'selecting_direction') {
                 standardControls.classList.remove('hidden');
@@ -550,21 +556,18 @@
                 confirmBtn.textContent = `Place Word (+${placementResult.totalScore})`;
                 confirmBtn.disabled = false;
                 resetBtn.classList.remove('hidden');
-                openDebugBtn.classList.add('hidden');
+                document.querySelector('#standard-controls > div.w-\\[18\\%\\]').classList.add('hidden');
             } else if (gameState === 'level_success') {
                 levelSuccessControls.classList.remove('hidden');
-                openDebugBtn.classList.add('hidden');
             } else if (gameState === 'game_over') { 
                 gameOverFailure.classList.remove('hidden');
-                openDebugBtn.classList.add('hidden');
 
-                // Check for final victory vs. mid-level failure
                 const isFinalVictory = currentLevelIndex >= LEVELS.length;
 
                 if (isFinalVictory) {
                     tryAgainBtn.textContent = "Start New Game";
                 } else {
-                    tryAgainBtn.textContent = "Unsuccessful, try again?";
+                    tryAgainBtn.textContent = "Try Again";
                 }
             }
             
@@ -573,11 +576,9 @@
         
         /** Updates the disabled state of the Undo button based on history. */
         function updateUndoButtonState() {
-            // Undo is only available in standard placement modes
             const isPlacementMode = gameState === 'selecting_start' || gameState === 'selecting_direction' || gameState === 'review_placement';
             undoBtn.disabled = placementHistory.length === 0 || !isPlacementMode;
         }
-
 
         /**
          * Checks if a word placement is valid and calculates the score.
@@ -623,11 +624,9 @@
             const currentLevel = LEVELS[currentLevelIndex];
             
             if (score >= currentLevel.minScore) {
-                // Level success - transition to success state 
                 gameState = 'level_success';
                 showMessage(`Level ${currentLevel.level} Passed! Score ${score} / Target ${currentLevel.minScore}. <span class="text-green-600 font-bold">CONGRATULATIONS!</span>`);
             } else {
-                // Level failure
                 gameState = 'game_over';
                 showMessage(`<span class="text-red-600 font-bold">Level ${currentLevel.level} Failed!</span> You scored ${score} but needed ${currentLevel.minScore}.`);
             }
@@ -675,11 +674,10 @@
                 endPos = null;
                 calculatedDirection = null;
                 
-                showMessage(`Great move! Score +${placedScore}. Now, **select your next word** from the list below.`); 
+                showMessage(`Great move! Score +${placedScore}. Now, **select your next word** from the list above.`); 
                 
                 placementResult = null;
             } else {
-                // All words for the current level are placed
                 checkLevelCompletion(); 
             }
 
@@ -714,13 +712,11 @@
             renderUI();
         }
 
-
         /**
          * Handles sharing the score via the Web Share API with a clipboard fallback.
          */
         async function shareScore() {
             const level = currentLevelIndex < LEVELS.length ? LEVELS[currentLevelIndex].level : 'MAX';
-            // Message format: "I scored X on level Y in wordga can you beat my score?"
             const shareText = `I scored ${score} on level ${level} in Wordga. Can you beat my score?`;
             const shareUrl = window.location.href;
 
@@ -735,7 +731,6 @@
                     await navigator.share(shareData);
                     showMessage(`Score successfully shared!`);
                 } catch (error) {
-                    // Check if the error is due to the user simply closing the dialog (AbortError)
                     if (error.name === 'AbortError') {
                         showMessage('Sharing <span class="text-yellow-600">cancelled</span> by user.');
                     } else {
@@ -744,10 +739,7 @@
                     }
                 }
             } else {
-                // Clipboard Fallback (if navigator.share is not supported)
                 const fallbackMessage = `${shareText} Play the game here: ${shareUrl}`;
-
-                // Use document.execCommand('copy') as a more reliable fallback in iFrame contexts
                 const el = document.createElement('textarea');
                 el.value = fallbackMessage;
                 el.setAttribute('readonly', '');
@@ -765,17 +757,15 @@
 
         /** Advances to the next level. */
         function goToNextLevel() {
-            // Check if user is at max level
             if (currentLevelIndex + 1 >= LEVELS.length) {
-                // Final level was passed
-                currentLevelIndex++; // Increment to exceed max index
-                gameState = 'game_over'; // Transition to final victory state
+                currentLevelIndex++;
+                gameState = 'game_over';
                 showMessage(`Fantastic! You beat all levels! Final Score: ${score}`);
             } else {
                 currentLevelIndex++;
                 loadLevel(currentLevelIndex);
                 gameState = 'selecting_start';
-                placementHistory = []; // Reset history for new grid
+                placementHistory = [];
                 showMessage(`Starting Level ${LEVELS[currentLevelIndex].level}! Score from previous levels persists.`);
             }
             renderGrid();
@@ -842,7 +832,7 @@
             messageBox.innerHTML = htmlText;
         }
 
-        // --- Debug / Level Setting Functions ---
+        // --- Settings / Level Setting Functions ---
         
         function displayDebugMessage(message, isError) {
              debugMessage.textContent = message;
@@ -931,15 +921,14 @@
                 loadLevel(currentLevelIndex); 
                 gameState = 'selecting_start';
                 placementHistory = [];
-                closeDebugScreen();
+                navigateTo('main-game-view');
                 renderGrid();
                 renderUI();
-                showMessage(`Debug: Starting game at **Level ${levelNumber}** with target score **${LEVELS[levelIndex].minScore}**.`);
+                showMessage(`Settings: Starting game at **Level ${levelNumber}** with target score **${LEVELS[levelIndex].minScore}**.`);
             }
         }
 
-        function openDebugScreen() {
-            debugModal.classList.remove('hidden');
+        function openSettingsScreen() {
             populateLevelSelector();
             
             const levelToLoad = LEVELS[currentLevelIndex] ? LEVELS[currentLevelIndex].level : (LEVELS[0] ? LEVELS[0].level : 1); 
@@ -950,10 +939,6 @@
                  levelSelect.value = levelToLoad; 
                  loadLevelDataToEditor(levelToLoad);
             }
-        }
-
-        function closeDebugScreen() {
-            debugModal.classList.add('hidden');
         }
 
 
@@ -967,15 +952,20 @@
         resetBtn.addEventListener('click', resetPlacement);
         undoBtn.addEventListener('click', undoLastPlacement);
         
-        // New/Updated Control Listeners
-        tryAgainBtn.addEventListener('click', initGame); // Used for both failure and final victory
+        // Game Over Controls
+        tryAgainBtn.addEventListener('click', initGame);
         nextLevelBtn.addEventListener('click', goToNextLevel);
         shareSuccessBtn.addEventListener('click', shareScore);
-        shareFailureBtn.addEventListener('click', shareScore); // NEW: Listen to the failure share button
+        shareFailureBtn.addEventListener('click', shareScore);
 
-        // Debug Controls
-        openDebugBtn.addEventListener('click', openDebugScreen);
-        closeDebugBtn.addEventListener('click', closeDebugScreen);
+        // Navigation Controls
+        aboutBtn.addEventListener('click', () => navigateTo('about-view'));
+        aboutBtnMobile.addEventListener('click', () => navigateTo('about-view')); // Handle the new mobile button
+        settingsBtn.addEventListener('click', () => navigateTo('settings-view'));
+        backFromAboutBtn.addEventListener('click', () => navigateTo('main-game-view'));
+        backFromSettingsBtn.addEventListener('click', () => navigateTo('main-game-view'));
+
+        // Settings Controls
         levelSelect.addEventListener('change', (e) => loadLevelDataToEditor(e.target.value));
         addLevelBtn.addEventListener('click', addNewLevel); 
         saveLevelBtn.addEventListener('click', saveLevelChanges);
