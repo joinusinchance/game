@@ -241,8 +241,9 @@
         const OVERLAP_BONUS = 5; 
         const BASE_SCORE_PER_LETTER = 0; 
 
-        // Levels 1-9
+        // UPDATED LEVELS ARRAY
         const LEVELS = [
+            // Standard Levels (1-9)
             {
                 level: 1,
                 words: ["JUMBLE", "SCORE", "REUSE", "WORDS"],
@@ -287,6 +288,39 @@
                 level: 9,
                 words: ["BEST", "WORST", "TIMES", "WAS", "CITIES", "TALE"],
                 minScore: 40,
+            },
+            
+            // --- NEW WORDPLAY LEVELS ---
+            
+            // Level 10: Portmanteaus (Word 1, Word 2, Combination)
+            {
+                level: 10,
+                words: ["BREAKFAST", "LUNCH", "BRUNCH", "SMOKE", "FOG", "SMOG"],
+                minScore: 40, 
+            },
+            // Level 11: Anagrams (Words that can be rearranged)
+            {
+                level: 11,
+                words: ["PARADE", "DRAPES", "SPAR", "READ"],
+                minScore: 35, 
+            },
+            // Level 12: Levidromes (Words that spell another word when reversed)
+            {
+                level: 12,
+                words: ["STRESSED", "DESSERTS", "RECALL", "LACKER"],
+                minScore: 45, 
+            },
+            // Level 13: Interlocking (Simulating Mesostic/Word Squares for maximum overlap)
+            {
+                level: 13,
+                words: ["CENTRAL", "LETTER", "WORDS", "AXIS"],
+                minScore: 30,
+            },
+            // Level 14: Complex Interlock (Longer words for maximum density)
+            {
+                level: 14,
+                words: ["ROPE", "OLIVE", "PIECES", "EVES", "CORE"],
+                minScore: 50, 
             }
         ];
 
