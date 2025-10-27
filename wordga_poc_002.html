@@ -363,7 +363,7 @@
         const saveLevelBtn = document.getElementById('save-level-btn');
         const startLevelBtn = document.getElementById('start-level-btn');
         const debugMessage = document.getElementById('debug-message');
-        const generateUrlBtn = document.getElementById('generate-url-btn'); // New button
+        const generateUrlBtn = document.getElementById('generate-url-btn'); 
 
 
         // --- Navigation Function ---
@@ -445,6 +445,20 @@
             return false;
         }
 
+
+        /** Helper function to copy link to clipboard (used in Settings view fallback). */
+        function copyLinkToClipboard(text, message) {
+            const el = document.createElement('textarea');
+            el.value = text;
+            el.setAttribute('readonly', '');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            displayDebugMessage(message, false);
+        }
 
         // --- Core Functions ---
 
@@ -791,22 +805,14 @@
                         showMessage('Sharing <span class="text-yellow-600">cancelled</span> by user.');
                     } else {
                         console.error('Error sharing score:', error);
-                        showMessage(`Sharing failed: <span class="text-red-600">${error.message}</span>`);
+                        // Fallback to clipboard if Web Share API fails for technical reasons
+                        const fallbackMessage = `${shareText} Play the game here: ${shareUrl}`;
+                        copyLinkToClipboard(fallbackMessage, `Sharing failed. Score message copied to clipboard!`);
                     }
                 }
             } else {
                 const fallbackMessage = `${shareText} Play the game here: ${shareUrl}`;
-                const el = document.createElement('textarea');
-                el.value = fallbackMessage;
-                el.setAttribute('readonly', '');
-                el.style.position = 'absolute';
-                el.style.left = '-9999px';
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-
-                showMessage(`Web Share not supported. Score message copied to clipboard!`);
+                copyLinkToClipboard(fallbackMessage, `Web Share not supported. Score message copied to clipboard!`);
             }
         }
 
@@ -947,7 +953,7 @@
             displayDebugMessage(`New Level ${newLevelNumber} created. Edit the words/score and press 'Save Changes'.`, false);
         }
 
-        function saveLevelChanges() {
+        function saveLevelChanges(silent = false) {
             const levelNumber = parseInt(levelSelect.value);
             const levelIndex = LEVELS.findIndex(l => l.level === levelNumber);
             
@@ -960,18 +966,20 @@
             const newMinScore = parseInt(minScoreInput.value);
 
             if (newWords.length === 0) {
-                 displayDebugMessage("Error: Word list cannot be empty or words are too long (max 8 letters).", true);
+                 if (!silent) displayDebugMessage("Error: Word list cannot be empty or words are too long (max 8 letters).", true);
                  return;
             }
             if (isNaN(newMinScore) || newMinScore < 0) {
-                 displayDebugMessage("Error: Minimum score must be a non-negative number.", true);
+                 if (!silent) displayDebugMessage("Error: Minimum score must be a non-negative number.", true);
                  return;
             }
             
             LEVELS[levelIndex].words = newWords;
             LEVELS[levelIndex].minScore = newMinScore;
             
-            displayDebugMessage(`Level ${levelNumber} updated successfully!`, false);
+            if (!silent) {
+                displayDebugMessage(`Level ${levelNumber} updated successfully!`, false);
+            }
             renderUI(); 
         }
 
@@ -980,7 +988,7 @@
             const levelIndex = LEVELS.findIndex(l => l.level === levelNumber);
 
             if (levelIndex !== -1) {
-                saveLevelChanges();
+                saveLevelChanges(true); // Save changes silently before starting
 
                 score = 0; // Score reset for starting a specific level
                 currentLevelIndex = levelIndex;
@@ -996,10 +1004,8 @@
 
         function openSettingsScreen() {
             // Restore default levels if a custom URL was used, so the editor sees the full set.
-            // (This is a quick fix; a robust solution would use a persistent storage for user levels).
             if (LEVELS.length === 1 && LEVELS[0].level === 1 && window.location.search.includes('target=')) {
-                // Since we don't store the original, we just prevent saving back to the URL's level
-                // and warn the user. For this context, we allow editing the single level.
+                // If this is a custom level, just ensure the selector shows it and the editor can be used.
             }
 
             populateLevelSelector();
@@ -1014,8 +1020,8 @@
             }
         }
         
-        /** Generates a shareable URL for the currently edited level. */
-        function generateShareLink() {
+        /** Generates a shareable URL for the currently edited level, and attempts to share it. */
+        async function generateShareLink() {
             const levelNumber = parseInt(levelSelect.value);
             const levelData = LEVELS.find(l => l.level === levelNumber);
             
@@ -1024,28 +1030,40 @@
                 return;
             }
 
-            // Ensure latest changes are saved before generating the link
-            saveLevelChanges();
+            // 1. Ensure latest changes are saved before generating the link
+            saveLevelChanges(true); // Save silently
 
             const wordsParam = encodeURIComponent(levelData.words.join(','));
             const targetParam = levelData.minScore;
             
-            // Construct the base URL without existing parameters
+            // Construct the shareable URL
             const baseUrl = window.location.origin + window.location.pathname;
             const shareUrl = `${baseUrl}?target=${targetParam}&words=${wordsParam}`;
-
-            // Display the link and copy it to clipboard
-            const el = document.createElement('textarea');
-            el.value = shareUrl;
-            el.setAttribute('readonly', '');
-            el.style.position = 'absolute';
-            el.style.left = '-9999px';
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-
-            displayDebugMessage("Share link copied to clipboard! Paste the URL to challenge a friend.", false);
+            
+            const shareData = {
+                title: 'Wordga Custom Challenge!',
+                text: `Try to beat my custom Wordga level (Target: ${targetParam}, Words: ${levelData.words.length}).`,
+                url: shareUrl
+            };
+            
+            // 2. Attempt to use navigator.share (primary method)
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    displayDebugMessage("Custom Challenge link shared successfully!", false);
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        displayDebugMessage("Sharing cancelled by user.", false);
+                    } else {
+                        // Technical failure, fall back to clipboard
+                        console.error('Error sharing link via Web Share:', error);
+                        copyLinkToClipboard(shareUrl, "Failed to use Web Share. Link copied to clipboard instead.");
+                    }
+                }
+            } else {
+                // 3. Fallback to clipboard
+                copyLinkToClipboard(shareUrl, "Web Share not supported. Link copied to clipboard!");
+            }
         }
 
 
@@ -1075,9 +1093,9 @@
         // Settings Controls
         levelSelect.addEventListener('change', (e) => loadLevelDataToEditor(e.target.value));
         addLevelBtn.addEventListener('click', addNewLevel); 
-        saveLevelBtn.addEventListener('click', saveLevelChanges);
+        saveLevelBtn.addEventListener('click', () => saveLevelChanges(false));
         startLevelBtn.addEventListener('click', startSelectedLevel);
-        generateUrlBtn.addEventListener('click', generateShareLink); // New URL generator listener
+        generateUrlBtn.addEventListener('click', generateShareLink);
 
 
         // --- Start Game on Load ---
