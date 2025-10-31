@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Majorcan Highs: A Trick-Taking Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; /* Light mint background */
+        }
+        .card {
+            width: 80px;
+            height: 120px;
+            background-color: white;
+            border: 3px solid #10b981; /* Emerald border */
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            font-weight: 700;
+            font-size: 2rem;
+            color: #10b981;
+            transition: transform 0.1s, box-shadow 0.1s;
+            cursor: pointer;
+            user-select: none;
+        }
+        .card-playable:hover, .card-playable:focus {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 10px rgba(0, 0, 0, 0.2);
+        }
+        .card-back {
+            background-color: #10b981;
+            color: white;
+            font-size: 1.5rem;
+            line-height: 1.2;
+            text-align: center;
+            border: 3px solid #065f46;
+        }
+        .text-red { color: #ef4444; }
+        .text-black { color: #1f2937; }
+
+        /* Ensure the main container fills the viewport nicely */
+        #game-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <!-- Global State Variables (Required for Canvas Environment) -->
+    <script type="module">
+        // Mandatory dummy variables to satisfy environment requirements
+        const __app_id = 'majorcan-highs-game';
+        const __firebase_config = '{}';
+        const __initial_auth_token = 'dummy-token';
+    </script>
+
+    <div id="game-container" class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-2xl border-4 border-emerald-600">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-emerald-800 mb-6">Majorcan Highs 🍹</h1>
+
+        <!-- Screen Container -->
+        <div id="screen-container">
+            <!-- Content will be injected here by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Death Modal (Hidden by default) -->
+    <div id="death-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-red-50 p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-100 border-4 border-red-500">
+            <h2 class="text-3xl font-extrabold text-red-700 mb-4 text-center">☠️ The Final Verdict ☠️</h2>
+            <p id="loser-name" class="text-xl font-semibold text-center mb-2"></p>
+            <p class="text-lg text-gray-700 mb-4 text-center italic">The card that sealed their fate: <span id="loser-card-rank" class="font-bold text-red-600"></span></p>
+            <div class="bg-red-100 p-4 rounded-lg border border-red-300">
+                <p id="death-message" class="text-xl text-gray-800 font-medium leading-relaxed"></p>
+            </div>
+
+            <div class="mt-8 flex justify-center">
+                <button onclick="restartGame()" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                    Start a New Game
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Core Game Data ---
+
+        const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        const SUITS = ['H', 'D', 'C', 'S']; // Hearts, Diamonds, Clubs, Spades
+        const SUIT_SYMBOLS = { 'H': '♥', 'D': '♦', 'C': '♣', 'S': '♠' };
+        // Rank value: A=1 (low), K=13 (high)
+        const RANK_VALUE = Object.fromEntries(RANKS.map((r, i) => [r, i + 1]));
+
+        const COMEDIC_DEATHS = {
+            'A': "Stumbles over their own two feet while attempting to tie their shoes and falls into a tiny sinkhole leading directly to a badger's tea party.",
+            '2': "Mistaken for a runaway garden gnome by a precision drone strike.",
+            '3': "Swallowed whole by a very bored but highly determined house cat.",
+            '4': "Accidentally orders 400 lbs of mayonnaise instead of coffee and drowns in the resulting creamy avalanche.",
+            '5': "Wins a lottery but the celebratory confetti gun misfires, lodging a piece of glitter directly into their brain.",
+            '6': "Their sock puppet achieves sentience and insists on wearing them as a hand-hat until they suffocate from lack of style.",
+            '7': "Tries to fix a leaky faucet but ends up summoning a vengeful water spirit who washes them away to the dimension of damp socks.",
+            '8': "Gets hit by a rogue coconut, even though they are indoors in a desert.",
+            '9': "Dies of embarrassment after realizing they've spent all day talking to a mannequin they thought was a cool new friend.",
+            '10': "A rogue wave of Majorcan Highs cocktails materializes and washes them out to sea, only to be pecked to death by synchronized seagulls.",
+            'J': "Gets fatally entangled in a very enthusiastic game of Twister being played by professional acrobats.",
+            'Q': "Chokes on a meticulously crafted, artisanal crouton.",
+            'K': "Is judged by a flock of pigeons for having 'too much main character energy' and is subsequently dive-bombed by bird droppings until they lose consciousness and fall off a small stool."
+        };
+
+        // --- Game State ---
+        let players = [];
+        let deck = [];
+        let currentTrick = []; // { playerId: id, card: 'KS' }
+        let currentPlayerIndex = 0;
+        let gameState = 'setup'; // 'setup', 'handoff', 'play', 'reveal'
+        let roundNumber = 1;
+        const MAX_ROUNDS = 3;
+
+        // --- Utility Functions ---
+
+        /**
+         * Creates a full deck of 52 cards (e.g., 'AH', 'KD', '2C', etc.)
+         * @returns {string[]} The shuffled deck.
+         */
+        function createAndShuffleDeck() {
+            let newDeck = [];
+            for (const suit of SUITS) {
+                for (const rank of RANKS) {
+                    newDeck.push(rank + suit);
+                }
+            }
+            // Fisher-Yates shuffle
+            for (let i = newDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+            }
+            return newDeck;
+        }
+
+        /**
+         * Extracts the rank from a card string.
+         * @param {string} card e.g., 'KH'
+         * @returns {string} e.g., 'K'
+         */
+        function getRank(card) {
+            return card.slice(0, -1);
+        }
+
+        /**
+         * Parses a card string into rank and suit.
+         * @param {string} card e.g., 'KH'
+         * @returns {{rank: string, suit: string, value: number, colorClass: string}}
+         */
+        function parseCard(card) {
+            const rank = getRank(card);
+            const suit = card.slice(-1);
+            const value = RANK_VALUE[rank];
+            const colorClass = (suit === 'H' || suit === 'D') ? 'text-red' : 'text-black';
+            return { rank, suit, value, colorClass };
+        }
+
+        // --- UI Rendering Functions ---
+
+        /**
+         * Renders a single card element.
+         * @param {string} cardString e.g., 'KH'
+         * @param {boolean} isPlayable If true, adds playable classes and click handler.
+         * @param {string} type 'face' or 'back'
+         * @returns {string} HTML string for the card.
+         */
+        function renderCard(cardString, isPlayable = false, type = 'face') {
+            if (type === 'back') {
+                return `
+                    <div class="card card-back flex items-center justify-center p-2">
+                        <span class="text-3xl transform rotate-12">🌴</span>
+                        <span class="text-sm font-light uppercase">Highs</span>
+                    </div>
+                `;
+            }
+
+            const { rank, suit, colorClass } = parseCard(cardString);
+            const symbol = SUIT_SYMBOLS[suit];
+            const playableClass = isPlayable ? 'card-playable bg-yellow-50 shadow-md cursor-pointer' : 'opacity-80';
+
+            return `
+                <div onclick="${isPlayable ? `handleCardPlay('${cardString}')` : ''}"
+                     class="card ${playableClass} ${colorClass} transition duration-150 ease-in-out">
+                    <span class="text-xl self-start leading-none">${rank}</span>
+                    <span class="text-4xl sm:text-5xl leading-none">${symbol}</span>
+                    <span class="text-xl self-end leading-none transform rotate-180">${rank}</span>
+                </div>
+            `;
+        }
+
+        function renderSetupScreen() {
+            gameState = 'setup';
+            const screen = document.getElementById('screen-container');
+            screen.innerHTML = `
+                <div class="text-center space-y-6">
+                    <p class="text-lg text-gray-600">Enter 2 to 4 players for a high-stakes, low-card-death trick-taking game.</p>
+                    <div id="player-inputs" class="space-y-4">
+                        <input type="text" id="player-1" placeholder="Player 1 Name (Mandatory)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" id="player-2" placeholder="Player 2 Name (Mandatory)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" id="player-3" placeholder="Player 3 Name (Optional)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" id="player-4" placeholder="Player 4 Name (Optional)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
+                    </div>
+                    <button onclick="startGame()" class="w-full px-6 py-3 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                        Start Game!
+                    </button>
+                    <p id="setup-error" class="text-red-500 font-semibold mt-4 hidden"></p>
+                </div>
+            `;
+        }
+
+        function renderHandOffScreen() {
+            gameState = 'handoff';
+            const currentPlayer = players[currentPlayerIndex];
+            const screen = document.getElementById('screen-container');
+            screen.innerHTML = `
+                <div class="text-center space-y-8 p-8 bg-emerald-100 rounded-lg border-2 border-emerald-400">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-emerald-800">Pass the Phone!</h2>
+                    <p class="text-4xl sm:text-5xl font-extrabold text-emerald-600 uppercase tracking-widest">${currentPlayer.name}</p>
+                    <p class="text-lg text-gray-700">It's your turn, ${currentPlayer.name}. Please confirm you are ready.</p>
+                    <button onclick="renderPlayScreen()" class="w-full px-6 py-4 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                        View My Hand & Play
+                    </button>
+                    <p class="text-sm text-gray-500 mt-4">Other players: Turn away!</p>
+                </div>
+            `;
+        }
+
+        function renderPlayScreen() {
+            gameState = 'play';
+            const currentPlayer = players[currentPlayerIndex];
+            const screen = document.getElementById('screen-container');
+
+            // Find the maximum number of cards in any player's hand
+            const maxCards = players.reduce((max, p) => Math.max(max, p.hand.length), 0);
+
+            screen.innerHTML = `
+                <h2 class="text-2xl font-bold text-emerald-700 mb-4 text-center">Round ${roundNumber} of ${MAX_ROUNDS}</h2>
+                <div class="flex justify-between items-center mb-6 p-3 bg-emerald-50 rounded-lg border-b-2 border-emerald-200">
+                    <p class="text-lg font-semibold text-gray-700">Playing Now:</p>
+                    <p class="text-3xl font-extrabold text-emerald-800">${currentPlayer.name}</p>
+                </div>
+
+                <!-- Played Cards (Trick Pile) -->
+                <div class="mb-8 p-4 bg-gray-100 rounded-xl shadow-inner">
+                    <h3 class="text-xl font-bold text-gray-700 mb-3 text-center">The Trick Pile (${currentTrick.length}/${players.length})</h3>
+                    <div id="trick-pile" class="flex justify-center space-x-2 h-32">
+                        ${currentTrick.map(trickItem => renderCard(trickItem.card)).join('')}
+                        ${Array(players.length - currentTrick.length).fill(0).map(() => renderCard('', false, 'back')).join('')}
+                    </div>
+                </div>
+
+                <!-- Current Player's Hand -->
+                <div class="p-4 bg-emerald-200 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-emerald-800 mb-3 text-center">Your Hand (${currentPlayer.hand.length} Cards)</h3>
+                    <div class="flex justify-center space-x-4">
+                        ${currentPlayer.hand.map(card => renderCard(card, true)).join('')}
+                    </div>
+                    <p class="text-center text-sm text-emerald-800 mt-2 font-medium">Click a card to play it!</p>
+                </div>
+            `;
+        }
+
+
+        // --- Game Logic Functions ---
+
+        /**
+         * Initializes the game state, deals cards, and moves to the hand-off screen.
+         */
+        function startGame() {
+            const playerNames = [];
+            for (let i = 1; i <= 4; i++) {
+                const name = document.getElementById(`player-${i}`).value.trim();
+                if (name) {
+                    playerNames.push(name);
+                }
+            }
+
+            if (playerNames.length < 2) {
+                const error = document.getElementById('setup-error');
+                error.textContent = "Please enter names for at least two players.";
+                error.classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('setup-error').classList.add('hidden');
+            }
+
+            // Reset game state
+            players = playerNames.map((name, index) => ({
+                id: crypto.randomUUID(),
+                name: name,
+                hand: []
+            }));
+            deck = createAndShuffleDeck();
+            currentTrick = [];
+            currentPlayerIndex = 0;
+            roundNumber = 1;
+
+            dealCards(3); // Deal 3 cards to each player
+
+            // Start with the first player's hand-off
+            renderHandOffScreen();
+        }
+
+        /**
+         * Deals a specified number of cards to each player from the deck.
+         * @param {number} count The number of cards to deal per player.
+         */
+        function dealCards(count) {
+            for (let c = 0; c < count; c++) {
+                for (let p = 0; p < players.length; p++) {
+                    if (deck.length > 0) {
+                        players[p].hand.push(deck.pop());
+                    }
+                }
+            }
+        }
+
+        /**
+         * Handles the click event for playing a card.
+         * @param {string} card The card string (e.g., 'KH') that was played.
+         */
+        function handleCardPlay(card) {
+            if (gameState !== 'play') return;
+
+            const currentPlayer = players[currentPlayerIndex];
+
+            // 1. Remove card from hand
+            currentPlayer.hand = currentPlayer.hand.filter(c => c !== card);
+
+            // 2. Add card to the trick pile
+            currentTrick.push({ playerId: currentPlayer.id, card: card, playerName: currentPlayer.name });
+
+            // 3. Check if trick is complete
+            if (currentTrick.length === players.length) {
+                resolveTrick();
+            } else {
+                // 4. Advance to the next player
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+                renderHandOffScreen();
+            }
+        }
+
+        /**
+         * Determines the winner and loser of the current trick.
+         */
+        function resolveTrick() {
+            // Find the highest card (winner)
+            let winningCard = currentTrick[0];
+            // Find the lowest card (loser, who gets the death)
+            let losingCard = currentTrick[0];
+
+            for (const trickItem of currentTrick) {
+                const currentCardValue = parseCard(trickItem.card).value;
+
+                // Check for Winner (Highest Card Value)
+                if (currentCardValue > parseCard(winningCard.card).value) {
+                    winningCard = trickItem;
+                }
+
+                // Check for Loser (Lowest Card Value)
+                if (currentCardValue < parseCard(losingCard.card).value) {
+                    losingCard = trickItem;
+                }
+            }
+
+            // The 'loser' is the one who played the single lowest card in the trick.
+            // Check if there's a tie for the lowest card. If so, nobody dies this round.
+            const lowestValue = parseCard(losingCard.card).value;
+            const lowestPlayers = currentTrick.filter(item => parseCard(item.card).value === lowestValue);
+
+            const loser = (lowestPlayers.length === 1) ? losingCard : null;
+            const winner = winningCard; // Winner is always the highest unique card. If tied, the first one to play it wins the trick.
+
+            // If this is the final round (trick), reveal the death.
+            if (roundNumber === MAX_ROUNDS && loser) {
+                showDeathModal(loser);
+            } else {
+                // Not the final trick, just advance the round.
+                startNewRound(winner);
+            }
+        }
+
+        /**
+         * Prepares for the next round.
+         * @param {Object} winner The trick item of the player who won the trick.
+         */
+        function startNewRound(winner) {
+            // 1. Reset the trick pile
+            currentTrick = [];
+
+            // 2. Check if hands are empty (shouldn't happen before MAX_ROUNDS is met)
+            const handsEmpty = players.every(p => p.hand.length === 0);
+            if (handsEmpty) {
+                // Game Over (should be handled by MAX_ROUNDS logic, but safety check)
+                renderFinalMessage("Game Finished! No more cards. Let's call it a draw!");
+                return;
+            }
+
+            // 3. Increment round number
+            roundNumber++;
+
+            // 4. Set the winner of the last trick to start the next round
+            const winningPlayer = players.find(p => p.id === winner.playerId);
+            currentPlayerIndex = players.indexOf(winningPlayer);
+
+            // 5. Announce winner (optional, for debugging/feedback)
+            console.log(`Round ${roundNumber - 1} winner: ${winner.playerName}. They lead next.`);
+
+            // 6. Go to the next player's hand-off screen
+            renderHandOffScreen();
+        }
+
+        /**
+         * Displays the comedic death modal for the player who played the lowest card in the final trick.
+         * @param {Object} loser The trick item of the player who lost the trick.
+         */
+        function showDeathModal(loser) {
+            gameState = 'reveal';
+            const rank = getRank(loser.card);
+            const deathMessage = COMEDIC_DEATHS[rank];
+
+            document.getElementById('loser-name').textContent = `${loser.playerName} met their end!`;
+            document.getElementById('loser-card-rank').textContent = `${rank}`;
+            document.getElementById('death-message').textContent = `They are comically killed because: ${deathMessage}`;
+
+            document.getElementById('death-modal').classList.remove('hidden');
+        }
+
+        /**
+         * Restarts the entire game.
+         */
+        function restartGame() {
+            document.getElementById('death-modal').classList.add('hidden');
+            renderSetupScreen();
+        }
+
+        /**
+         * Renders a generic final message (only used if game ends unexpectedly).
+         */
+        function renderFinalMessage(message) {
+            const screen = document.getElementById('screen-container');
+            screen.innerHTML = `
+                <div class="text-center space-y-6 p-8 bg-emerald-100 rounded-lg border-2 border-emerald-400">
+                    <h2 class="text-3xl font-bold text-emerald-800">Game Over!</h2>
+                    <p class="text-xl text-gray-700">${message}</p>
+                    <button onclick="restartGame()" class="w-full px-6 py-3 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                        Play Again
+                    </button>
+                </div>
+            `;
+        }
+
+
+        // --- Initialization ---
+
+        // Start the application on the setup screen
+        window.onload = function() {
+            renderSetupScreen();
+        };
+
+        // Expose functions globally for HTML event handlers
+        window.startGame = startGame;
+        window.renderPlayScreen = renderPlayScreen;
+        window.handleCardPlay = handleCardPlay;
+        window.restartGame = restartGame;
+
+    </script>
+</body>
+</html>
