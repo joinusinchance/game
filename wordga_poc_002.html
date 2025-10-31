@@ -166,7 +166,11 @@
                 
                 <!-- 1. Standard Controls (Selecting/Placing - Default view) -->
                 <div id="standard-controls" class="flex justify-center items-stretch space-x-1 sm:space-x-2">
-                    
+                    <!-- Daily Challenge Button (Visible only in Free Play) -->
+                    <button id="daily-challenge-btn" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-md hover:bg-purple-700 hidden">
+                        Level a Day
+                    </button>
+
                     <!-- Centered Undo Button -->
                     <button id="undo-btn" class="bg-red-400 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-md hover:bg-red-500" disabled>
                         Undo Last Step
@@ -188,6 +192,7 @@
                     <button id="share-success-btn" class="bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-yellow-600 text-sm flex-1">
                         Share Score
                     </button>
+                    <!-- Button text dynamically changed by JS -->
                     <button id="next-level-btn" class="bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-emerald-700 text-sm flex-1">
                         Next Level
                     </button>
@@ -226,12 +231,12 @@
 
     <!-- --- SETTINGS/LEVEL EDITOR VIEW --- -->
     <div id="settings-view" class="max-w-xl w-full p-4 bg-white rounded-xl shadow-2xl hidden">
-        <h2 class="text-3xl font-bold mb-4 text-indigo-600 text-center">Settings & Level Editor</h2>
-        <p class="text-sm text-gray-600 mb-4 text-center">Manage game levels, words, and minimum scores, or generate a custom URL.</p>
+        <h2 class="text-3xl font-bold mb-4 text-indigo-600 text-center">Settings & Level Editor (Free Play)</h2>
+        <p class="text-sm text-gray-600 mb-4 text-center">Manage standard Free Play levels, words, and minimum scores, or generate a custom URL.</p>
         
         <!-- Level Selector -->
         <div class="mb-4">
-            <label for="level-select" class="block text-sm font-medium text-gray-700 mb-1">Select Level to Edit/Play:</label>
+            <label for="level-select" class="block text-sm font-medium text-gray-700 mb-1">Select Free Play Level to Edit/Play:</label>
             <select id="level-select" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></select>
         </div>
 
@@ -239,7 +244,7 @@
         <div class="mb-4">
             <label for="level-words" class="block text-sm font-medium text-gray-700 mb-1">Words (Comma Separated, Uppercase):</label>
             <textarea id="level-words" rows="3" class="w-full p-2 border border-gray-300 rounded-lg font-mono text-sm"></textarea>
-            <p class="text-xs text-gray-500 mt-1">Max 8 letters per word. Words longer than 8 letters are ignored.</p>
+            <p class="text-xs text-gray-500 mt-1">Max 8 letters per word.</p>
         </div>
 
         <!-- Min Score Editor -->
@@ -277,22 +282,22 @@
         const OVERLAP_BONUS = 5; 
         const BASE_SCORE_PER_LETTER = 0; 
 
-        // Default Levels Array - Will be overwritten if custom URL is present
-        let LEVELS = [
-            { level: 1, words: ["JUMBLE", "SCORE", "REUSE", "WORDS"], minScore: 25 },
-            { level: 2, words: ["QUANTUM", "PUZZLE", "BONUS", "MOBILE"], minScore: 25 },
-            { level: 3, words: ["OVERLAP", "WORDGRID", "CHALLENGE"], minScore: 20 },
-            { level: 4, words: ["GRID", "PUZZLE", "PLAY", "HIGH"], minScore: 15 },
-            { level: 5, words: ["CHESS", "ROOK", "KING", "QUEEN", "PAWN"], minScore: 30 },
-            { level: 6, words: ["HERES", "LOOKING", "AT", "YOU", "KID"], minScore: 25 },
-            { level: 7, words: ["CALL", "ME", "ISHMAEL", "WHALE", "STORY"], minScore: 30 },
-            { level: 8, words: ["MAY", "THE", "FORCE", "BE", "WITH", "YOU"], minScore: 25 },
-            { level: 9, words: ["BEST", "WORST", "TIMES", "WAS", "CITIES", "TALE"], minScore: 40 },
-            { level: 10, words: ["BREAKFAST", "LUNCH", "BRUNCH", "SMOKE", "FOG", "SMOG"], minScore: 40 },
-            { level: 11, words: ["PARADE", "DRAPES", "SPAR", "READ"], minScore: 35 },
-            { level: 12, words: ["STRESSED", "DESSERTS", "RECALL", "LACKER"], minScore: 45 },
-            { level: 13, words: ["CENTRAL", "LETTER", "WORDS", "AXIS"], minScore: 30 },
-            { level: 14, words: ["ROPE", "OLIVE", "PIECES", "EVES", "CORE"], minScore: 50 }
+        // Define the master list of levels (Free Play Levels)
+        const FREE_PLAY_LEVELS = [
+            { id: 1, level: 1, words: ["JUMBLE", "SCORE", "REUSE", "WORDS"], minScore: 25 },
+            { id: 2, level: 2, words: ["QUANTUM", "PUZZLE", "BONUS", "MOBILE"], minScore: 25 },
+            { id: 3, level: 3, words: ["OVERLAP", "WORDGRID", "CHALLENGE"], minScore: 20 },
+            { id: 4, level: 4, words: ["GRID", "PUZZLE", "PLAY", "HIGH"], minScore: 15 },
+            { id: 5, level: 5, words: ["CHESS", "ROOK", "KING", "QUEEN", "PAWN"], minScore: 30 },
+            { id: 6, level: 6, words: ["HERES", "LOOKING", "AT", "YOU", "KID"], minScore: 25 },
+            { id: 7, level: 7, words: ["CALL", "ME", "ISHMAEL", "WHALE", "STORY"], minScore: 30 },
+            { id: 8, level: 8, words: ["MAY", "THE", "FORCE", "BE", "WITH", "YOU"], minScore: 25 },
+            { id: 9, level: 9, words: ["BEST", "WORST", "TIMES", "WAS", "CITIES", "TALE"], minScore: 40 },
+            { id: 10, level: 10, words: ["BREAKFAST", "LUNCH", "BRUNCH", "SMOKE", "FOG", "SMOG"], minScore: 40 },
+            { id: 11, level: 11, words: ["PARADE", "DRAPES", "SPAR", "READ"], minScore: 35 },
+            { id: 12, level: 12, words: ["STRESSED", "DESSERTS", "RECALL", "LACKER"], minScore: 45 },
+            { id: 13, level: 13, words: ["CENTRAL", "LETTER", "WORDS", "AXIS"], minScore: 30 },
+            { id: 14, level: 14, words: ["ROPE", "OLIVE", "PIECES", "EVES", "CORE"], minScore: 50 }
         ];
 
         // Global State
@@ -300,9 +305,14 @@
         let score = 0;
         let wordsToPlace = [];
         let currentWord = '';
-        let gameState = 'selecting_start'; // 'selecting_start', 'selecting_direction', 'review_placement', 'game_over', 'level_success'
-        let currentLevelIndex = 0;
+        let gameState = 'selecting_start'; // 'selecting_start', 'selecting_direction', 'game_over', 'level_success'
+        let currentLevelIndex = 0; // Index into the current LEVELS array
         let minScoreTarget = 0;
+        
+        // This array will hold the level(s) currently being played.
+        // It could be all 14 Free Play levels, a single Daily level, or a single Custom level.
+        let LEVELS = [...FREE_PLAY_LEVELS]; 
+        let gameMode = 'free_play'; // 'free_play', 'daily_challenge', 'custom'
 
         let startPos = null;
         let endPos = null;
@@ -318,11 +328,8 @@
         const gridContainer = document.getElementById('game-grid');
         const scoreDisplay = document.getElementById('score');
         const messageBox = document.getElementById('main-status-display'); 
-        const confirmBtn = null; // document.getElementById('confirm-btn'); // Removed
-        const resetBtn = null; // document.getElementById('reset-btn'); // Removed
-        const undoBtn = document.getElementById('undo-btn');
         
-        // Navigation Buttons (updated to include mobile version)
+        // Navigation Buttons
         const aboutBtn = document.getElementById('about-btn'); 
         const aboutBtnMobile = document.getElementById('about-btn-mobile');
         const settingsBtn = document.getElementById('settings-btn'); 
@@ -331,13 +338,18 @@
         const targetScoreDisplay = document.getElementById('target-score');
         const wordListContainer = document.getElementById('word-list-container');
         
+        // Controls
         const standardControls = document.getElementById('standard-controls');
+        const undoBtn = document.getElementById('undo-btn');
+        const dailyChallengeBtn = document.getElementById('daily-challenge-btn'); 
+        
         const gameOverFailure = document.getElementById('game-over-failure');
         const tryAgainBtn = document.getElementById('try-again-btn');
         const shareFailureBtn = document.getElementById('share-failure-btn');
+        
         const levelSuccessControls = document.getElementById('level-success-controls');
         const shareSuccessBtn = document.getElementById('share-success-btn');
-        const nextLevelBtn = document.getElementById('next-level-btn');
+        const nextLevelBtn = document.getElementById('next-level-btn'); // Will become "Go to Free Play" in daily mode
         
         // Settings View Elements
         const backFromAboutBtn = document.getElementById('back-from-about-btn');
@@ -372,6 +384,19 @@
 
 
         // --- Utility Functions ---
+        
+        /** Displays a temporary message in the main status display. */
+        function showMessage(message) {
+            if (messageBox) {
+                // Remove any pre-existing text color classes for general messages
+                messageBox.classList.remove('text-red-600', 'text-green-600', 'font-bold'); 
+                
+                // Use innerHTML to allow for simple inline formatting (like **bold** or <span class="text-green-600">)
+                messageBox.innerHTML = message;
+            } else {
+                console.error("Message box element (main-status-display) not found.");
+            }
+        }
 
         /** Utility function to wrap coordinates (for toroidal grid). */
         function wrapCoord(coord) {
@@ -391,8 +416,21 @@
             return null;
         }
         
-        /** * Parses URL parameters for custom level data (target score & words). 
-         * If found and valid, it overrides the LEVELS array.
+        /** Deterministically gets a level index from FREE_PLAY_LEVELS based on the day of the year. */
+        function getDailyLevelIndex() {
+            const today = new Date();
+            // Get day of the year (1 to 366)
+            const start = new Date(today.getFullYear(), 0, 1);
+            const diff = today - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            const dayOfYear = Math.floor(diff / oneDay);
+
+            // Use modulo to cycle through the available free play levels
+            return dayOfYear % FREE_PLAY_LEVELS.length;
+        }
+
+        /** Parses URL parameters for custom level data (target score & words). 
+         * If found and valid, it sets up the LEVELS array for custom mode.
          * @returns {boolean} True if a custom level was loaded.
          */
         function loadCustomLevelFromURL() {
@@ -406,22 +444,20 @@
                     .map(w => decodeURIComponent(w).trim().toUpperCase())
                     .filter(w => w.length > 0 && w.length <= GRID_SIZE);
 
-                // Basic validation
                 if (isNaN(minScore) || minScore < 0 || wordList.length === 0) {
-                    console.error("Invalid custom level parameters found in URL. Loading default levels.");
+                    console.error("Invalid custom level parameters found in URL. Loading default Free Play.");
                     return false;
                 }
 
-                // Override LEVELS with the single custom level
+                // Set up for custom mode
                 LEVELS = [{
-                    level: 1, // Custom level is always level 1 in this session
+                    level: 'Custom', 
                     words: wordList,
                     minScore: minScore
                 }];
-                
                 currentLevelIndex = 0;
+                gameMode = 'custom';
                 
-                // Show a confirmation message
                 setTimeout(() => {
                     showMessage(`Loaded **Custom Challenge**! Target: ${minScore}. Words: ${wordList.join(', ')}. Play the challenge!`);
                 }, 100);
@@ -430,7 +466,6 @@
             }
             return false;
         }
-
 
         /** Helper function to copy link to clipboard (used in Settings view fallback). */
         function copyLinkToClipboard(text, message) {
@@ -448,21 +483,33 @@
 
         // --- Core Functions ---
 
-        /** Initializes the game state and UI. */
-        function initGame() {
-            // 1. Check for custom level in URL
-            const isCustomLevelLoaded = loadCustomLevelFromURL();
-
-            // 2. Set default start if no custom level
-            if (!isCustomLevelLoaded) {
-                currentLevelIndex = 0; 
+        /** Initializes the game state and UI for a specific mode. */
+        function initGame(mode = 'free_play', startLevelIndex = 0) {
+            // 1. Check for custom level in URL (Highest priority, only on initial load)
+            if (window.location.search.includes('target=') && window.location.search.includes('words=') && LEVELS.length !== 1) {
+                if (loadCustomLevelFromURL()) {
+                    // Custom level loaded, gameMode is set to 'custom' and LEVELS is set.
+                }
             }
             
+            if (gameMode !== 'custom') {
+                gameMode = mode;
+                if (mode === 'daily_challenge') {
+                    const dailyIndex = getDailyLevelIndex();
+                    // LEVELS will contain only the daily level
+                    LEVELS = [FREE_PLAY_LEVELS[dailyIndex]];
+                    currentLevelIndex = 0;
+                } else {
+                    // Set up for Free Play (all levels)
+                    LEVELS = [...FREE_PLAY_LEVELS];
+                    currentLevelIndex = startLevelIndex;
+                }
+            }
+
             // Continue initialization
             grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(''));
-            score = 0; // Score always starts at 0 for the first loaded level
+            score = 0; 
             
-            // Load the determined starting level (custom or default)
             loadLevel(currentLevelIndex);
             gameState = 'selecting_start';
             placementHistory = [];
@@ -471,10 +518,28 @@
             updateUndoButtonState();
             navigateTo('main-game-view'); 
             
-            if (!isCustomLevelLoaded) {
-                showMessage('Welcome! **Select a word** from the list above to begin placement.');
+            if (gameMode === 'free_play') {
+                 showMessage('Welcome! **Select a word** from the list above to begin placement, or try the Daily Challenge!');
+            } else if (gameMode === 'daily_challenge') {
+                 showMessage('Starting the **Level A Day** challenge! Achieve the target score to win.');
+            } else if (gameMode === 'custom') {
+                 // Message already handled by loadCustomLevelFromURL
+            } else {
+                 showMessage('Game Ready. Select a word to start!');
             }
         }
+        
+        /** Starts the Daily Challenge mode. */
+        function startDailyChallenge() {
+            initGame('daily_challenge');
+        }
+        
+        /** Switches the game to Free Play mode starting at Level 1. */
+        function goToFreePlay() {
+            initGame('free_play', 0);
+            showMessage(`Welcome back to **Free Play** mode! Select a word to start Level 1.`);
+        }
+
         
         /** Loads the words and target score for a specific level. */
         function loadLevel(index) {
@@ -574,9 +639,10 @@
             scoreDisplay.textContent = score;
 
             const currentLevelData = LEVELS[currentLevelIndex];
+            
             if (currentLevelData) {
-                // If a custom level is loaded, show 'Custom' instead of the level number
-                currentLevelDisplay.textContent = LEVELS.length === 1 && currentLevelData.level === 1 && window.location.search.includes('target=') ? 'Custom' : currentLevelData.level;
+                const levelDisplay = gameMode === 'daily_challenge' ? 'Daily' : (gameMode === 'custom' ? 'Custom' : currentLevelData.level);
+                currentLevelDisplay.textContent = levelDisplay;
                 targetScoreDisplay.textContent = currentLevelData.minScore;
             } else {
                  currentLevelDisplay.textContent = 'MAX';
@@ -589,27 +655,39 @@
             gameOverFailure.classList.add('hidden');
             levelSuccessControls.classList.add('hidden');
             standardControls.classList.add('hidden');
-            
-            // confirmBtn.disabled = true; // Removed
-            // resetBtn.classList.add('hidden'); // Removed
-            
-            // Hide the reserved space placeholder
-            // document.querySelector('#standard-controls > div:first-child').classList.add('hidden'); // Removed
+            dailyChallengeBtn.classList.add('hidden');
 
             if (gameState === 'selecting_start' || gameState === 'selecting_direction') {
                 standardControls.classList.remove('hidden');
-                // confirmBtn.textContent = `Place Word (+0)`; // Removed
+                if (gameMode === 'free_play') {
+                    dailyChallengeBtn.classList.remove('hidden');
+                }
             } else if (gameState === 'level_success') {
                 levelSuccessControls.classList.remove('hidden');
+                if (gameMode === 'daily_challenge' || gameMode === 'custom') {
+                    nextLevelBtn.textContent = 'Go to Free Play';
+                    nextLevelBtn.removeEventListener('click', goToNextLevel);
+                    nextLevelBtn.addEventListener('click', goToFreePlay);
+                } else {
+                    nextLevelBtn.textContent = 'Next Level';
+                    nextLevelBtn.removeEventListener('click', goToFreePlay);
+                    nextLevelBtn.addEventListener('click', goToNextLevel);
+                }
             } else if (gameState === 'game_over') { 
                 gameOverFailure.classList.remove('hidden');
 
                 const isFinalVictory = currentLevelIndex >= LEVELS.length;
 
-                if (isFinalVictory) {
+                if (isFinalVictory && gameMode === 'free_play') {
                     tryAgainBtn.textContent = "Start New Game";
+                } else if (gameMode === 'daily_challenge' || gameMode === 'custom') {
+                    tryAgainBtn.textContent = "Try Free Play";
+                    tryAgainBtn.removeEventListener('click', initGame);
+                    tryAgainBtn.addEventListener('click', goToFreePlay);
                 } else {
                     tryAgainBtn.textContent = "Try Again";
+                    tryAgainBtn.removeEventListener('click', goToFreePlay);
+                    tryAgainBtn.addEventListener('click', initGame);
                 }
             }
             
@@ -665,13 +743,14 @@
         /** Checks if the level minimum score has been met and handles transitions. */
         function checkLevelCompletion() {
             const currentLevel = LEVELS[currentLevelIndex];
+            const levelName = currentLevel.level === 'Custom' ? 'Custom Challenge' : (gameMode === 'daily_challenge' ? 'Daily Level' : `Level ${currentLevel.level}`);
             
             if (score >= currentLevel.minScore) {
                 gameState = 'level_success';
-                showMessage(`Level ${LEVELS[currentLevelIndex].level} Passed! Score ${score} / Target ${currentLevel.minScore}. <span class="text-green-600 font-bold">CONGRATULATIONS!</span>`);
+                showMessage(`${levelName} Passed! Score ${score} / Target ${currentLevel.minScore}. <span class="text-green-600 font-bold">CONGRATULATIONS!</span>`);
             } else {
                 gameState = 'game_over';
-                showMessage(`<span class="text-red-600 font-bold">Level ${LEVELS[currentLevelIndex].level} Failed!</span> You scored ${score} but needed ${currentLevel.minScore}.`);
+                showMessage(`<span class="text-red-600 font-bold">${levelName} Failed!</span> You scored ${score} but needed ${currentLevel.minScore}.`);
             }
         }
 
@@ -685,6 +764,7 @@
             const savedWordsToPlace = [...wordsToPlace]; 
             const savedCurrentWord = currentWord;
             const savedScore = score;
+            const savedGameMode = gameMode;
             
             placementHistory.push({
                 grid: savedGrid,
@@ -692,6 +772,7 @@
                 wordsToPlace: savedWordsToPlace,
                 currentWord: savedCurrentWord,
                 currentLevelIndex: currentLevelIndex,
+                gameMode: savedGameMode
             });
             
             const placedScore = placementResult.totalScore; 
@@ -736,8 +817,13 @@
                 endPos = null;
                 calculatedDirection = null;
                 placementResult = null;
-                gameState = 'selecting_start';
-                showMessage(`Step undone. Word **${currentWord}** still selected. Click any cell to choose a new starting position.`);
+                // If a word was selected, return to selecting_start, otherwise don't change state.
+                if (currentWord) {
+                    gameState = 'selecting_start';
+                    showMessage(`Step undone. Word **${currentWord}** still selected. Click any cell to choose a new starting position.`);
+                } else {
+                    showMessage(`Start position cleared. Select a word to begin.`);
+                }
             } 
             // Case 2: Undo the last successfully placed word
             else if (placementHistory.length > 0) {
@@ -748,6 +834,7 @@
                 wordsToPlace = lastState.wordsToPlace;
                 currentWord = lastState.currentWord;
                 currentLevelIndex = lastState.currentLevelIndex;
+                gameMode = lastState.gameMode;
                 minScoreTarget = LEVELS[currentLevelIndex].minScore;
                 
                 startPos = null;
@@ -772,8 +859,8 @@
          * Handles sharing the score via the Web Share API with a clipboard fallback.
          */
         async function shareScore() {
-            const level = LEVELS.length === 1 && currentLevelIndex === 0 && window.location.search.includes('target=') ? 'Custom Challenge' : LEVELS[currentLevelIndex].level;
-            const shareText = `I scored ${score} on ${level} in Wordga. Can you beat my score?`;
+            const levelType = gameMode === 'daily_challenge' ? 'Daily Challenge' : (gameMode === 'custom' ? 'Custom Challenge' : `Level ${LEVELS[currentLevelIndex].level}`);
+            const shareText = `I scored ${score} on the ${levelType} in Wordga. Can you beat my score?`;
             
             // Use the current URL, which includes custom level parameters if present
             const shareUrl = window.location.href; 
@@ -805,28 +892,25 @@
         }
 
 
-        /** Advances to the next level. */
+        /** Advances to the next level in Free Play or switches to Free Play from Daily/Custom. */
         function goToNextLevel() {
-            // Check if this is a custom level loaded from URL
-            if (LEVELS.length === 1 && currentLevelIndex === 0 && window.location.search.includes('target=')) {
-                // If it's a custom level, end the game after success.
-                currentLevelIndex++; 
-                gameState = 'game_over';
-                showMessage(`Custom Challenge Complete! Final Score: ${score}`);
+            if (gameMode === 'daily_challenge' || gameMode === 'custom') {
+                goToFreePlay();
                 return;
             }
 
+            // Free Play Logic
             if (currentLevelIndex + 1 >= LEVELS.length) {
                 currentLevelIndex++;
                 gameState = 'game_over';
-                showMessage(`Fantastic! You beat all levels! Final Score: ${score}`);
+                showMessage(`Fantastic! You beat all Free Play levels! Final Score: ${score}`);
             } else {
                 currentLevelIndex++;
                 score = 0; // Reset score for the new level
                 loadLevel(currentLevelIndex);
                 gameState = 'selecting_start';
                 placementHistory = [];
-                showMessage(`Starting Level ${LEVELS[currentLevelIndex].level}! Your new challenge begins now.`);
+                showMessage(`Starting Free Play Level ${LEVELS[currentLevelIndex].level}! Your new challenge begins now.`);
             }
             renderGrid();
             renderUI();
@@ -876,29 +960,8 @@
                 return;
                 
             }
-
-            // renderGrid(); // Removed
-            // renderUI(); // Removed
         }
 
-        /** Resets the current word placement attempt. */
-        /* // This function is no longer used
-        function resetPlacement() {
-            startPos = null;
-            endPos = null;
-            calculatedDirection = null;
-            placementResult = null;
-            gameState = 'selecting_start';
-            showMessage(`Placement reset. Select a starting cell for the word: <span class="text-indigo-600">${currentWord}</span>`);
-            renderGrid();
-            renderUI();
-        }
-        */
-
-        /** Displays a message in the message box. */
-        function showMessage(htmlText) {
-            messageBox.innerHTML = htmlText;
-        }
 
         // --- Settings / Level Setting Functions ---
         
@@ -909,8 +972,9 @@
         }
 
         function populateLevelSelector() {
+            // Use FREE_PLAY_LEVELS for the editor
             levelSelect.innerHTML = '';
-            LEVELS.sort((a, b) => a.level - b.level).forEach(levelData => {
+            FREE_PLAY_LEVELS.sort((a, b) => a.level - b.level).forEach(levelData => {
                 const option = document.createElement('option');
                 option.value = levelData.level;
                 option.textContent = `Level ${levelData.level}`;
@@ -919,7 +983,8 @@
         }
 
         function loadLevelDataToEditor(levelNumber) {
-            const levelData = LEVELS.find(l => l.level === parseInt(levelNumber));
+            // Use FREE_PLAY_LEVELS for the editor
+            const levelData = FREE_PLAY_LEVELS.find(l => l.level === parseInt(levelNumber));
             if (levelData) {
                 levelWordsInput.value = levelData.words.join(', ');
                 minScoreInput.value = levelData.minScore;
@@ -931,7 +996,7 @@
         }
         
         function addNewLevel() {
-            const newLevelNumber = LEVELS.length > 0 ? Math.max(...LEVELS.map(l => l.level)) + 1 : 1;
+            const newLevelNumber = FREE_PLAY_LEVELS.length > 0 ? Math.max(...FREE_PLAY_LEVELS.map(l => l.level)) + 1 : 1;
             
             const newLevelData = {
                 level: newLevelNumber,
@@ -939,7 +1004,7 @@
                 minScore: 10,
             };
             
-            LEVELS.push(newLevelData);
+            FREE_PLAY_LEVELS.push(newLevelData);
             
             populateLevelSelector();
             
@@ -951,7 +1016,7 @@
 
         function saveLevelChanges(silent = false) {
             const levelNumber = parseInt(levelSelect.value);
-            const levelIndex = LEVELS.findIndex(l => l.level === levelNumber);
+            const levelIndex = FREE_PLAY_LEVELS.findIndex(l => l.level === levelNumber);
             
             if (levelIndex === -1) return;
 
@@ -970,56 +1035,47 @@
                  return;
             }
             
-            LEVELS[levelIndex].words = newWords;
-            LEVELS[levelIndex].minScore = newMinScore;
+            FREE_PLAY_LEVELS[levelIndex].words = newWords;
+            FREE_PLAY_LEVELS[levelIndex].minScore = newMinScore;
             
             if (!silent) {
-                displayDebugMessage(`Level ${levelNumber} updated successfully!`, false);
+                displayDebugMessage(`Free Play Level ${levelNumber} updated successfully!`, false);
             }
             renderUI(); 
         }
 
         function startSelectedLevel() {
             const levelNumber = parseInt(levelSelect.value);
-            const levelIndex = LEVELS.findIndex(l => l.level === levelNumber);
+            const levelIndex = FREE_PLAY_LEVELS.findIndex(l => l.level === levelNumber);
 
             if (levelIndex !== -1) {
                 saveLevelChanges(true); // Save changes silently before starting
 
-                score = 0; // Score reset for starting a specific level
-                currentLevelIndex = levelIndex;
-                loadLevel(currentLevelIndex); 
-                gameState = 'selecting_start';
-                placementHistory = [];
-                navigateTo('main-game-view');
-                renderGrid();
-                renderUI();
-                showMessage(`Settings: Starting game at **Level ${levelNumber}** with target score **${LEVELS[levelIndex].minScore}**.`);
+                // Start Free Play mode at the selected index
+                initGame('free_play', levelIndex);
+                showMessage(`Settings: Starting **Free Play** game at **Level ${levelNumber}** with target score **${FREE_PLAY_LEVELS[levelIndex].minScore}**.`);
             }
         }
 
         function openSettingsScreen() {
-            // Restore default levels if a custom URL was used, so the editor sees the full set.
-            if (LEVELS.length === 1 && LEVELS[0].level === 1 && window.location.search.includes('target=')) {
-                // If this is a custom level, just ensure the selector shows it and the editor can be used.
-            }
-
             populateLevelSelector();
             
-            const levelToLoad = LEVELS[currentLevelIndex] ? LEVELS[currentLevelIndex].level : (LEVELS[0] ? LEVELS[0].level : 1); 
+            // Find the level index based on the current level number (for Free Play mode)
+            const currentLevelNumber = LEVELS.length > 0 ? LEVELS[currentLevelIndex].level : 1; 
+            const levelToLoad = FREE_PLAY_LEVELS.find(l => l.level === currentLevelNumber);
             
-            if (LEVELS.length === 0) {
+            if (FREE_PLAY_LEVELS.length === 0) {
                 addNewLevel();
             } else {
-                 levelSelect.value = levelToLoad; 
-                 loadLevelDataToEditor(levelToLoad);
+                 levelSelect.value = levelToLoad ? levelToLoad.level : FREE_PLAY_LEVELS[0].level; 
+                 loadLevelDataToEditor(levelSelect.value);
             }
         }
         
         /** Generates a shareable URL for the currently edited level, and attempts to share it. */
         async function generateShareLink() {
             const levelNumber = parseInt(levelSelect.value);
-            const levelData = LEVELS.find(l => l.level === levelNumber);
+            const levelData = FREE_PLAY_LEVELS.find(l => l.level === levelNumber);
             
             if (!levelData) {
                 displayDebugMessage("Error: Could not find current level data.", true);
@@ -1064,20 +1120,12 @@
 
 
         // --- Event Listeners ---
-        /* // Removed
-        confirmBtn.addEventListener('click', () => {
-            if (gameState === 'review_placement') {
-                placeWord();
-            }
-        });
-        */
-
-        // resetBtn.addEventListener('click', resetPlacement); // Removed
         undoBtn.addEventListener('click', undoLastStep);
+        dailyChallengeBtn.addEventListener('click', startDailyChallenge);
         
         // Game Over Controls
-        tryAgainBtn.addEventListener('click', initGame);
-        nextLevelBtn.addEventListener('click', goToNextLevel);
+        tryAgainBtn.addEventListener('click', initGame); // Handled dynamically in renderUI
+        nextLevelBtn.addEventListener('click', goToNextLevel); // Handled dynamically in renderUI
         shareSuccessBtn.addEventListener('click', shareScore);
         shareFailureBtn.addEventListener('click', shareScore);
 
@@ -1097,7 +1145,7 @@
 
 
         // --- Start Game on Load ---
-        window.onload = initGame;
+        window.onload = () => initGame(); 
     </script>
 </body>
 </html>
