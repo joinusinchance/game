@@ -64,7 +64,15 @@
     </script>
 
     <div id="game-container" class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-2xl border-4 border-emerald-600">
-        <h1 class="text-3xl sm:text-4xl font-bold text-center text-emerald-800 mb-6">Majorcan Highs 🍹</h1>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-bold text-emerald-800">Majorcan Highs 🍹</h1>
+            <button onclick="showRulesModal()" class="w-10 h-10 bg-emerald-500 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-600 transition duration-150">
+                ?
+            </button>
+        </div>
+        <div id="score-display" class="flex justify-around text-sm font-semibold mb-4 text-gray-600">
+            <!-- Scoreboard will be injected here -->
+        </div>
 
         <!-- Screen Container -->
         <div id="screen-container">
@@ -75,16 +83,59 @@
     <!-- Death Modal (Hidden by default) -->
     <div id="death-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-red-50 p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-100 border-4 border-red-500">
-            <h2 class="text-3xl font-extrabold text-red-700 mb-4 text-center">☠️ The Final Verdict ☠️</h2>
+            <h2 id="death-modal-title" class="text-3xl font-extrabold text-red-700 mb-4 text-center">💀 The Final Verdict 💀</h2>
             <p id="loser-name" class="text-xl font-semibold text-center mb-2"></p>
             <p class="text-lg text-gray-700 mb-4 text-center italic">The card that sealed their fate: <span id="loser-card-rank" class="font-bold text-red-600"></span></p>
             <div class="bg-red-100 p-4 rounded-lg border border-red-300">
-                <p id="death-message" class="text-xl text-gray-800 font-medium leading-relaxed"></p>
+                <p class="text-xl text-gray-800 font-medium leading-relaxed">Comically killed because they: <span id="death-message"></span></p>
             </div>
 
             <div class="mt-8 flex justify-center">
-                <button onclick="restartGame()" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
-                    Start a New Game
+                <button id="death-modal-action-button" onclick="startNextHand()" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                    Start Next Hand
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules Modal (Hidden by default) -->
+    <div id="rules-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto transform transition-all duration-300 border-4 border-emerald-600">
+            <h2 class="text-3xl font-extrabold text-emerald-800 mb-4 text-center">Majorcan Highs Rules</h2>
+
+            <div class="space-y-4 text-gray-700">
+                <h3 class="text-xl font-bold text-emerald-600">Objective</h3>
+                <p>The sole objective is to survive! Players start with 3 lives. The player who loses a life in the final round of a hand is one step closer to elimination. The last player standing wins the Majorcan Highs championship.</p>
+
+                <h3 class="text-xl font-bold text-emerald-600">Gameplay (The Hand)</h3>
+                <ul class="list-disc list-inside space-y-1 ml-4">
+                    <li>Each player is dealt **3 cards**.</li>
+                    <li>The hand consists of **3 rounds (tricks)**.</li>
+                    <li>The player who wins a trick leads the next.</li>
+                    <li>The aim of a trick is to play the **highest ranked card**. Suit doesn't matter.</li>
+                    <li><span class="font-bold">Card Ranks (Ace Low, King High):</span> A (Lowest) &rarr; 2 &rarr; 3 &rarr; ... &rarr; Q &rarr; K (Highest).</li>
+                </ul>
+
+                <h3 class="text-xl font-bold text-emerald-600">The Death (Losing a Life)</h3>
+                <ul class="list-disc list-inside space-y-1 ml-4">
+                    <li>The final trick is the only one that matters for lives.</li>
+                    <li>The player who plays the **single lowest card** in the final trick loses a life.</li>
+                    <li>If two or more players tie for the lowest card, no one loses a life, but the highest card still wins the trick.</li>
+                    <li>If a player reaches 0 lives, they are eliminated from the game.</li>
+                </ul>
+
+                <h3 class="text-xl font-bold text-emerald-600 mt-6">Comedic Deaths by Rank</h3>
+                <p class="text-sm italic mb-2">The rank of the losing card determines the comically tragic fate:</p>
+                <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    ${Object.entries(COMEDIC_DEATHS).map(([rank, death]) =>
+                        `<div class="font-medium">**${rank}**:</div><div>${death}</div>`
+                    ).join('')}
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-center">
+                <button onclick="hideRulesModal()" class="px-6 py-3 bg-red-500 text-white font-bold rounded-lg shadow-lg hover:bg-red-600 transition duration-150 transform hover:scale-105">
+                    Close Rules
                 </button>
             </div>
         </div>
@@ -100,28 +151,29 @@
         // Rank value: A=1 (low), K=13 (high)
         const RANK_VALUE = Object.fromEntries(RANKS.map((r, i) => [r, i + 1]));
 
+        // Grammar-checked deaths that flow well with "Comically killed because they:"
         const COMEDIC_DEATHS = {
-            'A': "Stumbles over their own two feet while attempting to tie their shoes and falls into a tiny sinkhole leading directly to a badger's tea party.",
-            '2': "Mistaken for a runaway garden gnome by a precision drone strike.",
-            '3': "Swallowed whole by a very bored but highly determined house cat.",
-            '4': "Accidentally orders 400 lbs of mayonnaise instead of coffee and drowns in the resulting creamy avalanche.",
-            '5': "Wins a lottery but the celebratory confetti gun misfires, lodging a piece of glitter directly into their brain.",
-            '6': "Their sock puppet achieves sentience and insists on wearing them as a hand-hat until they suffocate from lack of style.",
-            '7': "Tries to fix a leaky faucet but ends up summoning a vengeful water spirit who washes them away to the dimension of damp socks.",
-            '8': "Gets hit by a rogue coconut, even though they are indoors in a desert.",
-            '9': "Dies of embarrassment after realizing they've spent all day talking to a mannequin they thought was a cool new friend.",
-            '10': "A rogue wave of Majorcan Highs cocktails materializes and washes them out to sea, only to be pecked to death by synchronized seagulls.",
-            'J': "Gets fatally entangled in a very enthusiastic game of Twister being played by professional acrobats.",
-            'Q': "Chokes on a meticulously crafted, artisanal crouton.",
-            'K': "Is judged by a flock of pigeons for having 'too much main character energy' and is subsequently dive-bombed by bird droppings until they lose consciousness and fall off a small stool."
+            'A': "stumble over their own two feet while attempting to tie their shoes and fall into a tiny sinkhole leading directly to a badger's tea party.",
+            '2': "are mistaken for a runaway garden gnome by a precision drone strike.",
+            '3': "are swallowed whole by a very bored but highly determined house cat.",
+            '4': "accidentally order 400 lbs of mayonnaise instead of coffee and drown in the resulting creamy avalanche.",
+            '5': "win a lottery but the celebratory confetti gun misfires, lodging a piece of glitter directly into their brain.",
+            '6': "watch their sock puppet achieve sentience and insist on wearing them as a hand-hat until they suffocate from lack of style.",
+            '7': "try to fix a leaky faucet but end up summoning a vengeful water spirit who washes them away to the dimension of damp socks.",
+            '8': "get hit by a rogue coconut, even though they are indoors in a desert.",
+            '9': "die of embarrassment after realizing they've spent all day talking to a mannequin they thought was a cool new friend.",
+            '10': "are engulfed by a rogue wave of Majorcan Highs cocktails that washes them out to sea, only to be pecked to death by synchronized seagulls.",
+            'J': "get fatally entangled in a very enthusiastic game of Twister being played by professional acrobats.",
+            'Q': "choke on a meticulously crafted, artisanal crouton.",
+            'K': "are judged by a flock of pigeons for having 'too much main character energy' and are subsequently dive-bombed by bird droppings until they lose consciousness and fall off a small stool."
         };
 
         // --- Game State ---
-        let players = [];
+        let players = []; // Includes { id, name, hand, lives: 3 }
         let deck = [];
-        let currentTrick = []; // { playerId: id, card: 'KS' }
+        let currentTrick = []; // { playerId: id, card: 'KS', playerName: name }
         let currentPlayerIndex = 0;
-        let gameState = 'setup'; // 'setup', 'handoff', 'play', 'reveal'
+        let gameState = 'setup'; // 'setup', 'handoff', 'play', 'resolution', 'reveal'
         let roundNumber = 1;
         const MAX_ROUNDS = 3;
 
@@ -167,15 +219,35 @@
             const colorClass = (suit === 'H' || suit === 'D') ? 'text-red' : 'text-black';
             return { rank, suit, value, colorClass };
         }
+        
+        // --- Modal Control Functions ---
+
+        function showRulesModal() {
+            document.getElementById('rules-modal').classList.remove('hidden');
+        }
+
+        function hideRulesModal() {
+            document.getElementById('rules-modal').classList.add('hidden');
+        }
+
 
         // --- UI Rendering Functions ---
 
         /**
+         * Renders the current scores/lives of all active players.
+         */
+        function renderScoreDisplay() {
+            const scoreDisplay = document.getElementById('score-display');
+            scoreDisplay.innerHTML = players.map(p => `
+                <div class="text-center p-2 rounded-lg ${p.lives === 0 ? 'bg-red-200 line-through' : 'bg-emerald-100'}">
+                    <span class="font-extrabold text-emerald-900">${p.name}:</span>
+                    <span class="text-xl font-bold text-red-600">${'❤️'.repeat(p.lives)}</span>
+                </div>
+            `).join('');
+        }
+
+        /**
          * Renders a single card element.
-         * @param {string} cardString e.g., 'KH'
-         * @param {boolean} isPlayable If true, adds playable classes and click handler.
-         * @param {string} type 'face' or 'back'
-         * @returns {string} HTML string for the card.
          */
         function renderCard(cardString, isPlayable = false, type = 'face') {
             if (type === 'back') {
@@ -204,9 +276,11 @@
         function renderSetupScreen() {
             gameState = 'setup';
             const screen = document.getElementById('screen-container');
+            document.getElementById('score-display').innerHTML = ''; // Clear scores on setup
+
             screen.innerHTML = `
                 <div class="text-center space-y-6">
-                    <p class="text-lg text-gray-600">Enter 2 to 4 players for a high-stakes, low-card-death trick-taking game.</p>
+                    <p class="text-lg text-gray-600">Each player starts with **3 lives**. The last player standing is the winner!</p>
                     <div id="player-inputs" class="space-y-4">
                         <input type="text" id="player-1" placeholder="Player 1 Name (Mandatory)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
                         <input type="text" id="player-2" placeholder="Player 2 Name (Mandatory)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
@@ -224,6 +298,14 @@
         function renderHandOffScreen() {
             gameState = 'handoff';
             const currentPlayer = players[currentPlayerIndex];
+
+            // If the current player has 0 lives, skip them
+            if (currentPlayer.lives === 0) {
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+                renderHandOffScreen(); // Recurse until an active player is found
+                return;
+            }
+
             const screen = document.getElementById('screen-container');
             screen.innerHTML = `
                 <div class="text-center space-y-8 p-8 bg-emerald-100 rounded-lg border-2 border-emerald-400">
@@ -243,9 +325,6 @@
             const currentPlayer = players[currentPlayerIndex];
             const screen = document.getElementById('screen-container');
 
-            // Find the maximum number of cards in any player's hand
-            const maxCards = players.reduce((max, p) => Math.max(max, p.hand.length), 0);
-
             screen.innerHTML = `
                 <h2 class="text-2xl font-bold text-emerald-700 mb-4 text-center">Round ${roundNumber} of ${MAX_ROUNDS}</h2>
                 <div class="flex justify-between items-center mb-6 p-3 bg-emerald-50 rounded-lg border-b-2 border-emerald-200">
@@ -255,10 +334,10 @@
 
                 <!-- Played Cards (Trick Pile) -->
                 <div class="mb-8 p-4 bg-gray-100 rounded-xl shadow-inner">
-                    <h3 class="text-xl font-bold text-gray-700 mb-3 text-center">The Trick Pile (${currentTrick.length}/${players.length})</h3>
+                    <h3 class="text-xl font-bold text-gray-700 mb-3 text-center">The Trick Pile (${currentTrick.length}/${players.filter(p => p.lives > 0).length})</h3>
                     <div id="trick-pile" class="flex justify-center space-x-2 h-32">
                         ${currentTrick.map(trickItem => renderCard(trickItem.card)).join('')}
-                        ${Array(players.length - currentTrick.length).fill(0).map(() => renderCard('', false, 'back')).join('')}
+                        ${Array(players.filter(p => p.lives > 0).length - currentTrick.length).fill(0).map(() => renderCard('', false, 'back')).join('')}
                     </div>
                 </div>
 
@@ -269,6 +348,72 @@
                         ${currentPlayer.hand.map(card => renderCard(card, true)).join('')}
                     </div>
                     <p class="text-center text-sm text-emerald-800 mt-2 font-medium">Click a card to play it!</p>
+                </div>
+            `;
+        }
+        
+        /**
+         * Renders the screen showing the result of the completed trick.
+         * @param {Object} winner The trick item of the player who won.
+         * @param {Object|null} loser The trick item of the player who played the lowest unique card, or null.
+         */
+        function renderTrickResolutionScreen(winner, loser) {
+            gameState = 'resolution';
+            const screen = document.getElementById('screen-container');
+
+            let announcement = '';
+            let subtext = '';
+            let buttonText = '';
+            let buttonAction = '';
+            let highlightClass = 'bg-yellow-100 border-yellow-400 text-yellow-800';
+
+            if (roundNumber < MAX_ROUNDS) {
+                // Regular trick resolution
+                announcement = `${winner.playerName} takes the trick! 🎉`;
+                subtext = `Round ${roundNumber} complete. ${winner.playerName} will lead Round ${roundNumber + 1}.`;
+                buttonText = 'Continue to Next Player';
+                buttonAction = `startNewRound('${winner.playerId}')`;
+            } else {
+                // Final trick resolution
+                if (loser) {
+                    highlightClass = 'bg-red-100 border-red-500 text-red-800';
+                    announcement = `${loser.playerName} played the lowest card! 💀`;
+                    subtext = `Their card (${getRank(loser.card)}) determines the fate for this hand!`;
+                    buttonText = 'Reveal the Fate!';
+                    buttonAction = `resolveFinalRound('${loser.playerId}', '${getRank(loser.card)}')`;
+                } else {
+                    highlightClass = 'bg-green-100 border-green-500 text-green-800';
+                    announcement = `No unique lowest card! Everyone lives (for now).`;
+                    subtext = `${winner.playerName} still wins the final trick. The next hand begins without a death.`;
+                    buttonText = 'Start Next Hand';
+                    buttonAction = `startNextHand()`;
+                }
+            }
+
+            // Clear the current trick pile from display before showing the resolution.
+            const playedCardsHtml = currentTrick.map(trickItem => renderCard(trickItem.card)).join('');
+            currentTrick = []; // Clear the pile state now.
+
+            screen.innerHTML = `
+                <h2 class="text-2xl font-bold text-emerald-700 mb-4 text-center">Round ${roundNumber} Concluded</h2>
+
+                <!-- Played Cards -->
+                <div class="mb-8 p-4 bg-gray-100 rounded-xl shadow-inner">
+                    <h3 class="text-xl font-bold text-gray-700 mb-3 text-center">Cards Played</h3>
+                    <div class="flex justify-center space-x-2 h-32">
+                        ${playedCardsHtml}
+                    </div>
+                </div>
+
+                <div class="text-center space-y-4 p-6 rounded-lg border-2 ${highlightClass}">
+                    <p class="text-3xl font-extrabold">${announcement}</p>
+                    <p class="text-lg text-gray-700">${subtext}</p>
+                </div>
+
+                <div class="mt-8 flex justify-center">
+                    <button onclick="${buttonAction}" class="px-6 py-4 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                        ${buttonText}
+                    </button>
                 </div>
             `;
         }
@@ -301,7 +446,8 @@
             players = playerNames.map((name, index) => ({
                 id: crypto.randomUUID(),
                 name: name,
-                hand: []
+                hand: [],
+                lives: 3 // Start with 3 lives
             }));
             deck = createAndShuffleDeck();
             currentTrick = [];
@@ -309,8 +455,7 @@
             roundNumber = 1;
 
             dealCards(3); // Deal 3 cards to each player
-
-            // Start with the first player's hand-off
+            renderScoreDisplay();
             renderHandOffScreen();
         }
 
@@ -319,10 +464,13 @@
          * @param {number} count The number of cards to deal per player.
          */
         function dealCards(count) {
+            // Only deal to players with lives > 0
+            const activePlayers = players.filter(p => p.lives > 0);
             for (let c = 0; c < count; c++) {
-                for (let p = 0; p < players.length; p++) {
+                for (let p = 0; p < activePlayers.length; p++) {
+                    const playerIndex = players.findIndex(pl => pl.id === activePlayers[p].id);
                     if (deck.length > 0) {
-                        players[p].hand.push(deck.pop());
+                        players[playerIndex].hand.push(deck.pop());
                     }
                 }
             }
@@ -344,17 +492,35 @@
             currentTrick.push({ playerId: currentPlayer.id, card: card, playerName: currentPlayer.name });
 
             // 3. Check if trick is complete
-            if (currentTrick.length === players.length) {
+            const activePlayersCount = players.filter(p => p.lives > 0).length;
+            if (currentTrick.length === activePlayersCount) {
                 resolveTrick();
             } else {
-                // 4. Advance to the next player
-                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-                renderHandOffScreen();
+                // 4. Advance to the next ACTIVE player
+                let nextPlayerIndex;
+                let foundNext = false;
+                
+                // Search for the next active player, wrapping around
+                for (let i = 1; i <= players.length; i++) {
+                    nextPlayerIndex = (currentPlayerIndex + i) % players.length;
+                    if (players[nextPlayerIndex].lives > 0) {
+                        currentPlayerIndex = nextPlayerIndex;
+                        foundNext = true;
+                        break;
+                    }
+                }
+
+                if(foundNext) {
+                    renderHandOffScreen();
+                } else {
+                    // Should not happen if game status check is correct
+                    console.error("Could not find next active player.");
+                }
             }
         }
 
         /**
-         * Determines the winner and loser of the current trick.
+         * Determines the winner and loser of the current trick and renders the resolution screen.
          */
         function resolveTrick() {
             // Find the highest card (winner)
@@ -382,63 +548,142 @@
             const lowestPlayers = currentTrick.filter(item => parseCard(item.card).value === lowestValue);
 
             const loser = (lowestPlayers.length === 1) ? losingCard : null;
-            const winner = winningCard; // Winner is always the highest unique card. If tied, the first one to play it wins the trick.
-
-            // If this is the final round (trick), reveal the death.
-            if (roundNumber === MAX_ROUNDS && loser) {
-                showDeathModal(loser);
-            } else {
-                // Not the final trick, just advance the round.
-                startNewRound(winner);
-            }
+            const winner = winningCard; 
+            
+            // Go to the new resolution screen instead of resolving directly
+            renderTrickResolutionScreen(winner, loser);
         }
 
         /**
-         * Prepares for the next round.
-         * @param {Object} winner The trick item of the player who won the trick.
+         * Prepares for the next round (trick) within the same hand.
+         * @param {string} winnerId The ID of the player who won the trick.
          */
-        function startNewRound(winner) {
-            // 1. Reset the trick pile
-            currentTrick = [];
-
-            // 2. Check if hands are empty (shouldn't happen before MAX_ROUNDS is met)
-            const handsEmpty = players.every(p => p.hand.length === 0);
-            if (handsEmpty) {
-                // Game Over (should be handled by MAX_ROUNDS logic, but safety check)
-                renderFinalMessage("Game Finished! No more cards. Let's call it a draw!");
-                return;
-            }
-
-            // 3. Increment round number
+        function startNewRound(winnerId) {
+            // 1. Increment round number
             roundNumber++;
 
-            // 4. Set the winner of the last trick to start the next round
-            const winningPlayer = players.find(p => p.id === winner.playerId);
-            currentPlayerIndex = players.indexOf(winningPlayer);
+            // 2. Set the winner of the last trick to start the next round
+            const winningPlayerIndex = players.findIndex(p => p.id === winnerId);
+            currentPlayerIndex = winningPlayerIndex;
 
-            // 5. Announce winner (optional, for debugging/feedback)
-            console.log(`Round ${roundNumber - 1} winner: ${winner.playerName}. They lead next.`);
-
-            // 6. Go to the next player's hand-off screen
+            // 3. Go to the next player's hand-off screen
             renderHandOffScreen();
         }
 
         /**
-         * Displays the comedic death modal for the player who played the lowest card in the final trick.
-         * @param {Object} loser The trick item of the player who lost the trick.
+         * Resolves the outcome of the final round (trick), including life loss.
+         * @param {string} loserId ID of the player who lost the round.
+         * @param {string} rank Rank of the card that caused the loss.
          */
-        function showDeathModal(loser) {
+        function resolveFinalRound(loserId, rank) {
+            const loser = players.find(p => p.id === loserId);
+
+            if (loser) {
+                // Player loses a life
+                loser.lives -= 1;
+                renderScoreDisplay(); // Update scores immediately
+
+                // Show the death modal
+                showDeathModal(loser, rank);
+            }
+        }
+        
+        /**
+         * Starts a new hand (new deal, new rounds).
+         */
+        function startNextHand() {
+            document.getElementById('death-modal').classList.add('hidden');
+            
+            // Check if only one player remains before dealing.
+            const remainingPlayers = players.filter(p => p.lives > 0);
+            if (remainingPlayers.length <= 1) {
+                renderFinalMessage(remainingPlayers[0] ? `${remainingPlayers[0].name} is the MAJORCAN HIGH WINNER!` : "No winner could be determined!");
+                return;
+            }
+
+            // Re-deal and reset for a new hand
+            deck = createAndShuffleDeck();
+            currentTrick = [];
+            roundNumber = 1;
+            
+            // Set first player of the new hand to the next active player after the person who lost a life (or the first person in the array if the loser was the last one).
+            const nextActivePlayerIndex = players.findIndex(p => p.lives > 0);
+            currentPlayerIndex = nextActivePlayerIndex !== -1 ? nextActivePlayerIndex : 0;
+
+            dealCards(3);
+            renderScoreDisplay();
+            renderHandOffScreen();
+        }
+
+        /**
+         * Displays the comedic death modal for the player who lost the round.
+         * @param {Object} loserPlayer The player object of the loser.
+         * @param {string} rank The rank of the losing card.
+         */
+        function showDeathModal(loserPlayer, rank) {
             gameState = 'reveal';
-            const rank = getRank(loser.card);
             const deathMessage = COMEDIC_DEATHS[rank];
 
-            document.getElementById('loser-name').textContent = `${loser.playerName} met their end!`;
-            document.getElementById('loser-card-rank').textContent = `${rank}`;
-            document.getElementById('death-message').textContent = `They are comically killed because: ${deathMessage}`;
+            const remainingPlayers = players.filter(p => p.lives > 0);
+            let buttonText = '';
+            let buttonAction = '';
+
+            if (remainingPlayers.length <= 1) {
+                // Game End: Majorcan Highs Winner!
+                const winner = remainingPlayers[0] || null;
+                const winnerName = winner ? winner.name : 'No one';
+                document.getElementById('death-modal-title').textContent = '👑 Majorcan High Winner! 👑';
+                document.getElementById('loser-name').textContent = `${loserPlayer.name} has run out of lives and is ELIMINATED!`;
+                document.getElementById('death-message').textContent = `is no longer with us. The champion of Majorcan Highs is ${winnerName}!`;
+                document.getElementById('loser-card-rank').textContent = '';
+                
+                // Find the main text element and update the whole sentence structure for game over
+                document.querySelector('#death-modal .bg-red-100 p').innerHTML = `
+                    <p class="text-xl text-gray-800 font-medium leading-relaxed">${loserPlayer.name} is no longer with us. The champion of Majorcan Highs is ${winnerName}!</p>
+                `;
+                
+                buttonText = 'Start New Game';
+                buttonAction = 'restartGame()';
+            } else {
+                // Continue to next hand
+                document.getElementById('death-modal-title').textContent = '💀 The Final Verdict 💀';
+                document.getElementById('loser-name').textContent = `${loserPlayer.name} has lost a life! Lives remaining: ${'❤️'.repeat(loserPlayer.lives)}`;
+                document.getElementById('loser-card-rank').textContent = `${rank}`;
+                
+                // Update the text to flow grammatically: "Comically killed because they: [death message]"
+                document.getElementById('death-message').textContent = `${deathMessage}`;
+                document.querySelector('#death-modal .bg-red-100 p').innerHTML = `
+                    <p class="text-xl text-gray-800 font-medium leading-relaxed">Comically killed because they: <span id="death-message">${deathMessage}</span></p>
+                `;
+
+                buttonText = 'Start Next Hand';
+                buttonAction = 'startNextHand()';
+            }
+
+            document.getElementById('death-modal-action-button').textContent = buttonText;
+            document.getElementById('death-modal-action-button').onclick = window[buttonAction] || new Function(buttonAction);
 
             document.getElementById('death-modal').classList.remove('hidden');
         }
 
+
+        /**
+         * Renders the final message for the Majorcan High Winner.
+         */
+        function renderFinalMessage(message) {
+            const screen = document.getElementById('screen-container');
+            screen.innerHTML = `
+                <div class="text-center space-y-6 p-8 bg-emerald-100 rounded-lg border-2 border-emerald-400">
+                    <h2 class="text-3xl font-bold text-emerald-800">GAME OVER!</h2>
+                    <p class="text-4xl font-extrabold text-emerald-600">${message}</p>
+                    <button onclick="restartGame()" class="w-full px-6 py-3 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                        Play Again
+                    </button>
+                </div>
+            `;
+             document.getElementById('score-display').innerHTML = '';
+        }
+        
         /**
          * Restarts the entire game.
          */
@@ -446,23 +691,6 @@
             document.getElementById('death-modal').classList.add('hidden');
             renderSetupScreen();
         }
-
-        /**
-         * Renders a generic final message (only used if game ends unexpectedly).
-         */
-        function renderFinalMessage(message) {
-            const screen = document.getElementById('screen-container');
-            screen.innerHTML = `
-                <div class="text-center space-y-6 p-8 bg-emerald-100 rounded-lg border-2 border-emerald-400">
-                    <h2 class="text-3xl font-bold text-emerald-800">Game Over!</h2>
-                    <p class="text-xl text-gray-700">${message}</p>
-                    <button onclick="restartGame()" class="w-full px-6 py-3 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
-                        Play Again
-                    </button>
-                </div>
-            `;
-        }
-
 
         // --- Initialization ---
 
@@ -476,6 +704,10 @@
         window.renderPlayScreen = renderPlayScreen;
         window.handleCardPlay = handleCardPlay;
         window.restartGame = restartGame;
+        window.resolveFinalRound = resolveFinalRound;
+        window.startNextHand = startNextHand;
+        window.showRulesModal = showRulesModal;
+        window.hideRulesModal = hideRulesModal;
 
     </script>
 </body>
