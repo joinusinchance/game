@@ -165,24 +165,11 @@
             <div id="status-message-controls" class="relative">
                 
                 <!-- 1. Standard Controls (Selecting/Placing - Default view) -->
-                <div id="standard-controls" class="flex justify-between items-stretch space-x-1 sm:space-x-2">
+                <div id="standard-controls" class="flex justify-center items-stretch space-x-1 sm:space-x-2">
                     
-                    <!-- Left Group: Reserved Space -->
-                    <div class="w-[18%] hidden sm:block"></div>
-                    
-                    <!-- Center Group: Undo / Reset -->
-                    <div class="flex space-x-1 sm:space-x-2">
-                        <button id="undo-btn" class="bg-red-400 text-white font-bold py-2 px-1 rounded-lg text-[10px] sm:text-sm shadow-md hover:bg-red-500" disabled>
-                            Undo
-                        </button>
-                        <button id="reset-btn" class="bg-gray-400 text-white font-bold py-2 px-1 rounded-lg text-[10px] sm:text-sm shadow-md hover:bg-gray-500 hidden">
-                            Reset
-                        </button>
-                    </div>
-                    
-                    <!-- Right Group: Confirm -->
-                    <button id="confirm-btn" class="button-confirm bg-emerald-500 text-white font-bold py-2 px-2 rounded-lg text-xs sm:text-base shadow-md hover:shadow-lg flex-grow min-w-[45%]" disabled>
-                        Place Word (+0)
+                    <!-- Centered Undo Button -->
+                    <button id="undo-btn" class="bg-red-400 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-md hover:bg-red-500" disabled>
+                        Undo Last Step
                     </button>
                 </div>
                 
@@ -226,9 +213,8 @@
         <ol class="list-decimal list-inside space-y-2 mb-6 text-gray-700">
             <li>Select one of your available words.</li>
             <li>Click a cell to set the **start position**. (Highlighted in <span class="text-yellow-600 font-bold">yellow</span>)</li>
-            <li>Click an **adjacent** cell (up, down, left, or right) to set the **direction**. (Possible cells are <span class="text-emerald-500 font-bold">green</span>)</li>
-            <li>Review the placement. Overlapping letters are highlighted in <span class="text-orange-600 font-bold">orange</span>.</li>
-            <li>Press **Place Word** to confirm and add the score.</li>
+            <li>Click an **adjacent** cell (H or V) to set the **direction**. (Possible cells are <span class="text-emerald-500 font-bold">green</span>). The word is automatically placed after this step.</li>
+            <li>Use the **Undo Last Step** button to revert your last word placement or clear your current start position.</li>
             <li>Complete all words to meet the target score and advance!</li>
         </ol>
 
@@ -332,8 +318,8 @@
         const gridContainer = document.getElementById('game-grid');
         const scoreDisplay = document.getElementById('score');
         const messageBox = document.getElementById('main-status-display'); 
-        const confirmBtn = document.getElementById('confirm-btn');
-        const resetBtn = document.getElementById('reset-btn');
+        const confirmBtn = null; // document.getElementById('confirm-btn'); // Removed
+        const resetBtn = null; // document.getElementById('reset-btn'); // Removed
         const undoBtn = document.getElementById('undo-btn');
         
         // Navigation Buttons (updated to include mobile version)
@@ -563,13 +549,6 @@
                         // Highlight placement based on game state
                         if (startPos && startPos.r === r && startPos.c === c) {
                             cell.classList.add('start-cell');
-                        } else if (gameState === 'review_placement' && placementResult && placementResult.placements.some(p => p.r === r && p.c === c)) {
-                            const placement = placementResult.placements.find(p => p.r === r && p.c === c);
-                            if (placement.isOverlap) {
-                                cell.classList.add('overlap-cell');
-                            } else {
-                                cell.classList.add('placement-valid');
-                            }
                         } else if (gameState === 'selecting_direction' && startPos) {
                             const drRaw = r - startPos.r;
                             const dcRaw = c - startPos.c;
@@ -611,20 +590,15 @@
             levelSuccessControls.classList.add('hidden');
             standardControls.classList.add('hidden');
             
-            confirmBtn.disabled = true;
-            resetBtn.classList.add('hidden');
+            // confirmBtn.disabled = true; // Removed
+            // resetBtn.classList.add('hidden'); // Removed
             
             // Hide the reserved space placeholder
-            document.querySelector('#standard-controls > div:first-child').classList.add('hidden');
+            // document.querySelector('#standard-controls > div:first-child').classList.add('hidden'); // Removed
 
             if (gameState === 'selecting_start' || gameState === 'selecting_direction') {
                 standardControls.classList.remove('hidden');
-                confirmBtn.textContent = `Place Word (+0)`;
-            } else if (gameState === 'review_placement' && placementResult) {
-                standardControls.classList.remove('hidden');
-                confirmBtn.textContent = `Place Word (+${placementResult.totalScore})`;
-                confirmBtn.disabled = false;
-                resetBtn.classList.remove('hidden');
+                // confirmBtn.textContent = `Place Word (+0)`; // Removed
             } else if (gameState === 'level_success') {
                 levelSuccessControls.classList.remove('hidden');
             } else if (gameState === 'game_over') { 
@@ -644,8 +618,9 @@
         
         /** Updates the disabled state of the Undo button based on history. */
         function updateUndoButtonState() {
-            const isPlacementMode = gameState === 'selecting_start' || gameState === 'selecting_direction' || gameState === 'review_placement';
-            undoBtn.disabled = placementHistory.length === 0 || !isPlacementMode;
+            const canUndoStep = startPos !== null; // Can undo if a start position is set
+            const canUndoWord = placementHistory.length > 0; // Can undo a word if history exists
+            undoBtn.disabled = !(canUndoStep || canUndoWord);
         }
 
         /**
@@ -742,7 +717,7 @@
                 endPos = null;
                 calculatedDirection = null;
                 
-                showMessage(`Great move! Score +${placedScore}. Now, **select your next word** from the list above.`); 
+                showMessage(`**${savedCurrentWord}** placed! Score +${placedScore}. Now, **select your next word**.`); 
                 
                 placementResult = null;
             } else {
@@ -753,29 +728,42 @@
             renderUI();
         }
         
-        /** Reverts the game state to the state before the last successful word placement. */
-        function undoLastPlacement() {
-            if (placementHistory.length === 0) return;
+        /** Reverts the game state to the state before the last successful word placement, or undoes the current step. */
+        function undoLastStep() {
+            // Case 1: Undo the current step (clear start position if one is selected)
+            if (gameState === 'selecting_direction' && startPos) {
+                startPos = null;
+                endPos = null;
+                calculatedDirection = null;
+                placementResult = null;
+                gameState = 'selecting_start';
+                showMessage(`Step undone. Word **${currentWord}** still selected. Click any cell to choose a new starting position.`);
+            } 
+            // Case 2: Undo the last successfully placed word
+            else if (placementHistory.length > 0) {
+                const lastState = placementHistory.pop();
+                
+                grid = lastState.grid;
+                score = lastState.score;
+                wordsToPlace = lastState.wordsToPlace;
+                currentWord = lastState.currentWord;
+                currentLevelIndex = lastState.currentLevelIndex;
+                minScoreTarget = LEVELS[currentLevelIndex].minScore;
+                
+                startPos = null;
+                endPos = null;
+                calculatedDirection = null;
+                placementResult = null;
+                
+                gameState = 'selecting_start';
+                
+                const messageWord = currentWord ? currentWord : 'a word';
+                showMessage(`Word undo successful. Please **select ${messageWord}** to re-place.`);
+            } else {
+                 // Nothing to undo
+                 return;
+            }
 
-            const lastState = placementHistory.pop();
-            
-            grid = lastState.grid;
-            score = lastState.score;
-            wordsToPlace = lastState.wordsToPlace;
-            currentWord = lastState.currentWord;
-            currentLevelIndex = lastState.currentLevelIndex;
-            minScoreTarget = LEVELS[currentLevelIndex].minScore;
-            
-            startPos = null;
-            endPos = null;
-            calculatedDirection = null;
-            placementResult = null;
-            
-            gameState = 'selecting_start';
-            
-            const messageWord = currentWord ? currentWord : 'a word';
-            showMessage(`Undo successful! Please **select ${messageWord}** to re-place.`);
-            
             renderGrid();
             renderUI();
         }
@@ -858,6 +846,11 @@
                 startPos = { r, c };
                 gameState = 'selecting_direction';
                 showMessage(`**Step 2:** Select an **adjacent cell** (H or V) to set the direction for the remaining letters of **${currentWord}**.`);
+                
+                renderGrid();
+                renderUI();
+                return;
+
             } else if (gameState === 'selecting_direction') {
                 endPos = { r, c };
 
@@ -878,16 +871,18 @@
                 calculatedDirection = [dr, dc];
                 placementResult = checkPlacement(currentWord, startPos.r, startPos.c, [dr, dc]);
 
-                gameState = 'review_placement';
-                showMessage(`Placement ready. Overlaps: <span class="text-orange-600 font-bold">${placementResult.overlapCount}</span>. Total score: <span class="text-emerald-600 font-bold"> +${placementResult.totalScore}</span>. Press 'Place Word' to confirm.`);
+                // Auto-place word instead of going to review state
+                placeWord();
+                return;
                 
             }
 
-            renderGrid();
-            renderUI();
+            // renderGrid(); // Removed
+            // renderUI(); // Removed
         }
 
         /** Resets the current word placement attempt. */
+        /* // This function is no longer used
         function resetPlacement() {
             startPos = null;
             endPos = null;
@@ -898,6 +893,7 @@
             renderGrid();
             renderUI();
         }
+        */
 
         /** Displays a message in the message box. */
         function showMessage(htmlText) {
@@ -1068,14 +1064,16 @@
 
 
         // --- Event Listeners ---
+        /* // Removed
         confirmBtn.addEventListener('click', () => {
             if (gameState === 'review_placement') {
                 placeWord();
             }
         });
+        */
 
-        resetBtn.addEventListener('click', resetPlacement);
-        undoBtn.addEventListener('click', undoLastPlacement);
+        // resetBtn.addEventListener('click', resetPlacement); // Removed
+        undoBtn.addEventListener('click', undoLastStep);
         
         // Game Over Controls
         tryAgainBtn.addEventListener('click', initGame);
