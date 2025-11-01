@@ -94,9 +94,9 @@
             <p id="loser-name" class="text-xl font-semibold text-center mb-2"></p>
             <p class="text-lg text-gray-700 mb-4 text-center italic">The card that sealed their fate: <span id="loser-card-rank" class="font-bold text-red-600"></span></p>
             <div class="bg-red-100 p-4 rounded-lg border border-red-300">
-                <p id="death-consequence-text" class="text-xl text-gray-800 font-medium leading-relaxed">
-                    Eliminated because they: <span id="death-message"></span>
-                </p>
+                <div id="death-consequence-text" class="text-xl text-gray-800 font-medium leading-relaxed">
+                    <!-- Dynamic content will be injected here based on player's fate -->
+                </div>
             </div>
 
             <div class="mt-8 flex justify-center space-x-4">
@@ -165,37 +165,37 @@
         // Consequences data structure
         let CONSEQUENCES = {}; 
         
-        // Removed 'Comically' from all descriptions
+        // CONSEQUENCE TEXTS ARE NOW GRAMMATICALLY CORRECT TO FLOW AFTER PLAYER NAME
         const FATAL_CONSEQUENCES = {
-            'A': "stumble over their own two feet while attempting to tie their shoes and fall into a tiny sinkhole leading directly to a badger's tea party.",
-            '2': "are mistaken for a runaway garden gnome by a precision drone strike.",
-            '3': "are swallowed whole by a very bored but highly determined house cat.",
-            '4': "accidentally order 400 lbs of mayonnaise instead of coffee and drown in the resulting creamy avalanche.",
-            '5': "win a lottery but the celebratory confetti gun misfires, lodging a piece of glitter directly into their brain.",
-            '6': "watch their sock puppet achieve sentience and insist on wearing them as a hand-hat until they suffocate from lack of style.",
-            '7': "try to fix a leaky faucet but end up summoning a vengeful water spirit who washes them away to the dimension of damp socks.",
-            '8': "get hit by a rogue coconut, even though they are indoors in a desert.",
-            '9': "die of embarrassment after realizing they've spent all day talking to a mannequin they thought was a cool new friend.",
-            '10': "are engulfed by a rogue wave of Majorcan Highs cocktails that washes them out to sea, only to be pecked to death by synchronized seagulls.",
-            'J': "get fatally entangled in a very enthusiastic game of Twister being played by professional acrobats.",
-            'Q': "choke on a meticulously crafted, artisanal crouton.",
-            'K': "are judged by a flock of pigeons for having 'too much main character energy' and are subsequently dive-bombed by bird droppings until they lose consciousness and fall off a small stool."
+            'A': "stumbles over their own two feet while attempting to tie their shoes and falls into a tiny sinkhole leading directly to a badger's tea party.",
+            '2': "is mistaken for a runaway garden gnome by a precision drone strike.",
+            '3': "is swallowed whole by a very bored but highly determined house cat.",
+            '4': "accidentally orders 400 lbs of mayonnaise instead of coffee and drowns in the resulting creamy avalanche.",
+            '5': "wins a lottery but the celebratory confetti gun misfires, lodging a piece of glitter directly into their brain.",
+            '6': "watches their sock puppet achieve sentience and insists on wearing them as a hand-hat until they suffocate from lack of style.",
+            '7': "tries to fix a leaky faucet but ends up summoning a vengeful water spirit who washes them away to the dimension of damp socks.",
+            '8': "gets hit by a rogue coconut, even though they are indoors in a desert.",
+            '9': "dies of embarrassment after realizing they've spent all day talking to a mannequin they thought was a cool new friend.",
+            '10': "is engulfed by a rogue wave of Majorcan Highs cocktails that washes them out to sea, only to be pecked to death by synchronized seagulls.",
+            'J': "gets fatally entangled in a very enthusiastic game of Twister being played by professional acrobats.",
+            'Q': "chokes on a meticulously crafted, artisanal crouton.",
+            'K': "is judged by a flock of pigeons for having 'too much main character energy' and is subsequently dive-bombed by bird droppings until they lose consciousness and fall off a small stool."
         };
         
         const MILD_INCONVENIENCES = {
-            'A': "have to wear their shirt backwards for the next 24 hours.",
+            'A': "has to wear their shirt backwards for the next 24 hours.",
             '2': "must refer to all body parts by the wrong name for one hour.",
-            '3': "have to eat a spoonful of plain mustard.",
+            '3': "has to eat a spoonful of plain mustard.",
             '4': "must sing the alphabet every time they enter a room today.",
             '5': "must use only thumbs to text for the next 30 minutes.",
-            '6': "have to call a random contact and speak entirely in rhyming couplets.",
+            '6': "has to call a random contact and speak entirely in rhyming couplets.",
             '7': "must refer to themselves in the third person for the rest of the game.",
-            '8': "have to post an extremely awkward photo of themselves on social media (private story allowed).",
+            '8': "has to post an extremely awkward photo of themselves on social media (private story allowed).",
             '9': "must do 10 push-ups right now.",
-            '10': "have to whisper all their communication until the next hand is dealt.",
+            '10': "has to whisper all their communication until the next hand is dealt.",
             'J': "must surrender their phone to another player for 5 minutes.",
             'Q': "must eat any single food item determined by the winner of the next trick.",
-            'K': "have to switch seats with another player who must then point and laugh at them for 1 minute."
+            'K': "has to switch seats with another player who must then point and laugh at them for 1 minute."
         };
 
         // Initialize consequences with the default fatal deaths
@@ -335,7 +335,7 @@
                     </ul>
 
                     <h3 class="text-xl font-bold text-red-600 mt-6">${gameSettings.consequencesType} by Rank</h3>
-                    <p class="text-sm italic mb-2">The rank of the losing card determines the fate:</p>
+                    <p class="text-sm italic mb-2">The rank of the losing card determines the fate (The full sentence is: "[Player Name] + Consequence"):</p>
                     <div id="rules-consequences-list" class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         ${RANKS.map(rank =>
                             `<div class="font-medium">**${rank}**:</div><div>${CONSEQUENCES[rank]}</div>`
@@ -464,7 +464,7 @@
 
         function editConsequence(rank) {
             const currentText = CONSEQUENCES[rank];
-            const newText = prompt(`Edit consequence for rank ${rank} (${gameSettings.consequencesType}):`, currentText);
+            const newText = prompt(`Edit consequence for rank ${rank} (${gameSettings.consequencesType}). This phrase must grammatically follow the player's name:`, currentText);
             
             if (newText !== null && newText.trim() !== '') {
                 CONSEQUENCES[rank] = newText.trim();
@@ -893,21 +893,33 @@
 
             } else {
                 // Continue to next trick (Player loses a life but is not eliminated)
+                
+                // 1. Set title and card rank
                 document.getElementById('death-modal-title').textContent = (consequenceType === 'Fatal Consequences') ? '💀 Consequence Applied 💀' : '⚠️ Mild Inconvenience ⚠️';
-                
-                // Moved this line directly above the consequence text section
-                document.getElementById('loser-name').textContent = `${loserPlayer.name} has lost a life! Lives remaining: ${'❤️'.repeat(loserPlayer.lives)}`;
-                
                 document.getElementById('loser-card-rank').textContent = `${rank}`;
                 
-                // Update the text to flow grammatically:
-                consequenceIntro = (consequenceType === 'Fatal Consequences') ? 
-                    'Eliminated because they:' : 
-                    'Faced a mild inconvenience and must:';
+                // Clear out the dedicated loser-name spot and use the content area for structure
+                document.getElementById('loser-name').textContent = ''; 
 
                 document.getElementById('death-consequence-text').innerHTML = `
-                    <p class="text-lg font-medium text-gray-800 leading-relaxed">Winner of Trick: <span class="font-bold text-emerald-600">${winnerOfTrick.name}</span></p>
-                    <p class="text-xl text-gray-800 font-medium leading-relaxed">${consequenceIntro} <span id="death-message">${deathMessage}</span></p>
+                    <div class="space-y-4">
+                        <!-- Winner of the trick -->
+                        <p class="text-xl font-bold text-center text-emerald-700">
+                            Winner of the trick: <span class="text-emerald-900">${winnerOfTrick.name}</span>
+                        </p>
+                        
+                        <div class="h-px bg-gray-300 w-3/4 mx-auto"></div> <!-- The 'sub box' divider -->
+
+                        <!-- The Loser's Fate (Player Name + Consequence Message) -->
+                        <p class="text-xl text-red-700 font-extrabold leading-relaxed text-center">
+                            <span class="text-red-600">${loserPlayer.name}</span> <span class="font-normal italic text-gray-800">${deathMessage}</span>
+                        </p>
+
+                        <!-- Lives Remaining -->
+                        <p class="text-lg font-medium text-center text-gray-700 mt-4">
+                            Lives remaining: <span class="text-red-500 text-2xl font-extrabold">${'❤️'.repeat(loserPlayer.lives)}</span>
+                        </p>
+                    </div>
                 `;
 
                 buttonText = 'Start Next Trick';
