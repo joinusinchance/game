@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Majorcan Highs: A Trick-Taking Game</title>
+    <title>Majorcan High Card Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
@@ -25,14 +25,12 @@
             align-items: center;
             padding: 8px;
             font-weight: 700;
-            font-size: 2rem;
             color: #10b981;
             transition: transform 0.1s, box-shadow 0.1s;
             cursor: pointer;
             user-select: none;
-            /* Default margin is now only used in the hand section */
             margin: 0; 
-            flex-shrink: 0; /* Prevent cards from shrinking too much */
+            flex-shrink: 0;
         }
         
         /* Mobile Card Size Optimization (Below 640px) */
@@ -40,12 +38,11 @@
             .card {
                 width: 60px; /* Reduced width to save horizontal space */
                 height: 90px; /* Reduced height to save vertical space */
-                font-size: 1.4rem; /* Smaller rank text */
                 padding: 5px;
-                /* No margin here, spacing handled by Tailwind utilities */
             }
-            .card > span:nth-child(2) { /* The suit symbol */
-                font-size: 2.8rem; /* Smaller suit symbol */
+            /* Explicitly override font size set in previous step, though Tailwind classes now handle this better. */
+            .card > span {
+                line-height: 1; /* Ensure no extra line height pushes boundary */
             }
         }
         
@@ -66,7 +63,6 @@
 
         /* Ensure the main container fits the viewport height */
         #game-container {
-            /* Using min-h-screen for full height, and padding adjusted via Tailwind */
             min-height: 100vh; 
             display: flex;
             flex-direction: column;
@@ -687,9 +683,11 @@
             return `
                 <div onclick="${isPlayable ? `handleCardPlay('${cardString}')` : ''}"
                      class="card ${playableClass} ${colorClass} transition duration-150 ease-in-out">
-                    <span class="text-xl self-start leading-none">${rank}</span>
-                    <span class="text-4xl sm:text-5xl leading-none">${symbol}</span>
-                    <span class="text-xl self-end leading-none transform rotate-180">${rank}</span>
+                    <!-- Adjusted Rank Text to be smaller on mobile (text-base) and normal on desktop (sm:text-xl) -->
+                    <span class="text-base sm:text-xl self-start leading-none">${rank}</span>
+                    <!-- Adjusted Suit Symbol to be smaller on mobile (text-3xl) and normal on desktop (sm:text-5xl) -->
+                    <span class="text-3xl sm:text-5xl leading-none">${symbol}</span>
+                    <span class="text-base sm:text-xl self-end leading-none transform rotate-180">${rank}</span>
                 </div>
             `;
         }
