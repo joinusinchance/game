@@ -184,10 +184,10 @@
 
         let gameSettings = {
             startingLives: 3, 
-            leadingSuitTrumps: true, 
             consequencesType: 'Fatal Consequences', // Renamed for tone
             handSize: 3, // Fixed hand size
         };
+        // NOTE: gameSettings.leadingSuitTrumps has been removed.
 
         // CONSEQUENCE PACKS (Constants - DO NOT MODIFY THESE)
         const FATAL_CONSEQUENCES = {
@@ -252,7 +252,7 @@
             // Fisher-Yates shuffle
             for (let i = newDeck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+                [newDeck[i], newDeck[j]] = [newDeck[i], newDeck[j]];
             }
             return newDeck;
         }
@@ -467,10 +467,11 @@
                         <li>The deck is only **reshuffled** when the draw deck is empty.</li>
                     </ul>
                     
-                    <h3 class="text-xl font-bold text-emerald-600">Trick Winning (Determines Next Leader)</h3>
+                    <h3 class="text-xl font-bold text-emerald-600">Trick Winning (New Suit Hierarchy)</h3>
                     <ul class="list-disc list-inside space-y-1 ml-4">
-                        <li><span class="font-bold">Highest Ranked Card Wins:</span> The player with the highest card (K is high, A is low) wins the trick and leads the next one.</li>
-                        <li><span class="font-bold">Leading Suit Rule (${gameSettings.leadingSuitTrumps ? 'ON' : 'OFF'}):</span> ${gameSettings.leadingSuitTrumps ? 'Only the highest card of the **leading suit** can win the trick. If no card of the leading suit is played, the highest card overall wins.' : 'The highest ranked card overall wins, regardless of suit.'}</li>
+                        <li><span class="font-bold">Lead Suit is Primary Trump:</span> The suit of the first card played in the trick becomes the **Primary Trump Suit** (Priority 1).</li>
+                        <li><span class="font-bold">Suit Hierarchy:</span> All other suits played establish a priority hierarchy based on their order of appearance in the trick (Priority 2, 3, etc.).</li>
+                        <li><span class="font-bold">Highest Priority Wins:</span> The trick is won by the player who played the **highest-ranked card** belonging to the **highest-priority suit played** (e.g., the highest Heart wins if Hearts was the Primary Trump, regardless of other higher-ranked non-trump cards played).</li>
                     </ul>
 
                     <h3 class="text-xl font-bold text-red-600">Consequences (Determines Life Loss)</h3>
@@ -583,16 +584,9 @@
                                    class="mt-1 p-2 w-full border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
                         </label>
 
-                        <!-- Removed fixed Hand Size display as requested -->
-
                         <div class="flex items-center justify-between p-2 bg-white rounded-lg border">
-                            <span class="text-gray-700 font-semibold">Leading Suit Trumps:</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="leading-suit-trumps" ${gameSettings.leadingSuitTrumps ? 'checked' : ''} 
-                                       onchange="updateSetting('leadingSuitTrumps', this.checked)" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                                <span class="ms-3 text-sm font-medium text-gray-900">${gameSettings.leadingSuitTrumps ? 'ON' : 'OFF'}</span>
-                            </label>
+                            <span class="text-gray-700 font-semibold">Trick Winning Rule:</span>
+                            <span class="ms-3 text-sm font-medium text-gray-900 font-bold">Suit Hierarchy (Primary Trump)</span>
                         </div>
                     </div>
                     
@@ -937,7 +931,7 @@
         }
 
         /**
-         * Determines the winner and loser (if unique) of the current trick.
+         * Determines the winner and loser (if unique) of the current trick using the new Suit Hierarchy logic.
          */
         function resolveTrick() {
             gameState = 'resolution';
@@ -945,31 +939,40 @@
             // 1. Add trick cards to discard pile
             currentTrick.forEach(item => discardPile.push(item.card));
 
-            // 2. Determine WINNER (Highest Card) to set who leads next trick
-            let winningCard = currentTrick[0];
+            // --- 2. Determine WINNER (New Suit Hierarchy Logic) ---
             
-            if (gameSettings.leadingSuitTrumps) {
-                const leadingCard = currentTrick[0];
-                const leadingSuit = parseCard(leadingCard.card).suit;
-
-                let leadingSuitCandidates = currentTrick.filter(item => parseCard(item.card).suit === leadingSuit);
-
-                if (leadingSuitCandidates.length > 0) {
-                    // Highest card of the leading suit wins.
-                    winningCard = leadingSuitCandidates.reduce((best, current) => 
-                        parseCard(current.card).value > parseCard(best.card).value ? current : best, leadingSuitCandidates[0]);
-                } else {
-                    // If nobody followed the leading suit, the highest overall card wins (as per the non-trumping rule)
-                    winningCard = currentTrick.reduce((best, current) => 
-                        parseCard(current.card).value > parseCard(best.card).value ? current : best, currentTrick[0]);
+            let winningCard = null; // Will store the final winning card object
+            
+            // Map the suit of the first card of each unique suit played to establish hierarchy
+            const suitHierarchy = []; // [ 'H', 'D', 'S', 'C' ] for example
+            const playedSuits = new Set();
+            
+            for (const item of currentTrick) {
+                const suit = parseCard(item.card).suit;
+                if (!playedSuits.has(suit)) {
+                    playedSuits.add(suit);
+                    suitHierarchy.push(suit);
                 }
-            } else {
-                // Highest rank overall wins, regardless of suit.
-                winningCard = currentTrick.reduce((best, current) => 
-                    parseCard(current.card).value > parseCard(best.card).value ? current : best, currentTrick[0]);
             }
             
-            // 3. Find the losing card (lowest overall)
+            // The trick is won by the highest-ranked card of the highest-priority suit played.
+            for (const suit of suitHierarchy) {
+                const candidates = currentTrick.filter(item => parseCard(item.card).suit === suit);
+                
+                if (candidates.length > 0) {
+                    // Find the highest card within this suit (A=1 is low, K=13 is high)
+                    const highestInSuit = candidates.reduce((best, current) => 
+                        parseCard(current.card).value > parseCard(best.card).value ? current : best, candidates[0]);
+                    
+                    winningCard = highestInSuit;
+                    // Since we iterate in order of hierarchy (Primary, Secondary, etc.), the first match wins the trick.
+                    break; 
+                }
+            }
+
+            // --- 3. Determine LOSER (Lowest Card) - Logic remains unchanged ---
+
+            // Find the losing card (lowest overall)
             let losingCard = currentTrick.reduce((best, current) => 
                 parseCard(current.card).value < parseCard(best.card).value ? current : best, currentTrick[0]);
             
@@ -1117,7 +1120,7 @@
                         <!-- Trick Winner (Highest Card) -->
                         <div class="text-center p-2 rounded-lg bg-emerald-100 border border-emerald-300">
                             <p class="text-xl font-bold text-emerald-700">
-                                Trick Winner (Highest Card): 
+                                Trick Winner (Highest Priority Suit): 
                             </p>
                             <p class="text-2xl font-extrabold text-emerald-900">${winnerOfTrick.name}</p>
                         </div>
