@@ -173,9 +173,7 @@
             handSize: 3, // Fixed hand size
         };
 
-        // Consequences data structure
-        let CONSEQUENCES = {}; 
-        
+        // CONSEQUENCE PACKS (Constants - DO NOT MODIFY THESE)
         const FATAL_CONSEQUENCES = {
             'A': "stumbles over their own two feet while attempting to tie their shoes and falls into a tiny sinkhole leading directly to a badger's tea party.",
             '2': "is mistaken for a runaway garden gnome by a precision drone strike.",
@@ -207,10 +205,17 @@
             'Q': "must eat any single food item determined by the winner of the next trick.",
             'K': "has to switch seats with another player who must then point and laugh at them for 1 minute."
         };
+        
+        // --- MODIFIABLE STATE FOR CONSEQUENCES ---
+        // This object is the one actually used and modified.
+        let currentConsequences = {}; 
 
-        // Initialize consequences with the default fatal deaths
+
+        // Initialize consequences with the default fatal deaths (via deep copy)
         function initializeConsequences() {
-             CONSEQUENCES = FATAL_CONSEQUENCES;
+             // Use deep copy to ensure FATAL_CONSEQUENCES is not modified if user edits the pack
+             currentConsequences = JSON.parse(JSON.stringify(FATAL_CONSEQUENCES)); 
+             
              // Check and load consequences from URL if present (Must happen after default initialization)
              loadConsequencesFromURL();
         }
@@ -319,12 +324,13 @@
         // --- URL Sharing and Loading Logic ---
 
         /**
-         * Encodes the current CONSEQUENCES object into a Base64 URL parameter.
+         * Encodes the current currentConsequences object into a Base64 URL parameter.
          * @returns {string} Base64 encoded JSON string.
          */
         function encodeConsequences() {
             try {
-                const jsonString = JSON.stringify(CONSEQUENCES);
+                // Encode the current active consequence pack
+                const jsonString = JSON.stringify(currentConsequences);
                 // Use btoa for Base64 encoding
                 return btoa(jsonString);
             } catch (e) {
@@ -403,14 +409,15 @@
                     const isValid = RANKS.every(rank => rank in customConsequences);
                     
                     if (isValid) {
-                        // Overwrite the CONSEQUENCES object
-                        CONSEQUENCES = customConsequences;
+                        // Overwrite the current active consequence object
+                        currentConsequences = customConsequences;
                         
                         // Update settings to reflect a custom pack
                         gameSettings.consequencesType = 'Custom Consequence Pack';
                         
                         // To avoid URL becoming too long, remove the parameter after loading it
                         history.replaceState({}, document.title, window.location.pathname);
+                        console.log('Custom consequences loaded from URL.');
                     } else {
                         console.error('Custom consequences pack is incomplete or invalid. Using default.');
                     }
@@ -455,7 +462,7 @@
                     <p class="text-sm italic mb-2">The rank of the losing card determines the fate (The full sentence is: "[Player Name] [Consequence]"):</p>
                     <div id="rules-consequences-list" class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         ${RANKS.map(rank =>
-                            `<div class="font-medium">**${rank}**:</div><div>${CONSEQUENCES[rank]}</div>`
+                            `<div class="font-medium">**${rank}**:</div><div>${currentConsequences[rank]}</div>`
                         ).join('')}
                     </div>
                 </div>
@@ -478,7 +485,7 @@
         }
 
         /**
-         * Saves the content of the editable span back to the CONSEQUENCES object.
+         * Saves the content of the editable span back to the currentConsequences object.
          * @param {string} rank The card rank (e.g., 'A', 'K').
          * @param {string} text The new consequence text.
          */
@@ -487,8 +494,9 @@
             const newText = text ? text.trim() : '';
 
             if (newText) {
-                // Save the new text
-                CONSEQUENCES[rank] = newText;
+                // Save the new text to the current active consequence set
+                currentConsequences[rank] = newText;
+                
                 // If the user modifies a default pack, switch to custom type
                 if (gameSettings.consequencesType !== 'Custom Consequence Pack') {
                     gameSettings.consequencesType = 'Custom Consequence Pack';
@@ -498,7 +506,7 @@
                 // Revert to original if text is empty (user deleted everything)
                 const element = document.getElementById(`consequence-text-${rank}`);
                 if (element) {
-                    element.textContent = CONSEQUENCES[rank] || '[EMPTY CONSEQUNCE - ENTER TEXT!]'; // Re-apply the old text or a placeholder
+                    element.textContent = currentConsequences[rank] || '[EMPTY CONSEQUNCE - ENTER TEXT!]'; // Re-apply the old text or a placeholder
                     // Optional visual feedback for an invalid/empty save
                     element.classList.add('bg-red-200');
                     setTimeout(() => element.classList.remove('bg-red-200'), 500);
@@ -576,7 +584,7 @@
                                           contenteditable="true" 
                                           onblur="saveConsequence('${rank}', this.textContent)"
                                           title="Click to edit and press enter or click away to save.">
-                                        ${CONSEQUENCES[rank]}
+                                        ${currentConsequences[rank]}
                                     </span>
                                 </div>
                             `).join('')}
@@ -604,13 +612,15 @@
         
         function updateConsequencesType(type) {
             gameSettings.consequencesType = type;
-            // Load the appropriate set for editing/display, unless it's the custom pack
+            // Load the appropriate set for editing/display. Use deep copy for defaults.
             if (type === 'Fatal Consequences') {
-                CONSEQUENCES = FATAL_CONSEQUENCES;
+                currentConsequences = JSON.parse(JSON.stringify(FATAL_CONSEQUENCES));
             } else if (type === 'Mild Inconveniences') {
-                CONSEQUENCES = MILD_INCONVENIENCES;
-            }
-            // If it's 'Custom Consequence Pack', we keep the current CONSEQUENCES object as is.
+                currentConsequences = JSON.parse(JSON.stringify(MILD_INCONVENIENCES));
+            } 
+            // If it's 'Custom Consequence Pack', we keep the currentConsequences object as is, 
+            // preserving any edits made to it.
+            
             renderOptionsScreen(); // Re-render to show new editable text
         }
 
@@ -990,7 +1000,8 @@
          */
         function showDeathModal(loserPlayer, rank, winnerPlayer) {
             gameState = 'reveal';
-            const deathMessage = CONSEQUENCES[rank];
+            // Use the current active consequence pack
+            const deathMessage = currentConsequences[rank];
             const consequenceType = gameSettings.consequencesType;
 
             const remainingPlayers = players.filter(p => p.lives > 0);
