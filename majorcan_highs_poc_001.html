@@ -34,7 +34,7 @@
         }
         .card-playable:hover, .card-playable:focus {
             transform: translateY(-5px);
-            box-shadow: 0 8px 10px rgba[0, 0, 0, 0.2];
+            box-shadow: 0 8px 10px rgba(0, 0, 0, 0.2);
         }
         .card-back {
             background-color: #10b981;
@@ -68,16 +68,17 @@
     <div id="game-container" class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-2xl border-4 border-emerald-600">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl sm:text-4xl font-bold text-emerald-800">Majorcan Highs 🍹</h1>
+            
+            <!-- UPDATED ICON ORDER: Rules (?) -> Share (🔗) -> Settings (⚙️) -->
             <div class="flex space-x-2">
-                <button onclick="renderOptionsScreen()" class="w-10 h-10 bg-gray-300 text-gray-700 font-extrabold rounded-full shadow-lg hover:bg-gray-400 transition duration-150" title="Options">
-                    ⚙️
-                </button>
-                <!-- UPDATED GLOBAL SHARE BUTTON ICON -->
-                <button onclick="globalShareLastConsequence()" class="w-10 h-10 bg-blue-500 text-white font-extrabold rounded-full shadow-lg hover:bg-blue-600 transition duration-150" title="Share Last Consequence">
-                    🔗
-                </button>
                 <button onclick="showRulesModal()" class="w-10 h-10 bg-emerald-500 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-600 transition duration-150" title="Rules">
                     ?
+                </button>
+                <button onclick="shareConsequencePack()" class="w-10 h-10 bg-blue-500 text-white font-extrabold rounded-full shadow-lg hover:bg-blue-600 transition duration-150" title="Share Consequence Pack Link">
+                    🔗
+                </button>
+                <button onclick="renderOptionsScreen()" class="w-10 h-10 bg-gray-300 text-gray-700 font-extrabold rounded-full shadow-lg hover:bg-gray-400 transition duration-150" title="Options">
+                    ⚙️
                 </button>
             </div>
         </div>
@@ -162,20 +163,19 @@
         let currentPlayerIndex = 0;
         let gameState = 'setup'; // 'setup', 'handoff', 'play', 'resolution', 'reveal', 'options'
         
-        // Stores the last consequence for the header share button
+        // Stores the last consequence for the modal share button
         let lastShareText = "Welcome to Majorcan Highs! Let's see who can survive the consequences. Play the game here: [GAME_LINK_GOES_HERE]"; 
 
         let gameSettings = {
             startingLives: 3, 
             leadingSuitTrumps: true, 
             consequencesType: 'Fatal Consequences', // Renamed for tone
-            handSize: 3, // New fixed hand size
+            handSize: 3, // Fixed hand size
         };
 
         // Consequences data structure
         let CONSEQUENCES = {}; 
         
-        // CONSEQUENCE TEXTS ARE NOW GRAMMATICALLY CORRECT TO FLOW AFTER "Player Name..."
         const FATAL_CONSEQUENCES = {
             'A': "stumbles over their own two feet while attempting to tie their shoes and falls into a tiny sinkhole leading directly to a badger's tea party.",
             '2': "is mistaken for a runaway garden gnome by a precision drone strike.",
@@ -211,6 +211,8 @@
         // Initialize consequences with the default fatal deaths
         function initializeConsequences() {
              CONSEQUENCES = FATAL_CONSEQUENCES;
+             // Check and load consequences from URL if present (Must happen after default initialization)
+             loadConsequencesFromURL();
         }
         
         // --- Deck and Card Management ---
@@ -289,7 +291,7 @@
          * Shares the consequence via the Web Share API or copies text.
          * @param {string} shareText The text to share.
          */
-        function shareConsequence(shareText) {
+        function shareConsequenceText(shareText) {
             if (navigator.share) {
                 navigator.share({
                     title: 'Majorcan Highs Consequence!',
@@ -305,7 +307,7 @@
                 document.body.removeChild(tempInput);
                 
                 // Show a temporary message
-                const actionButton = document.getElementById('share-button') || document.querySelector('[title="Share Last Consequence"]');
+                const actionButton = document.getElementById('share-button') || document.querySelector('[title="Share Consequence Pack Link"]');
                 const originalText = actionButton.innerHTML;
                 actionButton.innerHTML = '✅ Copied!';
                 setTimeout(() => {
@@ -314,22 +316,102 @@
             }
         }
         
+        // --- URL Sharing and Loading Logic ---
+
         /**
-         * Global share function linked to the header button.
+         * Encodes the current CONSEQUENCES object into a Base64 URL parameter.
+         * @returns {string} Base64 encoded JSON string.
          */
-        function globalShareLastConsequence() {
-            shareConsequence(lastShareText);
-            // Provide feedback on the header button
-            const shareButton = document.querySelector('[title="Share Last Consequence"]');
-            const originalTitle = shareButton.title;
-            const originalIcon = shareButton.innerHTML;
-            shareButton.innerHTML = '✅';
-            shareButton.title = 'Text Copied!';
-            setTimeout(() => {
-                shareButton.innerHTML = originalIcon;
-                shareButton.title = originalTitle;
-            }, 1500);
+        function encodeConsequences() {
+            try {
+                const jsonString = JSON.stringify(CONSEQUENCES);
+                // Use btoa for Base64 encoding
+                return btoa(jsonString);
+            } catch (e) {
+                console.error("Error encoding consequences:", e);
+                return '';
+            }
         }
+
+        /**
+         * Shares the current consequence pack via URL.
+         */
+        function shareConsequencePack() {
+            const encodedPack = encodeConsequences();
+            // In the canvas environment, we use the current URL without modifications
+            const currentBaseUrl = window.location.origin + window.location.pathname;
+            
+            // Construct the shareable URL with the consequence parameter
+            let shareUrl = currentBaseUrl;
+            if (encodedPack) {
+                shareUrl += `?c=${encodedPack}`;
+            }
+
+            const shareText = `Check out my custom Majorcan Highs consequence pack! Play the game here: ${shareUrl}`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Majorcan Highs Consequence Pack',
+                    text: shareText,
+                    url: shareUrl
+                }).catch(error => console.error('Error sharing pack:', error));
+            } else {
+                // Fallback: Copy the URL to the clipboard
+                const tempInput = document.createElement('textarea');
+                tempInput.value = shareUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                
+                // Provide visual feedback on the header button
+                const shareButton = document.querySelector('[title="Share Consequence Pack Link"]');
+                const originalTitle = shareButton.title;
+                const originalIcon = shareButton.innerHTML;
+                shareButton.innerHTML = '✅';
+                shareButton.title = 'Link Copied!';
+                setTimeout(() => {
+                    shareButton.innerHTML = originalIcon;
+                    shareButton.title = originalTitle;
+                }, 1500);
+            }
+        }
+
+        /**
+         * Checks the URL for a consequence parameter, decodes, and loads it.
+         */
+        function loadConsequencesFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const encodedPack = params.get('c');
+
+            if (encodedPack) {
+                try {
+                    // Use atob for Base64 decoding
+                    const jsonString = atob(encodedPack);
+                    const customConsequences = JSON.parse(jsonString);
+
+                    // Basic validation: check if all RANKS are present in the loaded object
+                    const isValid = RANKS.every(rank => rank in customConsequences);
+                    
+                    if (isValid) {
+                        // Overwrite the CONSEQUENCES object
+                        CONSEQUENCES = customConsequences;
+                        
+                        // Update settings to reflect a custom pack
+                        gameSettings.consequencesType = 'Custom Consequence Pack';
+                        
+                        // To avoid URL becoming too long, remove the parameter after loading it
+                        history.replaceState({}, document.title, window.location.pathname);
+                    } else {
+                        console.error('Custom consequences pack is incomplete or invalid. Using default.');
+                    }
+
+                } catch (e) {
+                    console.error("Error decoding or parsing custom consequences URL:", e);
+                }
+            }
+        }
+
 
         // --- Modal Control Functions ---
 
@@ -388,7 +470,6 @@
 
         /**
          * Saves the content of the editable span back to the CONSEQUENCES object.
-         * This function replaces the old prompt-based editConsequence.
          * @param {string} rank The card rank (e.g., 'A', 'K').
          * @param {string} text The new consequence text.
          */
@@ -399,11 +480,16 @@
             if (newText) {
                 // Save the new text
                 CONSEQUENCES[rank] = newText;
+                // If the user modifies a default pack, switch to custom type
+                if (gameSettings.consequencesType !== 'Custom Consequence Pack') {
+                    gameSettings.consequencesType = 'Custom Consequence Pack';
+                    renderOptionsScreen(); // Re-render to update the select box
+                }
             } else {
                 // Revert to original if text is empty (user deleted everything)
                 const element = document.getElementById(`consequence-text-${rank}`);
                 if (element) {
-                    element.textContent = CONSEQUENCES[rank]; // Re-apply the old text
+                    element.textContent = CONSEQUENCES[rank] || '[EMPTY CONSEQUNCE - ENTER TEXT!]'; // Re-apply the old text or a placeholder
                     // Optional visual feedback for an invalid/empty save
                     element.classList.add('bg-red-200');
                     setTimeout(() => element.classList.remove('bg-red-200'), 500);
@@ -415,7 +501,6 @@
 
         /**
          * Renders the current scores/lives of all active players.
-         * (Removed card count from score display per user request)
          */
         function renderScoreDisplay() {
             const scoreDisplay = document.getElementById('score-display');
@@ -445,11 +530,7 @@
                                    class="mt-1 p-2 w-full border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
                         </label>
 
-                        <div class="flex items-center justify-between p-2 mb-4 bg-white rounded-lg border">
-                            <span class="text-gray-700 font-semibold">Hand Size (Fixed at 3 for this game mode):</span>
-                            <span class="font-bold text-lg text-emerald-600">3</span>
-                        </div>
-
+                        <!-- Removed fixed Hand Size display as requested -->
 
                         <div class="flex items-center justify-between p-2 bg-white rounded-lg border">
                             <span class="text-gray-700 font-semibold">Leading Suit Trumps:</span>
@@ -471,6 +552,7 @@
                             <select id="consequences-type" onchange="updateConsequencesType(this.value)" class="p-2 border-2 border-gray-300 rounded-lg focus:border-red-500 focus:ring-red-500">
                                 <option value="Fatal Consequences" ${gameSettings.consequencesType === 'Fatal Consequences' ? 'selected' : ''}>Fatal Consequences</option>
                                 <option value="Mild Inconveniences" ${gameSettings.consequencesType === 'Mild Inconveniences' ? 'selected' : ''}>Mild Inconveniences</option>
+                                <option value="Custom Consequence Pack" ${gameSettings.consequencesType === 'Custom Consequence Pack' ? 'selected' : ''}>Custom Consequence Pack</option>
                             </select>
                         </div>
                         
@@ -513,12 +595,15 @@
         
         function updateConsequencesType(type) {
             gameSettings.consequencesType = type;
-            // Load the appropriate set for editing/display
-            CONSEQUENCES = (type === 'Fatal Consequences') ? FATAL_CONSEQUENCES : MILD_INCONVENIENCES;
+            // Load the appropriate set for editing/display, unless it's the custom pack
+            if (type === 'Fatal Consequences') {
+                CONSEQUENCES = FATAL_CONSEQUENCES;
+            } else if (type === 'Mild Inconveniences') {
+                CONSEQUENCES = MILD_INCONVENIENCES;
+            }
+            // If it's 'Custom Consequence Pack', we keep the current CONSEQUENCES object as is.
             renderOptionsScreen(); // Re-render to show new editable text
         }
-
-        /* Removed old prompt-based editConsequence function */
 
 
         /**
@@ -723,7 +808,6 @@
                 const newCard = drawCard();
                 if (newCard) {
                     player.hand.push(newCard);
-                    console.log(`${player.name} drew a replacement card: ${newCard}. Deck size: ${deck.length}`);
                 } else {
                     console.log('Deck is empty, no card drawn.');
                 }
@@ -826,13 +910,10 @@
             // Determine the unique loser
             let loser = (lowestPlayers.length === 1) ? losingCard : null;
             
-            // --- BUG FIX ---
             // If the unique lowest card also won the trick, treat it as a tie to prioritize the win (no consequence applied).
             if (loser && loser.playerId === winningCard.playerId) {
-                console.warn("BUG FIX APPLIED: Trick Winner was also unique Life Loser. Consequence is skipped (treated as a tie).");
                 loser = null; 
             }
-            // ---------------
 
             // 4. Set the winner of the trick to lead the next hand.
             const winningPlayerIndex = players.findIndex(p => p.id === winningCard.playerId);
@@ -957,7 +1038,7 @@
                 // Continue to next trick (Player loses a life but is not eliminated)
                 
                 // 1. Set title and card rank
-                document.getElementById('death-modal-title').textContent = (consequenceType === 'Fatal Consequences') ? '💀 Consequence Applied 💀' : '⚠️ Mild Inconvenience ⚠️';
+                document.getElementById('death-modal-title').textContent = (consequenceType === 'Fatal Consequences' || consequenceType === 'Custom Consequence Pack') ? '💀 Consequence Applied 💀' : '⚠️ Mild Inconvenience ⚠️';
                 
                 document.getElementById('death-consequence-text').innerHTML = `
                     <div class="space-y-4">
@@ -993,7 +1074,7 @@
                 buttonAction = 'startNextTrick';
                 
                 // Prepare Share Text 
-                const status = (consequenceType === 'Fatal Consequences') ? 'lost a life' : 'suffered an inconvenience';
+                const status = (consequenceType === 'Fatal Consequences' || consequenceType === 'Custom Consequence Pack') ? 'lost a life' : 'suffered an inconvenience';
                 shareText = `In Majorcan Highs, ${loserPlayer.name} ${status} after they ${deathMessage} (Losing Card: ${rank}). ${winnerOfTrick.name} won the trick and leads next! 🍹`;
 
                 // Set the last share text for the header button (with game link placeholder)
@@ -1002,7 +1083,7 @@
                 // Show the share button and set the action
                 document.getElementById('share-button-container').classList.remove('hidden');
                 // The modal's internal share button uses the global lastShareText which includes the game link placeholder
-                document.getElementById('share-button').onclick = () => shareConsequence(lastShareText);
+                document.getElementById('share-button').onclick = () => shareConsequenceText(lastShareText);
             }
 
             document.getElementById('death-modal-action-button').textContent = buttonText;
@@ -1086,7 +1167,7 @@
         window.updateConsequencesType = updateConsequencesType;
         window.saveConsequence = saveConsequence; // Expose new function
         window.hideNoConsequenceModal = hideNoConsequenceModal;
-        window.globalShareLastConsequence = globalShareLastConsequence;
+        window.shareConsequencePack = shareConsequencePack; // Expose new pack sharing function
     </script>
 </body>
 </html>
