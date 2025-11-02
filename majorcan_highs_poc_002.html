@@ -74,7 +74,8 @@
                 <button onclick="showRulesModal()" class="w-10 h-10 bg-emerald-500 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-600 transition duration-150" title="Rules">
                     ?
                 </button>
-                <button onclick="shareConsequencePack()" class="w-10 h-10 bg-blue-500 text-white font-extrabold rounded-full shadow-lg hover:bg-blue-600 transition duration-150" title="Share Consequence Pack Link">
+                <!-- FIX: Changed bg-blue-500/600 to bg-emerald-500/600 -->
+                <button onclick="shareConsequencePack()" class="w-10 h-10 bg-emerald-500 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-600 transition duration-150" title="Share Consequence Pack Link">
                     🔗
                 </button>
                 <button onclick="renderOptionsScreen()" class="w-10 h-10 bg-gray-300 text-gray-700 font-extrabold rounded-full shadow-lg hover:bg-gray-400 transition duration-150" title="Options">
@@ -359,11 +360,15 @@
          * Shares the current consequence pack via URL.
          */
         function shareConsequencePack() {
-            const shareUrl = getShareableGameUrl(); // <-- Use new helper
+            const shareUrl = getShareableGameUrl(); // This includes the custom pack if it exists
             
-            // Construct the shareable URL with the consequence parameter
-            const shareText = `Check out my custom Majorcan Highs consequence pack! Play the game here: ${shareUrl}`;
+            // Construct the shareable text
+            const packName = gameSettings.consequencesType === 'Custom Consequence Pack' ? 
+                             'my custom Majorcan Highs consequence pack' : 
+                             `the ${gameSettings.consequencesType} pack`;
+            const shareText = `Check out ${packName}! Play the game here: ${shareUrl}`;
 
+            // FIX: Ensure navigator.share is always prioritized
             if (navigator.share) {
                 navigator.share({
                     title: 'Majorcan Highs Consequence Pack',
@@ -373,7 +378,8 @@
             } else {
                 // Fallback: Copy the URL to the clipboard
                 const tempInput = document.createElement('textarea');
-                tempInput.value = shareUrl; // <-- Use new helper
+                // Use the URL alone for cleaner clipboard copy fallback
+                tempInput.value = shareUrl; 
                 document.body.appendChild(tempInput);
                 tempInput.select();
                 document.execCommand('copy');
@@ -592,7 +598,7 @@
                     </div>
 
                     <button onclick="renderSetupScreen()" class="w-full px-6 py-3 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
-                        Back to Setup
+                        Back to Game
                     </button>
                 </div>
             `;
