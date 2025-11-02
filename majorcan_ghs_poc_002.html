@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Majorcan Highs: A Trick-Taking Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; /* Light mint background */
+        }
+        .card {
+            width: 80px;
+            height: 120px;
+            background-color: white;
+            border: 3px solid #10b981; /* Emerald border */
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            font-weight: 700;
+            font-size: 2rem;
+            color: #10b981;
+            transition: transform 0.1s, box-shadow 0.1s;
+            cursor: pointer;
+            user-select: none;
+            /* Added margin for 3-card hands in play screen */
+            margin: 0 4px; 
+        }
+        .card-playable:hover, .card-playable:focus {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 10px rgba(0, 0, 0, 0.2);
+        }
+        .card-back {
+            background-color: #10b981;
+            color: white;
+            font-size: 1.5rem;
+            line-height: 1.2;
+            text-align: center;
+            border: 3px solid #065f46;
+        }
+        .text-red { color: #ef4444; }
+        .text-black { color: #1f2937; }
+
+        /* Ensure the main container fills the viewport nicely */
+        #game-container {
+            min-height: 10vh;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <!-- Global State Variables (Required for Canvas Environment) -->
+    <script type="module">
+        // Mandatory dummy variables to satisfy environment requirements
+        const __app_id = 'majorcan-highs-game';
+        const __firebase_config = '{}';
+        const __initial_auth_token = 'dummy-token';
+    </script>
+
+    <div id="game-container" class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-2xl border-4 border-emerald-600">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-bold text-emerald-800">Majorcan Highs 🍹</h1>
+            
+            <!-- UPDATED ICON ORDER: Rules (?) -> Share (🔗) -> Settings (⚙️) -->
+            <div class="flex space-x-2">
+                <button onclick="showRulesModal()" class="w-10 h-10 bg-emerald-500 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-600 transition duration-150" title="Rules">
+                    ?
+                </button>
+                <button onclick="shareConsequencePack()" class="w-10 h-10 bg-blue-500 text-white font-extrabold rounded-full shadow-lg hover:bg-blue-600 transition duration-150" title="Share Consequence Pack Link">
+                    🔗
+                </button>
+                <button onclick="renderOptionsScreen()" class="w-10 h-10 bg-gray-300 text-gray-700 font-extrabold rounded-full shadow-lg hover:bg-gray-400 transition duration-150" title="Options">
+                    ⚙️
+                </button>
+            </div>
+        </div>
+        <div id="score-display" class="flex justify-around text-sm font-semibold mb-4 text-gray-600">
+            <!-- Scoreboard will be injected here -->
+        </div>
+
+        <!-- Screen Container -->
+        <div id="screen-container">
+            <!-- Content will be injected here by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Death Modal (Hidden by default) -->
+    <div id="death-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-red-50 p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-100 border-4 border-red-500">
+            <h2 id="death-modal-title" class="text-3xl font-extrabold text-red-700 mb-4 text-center">💀 Consequence Applied 💀</h2>
+            <!-- Loser Name will be used in the new structure now -->
+            <p id="loser-name" class="text-xl font-semibold text-center mb-2 hidden"></p>
+            <p class="text-lg text-gray-700 mb-4 text-center italic hidden">The card that sealed their fate: <span id="loser-card-rank" class="font-bold text-red-600"></span></p>
+            
+            <div class="bg-red-100 p-4 rounded-lg border border-red-300">
+                <div id="death-consequence-text" class="text-xl text-gray-800 font-medium leading-relaxed">
+                    <!-- Dynamic content will be injected here based on player's fate -->
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-center space-x-4">
+                <div id="share-button-container">
+                    <!-- UPDATED SHARE BUTTON ICON IN MODAL -->
+                    <button id="share-button" class="px-4 py-3 bg-blue-500 text-white font-bold rounded-lg shadow-lg hover:bg-blue-600 transition duration-150 transform hover:scale-105 flex items-center">
+                        Share 🔗
+                    </button>
+                </div>
+                <button id="death-modal-action-button" onclick="startNextTrick()" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                    Start Next Trick
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Consequence Modal (Hidden by default) -->
+    <div id="no-consequence-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-green-50 p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-100 border-4 border-green-500 text-center">
+            <h2 class="text-3xl font-extrabold text-green-700 mb-4">No Consequence! 😅</h2>
+            <p id="no-consequence-text" class="text-xl font-semibold text-gray-700 mb-6">A tie occurred for the lowest card, so everyone is safe this trick!</p>
+            <button onclick="hideNoConsequenceModal(); startNextTrick();" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                Start Next Trick
+            </button>
+        </div>
+    </div>
+
+    <!-- Rules Modal (Hidden by default) -->
+    <div id="rules-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto transform transition-all duration-300 border-4 border-emerald-600">
+            <h2 class="text-3xl font-extrabold text-emerald-800 mb-4 text-center">Majorcan Highs Rules</h2>
+            <!-- Rules content dynamically injected by showRulesModal() -->
+
+            <div class="mt-8 flex justify-center">
+                <button onclick="hideRulesModal()" class="px-6 py-3 bg-red-500 text-white font-bold rounded-lg shadow-lg hover:bg-red-600 transition duration-150 transform hover:scale-105">
+                    Close Rules
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // --- Core Game Data ---
+
+        const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        const SUITS = ['H', 'D', 'C', 'S']; // Hearts, Diamonds, Clubs, Spades
+        const SUIT_SYMBOLS = { 'H': '♥', 'D': '♦', 'C': '♣', 'S': '♠' };
+        // Rank value: A=1 (low), K=13 (high)
+        const RANK_VALUE = Object.fromEntries(RANKS.map((r, i) => [r, i + 1]));
+
+        // --- Game State & Settings ---
+
+        let players = []; // Includes { id, name, hand, lives: 3 }
+        let deck = [];
+        let discardPile = []; // New pile for played cards
+        let currentTrick = []; // { playerId: id, card: 'KS', playerName: name }
+        let currentPlayerIndex = 0;
+        let gameState = 'setup'; // 'setup', 'handoff', 'play', 'resolution', 'reveal', 'options'
+        
+        // Stores the last consequence for the modal share button
+        let lastShareText = "Welcome to Majorcan Highs! Let's see who can survive the consequences. Play the game here: [GAME_LINK_GOES_HERE]"; 
+
+        let gameSettings = {
+            startingLives: 3, 
+            leadingSuitTrumps: true, 
+            consequencesType: 'Fatal Consequences', // Renamed for tone
+            handSize: 3, // Fixed hand size
+        };
+
+        // Consequences data structure
+        let CONSEQUENCES = {}; 
+        
+        const FATAL_CONSEQUENCES = {
+            'A': "stumbles over their own two feet while attempting to tie their shoes and falls into a tiny sinkhole leading directly to a badger's tea party.",
+            '2': "is mistaken for a runaway garden gnome by a precision drone strike.",
+            '3': "is swallowed whole by a very bored but highly determined house cat.",
+            '4': "accidentally orders 400 lbs of mayonnaise instead of coffee and drowns in the resulting creamy avalanche.",
+            '5': "wins a lottery but the celebratory confetti gun misfires, lodging a piece of glitter directly into their brain.",
+            '6': "watches their sock puppet achieve sentience and insists on wearing them as a hand-hat until they suffocate from lack of style.",
+            '7': "tries to fix a leaky faucet but ends up summoning a vengeful water spirit who washes them away to the dimension of damp socks.",
+            '8': "gets hit by a rogue coconut, even though they are indoors in a desert.",
+            '9': "dies of embarrassment after realizing they've spent all day talking to a mannequin they thought was a cool new friend.",
+            '10': "is engulfed by a rogue wave of Majorcan Highs cocktails that washes them out to sea, only to be pecked to death by synchronized seagulls.",
+            'J': "gets fatally entangled in a very enthusiastic game of Twister being played by professional acrobats.",
+            'Q': "meticulously crafted, artisanal crouton.",
+            'K': "is judged by a flock of pigeons for having 'too much main character energy' and is subsequently dive-bombed by bird droppings until they lose consciousness and fall off a small stool."
+        };
+        
+        const MILD_INCONVENIENCES = {
+            'A': "has to wear their shirt backwards for the next 24 hours.",
+            '2': "must refer to all body parts by the wrong name for one hour.",
+            '3': "has to eat a spoonful of plain mustard.",
+            '4': "must wear their shoes on the wrong feet for the next hour.",
+            '5': "must use only thumbs to text for the next 30 minutes.",
+            '6': "has to call a random contact and speak entirely in rhyming couplets.",
+            '7': "must refer to themselves in the third person for the rest of the game.",
+            '8': "has to post an extremely awkward photo of themselves on social media (private story allowed).",
+            '9': "must do 10 push-ups right now.",
+            '10': "has to whisper all their communication until the next hand is dealt.",
+            'J': "must surrender their phone to another player for 5 minutes.",
+            'Q': "must eat any single food item determined by the winner of the next trick.",
+            'K': "has to switch seats with another player who must then point and laugh at them for 1 minute."
+        };
+
+        // Initialize consequences with the default fatal deaths
+        function initializeConsequences() {
+             CONSEQUENCES = FATAL_CONSEQUENCES;
+             // Check and load consequences from URL if present (Must happen after default initialization)
+             loadConsequencesFromURL();
+        }
+        
+        // --- Deck and Card Management ---
+
+        /**
+         * Creates a full deck of 52 cards and shuffles it.
+         * @returns {string[]} The shuffled deck.
+         */
+        function createAndShuffleDeck() {
+            let newDeck = [];
+            for (const suit of SUITS) {
+                for (const rank of RANKS) {
+                    newDeck.push(rank + suit);
+                }
+            }
+            // Fisher-Yates shuffle
+            for (let i = newDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+            }
+            return newDeck;
+        }
+        
+        /**
+         * Reshuffles the discard pile back into the deck.
+         */
+        function reshuffleDeck() {
+            if (discardPile.length > 0) {
+                deck = discardPile;
+                discardPile = []; // Clear discard pile
+                // Fisher-Yates shuffle
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+                console.log('Deck reshuffled with discard pile. New size:', deck.length);
+            }
+        }
+        
+        /**
+         * Draws one card from the deck, reshuffling if necessary.
+         * @returns {string | null} The drawn card or null if deck is empty.
+         */
+        function drawCard() {
+            if (deck.length === 0) {
+                reshuffleDeck();
+            }
+            return deck.pop() || null;
+        }
+
+        // --- Utility Functions ---
+
+        /**
+         * Extracts the rank from a card string.
+         * @param {string} card e.g., 'KH'
+         * @returns {string} e.g., 'K'
+         */
+        function getRank(card) {
+            return card.slice(0, -1);
+        }
+
+        /**
+         * Parses a card string into rank and suit.
+         * @param {string} card e.g., 'KH'
+         * @returns {{rank: string, suit: string, value: number, colorClass: string}}
+         */
+        function parseCard(card) {
+            const rank = getRank(card);
+            const suit = card.slice(-1);
+            const value = RANK_VALUE[rank];
+            const colorClass = (suit === 'H' || suit === 'D') ? 'text-red' : 'text-black';
+            return { rank, suit, value, colorClass };
+        }
+
+        /**
+         * Shares the consequence via the Web Share API or copies text.
+         * @param {string} shareText The text to share.
+         */
+        function shareConsequenceText(shareText) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Majorcan Highs Consequence!',
+                    text: shareText
+                }).catch(error => console.error('Error sharing:', error));
+            } else {
+                // Fallback for non-supporting browsers (using execCommand for iframe compatibility)
+                const tempInput = document.createElement('textarea');
+                tempInput.value = shareText;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                
+                // Show a temporary message
+                const actionButton = document.getElementById('share-button') || document.querySelector('[title="Share Consequence Pack Link"]');
+                const originalText = actionButton.innerHTML;
+                actionButton.innerHTML = '✅ Copied!';
+                setTimeout(() => {
+                    actionButton.innerHTML = originalText;
+                }, 2000);
+            }
+        }
+        
+        // --- URL Sharing and Loading Logic ---
+
+        /**
+         * Encodes the current CONSEQUENCES object into a Base64 URL parameter.
+         * @returns {string} Base64 encoded JSON string.
+         */
+        function encodeConsequences() {
+            try {
+                const jsonString = JSON.stringify(CONSEQUENCES);
+                // Use btoa for Base64 encoding
+                return btoa(jsonString);
+            } catch (e) {
+                console.error("Error encoding consequences:", e);
+                return '';
+            }
+        }
+
+        /**
+         * Generates the full shareable URL for the game, including the current consequence pack.
+         * @returns {string} The full URL.
+         */
+        function getShareableGameUrl() {
+            const encodedPack = encodeConsequences();
+            // In the canvas environment, we use the current URL without modifications
+            const currentBaseUrl = window.location.origin + window.location.pathname;
+            
+            let shareUrl = currentBaseUrl;
+            if (encodedPack) {
+                shareUrl += `?c=${encodedPack}`;
+            }
+            return shareUrl;
+        }
+
+        /**
+         * Shares the current consequence pack via URL.
+         */
+        function shareConsequencePack() {
+            const shareUrl = getShareableGameUrl(); // <-- Use new helper
+            
+            // Construct the shareable URL with the consequence parameter
+            const shareText = `Check out my custom Majorcan Highs consequence pack! Play the game here: ${shareUrl}`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Majorcan Highs Consequence Pack',
+                    text: shareText,
+                    url: shareUrl
+                }).catch(error => console.error('Error sharing pack:', error));
+            } else {
+                // Fallback: Copy the URL to the clipboard
+                const tempInput = document.createElement('textarea');
+                tempInput.value = shareUrl; // <-- Use new helper
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                
+                // Provide visual feedback on the header button
+                const shareButton = document.querySelector('[title="Share Consequence Pack Link"]');
+                const originalTitle = shareButton.title;
+                const originalIcon = shareButton.innerHTML;
+                shareButton.innerHTML = '✅';
+                shareButton.title = 'Link Copied!';
+                setTimeout(() => {
+                    shareButton.innerHTML = originalIcon;
+                    shareButton.title = originalTitle;
+                }, 1500);
+            }
+        }
+
+        /**
+         * Checks the URL for a consequence parameter, decodes, and loads it.
+         */
+        function loadConsequencesFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const encodedPack = params.get('c');
+
+            if (encodedPack) {
+                try {
+                    // Use atob for Base64 decoding
+                    const jsonString = atob(encodedPack);
+                    const customConsequences = JSON.parse(jsonString);
+
+                    // Basic validation: check if all RANKS are present in the loaded object
+                    const isValid = RANKS.every(rank => rank in customConsequences);
+                    
+                    if (isValid) {
+                        // Overwrite the CONSEQUENCES object
+                        CONSEQUENCES = customConsequences;
+                        
+                        // Update settings to reflect a custom pack
+                        gameSettings.consequencesType = 'Custom Consequence Pack';
+                        
+                        // To avoid URL becoming too long, remove the parameter after loading it
+                        history.replaceState({}, document.title, window.location.pathname);
+                    } else {
+                        console.error('Custom consequences pack is incomplete or invalid. Using default.');
+                    }
+
+                } catch (e) {
+                    console.error("Error decoding or parsing custom consequences URL:", e);
+                }
+            }
+        }
+
+
+        // --- Modal Control Functions ---
+
+        function showRulesModal() {
+            // Update the rules content dynamically based on current settings
+            document.getElementById('rules-modal').querySelector('.max-w-lg').innerHTML = `
+                <h2 class="text-3xl font-extrabold text-emerald-800 mb-4 text-center">Majorcan Highs Rules</h2>
+
+                <div class="space-y-4 text-gray-700">
+                    <h3 class="text-xl font-bold text-emerald-600">Objective & Lives</h3>
+                    <p>Each player starts with **${gameSettings.startingLives} lives**. The last player standing wins the Majorcan Highs championship.</p>
+
+                    <h3 class="text-xl font-bold text-emerald-600">Gameplay (The Trick Cycle)</h3>
+                    <ul class="list-disc list-inside space-y-1 ml-4">
+                        <li>Each player starts with **${gameSettings.handSize} cards** and draws a replacement card immediately after playing.</li>
+                        <li>The deck is only **reshuffled** when the draw deck is empty.</li>
+                    </ul>
+                    
+                    <h3 class="text-xl font-bold text-emerald-600">Trick Winning (Determines Next Leader)</h3>
+                    <ul class="list-disc list-inside space-y-1 ml-4">
+                        <li><span class="font-bold">Highest Ranked Card Wins:</span> The player with the highest card (K is high, A is low) wins the trick and leads the next one.</li>
+                        <li><span class="font-bold">Leading Suit Rule (${gameSettings.leadingSuitTrumps ? 'ON' : 'OFF'}):</span> ${gameSettings.leadingSuitTrumps ? 'Only the highest card of the **leading suit** can win the trick. If no card of the leading suit is played, the highest card overall wins.' : 'The highest ranked card overall wins, regardless of suit.'}</li>
+                    </ul>
+
+                    <h3 class="text-xl font-bold text-red-600">Consequences (Determines Life Loss)</h3>
+                    <ul class="list-disc list-inside space-y-1 ml-4">
+                        <li>The player who plays the **single lowest card** (A is low) loses a life and faces a consequence.</li>
+                        <li>If two or more players tie for the lowest card, no one loses a life.</li>
+                    </ul>
+
+                    <h3 class="text-xl font-bold text-red-600 mt-6">${gameSettings.consequencesType} by Rank</h3>
+                    <p class="text-sm italic mb-2">The rank of the losing card determines the fate (The full sentence is: "[Player Name] [Consequence]"):</p>
+                    <div id="rules-consequences-list" class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        ${RANKS.map(rank =>
+                            `<div class="font-medium">**${rank}**:</div><div>${CONSEQUENCES[rank]}</div>`
+                        ).join('')}
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-center">
+                    <button onclick="hideRulesModal()" class="px-6 py-3 bg-red-500 text-white font-bold rounded-lg shadow-lg hover:bg-red-600 transition duration-150 transform hover:scale-105">
+                        Close Rules
+                    </button>
+                </div>
+            `;
+            document.getElementById('rules-modal').classList.remove('hidden');
+        }
+
+        function hideRulesModal() {
+            document.getElementById('rules-modal').classList.add('hidden');
+        }
+
+        function hideNoConsequenceModal() {
+            document.getElementById('no-consequence-modal').classList.add('hidden');
+        }
+
+        /**
+         * Saves the content of the editable span back to the CONSEQUENCES object.
+         * @param {string} rank The card rank (e.g., 'A', 'K').
+         * @param {string} text The new consequence text.
+         */
+        function saveConsequence(rank, text) {
+            // Sanitize text to ensure it's not empty and remove leading/trailing whitespace
+            const newText = text ? text.trim() : '';
+
+            if (newText) {
+                // Save the new text
+                CONSEQUENCES[rank] = newText;
+                // If the user modifies a default pack, switch to custom type
+                if (gameSettings.consequencesType !== 'Custom Consequence Pack') {
+                    gameSettings.consequencesType = 'Custom Consequence Pack';
+                    renderOptionsScreen(); // Re-render to update the select box
+                }
+            } else {
+                // Revert to original if text is empty (user deleted everything)
+                const element = document.getElementById(`consequence-text-${rank}`);
+                if (element) {
+                    element.textContent = CONSEQUENCES[rank] || '[EMPTY CONSEQUNCE - ENTER TEXT!]'; // Re-apply the old text or a placeholder
+                    // Optional visual feedback for an invalid/empty save
+                    element.classList.add('bg-red-200');
+                    setTimeout(() => element.classList.remove('bg-red-200'), 500);
+                }
+            }
+        }
+
+        // --- UI Rendering Functions ---
+
+        /**
+         * Renders the current scores/lives of all active players.
+         */
+        function renderScoreDisplay() {
+            const scoreDisplay = document.getElementById('score-display');
+            scoreDisplay.innerHTML = players.map(p => `
+                <div class="text-center p-2 rounded-lg ${p.lives <= 0 ? 'bg-red-200 line-through' : 'bg-emerald-100'}">
+                    <span class="font-extrabold text-emerald-900">${p.name}:</span>
+                    <span class="text-xl font-bold text-red-600">${'❤️'.repeat(Math.max(0, p.lives))}</span>
+                </div>
+            `).join('');
+        }
+        
+        function renderOptionsScreen() {
+            gameState = 'options';
+            const screen = document.getElementById('screen-container');
+
+            screen.innerHTML = `
+                <h2 class="text-3xl font-bold text-emerald-800 mb-6 text-center">Game Options</h2>
+                <div class="space-y-6">
+                    <!-- General Settings -->
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-md border-b-2 border-emerald-300">
+                        <h3 class="text-xl font-bold text-emerald-600 mb-3">General Rules</h3>
+                        
+                        <label class="block mb-4">
+                            <span class="text-gray-700 font-semibold">Starting Lives per Player:</span>
+                            <input type="number" id="starting-lives" min="1" value="${gameSettings.startingLives}" 
+                                   onchange="updateSetting('startingLives', parseInt(this.value))"
+                                   class="mt-1 p-2 w-full border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
+                        </label>
+
+                        <!-- Removed fixed Hand Size display as requested -->
+
+                        <div class="flex items-center justify-between p-2 bg-white rounded-lg border">
+                            <span class="text-gray-700 font-semibold">Leading Suit Trumps:</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="leading-suit-trumps" ${gameSettings.leadingSuitTrumps ? 'checked' : ''} 
+                                       onchange="updateSetting('leadingSuitTrumps', this.checked)" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                <span class="ms-3 text-sm font-medium text-gray-900">${gameSettings.leadingSuitTrumps ? 'ON' : 'OFF'}</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Consequences Editor (FIXED: Now uses contenteditable for reliable desktop editing) -->
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-md border-b-2 border-red-300">
+                        <h3 class="text-xl font-bold text-red-600 mb-3">Consequences Settings</h3>
+
+                        <div class="flex items-center justify-between p-2 mb-4 bg-white rounded-lg border">
+                            <span class="text-gray-700 font-semibold">Consequence Type:</span>
+                            <select id="consequences-type" onchange="updateConsequencesType(this.value)" class="p-2 border-2 border-gray-300 rounded-lg focus:border-red-500 focus:ring-red-500">
+                                <option value="Fatal Consequences" ${gameSettings.consequencesType === 'Fatal Consequences' ? 'selected' : ''}>Fatal Consequences</option>
+                                <option value="Mild Inconveniences" ${gameSettings.consequencesType === 'Mild Inconveniences' ? 'selected' : ''}>Mild Inconveniences</option>
+                                <option value="Custom Consequence Pack" ${gameSettings.consequencesType === 'Custom Consequence Pack' ? 'selected' : ''}>Custom Consequence Pack</option>
+                            </select>
+                        </div>
+                        
+                        <p class="text-sm text-gray-600 mb-3 font-medium">Click to edit the consequence message (This phrase must grammatically follow "Player Name..."):</p>
+                        <div id="consequences-editor" class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2">
+                            ${RANKS.map(rank => `
+                                <div class="flex items-start p-2 bg-white border rounded-lg hover:bg-yellow-50 transition duration-100">
+                                    <span class="font-extrabold text-lg text-red-500 mr-2 flex-shrink-0 pt-1">${rank}:</span>
+                                    <!-- Using contenteditable for direct inline editing -->
+                                    <span id="consequence-text-${rank}" 
+                                          class="text-sm flex-grow p-1 rounded hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-100" 
+                                          contenteditable="true" 
+                                          onblur="saveConsequence('${rank}', this.textContent)"
+                                          title="Click to edit and press enter or click away to save.">
+                                        ${CONSEQUENCES[rank]}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <button onclick="renderSetupScreen()" class="w-full px-6 py-3 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                        Back to Setup
+                    </button>
+                </div>
+            `;
+        }
+        
+        function updateSetting(key, value) {
+            if (key === 'startingLives' && value < 1) {
+                value = 1;
+                document.getElementById('starting-lives').value = 1;
+            }
+            gameSettings[key] = value;
+            // Re-render the options screen to update any visual toggles (like ON/OFF text)
+            if (gameState === 'options') {
+                renderOptionsScreen();
+            }
+        }
+        
+        function updateConsequencesType(type) {
+            gameSettings.consequencesType = type;
+            // Load the appropriate set for editing/display, unless it's the custom pack
+            if (type === 'Fatal Consequences') {
+                CONSEQUENCES = FATAL_CONSEQUENCES;
+            } else if (type === 'Mild Inconveniences') {
+                CONSEQUENCES = MILD_INCONVENIENCES;
+            }
+            // If it's 'Custom Consequence Pack', we keep the current CONSEQUENCES object as is.
+            renderOptionsScreen(); // Re-render to show new editable text
+        }
+
+
+        /**
+         * Renders a single card element.
+         */
+        function renderCard(cardString, isPlayable = false, type = 'face') {
+            if (type === 'back') {
+                const deckInfo = (deck.length > 0) ? `${deck.length} Left` : 'RESHUFFLE!';
+                return `
+                    <div class="card card-back flex items-center justify-center p-2">
+                        <span class="text-3xl transform rotate-12">🌴</span>
+                        <span class="text-sm font-light uppercase">${deckInfo}</span>
+                    </div>
+                `;
+            }
+
+            const { rank, suit, colorClass } = parseCard(cardString);
+            const symbol = SUIT_SYMBOLS[suit];
+            const playableClass = isPlayable ? 'card-playable bg-yellow-50 shadow-md cursor-pointer' : 'opacity-80';
+
+            return `
+                <div onclick="${isPlayable ? `handleCardPlay('${cardString}')` : ''}"
+                     class="card ${playableClass} ${colorClass} transition duration-150 ease-in-out">
+                    <span class="text-xl self-start leading-none">${rank}</span>
+                    <span class="text-4xl sm:text-5xl leading-none">${symbol}</span>
+                    <span class="text-xl self-end leading-none transform rotate-180">${rank}</span>
+                </div>
+            `;
+        }
+
+        function renderSetupScreen() {
+            gameState = 'setup';
+            const screen = document.getElementById('screen-container');
+            document.getElementById('score-display').innerHTML = ''; // Clear scores on setup
+
+            screen.innerHTML = `
+                <div class="text-center space-y-6">
+                    <p class="text-lg text-gray-600">Each player starts with **${gameSettings.handSize} cards** and draws a replacement immediately after playing. Starting lives: **${gameSettings.startingLives}**.</p>
+                    <div id="player-inputs" class="space-y-4">
+                        <input type="text" id="player-1" value="Maria" placeholder="Player 1 Name (Mandatory)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" id="player-2" value="Carlos" placeholder="Player 2 Name (Mandatory)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" id="player-3" placeholder="Player 3 Name (Optional)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
+                        <input type="text" id="player-4" placeholder="Player 4 Name (Optional)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
+                    </div>
+                    <button onclick="startGame()" class="w-full px-6 py-3 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                        Start Game!
+                    </button>
+                    <p id="setup-error" class="text-red-500 font-semibold mt-4 hidden"></p>
+                </div>
+            `;
+        }
+
+        function renderHandOffScreen() {
+            gameState = 'handoff';
+            const activePlayers = players.filter(p => p.lives > 0);
+            
+            // Check if game is over (no one left, or only one winner)
+            if (activePlayers.length <= 1) {
+                renderFinalMessage(activePlayers.length === 1 ? 
+                    `${activePlayers[0].name} is the MAJORCAN HIGH WINNER!` : 
+                    "The game ended in a draw (all players eliminated simultaneously).");
+                return;
+            }
+
+            // Ensure the current player index points to an active player
+            let activePlayerFound = false;
+            let originalIndex = currentPlayerIndex;
+            
+            for (let i = 0; i < players.length; i++) {
+                let nextIndex = (originalIndex + i) % players.length;
+                if (players[nextIndex].lives > 0) {
+                    currentPlayerIndex = nextIndex;
+                    activePlayerFound = true;
+                    break;
+                }
+            }
+
+            if (!activePlayerFound) {
+                 renderFinalMessage("An error occurred: No active players found.");
+                 return;
+            }
+
+            const currentPlayer = players[currentPlayerIndex];
+            const screen = document.getElementById('screen-container');
+            screen.innerHTML = `
+                <div class="text-center space-y-8 p-8 bg-emerald-100 rounded-lg border-2 border-emerald-400">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-emerald-800">Pass the Phone!</h2>
+                    <p class="text-4xl sm:text-5xl font-extrabold text-emerald-600 uppercase tracking-widest">${currentPlayer.name}</p>
+                    <p class="text-lg text-gray-700">It's your turn, ${currentPlayer.name}. Please confirm you are ready to play one of your ${currentPlayer.hand.length} cards.</p>
+                    <button onclick="renderPlayScreen()" class="w-full px-6 py-4 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                        View My Hand & Play
+                    </button>
+                    <p class="text-sm text-gray-500 mt-4">Other players: Turn away!</p>
+                </div>
+            `;
+        }
+
+        function renderPlayScreen() {
+            gameState = 'play';
+            const currentPlayer = players[currentPlayerIndex];
+            const screen = document.getElementById('screen-container');
+            const activePlayersCount = players.filter(p => p.lives > 0).length;
+
+            const toPlay = activePlayersCount - currentTrick.length;
+            const deckSize = deck.length;
+
+
+            screen.innerHTML = `
+                <h2 class="text-2xl font-bold text-emerald-700 mb-4 text-center">Trick In Progress</h2>
+                <div class="flex justify-between items-center mb-6 p-3 bg-emerald-50 rounded-lg border-b-2 border-emerald-200">
+                    <p class="text-lg font-semibold text-gray-700">Playing Now:</p>
+                    <p class="text-3xl font-extrabold text-emerald-800">${currentPlayer.name}</p>
+                </div>
+
+                <!-- Played Cards (Trick Pile) -->
+                <div class="mb-8 p-4 bg-gray-100 rounded-xl shadow-inner">
+                    <h3 class="text-xl font-bold text-gray-700 mb-3 text-center">The Trick Pile (${currentTrick.length}/${activePlayersCount})</h3>
+                    <p class="text-sm text-center text-gray-500 mb-3">Waiting for **${toPlay}** player${toPlay === 1 ? '' : 's'}.</p>
+                    <div id="trick-pile" class="flex justify-center space-x-2 h-32">
+                        ${currentTrick.map(trickItem => renderCard(trickItem.card)).join('')}
+                        ${Array(toPlay).fill(0).map(() => renderCard('', false, 'back')).join('')}
+                    </div>
+                </div>
+
+                <!-- Current Player's Hand -->
+                <div class="p-4 bg-emerald-200 rounded-xl shadow-lg">
+                    <h3 class="text-xl font-bold text-emerald-800 mb-3 text-center">Your Hand (${currentPlayer.hand.length} cards)</h3>
+                    <p class="text-center text-sm text-emerald-800 mb-3 font-medium">Deck Size: ${deckSize} cards. Discard Pile: ${discardPile.length} cards.</p>
+                    <div class="flex justify-center space-x-2">
+                        ${currentPlayer.hand.map(card => renderCard(card, true)).join('')}
+                    </div>
+                    <p class="text-center text-sm text-emerald-800 mt-2 font-medium">Click a card to play it!</p>
+                </div>
+            `;
+        }
+        
+        // --- Game Logic Functions ---
+
+        /**
+         * Initializes the game state and deals the initial hands.
+         */
+        function startGame() {
+            const playerNames = [];
+            for (let i = 1; i <= 4; i++) {
+                const name = document.getElementById(`player-${i}`).value.trim();
+                if (name) {
+                    playerNames.push(name);
+                }
+            }
+
+            if (playerNames.length < 2) {
+                const error = document.getElementById('setup-error');
+                error.textContent = "Please enter names for at least two players.";
+                error.classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('setup-error').classList.add('hidden');
+            }
+
+            // Reset game state
+            players = playerNames.map((name) => ({
+                id: crypto.randomUUID(),
+                name: name,
+                hand: [],
+                lives: gameSettings.startingLives
+            }));
+            deck = createAndShuffleDeck();
+            discardPile = [];
+            currentTrick = [];
+            
+            // Randomly choose a player to lead the first trick
+            currentPlayerIndex = Math.floor(Math.random() * players.length);
+
+            dealInitialHands(gameSettings.handSize); 
+            renderScoreDisplay();
+            renderHandOffScreen();
+        }
+
+        /**
+         * Deals the specified number of cards to each active player for initial setup.
+         */
+        function dealInitialHands(count) {
+            const activePlayers = players.filter(p => p.lives > 0);
+            
+            for (let c = 0; c < count; c++) {
+                for (let p = 0; p < activePlayers.length; p++) {
+                    const playerIndex = players.findIndex(pl => pl.id === activePlayers[p].id);
+                    const newCard = drawCard();
+                    if (newCard) {
+                        players[playerIndex].hand.push(newCard);
+                    }
+                }
+            }
+        }
+        
+        /**
+         * Gives the current player a replacement card if the deck is not empty.
+         */
+        function drawReplacementCard(playerId) {
+            const player = players.find(p => p.id === playerId);
+            if (player) {
+                const newCard = drawCard();
+                if (newCard) {
+                    player.hand.push(newCard);
+                } else {
+                    console.log('Deck is empty, no card drawn.');
+                }
+            }
+        }
+
+        /**
+         * Handles the click event for playing a card.
+         * @param {string} card The card string (e.g., 'KH') that was played.
+         */
+        function handleCardPlay(card) {
+            if (gameState !== 'play') return;
+
+            const currentPlayer = players[currentPlayerIndex];
+
+            // 1. Remove card from hand
+            currentPlayer.hand = currentPlayer.hand.filter(c => c !== card);
+
+            // 2. Add card to the trick pile
+            currentTrick.push({ playerId: currentPlayer.id, card: card, playerName: currentPlayer.name });
+            
+            // 3. Draw a replacement card immediately
+            drawReplacementCard(currentPlayer.id);
+            renderScoreDisplay(); // Update score display to show new hand size
+
+            // 4. Check if all active players have played
+            const activePlayersCount = players.filter(p => p.lives > 0).length;
+            if (currentTrick.length === activePlayersCount) {
+                // Trick is complete, resolve immediately
+                resolveTrick();
+            } else {
+                // 5. Advance to the next ACTIVE player
+                let nextPlayerIndex;
+                let foundNext = false;
+                
+                // Search for the next active player, wrapping around
+                for (let i = 1; i <= players.length; i++) {
+                    nextPlayerIndex = (currentPlayerIndex + i) % players.length;
+                    
+                    // Check if player is active AND hasn't played yet in this trick
+                    const hasPlayed = currentTrick.some(item => item.playerId === players[nextPlayerIndex].id);
+                    
+                    if (players[nextPlayerIndex].lives > 0 && !hasPlayed) { 
+                        currentPlayerIndex = nextPlayerIndex;
+                        foundNext = true;
+                        break;
+                    }
+                }
+
+                if(foundNext) {
+                    renderHandOffScreen();
+                } else {
+                    // This should only happen if all remaining players have played
+                    resolveTrick();
+                }
+            }
+        }
+
+        /**
+         * Determines the winner and loser (if unique) of the current trick.
+         */
+        function resolveTrick() {
+            gameState = 'resolution';
+            
+            // 1. Add trick cards to discard pile
+            currentTrick.forEach(item => discardPile.push(item.card));
+
+            // 2. Determine WINNER (Highest Card) to set who leads next trick
+            let winningCard = currentTrick[0];
+            
+            if (gameSettings.leadingSuitTrumps) {
+                const leadingCard = currentTrick[0];
+                const leadingSuit = parseCard(leadingCard.card).suit;
+
+                let leadingSuitCandidates = currentTrick.filter(item => parseCard(item.card).suit === leadingSuit);
+
+                if (leadingSuitCandidates.length > 0) {
+                    // Highest card of the leading suit wins.
+                    winningCard = leadingSuitCandidates.reduce((best, current) => 
+                        parseCard(current.card).value > parseCard(best.card).value ? current : best, leadingSuitCandidates[0]);
+                } else {
+                    // If nobody followed the leading suit, the highest overall card wins (as per the non-trumping rule)
+                    winningCard = currentTrick.reduce((best, current) => 
+                        parseCard(current.card).value > parseCard(best.card).value ? current : best, currentTrick[0]);
+                }
+            } else {
+                // Highest rank overall wins, regardless of suit.
+                winningCard = currentTrick.reduce((best, current) => 
+                    parseCard(current.card).value > parseCard(best.card).value ? current : best, currentTrick[0]);
+            }
+            
+            // 3. Find the losing card (lowest overall)
+            let losingCard = currentTrick.reduce((best, current) => 
+                parseCard(current.card).value < parseCard(best.card).value ? current : best, currentTrick[0]);
+            
+            // Check for Loser (Lowest Card) - Check if there's a tie for the lowest card.
+            const lowestValue = parseCard(losingCard.card).value;
+            const lowestPlayers = currentTrick.filter(item => parseCard(item.card).value === lowestValue);
+            
+            // Determine the unique loser
+            let loser = (lowestPlayers.length === 1) ? losingCard : null;
+            
+            // If the unique lowest card also won the trick, treat it as a tie to prioritize the win (no consequence applied).
+            if (loser && loser.playerId === winningCard.playerId) {
+                loser = null; 
+            }
+
+            // 4. Set the winner of the trick to lead the next hand.
+            const winningPlayerIndex = players.findIndex(p => p.id === winningCard.playerId);
+            currentPlayerIndex = winningPlayerIndex;
+            
+            // 5. Clear trick for next round
+            currentTrick = []; 
+            
+            // Get the winner player object for the modal
+            const winnerPlayer = players.find(p => p.id === winningCard.playerId);
+
+            // 6. Go to consequence resolution
+            if (loser) {
+                resolveConsequence(loser.playerId, getRank(loser.card), winnerPlayer);
+            } else {
+                // No unique loser, no life lost.
+                showNoConsequenceModal(winnerPlayer);
+            }
+        }
+
+        /**
+         * Resolves the outcome of the trick, including life loss.
+         * @param {string} loserId ID of the player who lost the round.
+         * @param {string} rank Rank of the card that caused the loss.
+         * @param {Object} winnerPlayer The player object of the trick winner (next leader).
+         */
+        function resolveConsequence(loserId, rank, winnerPlayer) {
+            const loser = players.find(p => p.id === loserId);
+
+            if (loser) {
+                // Player loses a life
+                loser.lives -= 1;
+                
+                renderScoreDisplay(); // Update scores immediately
+                showDeathModal(loser, rank, winnerPlayer);
+            }
+        }
+        
+        /**
+         * Starts a new trick (new play cycle).
+         */
+        function startNextTrick() {
+            document.getElementById('death-modal').classList.add('hidden');
+            document.getElementById('no-consequence-modal').classList.add('hidden');
+            
+            // Check if only one player remains before continuing.
+            const remainingPlayers = players.filter(p => p.lives > 0);
+            if (remainingPlayers.length <= 1) {
+                if (remainingPlayers.length === 1) {
+                    renderFinalMessage(`${remainingPlayers[0].name} is the MAJORCAN HIGH WINNER!`);
+                } else {
+                    renderFinalMessage("The game ended with no winner (all players eliminated in the same final hand).");
+                }
+                return;
+            }
+
+            renderHandOffScreen();
+        }
+
+        /**
+         * Displays the death/consequence modal for the player who lost the round.
+         * @param {Object} loserPlayer The player object of the loser.
+         * @param {string} rank The rank of the losing card.
+         * @param {Object} winnerPlayer The player object of the trick winner.
+         */
+        function showDeathModal(loserPlayer, rank, winnerPlayer) {
+            gameState = 'reveal';
+            const deathMessage = CONSEQUENCES[rank];
+            const consequenceType = gameSettings.consequencesType;
+
+            const remainingPlayers = players.filter(p => p.lives > 0);
+            let buttonText = '';
+            let buttonAction = '';
+            let shareText = '';
+            
+            // Find the winner of the trick (the player who leads next)
+            const winnerOfTrick = winnerPlayer; // Passed directly from resolveTrick
+
+            if (loserPlayer.lives <= 0) {
+                // Player is eliminated, check if game over
+                const gameWinner = remainingPlayers[0] || null;
+                const winnerName = gameWinner ? gameWinner.name : 'No one';
+                const statusVerb = (consequenceType === 'Fatal Consequences') ? 'met their tragic, final fate' : 'succumbed to a debilitating final inconvenience';
+
+                if (remainingPlayers.length <= 0) {
+                    // Draw (all players eliminated simultaneously)
+                    document.getElementById('death-modal-title').textContent = '💥 Game Over: Draw! 💥';
+                    document.getElementById('loser-name').textContent = `All players eliminated simultaneously!`;
+                    
+                    document.getElementById('death-consequence-text').innerHTML = `
+                        <p class="text-xl font-extrabold text-red-700 text-center mb-4">It's a Draw!</p>
+                        <p class="text-lg text-gray-800 leading-relaxed text-center">
+                            The final card (Rank ${rank}) caused a simultaneous elimination! No winner was declared.
+                        </p>
+                    `;
+                    buttonText = 'Start New Game';
+                    buttonAction = 'restartGame';
+                    shareText = `It's a draw in Majorcan Highs! All players eliminated at once!`;
+                } else {
+                    // Single winner remains 
+                    document.getElementById('death-modal-title').textContent = '👑 Game Over: Winner Declared 👑';
+                    document.getElementById('loser-name').textContent = `The Champion is ${winnerName}!`;
+                    
+                    document.getElementById('death-consequence-text').innerHTML = `
+                        <p class="text-2xl font-extrabold text-emerald-700 text-center mb-4">🏆 ${winnerName} WINS! 🏆</p>
+                        <p class="text-lg text-gray-800 leading-relaxed text-center">
+                            The game concluded when <span class="font-bold text-red-600">${loserPlayer.name}</span> (Losing Card: <span class="font-bold text-red-600">Rank ${rank}</span>) ${statusVerb} because they **${deathMessage}**.
+                        </p>
+                    `;
+                    buttonText = 'Start New Game';
+                    buttonAction = 'restartGame';
+                    shareText = `Game Over in Majorcan Highs! ${loserPlayer.name} was eliminated (Last Card: ${rank}) because they ${deathMessage}. This makes ${winnerName} the Majorcan High Winner! 🍹`;
+                }
+                
+                // Set the last share text for the header button (with game link placeholder)
+                const shareUrl = getShareableGameUrl(); // <-- Get the full URL
+                lastShareText = `${shareText} Play the trick-taking game Majorcan Highs here: ${shareUrl}`;
+
+                // Hide the share button for final winner screen
+                document.getElementById('share-button-container').classList.add('hidden');
+
+            } else {
+                // Continue to next trick (Player loses a life but is not eliminated)
+                
+                // 1. Set title and card rank
+                document.getElementById('death-modal-title').textContent = (consequenceType === 'Fatal Consequences' || consequenceType === 'Custom Consequence Pack') ? '💀 Consequence Applied 💀' : '⚠️ Mild Inconvenience ⚠️';
+                
+                document.getElementById('death-consequence-text').innerHTML = `
+                    <div class="space-y-4">
+                        <!-- Trick Winner (Highest Card) -->
+                        <div class="text-center p-2 rounded-lg bg-emerald-100 border border-emerald-300">
+                            <p class="text-xl font-bold text-emerald-700">
+                                Trick Winner (Highest Card): 
+                            </p>
+                            <p class="text-2xl font-extrabold text-emerald-900">${winnerOfTrick.name}</p>
+                        </div>
+                        
+                        <!-- Life Loser (Lowest Card) -->
+                        <div class="text-center p-2 rounded-lg bg-red-100 border border-red-300">
+                            <p class="text-xl font-bold text-red-700">
+                                Life Loser (Lowest Card: Rank ${rank}): 
+                            </p>
+                            <p class="text-2xl font-extrabold text-red-600">${loserPlayer.name}</p>
+                        </div>
+
+                        <!-- Consequence (Grammatically correct sentence: [Player Name] [Consequence]) -->
+                        <p class="text-lg italic text-gray-800 font-medium leading-relaxed text-center pt-2">
+                             <span class="font-semibold">${loserPlayer.name}</span> ${deathMessage}
+                        </p>
+
+                        <!-- Lives Remaining -->
+                        <p class="text-lg font-medium text-center text-gray-700 mt-4">
+                            Lives remaining: <span class="text-red-500 text-2xl font-extrabold">${'❤️'.repeat(loserPlayer.lives)}</span>
+                        </p>
+                    </div>
+                `;
+
+                buttonText = 'Start Next Trick';
+                buttonAction = 'startNextTrick';
+                
+                // Prepare Share Text 
+                const status = (consequenceType === 'Fatal Consequences' || consequenceType === 'Custom Consequence Pack') ? 'lost a life' : 'suffered an inconvenience';
+                shareText = `In Majorcan Highs, ${loserPlayer.name} ${status} after they ${deathMessage} (Losing Card: ${rank}). ${winnerOfTrick.name} won the trick and leads next! 🍹`;
+
+                // Set the last share text for the header button (with game link placeholder)
+                const shareUrl = getShareableGameUrl(); // <-- Get the full URL
+                lastShareText = `${shareText} Play the trick-taking game Majorcan Highs here: ${shareUrl}`;
+
+                // Show the share button and set the action
+                document.getElementById('share-button-container').classList.remove('hidden');
+                // The modal's internal share button uses the global lastShareText which includes the game link placeholder
+                document.getElementById('share-button').onclick = () => shareConsequenceText(lastShareText);
+            }
+
+            document.getElementById('death-modal-action-button').textContent = buttonText;
+            document.getElementById('death-modal-action-button').onclick = window[buttonAction] || new Function(buttonAction);
+
+            document.getElementById('death-modal').classList.remove('hidden');
+        }
+
+        /**
+         * Displays the modal when there is no unique loser.
+         * @param {Object} winnerPlayer The player object of the trick winner.
+         */
+        function showNoConsequenceModal(winnerPlayer) {
+            gameState = 'reveal';
+            
+            document.getElementById('no-consequence-modal').classList.remove('hidden');
+            
+            // Set the last share text to reflect a safe round
+            const shareUrl = getShareableGameUrl(); // <-- Get the full URL
+            const shareText = `${winnerPlayer.name} won the trick in Majorcan Highs! A low card tie meant no one lost a life this round. Play the game here: ${shareUrl}`;
+            lastShareText = shareText; // Update global share text
+            
+            document.getElementById('no-consequence-text').innerHTML = `
+                <p class="text-xl font-semibold text-gray-700 mb-6">
+                    A tie occurred for the lowest card, so everyone is safe this trick!
+                </p>
+                <p class="text-2xl font-extrabold text-emerald-700 mt-4">
+                    ${winnerPlayer.name} wins the trick and leads next!
+                </p>
+            `;
+        }
+
+        /**
+         * Renders the final message for the Majorcan High Winner.
+         */
+        function renderFinalMessage(message) {
+            const screen = document.getElementById('screen-container');
+            screen.innerHTML = `
+                <div class="text-center space-y-6 p-8 bg-emerald-100 rounded-lg border-2 border-emerald-400">
+                    <h2 class="text-3xl font-bold text-emerald-800">GAME OVER!</h2>
+                    <p class="text-4xl font-extrabold text-emerald-600">${message}</p>
+                    <button onclick="restartGame()" class="w-full px-6 py-3 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
+                        Play Again
+                    </button>
+                </div>
+            `;
+             document.getElementById('score-display').innerHTML = '';
+             // Update global share for final win message
+             const shareUrl = getShareableGameUrl(); // <-- Get the full URL
+             lastShareText = `${message} Play the trick-taking game Majorcan Highs here: ${shareUrl}`;
+        }
+        
+        /**
+         * Restarts the entire game.
+         */
+        function restartGame() {
+            document.getElementById('death-modal').classList.add('hidden');
+            document.getElementById('no-consequence-modal').classList.add('hidden');
+            // Reset player hands
+            players.forEach(p => p.hand = []);
+            renderSetupScreen();
+        }
+
+        // --- Initialization ---
+
+        // Start the application on the setup screen
+        window.onload = function() {
+            initializeConsequences();
+            renderSetupScreen();
+        };
+
+        // Expose functions globally for HTML event handlers
+        window.startGame = startGame;
+        window.renderPlayScreen = renderPlayScreen;
+        window.handleCardPlay = handleCardPlay;
+        window.restartGame = restartGame;
+        window.resolveConsequence = resolveConsequence;
+        window.startNextTrick = startNextTrick; 
+        window.showRulesModal = showRulesModal;
+        window.hideRulesModal = hideRulesModal;
+        window.renderOptionsScreen = renderOptionsScreen;
+        window.updateSetting = updateSetting;
+        window.updateConsequencesType = updateConsequencesType;
+        window.saveConsequence = saveConsequence; // Expose new function
+        window.hideNoConsequenceModal = hideNoConsequenceModal;
+        window.shareConsequencePack = shareConsequencePack; // Expose new pack sharing function
+    </script>
+</body>
+</html>
