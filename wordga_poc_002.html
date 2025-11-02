@@ -1,1068 +1,1152 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Majorcan Highs: A Trick-Taking Game</title>
+    <title>Wordga Challenge</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght%40400;600;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        :root {
+            --cell-size: 10vw;
+        }
+        @media (min-width: 640px) {
+            :root {
+                --cell-size: 50px;
+            }
+        }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0fdf4; /* Light mint background */
+            background-color: #f7f9fb;
+            color: #1f2937;
         }
-        .card {
-            width: 80px;
-            height: 120px;
-            background-color: white;
-            border: 3px solid #10b981; /* Emerald border */
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
+        .grid-cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            line-height: var(--cell-size);
+            font-size: 5vw;
+            text-transform: uppercase;
             font-weight: 700;
-            font-size: 2rem;
-            color: #10b981;
-            transition: transform 0.1s, box-shadow 0.1s;
+            border: 1px solid #d1d5db;
+            transition: all 0.1s ease-in-out;
             cursor: pointer;
             user-select: none;
-            /* Added margin for 3-card hands in play screen */
-            margin: 0 4px; 
-        }
-        .card-playable:hover, .card-playable:focus {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 10px rgba[0, 0, 0, 0.2];
-        }
-        .card-back {
-            background-color: #10b981;
-            color: white;
-            font-size: 1.5rem;
-            line-height: 1.2;
             text-align: center;
-            border: 3px solid #065f46;
         }
-        .text-red { color: #ef4444; }
-        .text-black { color: #1f2937; }
-
-        /* Ensure the main container fills the viewport nicely */
-        #game-container {
-            min-height: 10vh;
-            display: flex;
-            flex-direction: column;
+        @media (min-width: 640px) {
+            .grid-cell {
+                font-size: 24px;
+            }
+        }
+        .filled-cell {
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+        .start-cell {
+            background-color: #fcd34d !important; /* Amber-400 */
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(252, 211, 77, 0.8);
+        }
+        .possible-cell {
+            background-color: #6ee7b7; /* Emerald-300 */
+        }
+        .placement-valid {
+            background-color: #34d399 !important; /* Emerald-400 - Used for non-scoring overwrites */
+        }
+        .overlap-cell {
+            background-color: #f97316 !important; /* Orange-600 for scoring overlap */
+            color: white !important;
+        }
+        .message-box {
+            min-height: 3rem; 
+            line-height: 1.25;
+        }
+        .button-confirm {
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .button-confirm:hover:not(:disabled) {
+            background-color: #059669;
+        }
+        .button-confirm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        /* Word selection buttons */
+        .word-btn {
+            padding: 0.5rem 0.75rem; 
+            font-size: 0.875rem; 
+            font-weight: 600;
+            text-transform: uppercase;
+            border-radius: 9999px; 
+            transition: all 0.15s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .word-btn:hover {
+            opacity: 0.8;
+        }
+        .word-btn-default {
+            background-color: #3b82f6; 
+            color: white;
+        }
+        .word-btn-selected {
+            background-color: #10b981; 
+            color: white;
+            border-color: #fcd34d; 
+            transform: scale(1.05);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
         }
     </style>
 </head>
-<body class="p-4 sm:p-8">
+<body class="p-3 flex flex-col items-center min-h-screen">
 
-    <!-- Global State Variables (Required for Canvas Environment) -->
-    <script type="module">
-        // Mandatory dummy variables to satisfy environment requirements
-        const __app_id = 'majorcan-highs-game';
-        const __firebase_config = '{}';
-        const __initial_auth_token = 'dummy-token';
-    </script>
-
-    <div id="game-container" class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-2xl border-4 border-emerald-600">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl sm:text-4xl font-bold text-emerald-800">Majorcan Highs 🍹</h1>
-            <div class="flex space-x-2">
-                <button onclick="renderOptionsScreen()" class="w-10 h-10 bg-gray-300 text-gray-700 font-extrabold rounded-full shadow-lg hover:bg-gray-400 transition duration-150" title="Options">
-                    ⚙️
-                </button>
-                <!-- NEW GLOBAL SHARE BUTTON -->
-                <button onclick="globalShareLastConsequence()" class="w-10 h-10 bg-blue-500 text-white font-extrabold rounded-full shadow-lg hover:bg-blue-600 transition duration-150" title="Share Last Consequence">
-                    📣
-                </button>
-                <button onclick="showRulesModal()" class="w-10 h-10 bg-emerald-500 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-600 transition duration-150" title="Rules">
-                    ?
-                </button>
-            </div>
-        </div>
-        <div id="score-display" class="flex justify-around text-sm font-semibold mb-4 text-gray-600">
-            <!-- Scoreboard will be injected here -->
-        </div>
-
-        <!-- Screen Container -->
-        <div id="screen-container">
-            <!-- Content will be injected here by JavaScript -->
-        </div>
-    </div>
-
-    <!-- Death Modal (Hidden by default) -->
-    <div id="death-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-red-50 p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-100 border-4 border-red-500">
-            <h2 id="death-modal-title" class="text-3xl font-extrabold text-red-700 mb-4 text-center">💀 Consequence Applied 💀</h2>
-            <!-- Loser Name will be used in the new structure now -->
-            <p id="loser-name" class="text-xl font-semibold text-center mb-2 hidden"></p>
-            <p class="text-lg text-gray-700 mb-4 text-center italic hidden">The card that sealed their fate: <span id="loser-card-rank" class="font-bold text-red-600"></span></p>
+    <!-- --- MAIN GAME VIEW --- -->
+    <div id="main-game-view" class="max-w-xl w-full">
+        
+        <!-- Combined Navigation and Stats Header -->
+        <div class="flex justify-between items-center mb-4 p-2 bg-white rounded-xl shadow-lg border border-gray-100">
             
-            <div class="bg-red-100 p-4 rounded-lg border border-red-300">
-                <div id="death-consequence-text" class="text-xl text-gray-800 font-medium leading-relaxed">
-                    <!-- Dynamic content will be injected here based on player's fate -->
+            <!-- 1. About Button -->
+            <!-- Desktop button (text) -->
+            <button id="about-btn" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-full shadow-md hover:bg-gray-300 text-sm transition hidden sm:block">
+                About
+            </button>
+            <!-- Mobile button (icon) -->
+            <button id="about-btn-mobile" class="sm:hidden bg-gray-200 text-gray-700 font-bold p-2 rounded-full shadow-md hover:bg-gray-300 transition text-sm flex items-center justify-center w-8 h-8">
+                i
+            </button>
+
+            <!-- 2. Stats Block (Level | Score | Target) -->
+            <div class="flex justify-around items-center text-center flex-grow mx-2">
+                 <!-- Current Level -->
+                <div class="min-w-[20%]">
+                    <p class="text-[10px] sm:text-xs text-gray-500 font-medium">LEVEL</p>
+                    <p id="current-level" class="text-base sm:text-xl font-extrabold text-yellow-700">1</p>
+                </div>
+                <!-- Current Score -->
+                <div class="min-w-[30%]">
+                    <p class="text-[10px] sm:text-xs text-gray-500 font-medium">SCORE</p>
+                    <p id="score" class="text-base sm:text-xl font-extrabold text-indigo-600">0</p>
+                </div>
+                <!-- Target Score -->
+                <div class="min-w-[20%]">
+                    <p class="text-[10px] sm:text-xs text-gray-500 font-medium">TARGET</p>
+                    <p id="target-score" class="text-base sm:text-xl font-extrabold text-red-600">25</p>
                 </div>
             </div>
 
-            <div class="mt-8 flex justify-center space-x-4">
-                <div id="share-button-container">
-                    <button id="share-button" class="px-4 py-3 bg-blue-500 text-white font-bold rounded-lg shadow-lg hover:bg-blue-600 transition duration-150 transform hover:scale-105 flex items-center">
-                        Share 📣
-                    </button>
-                </div>
-                <button id="death-modal-action-button" onclick="startNextTrick()" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
-                    Start Next Trick
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- No Consequence Modal (Hidden by default) -->
-    <div id="no-consequence-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-green-50 p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-100 border-4 border-green-500 text-center">
-            <h2 class="text-3xl font-extrabold text-green-700 mb-4">No Consequence! 😅</h2>
-            <p id="no-consequence-text" class="text-xl font-semibold text-gray-700 mb-6">A tie occurred for the lowest card, so everyone is safe this trick!</p>
-            <button onclick="hideNoConsequenceModal(); startNextTrick();" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
-                Start Next Trick
+            <!-- 3. Settings Button -->
+            <button id="settings-btn" class="bg-indigo-500 text-white font-bold py-2 px-3 rounded-full shadow-md hover:bg-indigo-600 transition text-sm flex items-center justify-center w-10 h-10">
+                <!-- Gear Icon SVG -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.39a2 2 0 0 0 .73 2.73l.15.08a2 2 0 0 1 1 1.73v.5a2 2 0 0 1-1 1.73l-.15.08a2 2 0 0 0-.73 2.73l.22.39a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.73v-.5a2 2 0 0 1 1-1.73l.15-.08a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
         </div>
-    </div>
 
-    <!-- Rules Modal (Hidden by default) -->
-    <div id="rules-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto transform transition-all duration-300 border-4 border-emerald-600">
-            <h2 class="text-3xl font-extrabold text-emerald-800 mb-4 text-center">Majorcan Highs Rules</h2>
-            <!-- Rules content dynamically injected by showRulesModal() -->
+        <!-- Main Status Display -->
+        <div id="main-status-display" class="message-box bg-white p-3 rounded-xl shadow-md mb-3 text-center text-sm font-semibold text-gray-700 border border-gray-100">
+            <!-- Initial message placed by JavaScript -->
+        </div>
 
-            <div class="mt-8 flex justify-center">
-                <button onclick="hideRulesModal()" class="px-6 py-3 bg-red-500 text-white font-bold rounded-lg shadow-lg hover:bg-red-600 transition duration-150 transform hover:scale-105">
-                    Close Rules
-                </button>
+        <!-- Word Selection Buttons -->
+        <div class="bg-white p-2 rounded-xl shadow-lg mb-3 flex flex-col border border-gray-200">
+            <div id="word-list-container" class="flex flex-wrap justify-center gap-2">
+                <!-- Words will go here -->
+            </div>
+        </div>
+
+        <!-- Game Grid -->
+        <div id="game-grid" class="grid grid-cols-8 border border-gray-300 rounded-lg overflow-hidden shadow-2xl mb-3 mx-auto">
+            <!-- Cells generated by JavaScript -->
+        </div>
+        
+        <!-- Controls -->
+        <div class="bg-white p-3 rounded-xl shadow-lg border border-gray-200 relative">
+            <div id="status-message-controls" class="relative">
+                
+                <!-- 1. Standard Controls (Selecting/Placing - Default view) -->
+                <div id="standard-controls" class="flex justify-center items-stretch space-x-1 sm:space-x-2">
+                    <!-- Daily Challenge Button (Visible only in Free Play) -->
+                    <button id="daily-challenge-btn" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-md hover:bg-purple-700 hidden">
+                        Level a Day
+                    </button>
+
+                    <!-- Centered Undo Button -->
+                    <button id="undo-btn" class="bg-red-400 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-md hover:bg-red-500" disabled>
+                        Undo Last Step
+                    </button>
+                </div>
+                
+                <!-- 2. Game Over (Failure/Final Victory) Control -->
+                <div id="game-over-failure" class="flex justify-center space-x-3 hidden">
+                    <button id="share-failure-btn" class="bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-yellow-600 text-sm flex-1">
+                        Share Score
+                    </button>
+                    <button id="try-again-btn" class="bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-indigo-700 text-base flex-1">
+                        Try Again
+                    </button>
+                </div>
+
+                <!-- 3. Level Success Controls -->
+                <div id="level-success-controls" class="flex justify-center space-x-3 hidden">
+                    <button id="share-success-btn" class="bg-yellow-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-yellow-600 text-sm flex-1">
+                        Share Score
+                    </button>
+                    <!-- Button text dynamically changed by JS -->
+                    <button id="next-level-btn" class="bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:bg-emerald-700 text-sm flex-1">
+                        Next Level
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-    
+
+
+    <!-- --- ABOUT VIEW --- -->
+    <div id="about-view" class="max-w-xl w-full p-4 bg-white rounded-xl shadow-2xl hidden">
+        <h1 class="text-3xl font-bold text-center mb-4 text-indigo-600">The Worga Challenge</h1>
+        <p class="text-gray-700 mb-4">Worga is a strategy word-placement game where your goal is to place a set of words onto an 8x8 grid to achieve a target score.</p>
+        
+        <h2 class="text-xl font-semibold mb-2 text-gray-800 border-b pb-1">How Scoring Works</h2>
+        <ul class="list-disc list-inside space-y-2 mb-6 text-gray-700">
+            <li>**Overlap Bonus:** You earn **5 points** for every letter in your word that is placed on top of an existing, matching letter on the grid. This is the primary way to score!</li>
+            <li>**Placement:** Words must be placed horizontally or vertically.</li>
+            <li>**Toroidal Grid:** The grid wraps around. A word placed on the edge can continue on the opposite side (e.g., from row 7 to row 0).</li>
+        </ul>
+
+        <h2 class="text-xl font-semibold mb-2 text-gray-800 border-b pb-1">Game Flow</h2>
+        <ol class="list-decimal list-inside space-y-2 mb-6 text-gray-700">
+            <li>Select one of your available words.</li>
+            <li>Click a cell to set the **start position**. (Highlighted in <span class="text-yellow-600 font-bold">yellow</span>)</li>
+            <li>Click an **adjacent** cell (H or V) to set the **direction**. (Possible cells are <span class="text-emerald-500 font-bold">green</span>). The word is automatically placed after this step.</li>
+            <li>Use the **Undo Last Step** button to revert your last word placement or clear your current start position.</li>
+            <li>Complete all words to meet the target score and advance!</li>
+        </ol>
+
+        <button id="back-from-about-btn" class="w-full bg-indigo-600 text-white font-bold py-3 mt-6 rounded-lg shadow-lg hover:bg-indigo-700 transition">
+            Back to Game
+        </button>
+    </div>
+
+
+    <!-- --- SETTINGS/LEVEL EDITOR VIEW --- -->
+    <div id="settings-view" class="max-w-xl w-full p-4 bg-white rounded-xl shadow-2xl hidden">
+        <h2 class="text-3xl font-bold mb-4 text-indigo-600 text-center">Settings & Level Editor (Free Play)</h2>
+        <p class="text-sm text-gray-600 mb-4 text-center">Manage standard Free Play levels, words, and minimum scores, or generate a custom URL.</p>
+        
+        <!-- Level Selector -->
+        <div class="mb-4">
+            <label for="level-select" class="block text-sm font-medium text-gray-700 mb-1">Select Free Play Level to Edit/Play:</label>
+            <select id="level-select" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></select>
+        </div>
+
+        <!-- Word Editor -->
+        <div class="mb-4">
+            <label for="level-words" class="block text-sm font-medium text-gray-700 mb-1">Words (Comma Separated, Uppercase):</label>
+            <textarea id="level-words" rows="3" class="w-full p-2 border border-gray-300 rounded-lg font-mono text-sm"></textarea>
+            <p class="text-xs text-gray-500 mt-1">Max 8 letters per word.</p>
+        </div>
+
+        <!-- Min Score Editor -->
+        <div class="mb-6">
+            <label for="min-score" class="block text-sm font-medium text-gray-700 mb-1">Minimum Score to Pass:</label>
+            <input type="number" id="min-score" class="w-full p-2 border border-gray-300 rounded-lg" min="0">
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0 sm:space-x-3">
+            <button id="add-level-btn" class="bg-blue-500 text-white font-bold py-2 rounded-lg hover:bg-blue-600 transition flex-1 text-sm">
+                Add New Level
+            </button>
+            <button id="save-level-btn" class="bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 transition flex-1 text-sm">
+                Save Changes
+            </button>
+            <button id="start-level-btn" class="bg-indigo-500 text-white font-bold py-2 rounded-lg hover:bg-indigo-600 transition flex-1 text-sm">
+                Start Selected Level
+            </button>
+            <button id="generate-url-btn" class="bg-purple-500 text-white font-bold py-2 rounded-lg hover:bg-purple-600 transition flex-1 text-sm">
+                Generate Share Link
+            </button>
+        </div>
+        
+        <p id="debug-message" class="text-center mt-3 text-sm font-medium hidden"></p>
+
+        <button id="back-from-settings-btn" class="w-full bg-gray-400 text-gray-800 font-bold py-3 mt-6 rounded-lg shadow-md hover:bg-gray-500 transition">
+            Back to Current Game
+        </button>
+    </div>
+
     <script>
-        // --- Core Game Data ---
+        // --- Game Setup ---
+        const GRID_SIZE = 8;
+        const OVERLAP_BONUS = 5; 
+        const BASE_SCORE_PER_LETTER = 0; 
 
-        const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-        const SUITS = ['H', 'D', 'C', 'S']; // Hearts, Diamonds, Clubs, Spades
-        const SUIT_SYMBOLS = { 'H': '♥', 'D': '♦', 'C': '♣', 'S': '♠' };
-        // Rank value: A=1 (low), K=13 (high)
-        const RANK_VALUE = Object.fromEntries(RANKS.map((r, i) => [r, i + 1]));
+        // Define the master list of levels (Free Play Levels)
+        const FREE_PLAY_LEVELS = [
+            { id: 1, level: 1, words: ["JUMBLE", "SCORE", "REUSE", "WORDS"], minScore: 25 },
+            { id: 2, level: 2, words: ["QUANTUM", "PUZZLE", "BONUS", "MOBILE"], minScore: 25 },
+            { id: 3, level: 3, words: ["OVERLAP", "WORDGRID", "CHALLENGE"], minScore: 20 },
+            { id: 4, level: 4, words: ["GRID", "PUZZLE", "PLAY", "HIGH"], minScore: 15 },
+            { id: 5, level: 5, words: ["CHESS", "ROOK", "KING", "QUEEN", "PAWN"], minScore: 30 },
+            { id: 6, level: 6, words: ["HERES", "LOOKING", "AT", "YOU", "KID"], minScore: 25 },
+            { id: 7, level: 7, words: ["CALL", "ME", "ISHMAEL", "WHALE", "STORY"], minScore: 30 },
+            { id: 8, level: 8, words: ["MAY", "THE", "FORCE", "BE", "WITH", "YOU"], minScore: 25 },
+            { id: 9, level: 9, words: ["BEST", "WORST", "TIMES", "WAS", "CITIES", "TALE"], minScore: 40 },
+            { id: 10, level: 10, words: ["BREAKFAST", "LUNCH", "BRUNCH", "SMOKE", "FOG", "SMOG"], minScore: 40 },
+            { id: 11, level: 11, words: ["PARADE", "DRAPES", "SPAR", "READ"], minScore: 35 },
+            { id: 12, level: 12, words: ["STRESSED", "DESSERTS", "RECALL", "LACKER"], minScore: 45 },
+            { id: 13, level: 13, words: ["CENTRAL", "LETTER", "WORDS", "AXIS"], minScore: 30 },
+            { id: 14, level: 14, words: ["ROPE", "OLIVE", "PIECES", "EVES", "CORE"], minScore: 50 }
+        ];
 
-        // --- Game State & Settings ---
-
-        let players = []; // Includes { id, name, hand, lives: 3 }
-        let deck = [];
-        let discardPile = []; // New pile for played cards
-        let currentTrick = []; // { playerId: id, card: 'KS', playerName: name }
-        let currentPlayerIndex = 0;
-        let gameState = 'setup'; // 'setup', 'handoff', 'play', 'resolution', 'reveal', 'options'
+        // Global State
+        let grid = [];
+        let score = 0;
+        let wordsToPlace = [];
+        let currentWord = '';
+        let gameState = 'selecting_start'; // 'selecting_start', 'selecting_direction', 'game_over', 'level_success'
+        let currentLevelIndex = 0; // Index into the current LEVELS array
+        let minScoreTarget = 0;
         
-        // Stores the last consequence for the header share button
-        let lastShareText = "Welcome to Majorcan Highs! Let's see who can survive the consequences. Play the game here: [GAME_LINK_GOES_HERE]"; 
+        // This array will hold the level(s) currently being played.
+        // It could be all 14 Free Play levels, a single Daily level, or a single Custom level.
+        let LEVELS = [...FREE_PLAY_LEVELS]; 
+        let gameMode = 'free_play'; // 'free_play', 'daily_challenge', 'custom'
 
-        let gameSettings = {
-            startingLives: 3, 
-            leadingSuitTrumps: true, 
-            consequencesType: 'Fatal Consequences', // Renamed for tone
-            handSize: 3, // New fixed hand size
-        };
+        let startPos = null;
+        let endPos = null;
+        let calculatedDirection = null;
+        let placementResult = null;
+        let placementHistory = [];
 
-        // Consequences data structure
-        let CONSEQUENCES = {}; 
+        // --- DOM Elements ---
+        const mainGameView = document.getElementById('main-game-view');
+        const aboutView = document.getElementById('about-view');
+        const settingsView = document.getElementById('settings-view');
+
+        const gridContainer = document.getElementById('game-grid');
+        const scoreDisplay = document.getElementById('score');
+        const messageBox = document.getElementById('main-status-display'); 
         
-        // CONSEQUENCE TEXTS ARE NOW GRAMMATICALLY CORRECT TO FLOW AFTER "Player Name..."
-        const FATAL_CONSEQUENCES = {
-            'A': "stumbles over their own two feet while attempting to tie their shoes and falls into a tiny sinkhole leading directly to a badger's tea party.",
-            '2': "is mistaken for a runaway garden gnome by a precision drone strike.",
-            '3': "is swallowed whole by a very bored but highly determined house cat.",
-            '4': "accidentally orders 400 lbs of mayonnaise instead of coffee and drowns in the resulting creamy avalanche.",
-            '5': "wins a lottery but the celebratory confetti gun misfires, lodging a piece of glitter directly into their brain.",
-            '6': "watches their sock puppet achieve sentience and insists on wearing them as a hand-hat until they suffocate from lack of style.",
-            '7': "tries to fix a leaky faucet but ends up summoning a vengeful water spirit who washes them away to the dimension of damp socks.",
-            '8': "gets hit by a rogue coconut, even though they are indoors in a desert.",
-            '9': "dies of embarrassment after realizing they've spent all day talking to a mannequin they thought was a cool new friend.",
-            '10': "is engulfed by a rogue wave of Majorcan Highs cocktails that washes them out to sea, only to be pecked to death by synchronized seagulls.",
-            'J': "gets fatally entangled in a very enthusiastic game of Twister being played by professional acrobats.",
-            'Q': "meticulously crafted, artisanal crouton.",
-            'K': "is judged by a flock of pigeons for having 'too much main character energy' and is subsequently dive-bombed by bird droppings until they lose consciousness and fall off a small stool."
-        };
+        // Navigation Buttons
+        const aboutBtn = document.getElementById('about-btn'); 
+        const aboutBtnMobile = document.getElementById('about-btn-mobile');
+        const settingsBtn = document.getElementById('settings-btn'); 
         
-        const MILD_INCONVENIENCES = {
-            'A': "has to wear their shirt backwards for the next 24 hours.",
-            '2': "must refer to all body parts by the wrong name for one hour.",
-            '3': "has to eat a spoonful of plain mustard.",
-            '4': "must wear their shoes on the wrong feet for the next hour.",
-            '5': "must use only thumbs to text for the next 30 minutes.",
-            '6': "has to call a random contact and speak entirely in rhyming couplets.",
-            '7': "must refer to themselves in the third person for the rest of the game.",
-            '8': "has to post an extremely awkward photo of themselves on social media (private story allowed).",
-            '9': "must do 10 push-ups right now.",
-            '10': "has to whisper all their communication until the next hand is dealt.",
-            'J': "must surrender their phone to another player for 5 minutes.",
-            'Q': "must eat any single food item determined by the winner of the next trick.",
-            'K': "has to switch seats with another player who must then point and laugh at them for 1 minute."
-        };
-
-        // Initialize consequences with the default fatal deaths
-        function initializeConsequences() {
-             CONSEQUENCES = FATAL_CONSEQUENCES;
-        }
+        const currentLevelDisplay = document.getElementById('current-level');
+        const targetScoreDisplay = document.getElementById('target-score');
+        const wordListContainer = document.getElementById('word-list-container');
         
-        // --- Deck and Card Management ---
+        // Controls
+        const standardControls = document.getElementById('standard-controls');
+        const undoBtn = document.getElementById('undo-btn');
+        const dailyChallengeBtn = document.getElementById('daily-challenge-btn'); 
+        
+        const gameOverFailure = document.getElementById('game-over-failure');
+        const tryAgainBtn = document.getElementById('try-again-btn');
+        const shareFailureBtn = document.getElementById('share-failure-btn');
+        
+        const levelSuccessControls = document.getElementById('level-success-controls');
+        const shareSuccessBtn = document.getElementById('share-success-btn');
+        const nextLevelBtn = document.getElementById('next-level-btn'); // Will become "Go to Free Play" in daily mode
+        
+        // Settings View Elements
+        const backFromAboutBtn = document.getElementById('back-from-about-btn');
+        const backFromSettingsBtn = document.getElementById('back-from-settings-btn');
+        const levelSelect = document.getElementById('level-select');
+        const levelWordsInput = document.getElementById('level-words');
+        const minScoreInput = document.getElementById('min-score');
+        const addLevelBtn = document.getElementById('add-level-btn'); 
+        const saveLevelBtn = document.getElementById('save-level-btn');
+        const startLevelBtn = document.getElementById('start-level-btn');
+        const debugMessage = document.getElementById('debug-message');
+        const generateUrlBtn = document.getElementById('generate-url-btn'); 
 
-        /**
-         * Creates a full deck of 52 cards and shuffles it.
-         * @returns {string[]} The shuffled deck.
-         */
-        function createAndShuffleDeck() {
-            let newDeck = [];
-            for (const suit of SUITS) {
-                for (const rank of RANKS) {
-                    newDeck.push(rank + suit);
-                }
+
+        // --- Navigation Function ---
+
+        /** Switches the currently visible view. */
+        function navigateTo(viewId) {
+            const views = [mainGameView, aboutView, settingsView];
+            views.forEach(view => view.classList.add('hidden'));
+
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.classList.remove('hidden');
             }
-            // Fisher-Yates shuffle
-            for (let i = newDeck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
-            }
-            return newDeck;
-        }
-        
-        /**
-         * Reshuffles the discard pile back into the deck.
-         */
-        function reshuffleDeck() {
-            if (discardPile.length > 0) {
-                deck = discardPile;
-                discardPile = []; // Clear discard pile
-                // Fisher-Yates shuffle
-                for (let i = deck.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [deck[i], deck[j]] = [deck[j], deck[i]];
-                }
-                console.log('Deck reshuffled with discard pile. New size:', deck.length);
+            
+            // Special initialization for settings view
+            if (viewId === 'settings-view') {
+                openSettingsScreen();
             }
         }
-        
-        /**
-         * Draws one card from the deck, reshuffling if necessary.
-         * @returns {string | null} The drawn card or null if deck is empty.
-         */
-        function drawCard() {
-            if (deck.length === 0) {
-                reshuffleDeck();
-            }
-            return deck.pop() || null;
-        }
+
 
         // --- Utility Functions ---
-
-        /**
-         * Extracts the rank from a card string.
-         * @param {string} card e.g., 'KH'
-         * @returns {string} e.g., 'K'
-         */
-        function getRank(card) {
-            return card.slice(0, -1);
-        }
-
-        /**
-         * Parses a card string into rank and suit.
-         * @param {string} card e.g., 'KH'
-         * @returns {{rank: string, suit: string, value: number, colorClass: string}}
-         */
-        function parseCard(card) {
-            const rank = getRank(card);
-            const suit = card.slice(-1);
-            const value = RANK_VALUE[rank];
-            const colorClass = (suit === 'H' || suit === 'D') ? 'text-red' : 'text-black';
-            return { rank, suit, value, colorClass };
-        }
-
-        /**
-         * Shares the consequence via the Web Share API or copies text.
-         * @param {string} shareText The text to share.
-         */
-        function shareConsequence(shareText) {
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Majorcan Highs Consequence!',
-                    text: shareText
-                }).catch(error => console.error('Error sharing:', error));
-            } else {
-                // Fallback for non-supporting browsers (using execCommand for iframe compatibility)
-                const tempInput = document.createElement('textarea');
-                tempInput.value = shareText;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
+        
+        /** Displays a temporary message in the main status display. */
+        function showMessage(message) {
+            if (messageBox) {
+                // Remove any pre-existing text color classes for general messages
+                messageBox.classList.remove('text-red-600', 'text-green-600', 'font-bold'); 
                 
-                // Show a temporary message
-                const actionButton = document.getElementById('share-button') || document.querySelector('[title="Share Last Consequence"]');
-                const originalText = actionButton.innerHTML;
-                actionButton.innerHTML = '✅ Copied!';
+                // Use innerHTML to allow for simple inline formatting (like **bold** or <span class="text-green-600">)
+                messageBox.innerHTML = message;
+            } else {
+                console.error("Message box element (main-status-display) not found.");
+            }
+        }
+
+        /** Utility function to wrap coordinates (for toroidal grid). */
+        function wrapCoord(coord) {
+            const size = GRID_SIZE;
+            return (coord % size + size) % size;
+        }
+
+        /** Calculates the wrapped direction component (-1, 0, or 1) for a single axis. */
+        function getWrappedDirectionComponent(rawDiff) {
+            const N = GRID_SIZE;
+            
+            if (rawDiff >= -1 && rawDiff <= 1) return rawDiff;
+            
+            if (rawDiff === (N - 1)) return -1;
+            if (rawDiff === -(N - 1)) return 1; 
+            
+            return null;
+        }
+        
+        /** Deterministically gets a level index from FREE_PLAY_LEVELS based on the day of the year. */
+        function getDailyLevelIndex() {
+            const today = new Date();
+            // Get day of the year (1 to 366)
+            const start = new Date(today.getFullYear(), 0, 1);
+            const diff = today - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            const dayOfYear = Math.floor(diff / oneDay);
+
+            // Use modulo to cycle through the available free play levels
+            return dayOfYear % FREE_PLAY_LEVELS.length;
+        }
+
+        /** Parses URL parameters for custom level data (target score & words). 
+         * If found and valid, it sets up the LEVELS array for custom mode.
+         * @returns {boolean} True if a custom level was loaded.
+         */
+        function loadCustomLevelFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const urlTarget = params.get('target');
+            const urlWords = params.get('words');
+
+            if (urlTarget && urlWords) {
+                const minScore = parseInt(urlTarget);
+                const wordList = urlWords.split(',')
+                    .map(w => decodeURIComponent(w).trim().toUpperCase())
+                    .filter(w => w.length > 0 && w.length <= GRID_SIZE);
+
+                if (isNaN(minScore) || minScore < 0 || wordList.length === 0) {
+                    console.error("Invalid custom level parameters found in URL. Loading default Free Play.");
+                    return false;
+                }
+
+                // Set up for custom mode
+                LEVELS = [{
+                    level: 'Custom', 
+                    words: wordList,
+                    minScore: minScore
+                }];
+                currentLevelIndex = 0;
+                gameMode = 'custom';
+                
                 setTimeout(() => {
-                    actionButton.innerHTML = originalText;
-                }, 2000);
+                    showMessage(`Loaded **Custom Challenge**! Target: ${minScore}. Words: ${wordList.join(', ')}. Play the challenge!`);
+                }, 100);
+
+                return true;
             }
-        }
-        
-        /**
-         * Global share function linked to the header button.
-         */
-        function globalShareLastConsequence() {
-            shareConsequence(lastShareText);
-            // Provide feedback on the header button
-            const shareButton = document.querySelector('[title="Share Last Consequence"]');
-            const originalTitle = shareButton.title;
-            const originalIcon = shareButton.innerHTML;
-            shareButton.innerHTML = '✅';
-            shareButton.title = 'Text Copied!';
-            setTimeout(() => {
-                shareButton.innerHTML = originalIcon;
-                shareButton.title = originalTitle;
-            }, 1500);
+            return false;
         }
 
-        // --- Modal Control Functions ---
-
-        function showRulesModal() {
-            // Update the rules content dynamically based on current settings
-            document.getElementById('rules-modal').querySelector('.max-w-lg').innerHTML = `
-                <h2 class="text-3xl font-extrabold text-emerald-800 mb-4 text-center">Majorcan Highs Rules</h2>
-
-                <div class="space-y-4 text-gray-700">
-                    <h3 class="text-xl font-bold text-emerald-600">Objective & Lives</h3>
-                    <p>Each player starts with **${gameSettings.startingLives} lives**. The last player standing wins the Majorcan Highs championship.</p>
-
-                    <h3 class="text-xl font-bold text-emerald-600">Gameplay (The Trick Cycle)</h3>
-                    <ul class="list-disc list-inside space-y-1 ml-4">
-                        <li>Each player starts with **${gameSettings.handSize} cards** and draws a replacement card immediately after playing.</li>
-                        <li>The deck is only **reshuffled** when the draw deck is empty.</li>
-                    </ul>
-                    
-                    <h3 class="text-xl font-bold text-emerald-600">Trick Winning (Determines Next Leader)</h3>
-                    <ul class="list-disc list-inside space-y-1 ml-4">
-                        <li><span class="font-bold">Highest Ranked Card Wins:</span> The player with the highest card (K is high, A is low) wins the trick and leads the next one.</li>
-                        <li><span class="font-bold">Leading Suit Rule (${gameSettings.leadingSuitTrumps ? 'ON' : 'OFF'}):</span> ${gameSettings.leadingSuitTrumps ? 'Only the highest card of the **leading suit** can win the trick. If no card of the leading suit is played, the highest card overall wins.' : 'The highest ranked card overall wins, regardless of suit.'}</li>
-                    </ul>
-
-                    <h3 class="text-xl font-bold text-red-600">Consequences (Determines Life Loss)</h3>
-                    <ul class="list-disc list-inside space-y-1 ml-4">
-                        <li>The player who plays the **single lowest card** (A is low) loses a life and faces a consequence.</li>
-                        <li>If two or more players tie for the lowest card, no one loses a life.</li>
-                    </ul>
-
-                    <h3 class="text-xl font-bold text-red-600 mt-6">${gameSettings.consequencesType} by Rank</h3>
-                    <p class="text-sm italic mb-2">The rank of the losing card determines the fate (The full sentence is: "[Player Name] [Consequence]"):</p>
-                    <div id="rules-consequences-list" class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        ${RANKS.map(rank =>
-                            `<div class="font-medium">**${rank}**:</div><div>${CONSEQUENCES[rank]}</div>`
-                        ).join('')}
-                    </div>
-                </div>
-
-                <div class="mt-8 flex justify-center">
-                    <button onclick="hideRulesModal()" class="px-6 py-3 bg-red-500 text-white font-bold rounded-lg shadow-lg hover:bg-red-600 transition duration-150 transform hover:scale-105">
-                        Close Rules
-                    </button>
-                </div>
-            `;
-            document.getElementById('rules-modal').classList.remove('hidden');
+        /** Helper function to copy link to clipboard (used in Settings view fallback). */
+        function copyLinkToClipboard(text, message) {
+            const el = document.createElement('textarea');
+            el.value = text;
+            el.setAttribute('readonly', '');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            displayDebugMessage(message, false);
         }
 
-        function hideRulesModal() {
-            document.getElementById('rules-modal').classList.add('hidden');
-        }
+        // --- Core Functions ---
 
-        function hideNoConsequenceModal() {
-            document.getElementById('no-consequence-modal').classList.add('hidden');
-        }
-
-
-        // --- UI Rendering Functions ---
-
-        /**
-         * Renders the current scores/lives of all active players.
-         * (Removed card count from score display per user request)
-         */
-        function renderScoreDisplay() {
-            const scoreDisplay = document.getElementById('score-display');
-            scoreDisplay.innerHTML = players.map(p => `
-                <div class="text-center p-2 rounded-lg ${p.lives <= 0 ? 'bg-red-200 line-through' : 'bg-emerald-100'}">
-                    <span class="font-extrabold text-emerald-900">${p.name}:</span>
-                    <span class="text-xl font-bold text-red-600">${'❤️'.repeat(Math.max(0, p.lives))}</span>
-                </div>
-            `).join('');
-        }
-        
-        function renderOptionsScreen() {
-            gameState = 'options';
-            const screen = document.getElementById('screen-container');
-
-            screen.innerHTML = `
-                <h2 class="text-3xl font-bold text-emerald-800 mb-6 text-center">Game Options</h2>
-                <div class="space-y-6">
-                    <!-- General Settings -->
-                    <div class="bg-gray-50 p-4 rounded-lg shadow-md border-b-2 border-emerald-300">
-                        <h3 class="text-xl font-bold text-emerald-600 mb-3">General Rules</h3>
-                        
-                        <label class="block mb-4">
-                            <span class="text-gray-700 font-semibold">Starting Lives per Player:</span>
-                            <input type="number" id="starting-lives" min="1" value="${gameSettings.startingLives}" 
-                                   onchange="updateSetting('startingLives', parseInt(this.value))"
-                                   class="mt-1 p-2 w-full border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
-                        </label>
-
-                        <div class="flex items-center justify-between p-2 mb-4 bg-white rounded-lg border">
-                            <span class="text-gray-700 font-semibold">Hand Size (Fixed at 3 for this game mode):</span>
-                            <span class="font-bold text-lg text-emerald-600">3</span>
-                        </div>
-
-
-                        <div class="flex items-center justify-between p-2 bg-white rounded-lg border">
-                            <span class="text-gray-700 font-semibold">Leading Suit Trumps:</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="leading-suit-trumps" ${gameSettings.leadingSuitTrumps ? 'checked' : ''} 
-                                       onchange="updateSetting('leadingSuitTrumps', this.checked)" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                                <span class="ms-3 text-sm font-medium text-gray-900">${gameSettings.leadingSuitTrumps ? 'ON' : 'OFF'}</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- Consequences Editor -->
-                    <div class="bg-gray-50 p-4 rounded-lg shadow-md border-b-2 border-red-300">
-                        <h3 class="text-xl font-bold text-red-600 mb-3">Consequences Settings</h3>
-
-                        <div class="flex items-center justify-between p-2 mb-4 bg-white rounded-lg border">
-                            <span class="text-gray-700 font-semibold">Consequence Type:</span>
-                            <select id="consequences-type" onchange="updateConsequencesType(this.value)" class="p-2 border-2 border-gray-300 rounded-lg focus:border-red-500 focus:ring-red-500">
-                                <option value="Fatal Consequences" ${gameSettings.consequencesType === 'Fatal Consequences' ? 'selected' : ''}>Fatal Consequences</option>
-                                <option value="Mild Inconveniences" ${gameSettings.consequencesType === 'Mild Inconveniences' ? 'selected' : ''}>Mild Inconveniences</option>
-                            </select>
-                        </div>
-                        
-                        <p class="text-sm text-gray-600 mb-3 font-medium">Click on any rank to edit the consequence message (current deck size: ${deck.length}, discard: ${discardPile.length}):</p>
-                        <div id="consequences-editor" class="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-2">
-                            ${RANKS.map(rank => `
-                                <div class="flex items-center p-2 bg-white border rounded-lg cursor-pointer hover:bg-yellow-50 transition duration-100" 
-                                     onclick="editConsequence('${rank}')">
-                                    <span class="font-extrabold text-lg text-red-500 mr-2">${rank}:</span>
-                                    <span id="consequence-text-${rank}" class="text-sm truncate">${CONSEQUENCES[rank]}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-
-                    <button onclick="renderSetupScreen()" class="w-full px-6 py-3 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
-                        Back to Setup
-                    </button>
-                </div>
-            `;
-        }
-        
-        function updateSetting(key, value) {
-            if (key === 'startingLives' && value < 1) {
-                value = 1;
-                document.getElementById('starting-lives').value = 1;
+        /** Initializes the game state and UI for a specific mode. */
+        function initGame(mode = 'free_play', startLevelIndex = 0) {
+            // 1. Check for custom level in URL (Highest priority, only on initial load)
+            if (window.location.search.includes('target=') && window.location.search.includes('words=') && LEVELS.length !== 1) {
+                if (loadCustomLevelFromURL()) {
+                    // Custom level loaded, gameMode is set to 'custom' and LEVELS is set.
+                }
             }
-            gameSettings[key] = value;
-            // Re-render the options screen to update any visual toggles (like ON/OFF text)
-            if (gameState === 'options') {
-                renderOptionsScreen();
-            }
-        }
-        
-        function updateConsequencesType(type) {
-            gameSettings.consequencesType = type;
-            // Load the appropriate set for editing/display
-            CONSEQUENCES = (type === 'Fatal Consequences') ? FATAL_CONSEQUENCES : MILD_INCONVENIENCES;
-            renderOptionsScreen(); // Re-render to show new editable text
-        }
-
-        function editConsequence(rank) {
-            const currentText = CONSEQUENCES[rank];
-            const newText = prompt(`Edit consequence for rank ${rank} (${gameSettings.consequencesType}). This phrase must grammatically follow "Player Name...":`, currentText);
             
-            if (newText !== null && newText.trim() !== '') {
-                CONSEQUENCES[rank] = newText.trim();
-                document.getElementById(`consequence-text-${rank}`).textContent = newText.trim();
-            }
-        }
-
-        /**
-         * Renders a single card element.
-         */
-        function renderCard(cardString, isPlayable = false, type = 'face') {
-            if (type === 'back') {
-                const deckInfo = (deck.length > 0) ? `${deck.length} Left` : 'RESHUFFLE!';
-                return `
-                    <div class="card card-back flex items-center justify-center p-2">
-                        <span class="text-3xl transform rotate-12">🌴</span>
-                        <span class="text-sm font-light uppercase">${deckInfo}</span>
-                    </div>
-                `;
-            }
-
-            const { rank, suit, colorClass } = parseCard(cardString);
-            const symbol = SUIT_SYMBOLS[suit];
-            const playableClass = isPlayable ? 'card-playable bg-yellow-50 shadow-md cursor-pointer' : 'opacity-80';
-
-            return `
-                <div onclick="${isPlayable ? `handleCardPlay('${cardString}')` : ''}"
-                     class="card ${playableClass} ${colorClass} transition duration-150 ease-in-out">
-                    <span class="text-xl self-start leading-none">${rank}</span>
-                    <span class="text-4xl sm:text-5xl leading-none">${symbol}</span>
-                    <span class="text-xl self-end leading-none transform rotate-180">${rank}</span>
-                </div>
-            `;
-        }
-
-        function renderSetupScreen() {
-            gameState = 'setup';
-            const screen = document.getElementById('screen-container');
-            document.getElementById('score-display').innerHTML = ''; // Clear scores on setup
-
-            screen.innerHTML = `
-                <div class="text-center space-y-6">
-                    <p class="text-lg text-gray-600">Each player starts with **${gameSettings.handSize} cards** and draws a replacement immediately after playing. Starting lives: **${gameSettings.startingLives}**.</p>
-                    <div id="player-inputs" class="space-y-4">
-                        <input type="text" id="player-1" value="Maria" placeholder="Player 1 Name (Mandatory)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
-                        <input type="text" id="player-2" value="Carlos" placeholder="Player 2 Name (Mandatory)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
-                        <input type="text" id="player-3" placeholder="Player 3 Name (Optional)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
-                        <input type="text" id="player-4" placeholder="Player 4 Name (Optional)" class="p-3 w-full border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
-                    </div>
-                    <button onclick="startGame()" class="w-full px-6 py-3 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
-                        Start Game!
-                    </button>
-                    <p id="setup-error" class="text-red-500 font-semibold mt-4 hidden"></p>
-                </div>
-            `;
-        }
-
-        function renderHandOffScreen() {
-            gameState = 'handoff';
-            const activePlayers = players.filter(p => p.lives > 0);
-            
-            // Check if game is over (no one left, or only one winner)
-            if (activePlayers.length <= 1) {
-                renderFinalMessage(activePlayers.length === 1 ? 
-                    `${activePlayers[0].name} is the MAJORCAN HIGH WINNER!` : 
-                    "The game ended in a draw (all players eliminated simultaneously).");
-                return;
-            }
-
-            // Ensure the current player index points to an active player
-            let activePlayerFound = false;
-            let originalIndex = currentPlayerIndex;
-            
-            for (let i = 0; i < players.length; i++) {
-                let nextIndex = (originalIndex + i) % players.length;
-                if (players[nextIndex].lives > 0) {
-                    currentPlayerIndex = nextIndex;
-                    activePlayerFound = true;
-                    break;
+            if (gameMode !== 'custom') {
+                gameMode = mode;
+                if (mode === 'daily_challenge') {
+                    const dailyIndex = getDailyLevelIndex();
+                    // LEVELS will contain only the daily level
+                    LEVELS = [FREE_PLAY_LEVELS[dailyIndex]];
+                    currentLevelIndex = 0;
+                } else {
+                    // Set up for Free Play (all levels)
+                    LEVELS = [...FREE_PLAY_LEVELS];
+                    currentLevelIndex = startLevelIndex;
                 }
             }
 
-            if (!activePlayerFound) {
-                 renderFinalMessage("An error occurred: No active players found.");
+            // Continue initialization
+            grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(''));
+            score = 0; 
+            
+            loadLevel(currentLevelIndex);
+            gameState = 'selecting_start';
+            placementHistory = [];
+            renderGrid(); 
+            renderUI();
+            updateUndoButtonState();
+            navigateTo('main-game-view'); 
+            
+            if (gameMode === 'free_play') {
+                 showMessage('Welcome! **Select a word** from the list above to begin placement, or try the Daily Challenge!');
+            } else if (gameMode === 'daily_challenge') {
+                 showMessage('Starting the **Level A Day** challenge! Achieve the target score to win.');
+            } else if (gameMode === 'custom') {
+                 // Message already handled by loadCustomLevelFromURL
+            } else {
+                 showMessage('Game Ready. Select a word to start!');
+            }
+        }
+        
+        /** Starts the Daily Challenge mode. */
+        function startDailyChallenge() {
+            initGame('daily_challenge');
+        }
+        
+        /** Switches the game to Free Play mode starting at Level 1. */
+        function goToFreePlay() {
+            initGame('free_play', 0);
+            showMessage(`Welcome back to **Free Play** mode! Select a word to start Level 1.`);
+        }
+
+        
+        /** Loads the words and target score for a specific level. */
+        function loadLevel(index) {
+            if (index >= LEVELS.length) {
+                gameState = 'game_over';
+                showMessage(`You have completed all levels! Final Score: ${score}`);
+                return;
+            }
+            
+            const levelData = LEVELS[index];
+            minScoreTarget = levelData.minScore;
+            
+            // Always reset the grid when loading a new level configuration
+            grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(''));
+            
+            wordsToPlace = [...levelData.words].sort(() => 0.5 - Math.random());
+            currentWord = '';
+        }
+        
+        /** Renders the list of words available for placement, making them clickable. */
+        function renderWordList() {
+            wordListContainer.innerHTML = '';
+
+            wordsToPlace.forEach(word => {
+                const btn = document.createElement('button');
+                btn.textContent = word;
+                btn.classList.add('word-btn');
+
+                if (word === currentWord) {
+                    btn.classList.add('word-btn-selected');
+                } else {
+                    btn.classList.add('word-btn-default');
+                    btn.addEventListener('click', () => selectWord(word));
+                }
+
+                wordListContainer.appendChild(btn);
+            });
+        }
+        
+        /** Selects a word for placement. */
+        function selectWord(word) {
+            startPos = null;
+            endPos = null;
+            calculatedDirection = null;
+            placementResult = null;
+
+            currentWord = word;
+            gameState = 'selecting_start';
+            showMessage(`Word **${currentWord}** selected. **Step 1:** Click any cell on the grid to choose the starting position.`);
+            
+            renderGrid();
+            renderUI();
+        }
+
+        /** Renders the current state of the grid. */
+        function renderGrid() {
+            gridContainer.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell flex items-center justify-center rounded-sm';
+                    cell.id = `cell-${r}-${c}`;
+                    cell.textContent = grid[r][c];
+
+                    if (grid[r][c]) {
+                        cell.classList.add('filled-cell');
+                    } else {
+                        cell.classList.remove('filled-cell');
+                    }
+
+                    if (gameState !== 'level_success' && gameState !== 'game_over') {
+                        // Highlight placement based on game state
+                        if (startPos && startPos.r === r && startPos.c === c) {
+                            cell.classList.add('start-cell');
+                        } else if (gameState === 'selecting_direction' && startPos) {
+                            const drRaw = r - startPos.r;
+                            const dcRaw = c - startPos.c;
+                            const dr = getWrappedDirectionComponent(drRaw);
+                            const dc = getWrappedDirectionComponent(dcRaw);
+
+                            const isDirectionValid = dr !== null && dc !== null && (dr === 0 || dc === 0) && (dr !== 0 || dc !== 0);
+
+                            if (isDirectionValid) {
+                                 cell.classList.add('possible-cell');
+                            }
+                        }
+                    }
+
+                    cell.addEventListener('click', () => handleCellClick(r, c));
+                    gridContainer.appendChild(cell);
+                }
+            }
+        }
+
+        /** Updates non-grid UI elements and controls based on game state. */
+        function renderUI() {
+            scoreDisplay.textContent = score;
+
+            const currentLevelData = LEVELS[currentLevelIndex];
+            
+            if (currentLevelData) {
+                const levelDisplay = gameMode === 'daily_challenge' ? 'Daily' : (gameMode === 'custom' ? 'Custom' : currentLevelData.level);
+                currentLevelDisplay.textContent = levelDisplay;
+                targetScoreDisplay.textContent = currentLevelData.minScore;
+            } else {
+                 currentLevelDisplay.textContent = 'MAX';
+                 targetScoreDisplay.textContent = '---';
+            }
+
+            renderWordList();
+
+            // Control Visibility Logic
+            gameOverFailure.classList.add('hidden');
+            levelSuccessControls.classList.add('hidden');
+            standardControls.classList.add('hidden');
+            dailyChallengeBtn.classList.add('hidden');
+
+            if (gameState === 'selecting_start' || gameState === 'selecting_direction') {
+                standardControls.classList.remove('hidden');
+                if (gameMode === 'free_play') {
+                    dailyChallengeBtn.classList.remove('hidden');
+                }
+            } else if (gameState === 'level_success') {
+                levelSuccessControls.classList.remove('hidden');
+                if (gameMode === 'daily_challenge' || gameMode === 'custom') {
+                    nextLevelBtn.textContent = 'Go to Free Play';
+                    nextLevelBtn.removeEventListener('click', goToNextLevel);
+                    nextLevelBtn.addEventListener('click', goToFreePlay);
+                } else {
+                    nextLevelBtn.textContent = 'Next Level';
+                    nextLevelBtn.removeEventListener('click', goToFreePlay);
+                    nextLevelBtn.addEventListener('click', goToNextLevel);
+                }
+            } else if (gameState === 'game_over') { 
+                gameOverFailure.classList.remove('hidden');
+
+                const isFinalVictory = currentLevelIndex >= LEVELS.length;
+
+                if (isFinalVictory && gameMode === 'free_play') {
+                    tryAgainBtn.textContent = "Start New Game";
+                } else if (gameMode === 'daily_challenge' || gameMode === 'custom') {
+                    tryAgainBtn.textContent = "Try Free Play";
+                    tryAgainBtn.removeEventListener('click', initGame);
+                    tryAgainBtn.addEventListener('click', goToFreePlay);
+                } else {
+                    tryAgainBtn.textContent = "Try Again";
+                    tryAgainBtn.removeEventListener('click', goToFreePlay);
+                    tryAgainBtn.addEventListener('click', initGame);
+                }
+            }
+            
+            updateUndoButtonState();
+        }
+        
+        /** Updates the disabled state of the Undo button based on history. */
+        function updateUndoButtonState() {
+            const canUndoStep = startPos !== null; // Can undo if a start position is set
+            const canUndoWord = placementHistory.length > 0; // Can undo a word if history exists
+            undoBtn.disabled = !(canUndoStep || canUndoWord);
+        }
+
+        /**
+         * Checks if a word placement is valid and calculates the score.
+         * @returns {object} { isValid: boolean, totalScore: number, overlapCount: number, placements: array }
+         */
+        function checkPlacement(word, startR, startC, direction) {
+            const length = word.length;
+            const [dr, dc] = direction;
+            let isValid = true; 
+            let overlapCount = 0;
+            let totalScore = 0;
+            const placements = [];
+
+            for (let i = 0; i < length; i++) {
+                const rRaw = startR + i * dr;
+                const cRaw = startC + i * dc;
+
+                const r = wrapCoord(rRaw);
+                const c = wrapCoord(cRaw);
+                
+                const letter = word[i];
+                const existingLetter = grid[r][c] || '';
+
+                let isOverlap = false;
+                if (existingLetter) {
+                    if (existingLetter === letter) {
+                        isOverlap = true;
+                        overlapCount++;
+                        totalScore += OVERLAP_BONUS;
+                    }
+                } else {
+                    totalScore += BASE_SCORE_PER_LETTER; 
+                }
+
+                placements.push({ r, c, letter, isOverlap });
+            }
+
+            return { isValid, totalScore, overlapCount, placements };
+        }
+
+        /** Checks if the level minimum score has been met and handles transitions. */
+        function checkLevelCompletion() {
+            const currentLevel = LEVELS[currentLevelIndex];
+            const levelName = currentLevel.level === 'Custom' ? 'Custom Challenge' : (gameMode === 'daily_challenge' ? 'Daily Level' : `Level ${currentLevel.level}`);
+            
+            if (score >= currentLevel.minScore) {
+                gameState = 'level_success';
+                showMessage(`${levelName} Passed! Score ${score} / Target ${currentLevel.minScore}. <span class="text-green-600 font-bold">CONGRATULATIONS!</span>`);
+            } else {
+                gameState = 'game_over';
+                showMessage(`<span class="text-red-600 font-bold">${levelName} Failed!</span> You scored ${score} but needed ${currentLevel.minScore}.`);
+            }
+        }
+
+
+        /** Updates the grid and score with the placed word. */
+        function placeWord() {
+            if (!placementResult || !placementResult.isValid) return;
+
+            // 1. SAVE STATE FOR UNDO
+            const savedGrid = grid.map(row => [...row]); 
+            const savedWordsToPlace = [...wordsToPlace]; 
+            const savedCurrentWord = currentWord;
+            const savedScore = score;
+            const savedGameMode = gameMode;
+            
+            placementHistory.push({
+                grid: savedGrid,
+                score: savedScore,
+                wordsToPlace: savedWordsToPlace,
+                currentWord: savedCurrentWord,
+                currentLevelIndex: currentLevelIndex,
+                gameMode: savedGameMode
+            });
+            
+            const placedScore = placementResult.totalScore; 
+
+            // 2. APPLY PLACEMENT
+            placementResult.placements.forEach(p => {
+                grid[p.r][p.c] = p.letter;
+            });
+
+            score += placedScore;
+
+            // 3. CHECK NEXT WORD / LEVEL COMPLETION
+            const placedWordIndex = wordsToPlace.indexOf(currentWord);
+            if (placedWordIndex > -1) {
+                wordsToPlace.splice(placedWordIndex, 1);
+            }
+            
+            currentWord = '';
+
+            if (wordsToPlace.length > 0) {
+                gameState = 'selecting_start';
+                startPos = null;
+                endPos = null;
+                calculatedDirection = null;
+                
+                showMessage(`**${savedCurrentWord}** placed! Score +${placedScore}. Now, **select your next word**.`); 
+                
+                placementResult = null;
+            } else {
+                checkLevelCompletion(); 
+            }
+
+            renderGrid();
+            renderUI();
+        }
+        
+        /** Reverts the game state to the state before the last successful word placement, or undoes the current step. */
+        function undoLastStep() {
+            // Case 1: Undo the current step (clear start position if one is selected)
+            if (gameState === 'selecting_direction' && startPos) {
+                startPos = null;
+                endPos = null;
+                calculatedDirection = null;
+                placementResult = null;
+                // If a word was selected, return to selecting_start, otherwise don't change state.
+                if (currentWord) {
+                    gameState = 'selecting_start';
+                    showMessage(`Step undone. Word **${currentWord}** still selected. Click any cell to choose a new starting position.`);
+                } else {
+                    showMessage(`Start position cleared. Select a word to begin.`);
+                }
+            } 
+            // Case 2: Undo the last successfully placed word
+            else if (placementHistory.length > 0) {
+                const lastState = placementHistory.pop();
+                
+                grid = lastState.grid;
+                score = lastState.score;
+                wordsToPlace = lastState.wordsToPlace;
+                currentWord = lastState.currentWord;
+                currentLevelIndex = lastState.currentLevelIndex;
+                gameMode = lastState.gameMode;
+                minScoreTarget = LEVELS[currentLevelIndex].minScore;
+                
+                startPos = null;
+                endPos = null;
+                calculatedDirection = null;
+                placementResult = null;
+                
+                gameState = 'selecting_start';
+                
+                const messageWord = currentWord ? currentWord : 'a word';
+                showMessage(`Word undo successful. Please **select ${messageWord}** to re-place.`);
+            } else {
+                 // Nothing to undo
                  return;
             }
 
-            const currentPlayer = players[currentPlayerIndex];
-            const screen = document.getElementById('screen-container');
-            screen.innerHTML = `
-                <div class="text-center space-y-8 p-8 bg-emerald-100 rounded-lg border-2 border-emerald-400">
-                    <h2 class="text-2xl sm:text-3xl font-bold text-emerald-800">Pass the Phone!</h2>
-                    <p class="text-4xl sm:text-5xl font-extrabold text-emerald-600 uppercase tracking-widest">${currentPlayer.name}</p>
-                    <p class="text-lg text-gray-700">It's your turn, ${currentPlayer.name}. Please confirm you are ready to play one of your ${currentPlayer.hand.length} cards.</p>
-                    <button onclick="renderPlayScreen()" class="w-full px-6 py-4 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
-                        View My Hand & Play
-                    </button>
-                    <p class="text-sm text-gray-500 mt-4">Other players: Turn away!</p>
-                </div>
-            `;
-        }
-
-        function renderPlayScreen() {
-            gameState = 'play';
-            const currentPlayer = players[currentPlayerIndex];
-            const screen = document.getElementById('screen-container');
-            const activePlayersCount = players.filter(p => p.lives > 0).length;
-
-            const toPlay = activePlayersCount - currentTrick.length;
-            const deckSize = deck.length;
-
-
-            screen.innerHTML = `
-                <h2 class="text-2xl font-bold text-emerald-700 mb-4 text-center">Trick In Progress</h2>
-                <div class="flex justify-between items-center mb-6 p-3 bg-emerald-50 rounded-lg border-b-2 border-emerald-200">
-                    <p class="text-lg font-semibold text-gray-700">Playing Now:</p>
-                    <p class="text-3xl font-extrabold text-emerald-800">${currentPlayer.name}</p>
-                </div>
-
-                <!-- Played Cards (Trick Pile) -->
-                <div class="mb-8 p-4 bg-gray-100 rounded-xl shadow-inner">
-                    <h3 class="text-xl font-bold text-gray-700 mb-3 text-center">The Trick Pile (${currentTrick.length}/${activePlayersCount})</h3>
-                    <p class="text-sm text-center text-gray-500 mb-3">Waiting for **${toPlay}** player${toPlay === 1 ? '' : 's'}.</p>
-                    <div id="trick-pile" class="flex justify-center space-x-2 h-32">
-                        ${currentTrick.map(trickItem => renderCard(trickItem.card)).join('')}
-                        ${Array(toPlay).fill(0).map(() => renderCard('', false, 'back')).join('')}
-                    </div>
-                </div>
-
-                <!-- Current Player's Hand -->
-                <div class="p-4 bg-emerald-200 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-bold text-emerald-800 mb-3 text-center">Your Hand (${currentPlayer.hand.length} cards)</h3>
-                    <p class="text-center text-sm text-emerald-800 mb-3 font-medium">Deck Size: ${deckSize} cards. Discard Pile: ${discardPile.length} cards.</p>
-                    <div class="flex justify-center space-x-2">
-                        ${currentPlayer.hand.map(card => renderCard(card, true)).join('')}
-                    </div>
-                    <p class="text-center text-sm text-emerald-800 mt-2 font-medium">Click a card to play it!</p>
-                </div>
-            `;
-        }
-        
-        // --- Game Logic Functions ---
-
-        /**
-         * Initializes the game state and deals the initial hands.
-         */
-        function startGame() {
-            const playerNames = [];
-            for (let i = 1; i <= 4; i++) {
-                const name = document.getElementById(`player-${i}`).value.trim();
-                if (name) {
-                    playerNames.push(name);
-                }
-            }
-
-            if (playerNames.length < 2) {
-                const error = document.getElementById('setup-error');
-                error.textContent = "Please enter names for at least two players.";
-                error.classList.remove('hidden');
-                return;
-            } else {
-                document.getElementById('setup-error').classList.add('hidden');
-            }
-
-            // Reset game state
-            players = playerNames.map((name) => ({
-                id: crypto.randomUUID(),
-                name: name,
-                hand: [],
-                lives: gameSettings.startingLives
-            }));
-            deck = createAndShuffleDeck();
-            discardPile = [];
-            currentTrick = [];
-            
-            // Randomly choose a player to lead the first trick
-            currentPlayerIndex = Math.floor(Math.random() * players.length);
-
-            dealInitialHands(gameSettings.handSize); 
-            renderScoreDisplay();
-            renderHandOffScreen();
+            renderGrid();
+            renderUI();
         }
 
         /**
-         * Deals the specified number of cards to each active player for initial setup.
+         * Handles sharing the score via the Web Share API with a clipboard fallback.
          */
-        function dealInitialHands(count) {
-            const activePlayers = players.filter(p => p.lives > 0);
+        async function shareScore() {
+            const levelType = gameMode === 'daily_challenge' ? 'Daily Challenge' : (gameMode === 'custom' ? 'Custom Challenge' : `Level ${LEVELS[currentLevelIndex].level}`);
+            const shareText = `I scored ${score} on the ${levelType} in Wordga. Can you beat my score?`;
             
-            for (let c = 0; c < count; c++) {
-                for (let p = 0; p < activePlayers.length; p++) {
-                    const playerIndex = players.findIndex(pl => pl.id === activePlayers[p].id);
-                    const newCard = drawCard();
-                    if (newCard) {
-                        players[playerIndex].hand.push(newCard);
+            // Use the current URL, which includes custom level parameters if present
+            const shareUrl = window.location.href; 
+
+            const shareData = {
+                title: 'Wordga Score Challenge!',
+                text: shareText,
+                url: shareUrl
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    showMessage(`Score successfully shared!`);
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        showMessage('Sharing <span class="text-yellow-600">cancelled</span> by user.');
+                    } else {
+                        console.error('Error sharing score:', error);
+                        // Fallback to clipboard if Web Share API fails for technical reasons
+                        const fallbackMessage = `${shareText} Play the game here: ${shareUrl}`;
+                        copyLinkToClipboard(fallbackMessage, `Sharing failed. Score message copied to clipboard!`);
                     }
                 }
-            }
-        }
-        
-        /**
-         * Gives the current player a replacement card if the deck is not empty.
-         */
-        function drawReplacementCard(playerId) {
-            const player = players.find(p => p.id === playerId);
-            if (player) {
-                const newCard = drawCard();
-                if (newCard) {
-                    player.hand.push(newCard);
-                    console.log(`${player.name} drew a replacement card: ${newCard}. Deck size: ${deck.length}`);
-                } else {
-                    console.log('Deck is empty, no card drawn.');
-                }
-            }
-        }
-
-        /**
-         * Handles the click event for playing a card.
-         * @param {string} card The card string (e.g., 'KH') that was played.
-         */
-        function handleCardPlay(card) {
-            if (gameState !== 'play') return;
-
-            const currentPlayer = players[currentPlayerIndex];
-
-            // 1. Remove card from hand
-            currentPlayer.hand = currentPlayer.hand.filter(c => c !== card);
-
-            // 2. Add card to the trick pile
-            currentTrick.push({ playerId: currentPlayer.id, card: card, playerName: currentPlayer.name });
-            
-            // 3. Draw a replacement card immediately
-            drawReplacementCard(currentPlayer.id);
-            renderScoreDisplay(); // Update score display to show new hand size
-
-            // 4. Check if all active players have played
-            const activePlayersCount = players.filter(p => p.lives > 0).length;
-            if (currentTrick.length === activePlayersCount) {
-                // Trick is complete, resolve immediately
-                resolveTrick();
             } else {
-                // 5. Advance to the next ACTIVE player
-                let nextPlayerIndex;
-                let foundNext = false;
-                
-                // Search for the next active player, wrapping around
-                for (let i = 1; i <= players.length; i++) {
-                    nextPlayerIndex = (currentPlayerIndex + i) % players.length;
-                    
-                    // Check if player is active AND hasn't played yet in this trick
-                    const hasPlayed = currentTrick.some(item => item.playerId === players[nextPlayerIndex].id);
-                    
-                    if (players[nextPlayerIndex].lives > 0 && !hasPlayed) { 
-                        currentPlayerIndex = nextPlayerIndex;
-                        foundNext = true;
-                        break;
-                    }
-                }
-
-                if(foundNext) {
-                    renderHandOffScreen();
-                } else {
-                    // This should only happen if all remaining players have played
-                    resolveTrick();
-                }
+                const fallbackMessage = `${shareText} Play the game here: ${shareUrl}`;
+                copyLinkToClipboard(fallbackMessage, `Web Share not supported. Score message copied to clipboard!`);
             }
         }
 
-        /**
-         * Determines the winner and loser (if unique) of the current trick.
-         */
-        function resolveTrick() {
-            gameState = 'resolution';
-            
-            // 1. Add trick cards to discard pile
-            currentTrick.forEach(item => discardPile.push(item.card));
 
-            // 2. Determine WINNER (Highest Card) to set who leads next trick
-            let winningCard = currentTrick[0];
-            
-            if (gameSettings.leadingSuitTrumps) {
-                const leadingCard = currentTrick[0];
-                const leadingSuit = parseCard(leadingCard.card).suit;
-
-                let leadingSuitCandidates = currentTrick.filter(item => parseCard(item.card).suit === leadingSuit);
-
-                if (leadingSuitCandidates.length > 0) {
-                    // Highest card of the leading suit wins.
-                    winningCard = leadingSuitCandidates.reduce((best, current) => 
-                        parseCard(current.card).value > parseCard(best.card).value ? current : best, leadingSuitCandidates[0]);
-                } else {
-                    // If nobody followed the leading suit, the highest overall card wins (as per the non-trumping rule)
-                    winningCard = currentTrick.reduce((best, current) => 
-                        parseCard(current.card).value > parseCard(best.card).value ? current : best, currentTrick[0]);
-                }
-            } else {
-                // Highest rank overall wins, regardless of suit.
-                winningCard = currentTrick.reduce((best, current) => 
-                    parseCard(current.card).value > parseCard(best.card).value ? current : best, currentTrick[0]);
-            }
-            
-            // 3. Find the losing card (lowest overall)
-            let losingCard = currentTrick.reduce((best, current) => 
-                parseCard(current.card).value < parseCard(best.card).value ? current : best, currentTrick[0]);
-            
-            // Check for Loser (Lowest Card) - Check if there's a tie for the lowest card.
-            const lowestValue = parseCard(losingCard.card).value;
-            const lowestPlayers = currentTrick.filter(item => parseCard(item.card).value === lowestValue);
-            
-            // Determine the unique loser
-            let loser = (lowestPlayers.length === 1) ? losingCard : null;
-            
-            // --- BUG FIX ---
-            // If the unique lowest card also won the trick, treat it as a tie to prioritize the win (no consequence applied).
-            if (loser && loser.playerId === winningCard.playerId) {
-                console.warn("BUG FIX APPLIED: Trick Winner was also unique Life Loser. Consequence is skipped (treated as a tie).");
-                loser = null; 
-            }
-            // ---------------
-
-            // 4. Set the winner of the trick to lead the next hand.
-            const winningPlayerIndex = players.findIndex(p => p.id === winningCard.playerId);
-            currentPlayerIndex = winningPlayerIndex;
-            
-            // 5. Clear trick for next round
-            currentTrick = []; 
-            
-            // Get the winner player object for the modal
-            const winnerPlayer = players.find(p => p.id === winningCard.playerId);
-
-            // 6. Go to consequence resolution
-            if (loser) {
-                resolveConsequence(loser.playerId, getRank(loser.card), winnerPlayer);
-            } else {
-                // No unique loser, no life lost.
-                showNoConsequenceModal(winnerPlayer);
-            }
-        }
-
-        /**
-         * Resolves the outcome of the trick, including life loss.
-         * @param {string} loserId ID of the player who lost the round.
-         * @param {string} rank Rank of the card that caused the loss.
-         * @param {Object} winnerPlayer The player object of the trick winner (next leader).
-         */
-        function resolveConsequence(loserId, rank, winnerPlayer) {
-            const loser = players.find(p => p.id === loserId);
-
-            if (loser) {
-                // Player loses a life
-                loser.lives -= 1;
-                
-                renderScoreDisplay(); // Update scores immediately
-                showDeathModal(loser, rank, winnerPlayer);
-            }
-        }
-        
-        /**
-         * Starts a new trick (new play cycle).
-         */
-        function startNextTrick() {
-            document.getElementById('death-modal').classList.add('hidden');
-            document.getElementById('no-consequence-modal').classList.add('hidden');
-            
-            // Check if only one player remains before continuing.
-            const remainingPlayers = players.filter(p => p.lives > 0);
-            if (remainingPlayers.length <= 1) {
-                if (remainingPlayers.length === 1) {
-                    renderFinalMessage(`${remainingPlayers[0].name} is the MAJORCAN HIGH WINNER!`);
-                } else {
-                    renderFinalMessage("The game ended with no winner (all players eliminated in the same final hand).");
-                }
+        /** Advances to the next level in Free Play or switches to Free Play from Daily/Custom. */
+        function goToNextLevel() {
+            if (gameMode === 'daily_challenge' || gameMode === 'custom') {
+                goToFreePlay();
                 return;
             }
 
-            renderHandOffScreen();
+            // Free Play Logic
+            if (currentLevelIndex + 1 >= LEVELS.length) {
+                currentLevelIndex++;
+                gameState = 'game_over';
+                showMessage(`Fantastic! You beat all Free Play levels! Final Score: ${score}`);
+            } else {
+                currentLevelIndex++;
+                score = 0; // Reset score for the new level
+                loadLevel(currentLevelIndex);
+                gameState = 'selecting_start';
+                placementHistory = [];
+                showMessage(`Starting Free Play Level ${LEVELS[currentLevelIndex].level}! Your new challenge begins now.`);
+            }
+            renderGrid();
+            renderUI();
         }
 
-        /**
-         * Displays the death/consequence modal for the player who lost the round.
-         * @param {Object} loserPlayer The player object of the loser.
-         * @param {string} rank The rank of the losing card.
-         * @param {Object} winnerPlayer The player object of the trick winner.
-         */
-        function showDeathModal(loserPlayer, rank, winnerPlayer) {
-            gameState = 'reveal';
-            const deathMessage = CONSEQUENCES[rank];
-            const consequenceType = gameSettings.consequencesType;
 
-            const remainingPlayers = players.filter(p => p.lives > 0);
-            let buttonText = '';
-            let buttonAction = '';
-            let shareText = '';
-            
-            // Find the winner of the trick (the player who leads next)
-            const winnerOfTrick = winnerPlayer; // Passed directly from resolveTrick
+        /** Handles the click on any grid cell, driving the state machine. */
+        function handleCellClick(r, c) {
+            if (gameState !== 'selecting_start' && gameState !== 'selecting_direction') return;
 
-            if (loserPlayer.lives <= 0) {
-                // Player is eliminated, check if game over
-                const gameWinner = remainingPlayers[0] || null;
-                const winnerName = gameWinner ? gameWinner.name : 'No one';
-                const statusVerb = (consequenceType === 'Fatal Consequences') ? 'met their tragic, final fate' : 'succumbed to a debilitating final inconvenience';
-
-                if (remainingPlayers.length <= 0) {
-                    // Draw (all players eliminated simultaneously)
-                    document.getElementById('death-modal-title').textContent = '💥 Game Over: Draw! 💥';
-                    document.getElementById('loser-name').textContent = `All players eliminated simultaneously!`;
-                    
-                    document.getElementById('death-consequence-text').innerHTML = `
-                        <p class="text-xl font-extrabold text-red-700 text-center mb-4">It's a Draw!</p>
-                        <p class="text-lg text-gray-800 leading-relaxed text-center">
-                            The final card (Rank ${rank}) caused a simultaneous elimination! No winner was declared.
-                        </p>
-                    `;
-                    buttonText = 'Start New Game';
-                    buttonAction = 'restartGame';
-                    shareText = `It's a draw in Majorcan Highs! All players eliminated at once!`;
-                } else {
-                    // Single winner remains 
-                    document.getElementById('death-modal-title').textContent = '👑 Game Over: Winner Declared 👑';
-                    document.getElementById('loser-name').textContent = `The Champion is ${winnerName}!`;
-                    
-                    document.getElementById('death-consequence-text').innerHTML = `
-                        <p class="text-2xl font-extrabold text-emerald-700 text-center mb-4">🏆 ${winnerName} WINS! 🏆</p>
-                        <p class="text-lg text-gray-800 leading-relaxed text-center">
-                            The game concluded when <span class="font-bold text-red-600">${loserPlayer.name}</span> (Losing Card: <span class="font-bold text-red-600">Rank ${rank}</span>) ${statusVerb} because they **${deathMessage}**.
-                        </p>
-                    `;
-                    buttonText = 'Start New Game';
-                    buttonAction = 'restartGame';
-                    shareText = `Game Over in Majorcan Highs! ${loserPlayer.name} was eliminated (Last Card: ${rank}) because they ${deathMessage}. This makes ${winnerName} the Majorcan High Winner! 🍹`;
+            if (gameState === 'selecting_start') {
+                if (!currentWord) {
+                     showMessage('Please **select a word** from the list above before choosing a starting cell.');
+                     return;
                 }
                 
-                // Set the last share text for the header button (with game link placeholder)
-                lastShareText = `${shareText} Play the trick-taking game Majorcan Highs here: [GAME_LINK_GOES_HERE]`;
-
-                // Hide the share button for final winner screen
-                document.getElementById('share-button-container').classList.add('hidden');
-
-            } else {
-                // Continue to next trick (Player loses a life but is not eliminated)
+                startPos = { r, c };
+                gameState = 'selecting_direction';
+                showMessage(`**Step 2:** Select an **adjacent cell** (H or V) to set the direction for the remaining letters of **${currentWord}**.`);
                 
-                // 1. Set title and card rank
-                document.getElementById('death-modal-title').textContent = (consequenceType === 'Fatal Consequences') ? '💀 Consequence Applied 💀' : '⚠️ Mild Inconvenience ⚠️';
+                renderGrid();
+                renderUI();
+                return;
+
+            } else if (gameState === 'selecting_direction') {
+                endPos = { r, c };
+
+                const drRaw = endPos.r - startPos.r;
+                const dcRaw = endPos.c - startPos.c;
+
+                const dr = getWrappedDirectionComponent(drRaw);
+                const dc = getWrappedDirectionComponent(dcRaw);
                 
-                document.getElementById('death-consequence-text').innerHTML = `
-                    <div class="space-y-4">
-                        <!-- Trick Winner (Highest Card) -->
-                        <div class="text-center p-2 rounded-lg bg-emerald-100 border border-emerald-300">
-                            <p class="text-xl font-bold text-emerald-700">
-                                Trick Winner (Highest Card): 
-                            </p>
-                            <p class="text-2xl font-extrabold text-emerald-900">${winnerOfTrick.name}</p>
-                        </div>
-                        
-                        <!-- Life Loser (Lowest Card) -->
-                        <div class="text-center p-2 rounded-lg bg-red-100 border border-red-300">
-                            <p class="text-xl font-bold text-red-700">
-                                Life Loser (Lowest Card: Rank ${rank}): 
-                            </p>
-                            <p class="text-2xl font-extrabold text-red-600">${loserPlayer.name}</p>
-                        </div>
-
-                        <!-- Consequence (Grammatically correct sentence: [Player Name] [Consequence]) -->
-                        <p class="text-lg italic text-gray-800 font-medium leading-relaxed text-center pt-2">
-                             <span class="font-semibold">${loserPlayer.name}</span> ${deathMessage}
-                        </p>
-
-                        <!-- Lives Remaining -->
-                        <p class="text-lg font-medium text-center text-gray-700 mt-4">
-                            Lives remaining: <span class="text-red-500 text-2xl font-extrabold">${'❤️'.repeat(loserPlayer.lives)}</span>
-                        </p>
-                    </div>
-                `;
-
-                buttonText = 'Start Next Trick';
-                buttonAction = 'startNextTrick';
+                const isDirectionValid = dr !== null && dc !== null && (dr === 0 || dc === 0) && (dr !== 0 || dc !== 0);
                 
-                // Prepare Share Text 
-                const status = (consequenceType === 'Fatal Consequences') ? 'lost a life' : 'suffered an inconvenience';
-                shareText = `In Majorcan Highs, ${loserPlayer.name} ${status} after they ${deathMessage} (Losing Card: ${rank}). ${winnerOfTrick.name} won the trick and leads next! 🍹`;
+                if (!isDirectionValid) {
+                    const errorMessage = 'Invalid direction! You must select a cell that is **immediately adjacent** (horizontally or vertically) to the start cell, including wrap-around.';
+                    showMessage(`<span class="text-red-600 font-bold">Placement Failed:</span> ${errorMessage}`);
+                    return;
+                }
+                
+                calculatedDirection = [dr, dc];
+                placementResult = checkPlacement(currentWord, startPos.r, startPos.c, [dr, dc]);
 
-                // Set the last share text for the header button (with game link placeholder)
-                lastShareText = `${shareText} Play the trick-taking game Majorcan Highs here: [GAME_LINK_GOES_HERE]`;
-
-                // Show the share button and set the action
-                document.getElementById('share-button-container').classList.remove('hidden');
-                // The modal's internal share button uses the global lastShareText which includes the game link placeholder
-                document.getElementById('share-button').onclick = () => shareConsequence(lastShareText);
+                // Auto-place word instead of going to review state
+                placeWord();
+                return;
+                
             }
-
-            document.getElementById('death-modal-action-button').textContent = buttonText;
-            document.getElementById('death-modal-action-button').onclick = window[buttonAction] || new Function(buttonAction);
-
-            document.getElementById('death-modal').classList.remove('hidden');
         }
 
-        /**
-         * Displays the modal when there is no unique loser.
-         * @param {Object} winnerPlayer The player object of the trick winner.
-         */
-        function showNoConsequenceModal(winnerPlayer) {
-            gameState = 'reveal';
-            
-            document.getElementById('no-consequence-modal').classList.remove('hidden');
-            
-            // Set the last share text to reflect a safe round
-            const shareText = `${winnerPlayer.name} won the trick in Majorcan Highs! A low card tie meant no one lost a life this round. Play the game here: [GAME_LINK_GOES_HERE]`;
-            lastShareText = shareText; // Update global share text
-            
-            document.getElementById('no-consequence-text').innerHTML = `
-                <p class="text-xl font-semibold text-gray-700 mb-6">
-                    A tie occurred for the lowest card, so everyone is safe this trick!
-                </p>
-                <p class="text-2xl font-extrabold text-emerald-700 mt-4">
-                    ${winnerPlayer.name} wins the trick and leads next!
-                </p>
-            `;
+
+        // --- Settings / Level Setting Functions ---
+        
+        function displayDebugMessage(message, isError) {
+             debugMessage.textContent = message;
+             debugMessage.classList.remove('hidden', 'text-red-500', 'text-green-500');
+             debugMessage.classList.add(isError ? 'text-red-500' : 'text-green-500');
         }
 
-        /**
-         * Renders the final message for the Majorcan High Winner.
-         */
-        function renderFinalMessage(message) {
-            const screen = document.getElementById('screen-container');
-            screen.innerHTML = `
-                <div class="text-center space-y-6 p-8 bg-emerald-100 rounded-lg border-2 border-emerald-400">
-                    <h2 class="text-3xl font-bold text-emerald-800">GAME OVER!</h2>
-                    <p class="text-4xl font-extrabold text-emerald-600">${message}</p>
-                    <button onclick="restartGame()" class="w-full px-6 py-3 bg-emerald-600 text-white font-bold text-xl rounded-lg shadow-xl hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
-                        Play Again
-                    </button>
-                </div>
-            `;
-             document.getElementById('score-display').innerHTML = '';
-             // Update global share for final win message
-             lastShareText = `${message} Play the trick-taking game Majorcan Highs here: [GAME_LINK_GOES_HERE]`;
+        function populateLevelSelector() {
+            // Use FREE_PLAY_LEVELS for the editor
+            levelSelect.innerHTML = '';
+            FREE_PLAY_LEVELS.sort((a, b) => a.level - b.level).forEach(levelData => {
+                const option = document.createElement('option');
+                option.value = levelData.level;
+                option.textContent = `Level ${levelData.level}`;
+                levelSelect.appendChild(option);
+            });
+        }
+
+        function loadLevelDataToEditor(levelNumber) {
+            // Use FREE_PLAY_LEVELS for the editor
+            const levelData = FREE_PLAY_LEVELS.find(l => l.level === parseInt(levelNumber));
+            if (levelData) {
+                levelWordsInput.value = levelData.words.join(', ');
+                minScoreInput.value = levelData.minScore;
+            } else {
+                levelWordsInput.value = '';
+                minScoreInput.value = '';
+            }
+            debugMessage.classList.add('hidden');
         }
         
-        /**
-         * Restarts the entire game.
-         */
-        function restartGame() {
-            document.getElementById('death-modal').classList.add('hidden');
-            document.getElementById('no-consequence-modal').classList.add('hidden');
-            // Reset player hands
-            players.forEach(p => p.hand = []);
-            renderSetupScreen();
+        function addNewLevel() {
+            const newLevelNumber = FREE_PLAY_LEVELS.length > 0 ? Math.max(...FREE_PLAY_LEVELS.map(l => l.level)) + 1 : 1;
+            
+            const newLevelData = {
+                level: newLevelNumber,
+                words: ["NEW", "LEVEL", "EDIT", "ME"],
+                minScore: 10,
+            };
+            
+            FREE_PLAY_LEVELS.push(newLevelData);
+            
+            populateLevelSelector();
+            
+            levelSelect.value = newLevelNumber;
+            loadLevelDataToEditor(newLevelNumber);
+            
+            displayDebugMessage(`New Level ${newLevelNumber} created. Edit the words/score and press 'Save Changes'.`, false);
         }
 
-        // --- Initialization ---
+        function saveLevelChanges(silent = false) {
+            const levelNumber = parseInt(levelSelect.value);
+            const levelIndex = FREE_PLAY_LEVELS.findIndex(l => l.level === levelNumber);
+            
+            if (levelIndex === -1) return;
 
-        // Start the application on the setup screen
-        window.onload = function() {
-            initializeConsequences();
-            renderSetupScreen();
-        };
+            const newWords = levelWordsInput.value.split(',')
+                .map(w => w.trim().toUpperCase())
+                .filter(w => w.length > 0 && w.length <= GRID_SIZE);
+            
+            const newMinScore = parseInt(minScoreInput.value);
 
-        // Expose functions globally for HTML event handlers
-        window.startGame = startGame;
-        window.renderPlayScreen = renderPlayScreen;
-        window.handleCardPlay = handleCardPlay;
-        window.restartGame = restartGame;
-        window.resolveConsequence = resolveConsequence;
-        window.startNextTrick = startNextTrick; 
-        window.showRulesModal = showRulesModal;
-        window.hideRulesModal = hideRulesModal;
-        window.renderOptionsScreen = renderOptionsScreen;
-        window.updateSetting = updateSetting;
-        window.updateConsequencesType = updateConsequencesType;
-        window.editConsequence = editConsequence;
-        window.hideNoConsequenceModal = hideNoConsequenceModal;
-        window.globalShareLastConsequence = globalShareLastConsequence;
+            if (newWords.length === 0) {
+                 if (!silent) displayDebugMessage("Error: Word list cannot be empty or words are too long (max 8 letters).", true);
+                 return;
+            }
+            if (isNaN(newMinScore) || newMinScore < 0) {
+                 if (!silent) displayDebugMessage("Error: Minimum score must be a non-negative number.", true);
+                 return;
+            }
+            
+            FREE_PLAY_LEVELS[levelIndex].words = newWords;
+            FREE_PLAY_LEVELS[levelIndex].minScore = newMinScore;
+            
+            if (!silent) {
+                displayDebugMessage(`Free Play Level ${levelNumber} updated successfully!`, false);
+            }
+            renderUI(); 
+        }
+
+        function startSelectedLevel() {
+            const levelNumber = parseInt(levelSelect.value);
+            const levelIndex = FREE_PLAY_LEVELS.findIndex(l => l.level === levelNumber);
+
+            if (levelIndex !== -1) {
+                saveLevelChanges(true); // Save changes silently before starting
+
+                // Start Free Play mode at the selected index
+                initGame('free_play', levelIndex);
+                showMessage(`Settings: Starting **Free Play** game at **Level ${levelNumber}** with target score **${FREE_PLAY_LEVELS[levelIndex].minScore}**.`);
+            }
+        }
+
+        function openSettingsScreen() {
+            populateLevelSelector();
+            
+            // Find the level index based on the current level number (for Free Play mode)
+            const currentLevelNumber = LEVELS.length > 0 ? LEVELS[currentLevelIndex].level : 1; 
+            const levelToLoad = FREE_PLAY_LEVELS.find(l => l.level === currentLevelNumber);
+            
+            if (FREE_PLAY_LEVELS.length === 0) {
+                addNewLevel();
+            } else {
+                 levelSelect.value = levelToLoad ? levelToLoad.level : FREE_PLAY_LEVELS[0].level; 
+                 loadLevelDataToEditor(levelSelect.value);
+            }
+        }
+        
+        /** Generates a shareable URL for the currently edited level, and attempts to share it. */
+        async function generateShareLink() {
+            const levelNumber = parseInt(levelSelect.value);
+            const levelData = FREE_PLAY_LEVELS.find(l => l.level === levelNumber);
+            
+            if (!levelData) {
+                displayDebugMessage("Error: Could not find current level data.", true);
+                return;
+            }
+
+            // 1. Ensure latest changes are saved before generating the link
+            saveLevelChanges(true); // Save silently
+
+            const wordsParam = encodeURIComponent(levelData.words.join(','));
+            const targetParam = levelData.minScore;
+            
+            // Construct the shareable URL
+            const baseUrl = window.location.origin + window.location.pathname;
+            const shareUrl = `${baseUrl}?target=${targetParam}&words=${wordsParam}`;
+            
+            const shareData = {
+                title: 'Wordga Custom Challenge!',
+                text: `Try to beat my custom Wordga level (Target: ${targetParam}, Words: ${levelData.words.length}).`,
+                url: shareUrl
+            };
+            
+            // 2. Attempt to use navigator.share (primary method)
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    displayDebugMessage("Custom Challenge link shared successfully!", false);
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        displayDebugMessage("Sharing cancelled by user.", false);
+                    } else {
+                        // Technical failure, fall back to clipboard
+                        console.error('Error sharing link via Web Share:', error);
+                        copyLinkToClipboard(shareUrl, "Failed to use Web Share. Link copied to clipboard instead.");
+                    }
+                }
+            } else {
+                // 3. Fallback to clipboard
+                copyLinkToClipboard(shareUrl, "Web Share not supported. Link copied to clipboard!");
+            }
+        }
+
+
+        // --- Event Listeners ---
+        undoBtn.addEventListener('click', undoLastStep);
+        dailyChallengeBtn.addEventListener('click', startDailyChallenge);
+        
+        // Game Over Controls
+        tryAgainBtn.addEventListener('click', initGame); // Handled dynamically in renderUI
+        nextLevelBtn.addEventListener('click', goToNextLevel); // Handled dynamically in renderUI
+        shareSuccessBtn.addEventListener('click', shareScore);
+        shareFailureBtn.addEventListener('click', shareScore);
+
+        // Navigation Controls
+        aboutBtn.addEventListener('click', () => navigateTo('about-view'));
+        aboutBtnMobile.addEventListener('click', () => navigateTo('about-view')); 
+        settingsBtn.addEventListener('click', () => navigateTo('settings-view'));
+        backFromAboutBtn.addEventListener('click', () => navigateTo('main-game-view'));
+        backFromSettingsBtn.addEventListener('click', () => navigateTo('main-game-view'));
+
+        // Settings Controls
+        levelSelect.addEventListener('change', (e) => loadLevelDataToEditor(e.target.value));
+        addLevelBtn.addEventListener('click', addNewLevel); 
+        saveLevelBtn.addEventListener('click', () => saveLevelChanges(false));
+        startLevelBtn.addEventListener('click', startSelectedLevel);
+        generateUrlBtn.addEventListener('click', generateShareLink);
+
+
+        // --- Start Game on Load ---
+        window.onload = () => initGame(); 
     </script>
 </body>
 </html>
