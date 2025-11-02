@@ -136,16 +136,7 @@
         </div>
     </div>
 
-    <!-- No Consequence Modal (Hidden by default) -->
-    <div id="no-consequence-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-green-50 p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-100 border-4 border-green-500 text-center">
-            <h2 class="text-3xl font-extrabold text-green-700 mb-4">No Consequence! 😅</h2>
-            <p id="no-consequence-text" class="text-xl font-semibold text-gray-700 mb-6">A tie occurred for the lowest card, so everyone is safe this trick!</p>
-            <button onclick="hideNoConsequenceModal(); startNextTrick();" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
-                Start Next Trick
-            </button>
-        </div>
-    </div>
+    <!-- NOTE: No Consequence Modal has been removed as ties are now impossible for the loser -->
 
     <!-- Rules Modal (Hidden by default) -->
     <div id="rules-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
@@ -267,7 +258,7 @@
                 // Fisher-Yates shuffle
                 for (let i = deck.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
-                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                    [deck[i], deck[j]] = [deck[i], deck[j]];
                 }
                 console.log('Deck reshuffled with discard pile. New size:', deck.length);
             }
@@ -471,13 +462,14 @@
                     <ul class="list-disc list-inside space-y-1 ml-4">
                         <li><span class="font-bold">Lead Suit is Primary Trump:</span> The suit of the first card played in the trick becomes the **Primary Trump Suit** (Priority 1).</li>
                         <li><span class="font-bold">Suit Hierarchy:</span> All other suits played establish a priority hierarchy based on their order of appearance in the trick (Priority 2, 3, etc.).</li>
-                        <li><span class="font-bold">Highest Priority Wins:</span> The trick is won by the player who played the **highest-ranked card** belonging to the **highest-priority suit played** (e.g., the highest Heart wins if Hearts was the Primary Trump, regardless of other higher-ranked non-trump cards played).</li>
+                        <li><span class="font-bold">Highest Priority Wins:</span> The trick is won by the player who played the **highest-ranked card** belonging to the **highest-priority suit played** (e.g., the highest Heart wins if Hearts was the Primary Trump, regardless of other higher-ranked non-trump cards played). The trick winner leads the next hand.</li>
                     </ul>
 
                     <h3 class="text-xl font-bold text-red-600">Consequences (Determines Life Loss)</h3>
                     <ul class="list-disc list-inside space-y-1 ml-4">
                         <li>The player who plays the **single lowest card** (A is low) loses a life and faces a consequence.</li>
-                        <li>If two or more players tie for the lowest card, no one loses a life.</li>
+                        <li><span class="font-bold text-red-700">No Ties:</span> If two or more cards tie for the lowest rank, the tie is broken using the **Suit Hierarchy** (the first suit played in the trick is the highest priority for the lowest card).</li>
+                        <li>If the **Trick Winner** is also the unique **Life Loser**, the consequence is waived to prioritize the win.</li>
                     </ul>
 
                     <h3 class="text-xl font-bold text-red-600 mt-6">${gameSettings.consequencesType} by Rank</h3>
@@ -500,10 +492,6 @@
 
         function hideRulesModal() {
             document.getElementById('rules-modal').classList.add('hidden');
-        }
-
-        function hideNoConsequenceModal() {
-            document.getElementById('no-consequence-modal').classList.add('hidden');
         }
 
         /**
@@ -970,23 +958,33 @@
                 }
             }
 
-            // --- 3. Determine LOSER (Lowest Card) - Logic remains unchanged ---
+            // --- 3. Determine LOSER (Lowest Card with Suit Tie-Breaker) ---
 
-            // Find the losing card (lowest overall)
-            let losingCard = currentTrick.reduce((best, current) => 
+            // Find the lowest value played
+            let lowestCardByValue = currentTrick.reduce((best, current) => 
                 parseCard(current.card).value < parseCard(best.card).value ? current : best, currentTrick[0]);
             
-            // Check for Loser (Lowest Card) - Check if there's a tie for the lowest card.
-            const lowestValue = parseCard(losingCard.card).value;
-            const lowestPlayers = currentTrick.filter(item => parseCard(item.card).value === lowestValue);
+            const lowestValue = parseCard(lowestCardByValue.card).value;
+            let lowestPlayers = currentTrick.filter(item => parseCard(item.card).value === lowestValue);
             
-            // Determine the unique loser
-            let loser = (lowestPlayers.length === 1) ? losingCard : null;
-            
-            // If the unique lowest card also won the trick, treat it as a tie to prioritize the win (no consequence applied).
-            if (loser && loser.playerId === winningCard.playerId) {
-                loser = null; 
+            let loser = null;
+
+            if (lowestPlayers.length === 1) {
+                // Unique lowest card found (no tie)
+                loser = lowestPlayers[0]; 
+            } else if (lowestPlayers.length > 1) {
+                // Tie break using the suit hierarchy (first suit played is highest priority for lowest card)
+                // This ensures a unique loser is always found, meeting the user's new rule.
+                for (const suit of suitHierarchy) {
+                    const potentialLoser = lowestPlayers.find(item => parseCard(item.card).suit === suit);
+                    if (potentialLoser) {
+                        loser = potentialLoser;
+                        break; // Found the unique loser by highest priority suit
+                    }
+                }
             }
+            
+            // Note: 'loser' will always be set here due to the full deck having unique ranks/suits.
 
             // 4. Set the winner of the trick to lead the next hand.
             const winningPlayerIndex = players.findIndex(p => p.id === winningCard.playerId);
@@ -999,11 +997,14 @@
             const winnerPlayer = players.find(p => p.id === winningCard.playerId);
 
             // 6. Go to consequence resolution
-            if (loser) {
-                resolveConsequence(loser.playerId, getRank(loser.card), winnerPlayer);
+            
+            // If the unique lowest card also won the trick, treat it as a tie to prioritize the win (no consequence applied).
+            if (loser && loser.playerId === winningCard.playerId) {
+                // Consequence is waived, only show the winner
+                showConsequenceWaivedModal(winnerPlayer);
             } else {
-                // No unique loser, no life lost.
-                showNoConsequenceModal(winnerPlayer);
+                // A unique loser who is not the winner has been found. Apply consequence.
+                resolveConsequence(loser.playerId, getRank(loser.card), winnerPlayer);
             }
         }
 
@@ -1030,7 +1031,7 @@
          */
         function startNextTrick() {
             document.getElementById('death-modal').classList.add('hidden');
-            document.getElementById('no-consequence-modal').classList.add('hidden');
+            // Removed: document.getElementById('no-consequence-modal').classList.add('hidden');
             
             // Check if only one player remains before continuing.
             const remainingPlayers = players.filter(p => p.lives > 0);
@@ -1169,27 +1170,39 @@
         }
 
         /**
-         * Displays the modal when there is no unique loser.
+         * Displays the modal when the consequence is waived (winner is also the unique loser).
          * @param {Object} winnerPlayer The player object of the trick winner.
          */
-        function showNoConsequenceModal(winnerPlayer) {
+        function showConsequenceWaivedModal(winnerPlayer) {
             gameState = 'reveal';
             
-            document.getElementById('no-consequence-modal').classList.remove('hidden');
-            
-            // Set the last share text to reflect a safe round
-            const shareUrl = getShareableGameUrl(); // <-- Get the full URL
-            const shareText = `${winnerPlayer.name} won the trick in Majorcan Highs! A low card tie meant no one lost a life this round. Play the game here: ${shareUrl}`;
-            lastShareText = shareText; // Update global share text
-            
-            document.getElementById('no-consequence-text').innerHTML = `
-                <p class="text-xl font-semibold text-gray-700 mb-6">
-                    A tie occurred for the lowest card, so everyone is safe this trick!
-                </p>
-                <p class="text-2xl font-extrabold text-emerald-700 mt-4">
-                    ${winnerPlayer.name} wins the trick and leads next!
-                </p>
+            // Reusing the death modal structure for a clean message
+            document.getElementById('death-modal-title').textContent = '🥳 Consequence Waived! 🥳';
+            document.getElementById('share-button-container').classList.add('hidden');
+
+            document.getElementById('death-consequence-text').innerHTML = `
+                <div class="text-center p-2 rounded-lg bg-emerald-100 border border-emerald-300">
+                    <p class="text-2xl font-bold text-emerald-700 mb-2">
+                        ${winnerPlayer.name} WON THE TRICK!
+                    </p>
+                    <p class="text-lg text-gray-800 leading-relaxed">
+                        Because the winner was also the player with the unique lowest card, the **consequence is waived**!
+                    </p>
+                    <p class="text-xl font-extrabold text-emerald-600 mt-4">
+                        ${winnerPlayer.name} leads the next hand!
+                    </p>
+                </div>
             `;
+            
+            document.getElementById('death-modal-action-button').textContent = 'Start Next Trick';
+            document.getElementById('death-modal-action-button').onclick = startNextTrick;
+
+            // Set the last share text to reflect a safe round
+            const shareUrl = getShareableGameUrl(); 
+            const shareText = `${winnerPlayer.name} won the trick AND avoided the consequence in Majorcan Highs! A win is prioritized over the lowest card. Play the game here: ${shareUrl}`;
+            lastShareText = shareText;
+
+            document.getElementById('death-modal').classList.remove('hidden');
         }
 
         /**
@@ -1217,7 +1230,6 @@
          */
         function restartGame() {
             document.getElementById('death-modal').classList.add('hidden');
-            document.getElementById('no-consequence-modal').classList.add('hidden');
             // Reset player hands
             players.forEach(p => p.hand = []);
             renderSetupScreen();
@@ -1244,7 +1256,6 @@
         window.updateSetting = updateSetting;
         window.updateConsequencesType = updateConsequencesType;
         window.saveConsequence = saveConsequence; // Expose new function
-        window.hideNoConsequenceModal = hideNoConsequenceModal;
         window.shareConsequencePack = shareConsequencePack; // Expose new pack sharing function
         window.handleOptionsExit = handleOptionsExit; // Expose new exit function
     </script>
