@@ -337,6 +337,29 @@
             const colorClass = (suit === 'H' || suit === 'D') ? 'text-red' : 'text-black';
             return { rank, suit, value, colorClass };
         }
+        
+        /**
+         * Helper function for deep comparison of consequence objects.
+         * @param {Object} obj1 
+         * @param {Object} obj2 
+         * @returns {boolean} True if objects are structurally and content-wise identical.
+         */
+        function areConsequencesEqual(obj1, obj2) {
+            if (typeof obj1 !== 'object' || obj1 === null || typeof obj2 !== 'object' || obj2 === null) {
+                return obj1 === obj2;
+            }
+            const keys1 = Object.keys(obj1);
+            const keys2 = Object.keys(obj2);
+
+            if (keys1.length !== keys2.length) return false;
+
+            for (const key of keys1) {
+                if (obj1[key] !== obj2[key]) {
+                    return false;
+                }
+            }
+            return true;
+        }
 
         /**
          * Shares the consequence via the Web Share API or copies text.
@@ -367,13 +390,20 @@
             }
         }
         
-        // --- URL Sharing and Loading Logic (Updated for LZW Compression) ---
+        // --- URL Sharing and Loading Logic (Updated for Conditional Encoding) ---
 
         /**
          * Encodes and compresses the current CONSEQUENCES object into a Base64 URL parameter.
-         * @returns {string} Base64 encoded, compressed JSON string.
+         * This ONLY happens if the consequences are NOT identical to one of the default packs.
+         * @returns {string} Base64 encoded, compressed JSON string, or '' if using default.
          */
         function encodeConsequences() {
+            // BUG FIX: Check if the current CONSEQUENCES object is identical to either default pack
+            if (areConsequencesEqual(CONSEQUENCES, FATAL_CONSEQUENCES) || areConsequencesEqual(CONSEQUENCES, MILD_INCONVENIENCES)) {
+                // If it's a default pack, do not encode it in the URL.
+                return '';
+            }
+
             try {
                 // 1. Convert CONSEQUENCES object to JSON string
                 let jsonString = JSON.stringify(CONSEQUENCES);
@@ -417,12 +447,13 @@
          * @returns {string} The full URL.
          */
         function getShareableGameUrl() {
-            const encodedPack = encodeConsequences();
+            const encodedPack = encodeConsequences(); // This will return '' if using a default pack.
             // In the canvas environment, we use the current URL without modifications
             const currentBaseUrl = window.location.origin + window.location.pathname;
             
             let shareUrl = currentBaseUrl;
             if (encodedPack) {
+                // Only add the parameter if we actually encoded something custom
                 shareUrl += `?c=${encodedPack}`;
             }
             return shareUrl;
@@ -564,11 +595,18 @@
             if (newText) {
                 // Save the new text
                 CONSEQUENCES[rank] = newText;
-                // If the user modifies a default pack, switch to custom type
-                if (gameSettings.consequencesType !== 'Custom Consequence Pack') {
+                
+                // If the current consequences are now different from BOTH standard packs, 
+                // switch to 'Custom Consequence Pack' automatically.
+                if (!areConsequencesEqual(CONSEQUENCES, FATAL_CONSEQUENCES) && !areConsequencesEqual(CONSEQUENCES, MILD_INCONVENIENCES)) {
                     gameSettings.consequencesType = 'Custom Consequence Pack';
                     renderOptionsScreen(); // Re-render to update the select box
+                } else if (gameSettings.consequencesType === 'Custom Consequence Pack') {
+                    // This handles the case where the user edited a custom pack back to match a default one.
+                    // We can stick with 'Custom' or try to switch back; sticking with custom is safer.
+                    // If they edited it, it's custom. We'll let updateConsequencesType handle switching back to stock titles.
                 }
+
             } else {
                 // Revert to original if text is empty (user deleted everything)
                 const element = document.getElementById(`consequence-text-${rank}`);
@@ -1102,7 +1140,7 @@
                     document.getElementById('loser-name').textContent = `The Champion is ${winnerName}!`;
                     
                     document.getElementById('death-consequence-text').innerHTML = `
-                        <p class="text-2xl font-extrabold text-emerald-700 text-center mb-4">🏆 ${winnerName} WINS! 🏆</p>
+                        <p class="2xl font-extrabold text-emerald-700 text-center mb-4">🏆 ${winnerName} WINS! 🏆</p>
                         <p class="text-lg text-gray-800 leading-relaxed text-center">
                             The game concluded when <span class="font-bold text-red-600">${loserPlayer.name}</span> (Losing Card: <span class="font-bold text-red-600">Rank ${rank}</span>) ${statusVerb} because they **${deathMessage}**.
                         </p>
@@ -1140,7 +1178,7 @@
                             <p class="text-xl font-bold text-red-700">
                                 Life Loser (Lowest Card: Rank ${rank}): 
                             </p>
-                            <p class="text-2xl font-extrabold text-red-600">${loserPlayer.name}</p>
+                            <p class="2xl font-extrabold text-red-600">${loserPlayer.name}</p>
                         </div>
 
                         <!-- Consequence (Grammatically correct sentence: [Player Name] [Consequence]) -->
@@ -1196,7 +1234,7 @@
                 <p class="text-xl font-semibold text-gray-700 mb-6">
                     A tie occurred for the lowest card, so everyone is safe this trick!
                 </p>
-                <p class="text-2xl font-extrabold text-emerald-700 mt-4">
+                <p class="2xl font-extrabold text-emerald-700 mt-4">
                     ${winnerPlayer.name} wins the trick and leads next!
                 </p>
             `;
