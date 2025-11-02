@@ -74,7 +74,8 @@
                 <button onclick="showRulesModal()" class="w-10 h-10 bg-emerald-500 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-600 transition duration-150" title="Rules">
                     ?
                 </button>
-                <button onclick="shareConsequencePack()" class="w-10 h-10 bg-blue-500 text-white font-extrabold rounded-full shadow-lg hover:bg-blue-600 transition duration-150" title="Share Consequence Pack Link">
+                <!-- SHARE BUTTON: RETAINED GREEN BG -->
+                <button onclick="shareConsequencePack()" class="w-10 h-10 bg-emerald-500 text-white font-extrabold rounded-full shadow-lg hover:bg-emerald-600 transition duration-150" title="Share Consequence Pack Link">
                     🔗
                 </button>
                 <button onclick="renderOptionsScreen()" class="w-10 h-10 bg-gray-300 text-gray-700 font-extrabold rounded-full shadow-lg hover:bg-gray-400 transition duration-150" title="Options">
@@ -108,8 +109,8 @@
 
             <div class="mt-8 flex justify-center space-x-4">
                 <div id="share-button-container">
-                    <!-- UPDATED SHARE BUTTON ICON IN MODAL -->
-                    <button id="share-button" class="px-4 py-3 bg-blue-500 text-white font-bold rounded-lg shadow-lg hover:bg-blue-600 transition duration-150 transform hover:scale-105 flex items-center">
+                    <!-- SHARE BUTTON IN MODAL: RETAINED GREEN BG -->
+                    <button id="share-button" class="px-4 py-3 bg-emerald-500 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-600 transition duration-150 transform hover:scale-105 flex items-center">
                         Share 🔗
                     </button>
                 </div>
@@ -208,6 +209,56 @@
             'K': "has to switch seats with another player who must then point and laugh at them for 1 minute."
         };
 
+        
+        /* --- LZW-like Compression/Decompression for generic strings (Highly Compact) --- */
+        const LZW = {
+            // LZW compression logic: builds a dictionary dynamically to find repeating phrases.
+            compress: function(s) {
+                var dict = {}, data = (s + "").split(""), out = [], currChar, phrase = data[0], code = 256;
+                for (var i = 1; i < data.length; i++) {
+                    currChar = data[i];
+                    if (dict[phrase + currChar] != null) {
+                        phrase += currChar;
+                    } else {
+                        // Output the code for the longest match found (phrase)
+                        out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
+                        // Add the new phrase (match + next character) to the dictionary
+                        dict[phrase + currChar] = code++;
+                        phrase = currChar;
+                    }
+                }
+                out.push(phrase.length > 1 ? dict[phrase] : phrase.charCodeAt(0));
+                
+                // Encode the code array into a compact string using custom characters
+                for (i = 0; i < out.length; i++) {
+                    // Use String.fromCharCode to map the code to a character (relying on Unicode to store high codes)
+                    out[i] = String.fromCharCode(out[i]);
+                }
+                return out.join("");
+            },
+            // LZW decompression logic: rebuilds the dictionary while reading codes.
+            decompress: function(s) {
+                var dict = {}, data = s.split(''), currChar = data[0], oldPhrase = currChar, out = [currChar], code = 256, phrase, i;
+                for (i = 1; i < data.length; i++) {
+                    var currCode = data[i].charCodeAt(0);
+                    if (currCode < 256) {
+                        // Code is a single character
+                        phrase = data[i];
+                    } else {
+                        // Code is a dictionary entry
+                        phrase = dict[currCode] ? dict[currCode] : (oldPhrase + currChar);
+                    }
+                    out.push(phrase);
+                    currChar = phrase.charAt(0);
+                    // Add the new sequence (oldPhrase + currChar) to the dictionary
+                    dict[code++] = oldPhrase + currChar;
+                    oldPhrase = phrase;
+                }
+                return out.join("");
+            }
+        };
+
+
         // Initialize consequences with the default fatal deaths
         function initializeConsequences() {
              CONSEQUENCES = FATAL_CONSEQUENCES;
@@ -215,7 +266,7 @@
              loadConsequencesFromURL();
         }
         
-        // --- Deck and Card Management ---
+        // --- Deck and Card Management (Unchanged) ---
 
         /**
          * Creates a full deck of 52 cards and shuffles it.
@@ -263,7 +314,7 @@
             return deck.pop() || null;
         }
 
-        // --- Utility Functions ---
+        // --- Utility Functions (Unchanged) ---
 
         /**
          * Extracts the rank from a card string.
@@ -316,22 +367,50 @@
             }
         }
         
-        // --- URL Sharing and Loading Logic ---
+        // --- URL Sharing and Loading Logic (Updated for LZW Compression) ---
 
         /**
-         * Encodes the current CONSEQUENCES object into a Base64 URL parameter.
-         * @returns {string} Base64 encoded JSON string.
+         * Encodes and compresses the current CONSEQUENCES object into a Base64 URL parameter.
+         * @returns {string} Base64 encoded, compressed JSON string.
          */
         function encodeConsequences() {
             try {
-                const jsonString = JSON.stringify(CONSEQUENCES);
-                // Use btoa for Base64 encoding
-                return btoa(jsonString);
+                // 1. Convert CONSEQUENCES object to JSON string
+                let jsonString = JSON.stringify(CONSEQUENCES);
+                
+                // 2. Apply LZW compression
+                let compressedString = LZW.compress(jsonString);
+
+                // 3. Base64 encode the compressed string for URL safety
+                return btoa(compressedString);
             } catch (e) {
                 console.error("Error encoding consequences:", e);
                 return '';
             }
         }
+
+        /**
+         * Decompresses and Decodes the CONSEQUENCES object from a Base64 URL parameter.
+         * @param {string} encodedPack Base64 encoded, compressed JSON string.
+         * @returns {Object | null} The decoded consequence object or null on failure.
+         */
+        function decodeAndDecompress(encodedPack) {
+            try {
+                // 1. Base64 decode
+                let compressedString = atob(encodedPack);
+
+                // 2. Decompress (using LZW)
+                let jsonString = LZW.decompress(compressedString);
+                
+                // 3. Parse JSON string back into an object
+                return JSON.parse(jsonString);
+
+            } catch (e) {
+                console.error("Error decoding or decompressing custom consequences URL:", e);
+                return null;
+            }
+        }
+
 
         /**
          * Generates the full shareable URL for the game, including the current consequence pack.
@@ -394,11 +473,10 @@
             const encodedPack = params.get('c');
 
             if (encodedPack) {
-                try {
-                    // Use atob for Base64 decoding
-                    const jsonString = atob(encodedPack);
-                    const customConsequences = JSON.parse(jsonString);
+                // Use the new decompression/decode function
+                const customConsequences = decodeAndDecompress(encodedPack);
 
+                if (customConsequences) {
                     // Basic validation: check if all RANKS are present in the loaded object
                     const isValid = RANKS.every(rank => rank in customConsequences);
                     
@@ -414,15 +492,12 @@
                     } else {
                         console.error('Custom consequences pack is incomplete or invalid. Using default.');
                     }
-
-                } catch (e) {
-                    console.error("Error decoding or parsing custom consequences URL:", e);
                 }
             }
         }
 
 
-        // --- Modal Control Functions ---
+        // --- Modal Control Functions (Unchanged) ---
 
         function showRulesModal() {
             // Update the rules content dynamically based on current settings
@@ -506,7 +581,7 @@
             }
         }
 
-        // --- UI Rendering Functions ---
+        // --- UI Rendering Functions (Unchanged) ---
 
         /**
          * Renders the current scores/lives of all active players.
@@ -749,7 +824,7 @@
             `;
         }
         
-        // --- Game Logic Functions ---
+        // --- Game Logic Functions (Unchanged) ---
 
         /**
          * Initializes the game state and deals the initial hands.
