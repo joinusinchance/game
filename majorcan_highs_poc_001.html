@@ -34,7 +34,7 @@
         }
         .card-playable:hover, .card-playable:focus {
             transform: translateY(-5px);
-            box-shadow: 0 8px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 10px rgba[0, 0, 0, 0.2];
         }
         .card-back {
             background-color: #10b981;
@@ -91,8 +91,10 @@
     <div id="death-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-red-50 p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-100 border-4 border-red-500">
             <h2 id="death-modal-title" class="text-3xl font-extrabold text-red-700 mb-4 text-center">💀 Consequence Applied 💀</h2>
-            <p id="loser-name" class="text-xl font-semibold text-center mb-2"></p>
-            <p class="text-lg text-gray-700 mb-4 text-center italic">The card that sealed their fate: <span id="loser-card-rank" class="font-bold text-red-600"></span></p>
+            <!-- Loser Name will be used in the new structure now -->
+            <p id="loser-name" class="text-xl font-semibold text-center mb-2 hidden"></p>
+            <p class="text-lg text-gray-700 mb-4 text-center italic hidden">The card that sealed their fate: <span id="loser-card-rank" class="font-bold text-red-600"></span></p>
+            
             <div class="bg-red-100 p-4 rounded-lg border border-red-300">
                 <div id="death-consequence-text" class="text-xl text-gray-800 font-medium leading-relaxed">
                     <!-- Dynamic content will be injected here based on player's fate -->
@@ -116,7 +118,7 @@
     <div id="no-consequence-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-green-50 p-6 sm:p-8 rounded-xl shadow-2xl max-w-lg w-full transform transition-all duration-300 scale-100 border-4 border-green-500 text-center">
             <h2 class="text-3xl font-extrabold text-green-700 mb-4">No Consequence! 😅</h2>
-            <p class="text-xl font-semibold text-gray-700 mb-6">A tie occurred for the lowest card, so everyone is safe this trick!</p>
+            <p id="no-consequence-text" class="text-xl font-semibold text-gray-700 mb-6">A tie occurred for the lowest card, so everyone is safe this trick!</p>
             <button onclick="hideNoConsequenceModal(); startNextTrick();" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg shadow-lg hover:bg-emerald-700 transition duration-150 transform hover:scale-105">
                 Start Next Trick
             </button>
@@ -165,7 +167,7 @@
         // Consequences data structure
         let CONSEQUENCES = {}; 
         
-        // CONSEQUENCE TEXTS ARE NOW GRAMMATICALLY CORRECT TO FLOW AFTER PLAYER NAME
+        // CONSEQUENCE TEXTS ARE NOW GRAMMATICALLY CORRECT TO FLOW AFTER "Player Name chokes on a..."
         const FATAL_CONSEQUENCES = {
             'A': "stumbles over their own two feet while attempting to tie their shoes and falls into a tiny sinkhole leading directly to a badger's tea party.",
             '2': "is mistaken for a runaway garden gnome by a precision drone strike.",
@@ -178,7 +180,7 @@
             '9': "dies of embarrassment after realizing they've spent all day talking to a mannequin they thought was a cool new friend.",
             '10': "is engulfed by a rogue wave of Majorcan Highs cocktails that washes them out to sea, only to be pecked to death by synchronized seagulls.",
             'J': "gets fatally entangled in a very enthusiastic game of Twister being played by professional acrobats.",
-            'Q': "chokes on a meticulously crafted, artisanal crouton.",
+            'Q': "meticulously crafted, artisanal crouton.",
             'K': "is judged by a flock of pigeons for having 'too much main character energy' and is subsequently dive-bombed by bird droppings until they lose consciousness and fall off a small stool."
         };
         
@@ -186,7 +188,7 @@
             'A': "has to wear their shirt backwards for the next 24 hours.",
             '2': "must refer to all body parts by the wrong name for one hour.",
             '3': "has to eat a spoonful of plain mustard.",
-            '4': "must sing the alphabet every time they enter a room today.",
+            '4': "must wear their shoes on the wrong feet for the next hour.",
             '5': "must use only thumbs to text for the next 30 minutes.",
             '6': "has to call a random contact and speak entirely in rhyming couplets.",
             '7': "must refer to themselves in the third person for the rest of the game.",
@@ -219,7 +221,7 @@
             // Fisher-Yates shuffle
             for (let i = newDeck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+                [newDeck[i], newDeck[j]] = [newDeck[i], newDeck[j]];
             }
             return newDeck;
         }
@@ -317,8 +319,7 @@
 
                     <h3 class="text-xl font-bold text-emerald-600">Gameplay (The Trick Cycle)</h3>
                     <ul class="list-disc list-inside space-y-1 ml-4">
-                        <li>Each player starts with **${gameSettings.handSize} cards**.</li>
-                        <li>After playing a card, a player immediately **draws a replacement card** from the deck.</li>
+                        <li>Each player starts with **${gameSettings.handSize} cards** and draws a replacement card immediately after playing.</li>
                         <li>The deck is only **reshuffled** when the draw deck is empty.</li>
                     </ul>
                     
@@ -335,7 +336,7 @@
                     </ul>
 
                     <h3 class="text-xl font-bold text-red-600 mt-6">${gameSettings.consequencesType} by Rank</h3>
-                    <p class="text-sm italic mb-2">The rank of the losing card determines the fate (The full sentence is: "[Player Name] + Consequence"):</p>
+                    <p class="text-sm italic mb-2">The rank of the losing card determines the fate (The full sentence is: "[Player Name] [Consequence]"):</p>
                     <div id="rules-consequences-list" class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                         ${RANKS.map(rank =>
                             `<div class="font-medium">**${rank}**:</div><div>${CONSEQUENCES[rank]}</div>`
@@ -464,7 +465,7 @@
 
         function editConsequence(rank) {
             const currentText = CONSEQUENCES[rank];
-            const newText = prompt(`Edit consequence for rank ${rank} (${gameSettings.consequencesType}). This phrase must grammatically follow the player's name:`, currentText);
+            const newText = prompt(`Edit consequence for rank ${rank} (${gameSettings.consequencesType}). This phrase must grammatically follow "Player Name...":`, currentText);
             
             if (newText !== null && newText.trim() !== '') {
                 CONSEQUENCES[rank] = newText.trim();
@@ -742,19 +743,7 @@
             // 1. Add trick cards to discard pile
             currentTrick.forEach(item => discardPile.push(item.card));
 
-            // 2. Find the losing card (lowest overall)
-            let losingCard = currentTrick.reduce((best, current) => 
-                parseCard(current.card).value < parseCard(best.card).value ? current : best, currentTrick[0]);
-            
-            // Check for Loser (Lowest Card) - Check if there's a tie for the lowest card.
-            const lowestValue = parseCard(losingCard.card).value;
-            const lowestPlayers = currentTrick.filter(item => parseCard(item.card).value === lowestValue);
-            
-            // Determine the unique loser
-            const loser = (lowestPlayers.length === 1) ? losingCard : null;
-
-
-            // 3. Determine WINNER (Highest Card) to set who leads next trick
+            // 2. Determine WINNER (Highest Card) to set who leads next trick
             let winningCard = currentTrick[0];
             
             if (gameSettings.leadingSuitTrumps) {
@@ -777,6 +766,25 @@
                 winningCard = currentTrick.reduce((best, current) => 
                     parseCard(current.card).value > parseCard(best.card).value ? current : best, currentTrick[0]);
             }
+            
+            // 3. Find the losing card (lowest overall)
+            let losingCard = currentTrick.reduce((best, current) => 
+                parseCard(current.card).value < parseCard(best.card).value ? current : best, currentTrick[0]);
+            
+            // Check for Loser (Lowest Card) - Check if there's a tie for the lowest card.
+            const lowestValue = parseCard(losingCard.card).value;
+            const lowestPlayers = currentTrick.filter(item => parseCard(item.card).value === lowestValue);
+            
+            // Determine the unique loser
+            let loser = (lowestPlayers.length === 1) ? losingCard : null;
+            
+            // --- BUG FIX ---
+            // If the unique lowest card also won the trick, treat it as a tie to prioritize the win (no consequence applied).
+            if (loser && loser.playerId === winningCard.playerId) {
+                console.warn("BUG FIX APPLIED: Trick Winner was also unique Life Loser. Consequence is skipped (treated as a tie).");
+                loser = null; 
+            }
+            // ---------------
 
             // 4. Set the winner of the trick to lead the next hand.
             const winningPlayerIndex = players.findIndex(p => p.id === winningCard.playerId);
@@ -784,13 +792,16 @@
             
             // 5. Clear trick for next round
             currentTrick = []; 
+            
+            // Get the winner player object for the modal
+            const winnerPlayer = players.find(p => p.id === winningCard.playerId);
 
             // 6. Go to consequence resolution
             if (loser) {
-                resolveConsequence(loser.playerId, getRank(loser.card));
+                resolveConsequence(loser.playerId, getRank(loser.card), winnerPlayer);
             } else {
                 // No unique loser, no life lost.
-                showNoConsequenceModal(winningCard.playerName);
+                showNoConsequenceModal(winnerPlayer);
             }
         }
 
@@ -798,8 +809,9 @@
          * Resolves the outcome of the trick, including life loss.
          * @param {string} loserId ID of the player who lost the round.
          * @param {string} rank Rank of the card that caused the loss.
+         * @param {Object} winnerPlayer The player object of the trick winner (next leader).
          */
-        function resolveConsequence(loserId, rank) {
+        function resolveConsequence(loserId, rank, winnerPlayer) {
             const loser = players.find(p => p.id === loserId);
 
             if (loser) {
@@ -807,7 +819,7 @@
                 loser.lives -= 1;
                 
                 renderScoreDisplay(); // Update scores immediately
-                showDeathModal(loser, rank);
+                showDeathModal(loser, rank, winnerPlayer);
             }
         }
         
@@ -836,8 +848,9 @@
          * Displays the death/consequence modal for the player who lost the round.
          * @param {Object} loserPlayer The player object of the loser.
          * @param {string} rank The rank of the losing card.
+         * @param {Object} winnerPlayer The player object of the trick winner.
          */
-        function showDeathModal(loserPlayer, rank) {
+        function showDeathModal(loserPlayer, rank, winnerPlayer) {
             gameState = 'reveal';
             const deathMessage = CONSEQUENCES[rank];
             const consequenceType = gameSettings.consequencesType;
@@ -848,15 +861,13 @@
             let shareText = '';
             
             // Find the winner of the trick (the player who leads next)
-            const winnerOfTrick = players[currentPlayerIndex]; // currentPlayerIndex was set by resolveTrick
+            const winnerOfTrick = winnerPlayer; // Passed directly from resolveTrick
 
             if (loserPlayer.lives <= 0) {
                 // Player is eliminated, check if game over
                 const gameWinner = remainingPlayers[0] || null;
                 const winnerName = gameWinner ? gameWinner.name : 'No one';
                 const statusVerb = (consequenceType === 'Fatal Consequences') ? 'met their tragic, final fate' : 'succumbed to a debilitating final inconvenience';
-
-                document.getElementById('loser-card-rank').textContent = '';
 
                 if (remainingPlayers.length <= 0) {
                     // Draw (all players eliminated simultaneously)
@@ -896,23 +907,28 @@
                 
                 // 1. Set title and card rank
                 document.getElementById('death-modal-title').textContent = (consequenceType === 'Fatal Consequences') ? '💀 Consequence Applied 💀' : '⚠️ Mild Inconvenience ⚠️';
-                document.getElementById('loser-card-rank').textContent = `${rank}`;
                 
-                // Clear out the dedicated loser-name spot and use the content area for structure
-                document.getElementById('loser-name').textContent = ''; 
-
                 document.getElementById('death-consequence-text').innerHTML = `
                     <div class="space-y-4">
-                        <!-- Winner of the trick -->
-                        <p class="text-xl font-bold text-center text-emerald-700">
-                            Winner of the trick: <span class="text-emerald-900">${winnerOfTrick.name}</span>
-                        </p>
+                        <!-- Trick Winner (Highest Card) -->
+                        <div class="text-center p-2 rounded-lg bg-emerald-100 border border-emerald-300">
+                            <p class="text-xl font-bold text-emerald-700">
+                                Trick Winner (Highest Card): 
+                            </p>
+                            <p class="text-2xl font-extrabold text-emerald-900">${winnerOfTrick.name}</p>
+                        </div>
                         
-                        <div class="h-px bg-gray-300 w-3/4 mx-auto"></div> <!-- The 'sub box' divider -->
+                        <!-- Life Loser (Lowest Card) -->
+                        <div class="text-center p-2 rounded-lg bg-red-100 border border-red-300">
+                            <p class="text-xl font-bold text-red-700">
+                                Life Loser (Lowest Card: Rank ${rank}): 
+                            </p>
+                            <p class="text-2xl font-extrabold text-red-600">${loserPlayer.name}</p>
+                        </div>
 
-                        <!-- The Loser's Fate (Player Name + Consequence Message) -->
-                        <p class="text-xl text-red-700 font-extrabold leading-relaxed text-center">
-                            <span class="text-red-600">${loserPlayer.name}</span> <span class="font-normal italic text-gray-800">${deathMessage}</span>
+                        <!-- Consequence -->
+                        <p class="text-lg italic text-gray-800 font-medium leading-relaxed text-center pt-2">
+                             <span class="font-semibold">${loserPlayer.name}</span> ${deathMessage}
                         </p>
 
                         <!-- Lives Remaining -->
@@ -925,9 +941,9 @@
                 buttonText = 'Start Next Trick';
                 buttonAction = 'startNextTrick';
                 
-                // Prepare Share Text based on user request
+                // Prepare Share Text based on user request (adjusted to match new phrasing)
                 const status = (consequenceType === 'Fatal Consequences') ? 'is dead' : 'is mildly inconvenienced';
-                shareText = `In Majorcan Highs, ${loserPlayer.name} ${status} because ${deathMessage} (Losing Card: ${rank}). ${winnerOfTrick.name} won the trick! 🍹`;
+                shareText = `In Majorcan Highs, ${loserPlayer.name} ${status} after they ${deathMessage} (Losing Card: ${rank}). ${winnerOfTrick.name} won the trick and leads next! 🍹`;
 
                 // Show the share button and set the action
                 document.getElementById('share-button-container').classList.remove('hidden');
@@ -942,9 +958,20 @@
 
         /**
          * Displays the modal when there is no unique loser.
+         * @param {Object} winnerPlayer The player object of the trick winner.
          */
-        function showNoConsequenceModal(winnerName) {
+        function showNoConsequenceModal(winnerPlayer) {
             gameState = 'reveal';
+            
+            document.getElementById('no-consequence-text').innerHTML = `
+                <p class="text-xl font-semibold text-gray-700 mb-6">
+                    A tie occurred for the lowest card, so everyone is safe this trick!
+                </p>
+                <p class="text-2xl font-extrabold text-emerald-700 mt-4">
+                    ${winnerPlayer.name} wins the trick and leads next!
+                </p>
+            `;
+            
             document.getElementById('no-consequence-modal').classList.remove('hidden');
         }
 
