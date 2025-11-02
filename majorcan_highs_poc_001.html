@@ -334,19 +334,28 @@
         }
 
         /**
-         * Shares the current consequence pack via URL.
+         * Generates the full shareable URL for the game, including the current consequence pack.
+         * @returns {string} The full URL.
          */
-        function shareConsequencePack() {
+        function getShareableGameUrl() {
             const encodedPack = encodeConsequences();
             // In the canvas environment, we use the current URL without modifications
             const currentBaseUrl = window.location.origin + window.location.pathname;
             
-            // Construct the shareable URL with the consequence parameter
             let shareUrl = currentBaseUrl;
             if (encodedPack) {
                 shareUrl += `?c=${encodedPack}`;
             }
+            return shareUrl;
+        }
 
+        /**
+         * Shares the current consequence pack via URL.
+         */
+        function shareConsequencePack() {
+            const shareUrl = getShareableGameUrl(); // <-- Use new helper
+            
+            // Construct the shareable URL with the consequence parameter
             const shareText = `Check out my custom Majorcan Highs consequence pack! Play the game here: ${shareUrl}`;
 
             if (navigator.share) {
@@ -358,7 +367,7 @@
             } else {
                 // Fallback: Copy the URL to the clipboard
                 const tempInput = document.createElement('textarea');
-                tempInput.value = shareUrl;
+                tempInput.value = shareUrl; // <-- Use new helper
                 document.body.appendChild(tempInput);
                 tempInput.select();
                 document.execCommand('copy');
@@ -1029,7 +1038,8 @@
                 }
                 
                 // Set the last share text for the header button (with game link placeholder)
-                lastShareText = `${shareText} Play the trick-taking game Majorcan Highs here: [GAME_LINK_GOES_HERE]`;
+                const shareUrl = getShareableGameUrl(); // <-- Get the full URL
+                lastShareText = `${shareText} Play the trick-taking game Majorcan Highs here: ${shareUrl}`;
 
                 // Hide the share button for final winner screen
                 document.getElementById('share-button-container').classList.add('hidden');
@@ -1078,7 +1088,8 @@
                 shareText = `In Majorcan Highs, ${loserPlayer.name} ${status} after they ${deathMessage} (Losing Card: ${rank}). ${winnerOfTrick.name} won the trick and leads next! 🍹`;
 
                 // Set the last share text for the header button (with game link placeholder)
-                lastShareText = `${shareText} Play the trick-taking game Majorcan Highs here: [GAME_LINK_GOES_HERE]`;
+                const shareUrl = getShareableGameUrl(); // <-- Get the full URL
+                lastShareText = `${shareText} Play the trick-taking game Majorcan Highs here: ${shareUrl}`;
 
                 // Show the share button and set the action
                 document.getElementById('share-button-container').classList.remove('hidden');
@@ -1102,7 +1113,8 @@
             document.getElementById('no-consequence-modal').classList.remove('hidden');
             
             // Set the last share text to reflect a safe round
-            const shareText = `${winnerPlayer.name} won the trick in Majorcan Highs! A low card tie meant no one lost a life this round. Play the game here: [GAME_LINK_GOES_HERE]`;
+            const shareUrl = getShareableGameUrl(); // <-- Get the full URL
+            const shareText = `${winnerPlayer.name} won the trick in Majorcan Highs! A low card tie meant no one lost a life this round. Play the game here: ${shareUrl}`;
             lastShareText = shareText; // Update global share text
             
             document.getElementById('no-consequence-text').innerHTML = `
@@ -1131,7 +1143,8 @@
             `;
              document.getElementById('score-display').innerHTML = '';
              // Update global share for final win message
-             lastShareText = `${message} Play the trick-taking game Majorcan Highs here: [GAME_LINK_GOES_HERE]`;
+             const shareUrl = getShareableGameUrl(); // <-- Get the full URL
+             lastShareText = `${message} Play the trick-taking game Majorcan Highs here: ${shareUrl}`;
         }
         
         /**
