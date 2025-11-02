@@ -30,21 +30,22 @@
             transition: transform 0.1s, box-shadow 0.1s;
             cursor: pointer;
             user-select: none;
-            margin: 0 4px; 
+            /* Default margin is now only used in the hand section */
+            margin: 0; 
             flex-shrink: 0; /* Prevent cards from shrinking too much */
         }
         
         /* Mobile Card Size Optimization (Below 640px) */
         @media (max-width: 640px) {
             .card {
-                width: 65px; /* Smaller width */
-                height: 100px; /* Smaller height */
-                font-size: 1.5rem; /* Smaller rank text */
-                padding: 6px;
-                margin: 0 2px; /* Tighter margin */
+                width: 60px; /* Reduced width to save horizontal space */
+                height: 90px; /* Reduced height to save vertical space */
+                font-size: 1.4rem; /* Smaller rank text */
+                padding: 5px;
+                /* No margin here, spacing handled by Tailwind utilities */
             }
             .card > span:nth-child(2) { /* The suit symbol */
-                font-size: 3rem; /* Smaller suit symbol */
+                font-size: 2.8rem; /* Smaller suit symbol */
             }
         }
         
@@ -63,11 +64,17 @@
         .text-red { color: #ef4444; }
         .text-black { color: #1f2937; }
 
-        /* Ensure the main container minimizes scrolling on mobile */
+        /* Ensure the main container fits the viewport height */
         #game-container {
-            min-height: 90vh; /* Use most of the viewport height */
+            /* Using min-h-screen for full height, and padding adjusted via Tailwind */
+            min-height: 100vh; 
             display: flex;
             flex-direction: column;
+        }
+        
+        /* Custom CSS to handle the card spacing in the player's hand for mobile */
+        #player-hand-container > div {
+            margin: 0 2px;
         }
     </style>
 </head>
@@ -761,26 +768,43 @@
             const activePlayersCount = players.filter(p => p.lives > 0).length;
 
             const toPlay = activePlayersCount - currentTrick.length;
-            // const deckSize = deck.length; // Not used anymore
+            
+            // Combine played cards (face up) and back-of-cards (waiting)
+            const playedCards = currentTrick.map(item => ({ card: item.card, type: 'face' }));
+            const waitingCards = Array(toPlay).fill({ card: '', type: 'back' });
+            const allCards = [...playedCards, ...waitingCards];
 
             screen.innerHTML = `
-                <div class="flex justify-between items-center mb-6 p-3 bg-emerald-50 rounded-lg border-b-2 border-emerald-200">
+                <div class="flex justify-between items-center mb-4 p-2 bg-emerald-50 rounded-lg border-b-2 border-emerald-200">
                     <p class="text-lg font-semibold text-gray-700">Playing Now:</p>
                     <p class="text-3xl font-extrabold text-emerald-800">${currentPlayer.name}</p>
                 </div>
 
-                <!-- Played Cards (Trick Pile) - Removed 'Waiting for...' message -->
-                <div class="mb-6 p-3 bg-gray-100 rounded-xl shadow-inner">
-                    <div id="trick-pile" class="flex justify-center h-24 sm:h-32 overflow-x-auto p-1">
-                        ${currentTrick.map(trickItem => renderCard(trickItem.card)).join('')}
-                        ${Array(toPlay).fill(0).map(() => renderCard('', false, 'back')).join('')}
+                <!-- Played Cards (Trick Pile) - Height adjusted for mobile to prevent vertical scroll -->
+                <div class="mb-4 p-2 bg-gray-100 rounded-xl shadow-inner">
+                    <p class="text-center text-sm font-medium text-gray-600 mb-1">Trick Pile</p>
+                    <!-- H-24/H-28 for mobile to contain 90px card height + padding -->
+                    <div id="trick-pile" class="flex justify-center h-24 sm:h-32 p-1">
+                        ${allCards.map((item, index) => {
+                            const cardContent = item.type === 'face' ? renderCard(item.card) : renderCard('', false, 'back');
+                            // Apply overlap (ml-[-25px]) and z-index (relative z-index-X) for stacking effect
+                            // Overlap is slightly adjusted for the new 60px card width
+                            const overlapClass = index > 0 ? 'ml-[-15px]' : ''; 
+                            
+                            return `
+                                <div class="relative ${overlapClass}" style="z-index: ${index + 1}">
+                                    ${cardContent}
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
 
-                <!-- Current Player's Hand - Removed 'Deck/Discard' info -->
-                <div class="p-3 bg-emerald-200 rounded-xl shadow-lg"> <!-- Reduced padding -->
-                    <h3 class="text-xl font-bold text-emerald-800 mb-2 text-center">Your Hand (${currentPlayer.hand.length} cards)</h3> <!-- Reduced mb -->
-                    <div class="flex justify-center space-x-1"> <!-- Reduced spacing -->
+                <!-- Current Player's Hand - Padding reduced for vertical space saving -->
+                <div class="p-2 bg-emerald-200 rounded-xl shadow-lg"> 
+                    <h3 class="text-xl font-bold text-emerald-800 mb-2 text-center">Your Hand (${currentPlayer.hand.length} cards)</h3>
+                    <!-- Used custom CSS class to ensure minimal margin for hand cards -->
+                    <div id="player-hand-container" class="flex justify-center"> 
                         ${currentPlayer.hand.map(card => renderCard(card, true)).join('')}
                     </div>
                     <p class="text-center text-sm text-emerald-800 mt-2 font-medium">Click a card to play it!</p>
@@ -1100,7 +1124,7 @@
                             <p class="text-2xl font-extrabold text-emerald-900">${winnerOfTrick.name}</p>
                         </div>
                         
-                        <!-- Life Loser (Lowest Card) -->
+                        <!-- Life Loser (Lowest Card: Rank) -->
                         <div class="text-center p-2 rounded-lg bg-red-100 border border-red-300">
                             <p class="text-xl font-bold text-red-700">
                                 Life Loser (Lowest Card: Rank ${rank}): 
