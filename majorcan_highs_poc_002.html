@@ -571,11 +571,6 @@
                                    onchange="updateSetting('startingLives', parseInt(this.value))"
                                    class="mt-1 p-2 w-full border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-emerald-500">
                         </label>
-
-                        <div class="flex items-center justify-between p-2 bg-white rounded-lg border">
-                            <span class="text-gray-700 font-semibold">Trick Winning Rule:</span>
-                            <span class="ms-3 text-sm font-medium text-gray-900 font-bold">Suit Hierarchy (Primary Trump)</span>
-                        </div>
                     </div>
                     
                     <!-- Consequences Editor (FIXED: Now uses contenteditable for reliable desktop editing) -->
@@ -585,9 +580,9 @@
                         <div class="flex items-center justify-between p-2 mb-4 bg-white rounded-lg border">
                             <span class="text-gray-700 font-semibold">Consequence Type:</span>
                             <select id="consequences-type" onchange="updateConsequencesType(this.value)" class="p-2 border-2 border-gray-300 rounded-lg focus:border-red-500 focus:ring-red-500">
-                                <option value="Fatal Consequences" ${gameSettings.consequencesType === 'Fatal Consequences' ? 'selected' : ''}>Fatal Consequences</option>
-                                <option value="Mild Inconveniences" ${gameSettings.consequencesType === 'Mild Inconveniences' ? 'selected' : ''}>Mild Inconveniences</option>
-                                <option value="Custom Consequence Pack" ${gameSettings.consequencesType === 'Custom Consequence Pack' ? 'selected' : ''}>Custom Consequence Pack</option>
+                                <option value="Fatal Consequences" ${gameSettings.consequencesType === 'Fatal Consequences' ? 'selected' : ''}>Fatal</option>
+                                <option value="Mild Inconveniences" ${gameSettings.consequencesType === 'Mild Inconveniences' ? 'selected' : ''}>Mild</option>
+                                <option value="Custom Consequence Pack" ${gameSettings.consequencesType === 'Custom Consequence Pack' ? 'selected' : ''}>Custom</option>
                             </select>
                         </div>
                         
