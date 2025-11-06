@@ -383,7 +383,15 @@
                 this.isBagDropped = false;
 
                 // --- POSITIONAL DATA ---
-                this.y = Math.floor(Math.random() * (gameArea.clientHeight - 80)) + 40; 
+                // MODIFIED: Ensure a safe margin (100px) from the bottom of the game area. 
+                // The container is 60px high, so max top position is gameArea.clientHeight - 60 - 40 (clearance)
+                // The minimum top position is 40px.
+                const MIN_Y = 40;
+                const MAX_Y_TOP_POSITION = gameArea.clientHeight - 100;
+                const RANGE_LENGTH = MAX_Y_TOP_POSITION - MIN_Y;
+                
+                this.y = Math.floor(Math.random() * RANGE_LENGTH) + MIN_Y; 
+                
                 this.start_x = this.direction === 1 ? gameArea.clientWidth + 50 : -50;
                 this.end_x = this.direction === 1 ? -50 : gameArea.clientWidth + 50;
                 const dropZoneWidth = gameArea.clientWidth * 0.5;
