@@ -141,7 +141,7 @@
             100% { transform: scale(1) translateY(-20px); opacity: 0; }
         }
         
-        /* UPDATED: Failure Feedback - Now same size as Sorted */
+        /* Failure Feedback - Same size as Sorted */
         #feedback-overlay {
             display: none;
             position: absolute;
@@ -153,8 +153,8 @@
             pointer-events: none;
             justify-content: center;
             align-items: center;
-            font-size: 3rem; /* UPDATED to match sorted text size */
-            font-weight: black; /* UPDATED to match sorted text weight */
+            font-size: 3rem; 
+            font-weight: black; 
             color: #ef4444; /* Tailwind Red-500 */
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
         }
@@ -298,7 +298,11 @@
             }, 700); 
         };
 
-        // Animate police car collecting the SP bag
+        /**
+         * @function animatePoliceCollect
+         * Animates a police car (🚔) swooping in to collect the suspect package (SP).
+         * @param {HTMLElement} bagElement The DOM element of the SP bag to remove.
+         */
         const animatePoliceCollect = (bagElement) => {
             if (isGameOver) return;
 
@@ -319,15 +323,20 @@
             
             const moveDistance = startX - bagCenterX; 
 
+            // Start the movement animation
             requestAnimationFrame(() => {
                 policeCar.style.transform = `translateX(-${moveDistance}px)`;
             });
 
+            // After the car has reached the bag and removal has occurred (800ms)
             setTimeout(() => {
+                // 1. Remove the bag from the street
                 bagElement.remove();
                 
+                // 2. Flash the success message
                 flashSortedMessage();
                 
+                // 3. Animate the car leaving the screen
                 policeCar.style.transition = 'transform 1s ease-in'; 
                 policeCar.style.transform = `translateX(${-startX}px)`;
                 
@@ -346,6 +355,7 @@
             if (bagData.isSuspect) {
                 score++;
                 bagData.isResolved = true; 
+                // SUCCESS: Trigger police car animation and "SORTED!" text
                 animatePoliceCollect(bagData.element); 
             } else {
                 loseEnergy(ENERGY_LOSS_WRONG);
@@ -363,7 +373,7 @@
 
         // Handles sharing the final score
         const handleShare = () => {
-            // UPDATED: Use the specific share message format
+            // Updated share message format
             const shareMessage = `I detected ${score} suspected packages in See it Say it Sorted! Can you beat my score?`;
             
             if (navigator.share) {
@@ -374,6 +384,7 @@
                 }).catch((error) => console.log('Error sharing:', error));
             } else {
                 console.log("Web Share API not supported. Providing alert fallback.");
+                // Fallback action is to log the message/URL
                 console.log(`Share Message (Copy & Paste): ${shareMessage}`);
             }
         };
