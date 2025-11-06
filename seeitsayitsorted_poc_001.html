@@ -28,12 +28,12 @@
         /* Game specific styles */
         #game-area {
             position: relative;
-            flex-grow: 1;
+            flex-grow: 1; /* Takes up all remaining space between header and footer */
             background-color: #e2e8f0; /* Street/Pavement color */
             overflow: hidden;
             /* Using a gradient for a better street feel */
             background-image: linear-gradient(to top, #cbd5e1 5%, #e2e8f0 95%);
-            border-radius: 0 0 16px 16px;
+            border-radius: 0 0 0 0; /* Removed bottom radius since footer is separate */
         }
 
         .entity-container {
@@ -150,13 +150,8 @@
             transition: transform 0.8s ease-out; 
             z-index: 1000; /* Ensure it's above everything */
         }
-
-        /* NEW: Styles for the overlay footer to allow click-through */
-        #instructions-footer {
-            pointer-events: none; /* Allows clicks to pass through to elements beneath */
-            z-index: 190; /* Visual layer: above bags, below modals */
-            opacity: 0.9; /* Slight transparency for visual separation */
-        }
+        
+        /* Removed old #instructions-footer overlay styles */
     </style>
     <script>
         // --- GAME STATE AND CONSTANTS ---
@@ -383,12 +378,13 @@
                 this.isBagDropped = false;
 
                 // --- POSITIONAL DATA ---
-                // MODIFIED: Ensure a safe margin (100px) from the bottom of the game area. 
-                // The container is 60px high, so max top position is gameArea.clientHeight - 60 - 40 (clearance)
-                // The minimum top position is 40px.
+                // MODIFIED: Ensure a safe margin (120px) from the bottom of the game area. 
+                // This makes the game screen feel slightly shorter and keeps low-spawning entities visible.
                 const MIN_Y = 40;
-                const MAX_Y_TOP_POSITION = gameArea.clientHeight - 100;
-                const RANGE_LENGTH = MAX_Y_TOP_POSITION - MIN_Y;
+                
+                // MODIFIED: Increased bottom margin from 100px to 120px
+                const MAX_Y_TOP_POSITION = gameArea.clientHeight - 120;
+                const RANGE_LENGTH = Math.max(0, MAX_Y_TOP_POSITION - MIN_Y); // Ensure range is not negative
                 
                 this.y = Math.floor(Math.random() * RANGE_LENGTH) + MIN_Y; 
                 
@@ -781,7 +777,7 @@
             </div>
         </div>
 
-        <!-- Game Area: The Street Scene -->
+        <!-- Game Area: The Street Scene - Uses flex-grow: 1 -->
         <div id="game-area">
             <!-- Game Over Modal -->
             <div id="game-over-modal" class="game-modal">
@@ -800,14 +796,13 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Instructions Footer (Now positioned as a click-through overlay inside game-area) -->
-            <div id="instructions-footer" class="absolute inset-x-0 bottom-0 p-3 bg-gray-900 text-xs text-center text-gray-300">
-                <p>Monitor street traffic. Click "SP" bags once they are left behind.</p>
-            </div>
         </div>
 
-        <!-- Instructions Footer (OLD LOCATION REMOVED) -->
+        <!-- Instructions Footer (NOW FIXED AT BOTTOM) -->
+        <!-- Moved outside the game-area to ensure visibility on small screens -->
+        <div id="instructions-footer" class="p-3 bg-gray-900 text-xs text-center text-gray-300 border-t-4 border-gray-700 rounded-b-xl">
+            <p>Monitor street traffic. Click "SP" bags once they are left behind.</p>
+        </div>
         
     </div>
 </body>
