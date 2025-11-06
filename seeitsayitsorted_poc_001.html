@@ -115,7 +115,7 @@
             100% { opacity: 0; background-color: transparent; } /* Fade out */
         }
         
-        /* New Styles for Success Feedback */
+        /* Success Feedback (Sorted) - HIGHEST Z-INDEX */
         #sorted-overlay {
             display: none;
             position: absolute;
@@ -123,7 +123,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 180;
+            z-index: 250; /* Higher than modals (200) and flash (150) */
             pointer-events: none;
             justify-content: center;
             align-items: center;
@@ -133,7 +133,6 @@
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
         .sorted-animation {
-            /* INCREASED DURATION: from 0.6s to 1.5s */
             animation: sortedPop 1.5s ease-out forwards;
         }
         @keyframes sortedPop {
@@ -141,17 +140,45 @@
             50% { transform: scale(1.5) translateY(0); opacity: 1; }
             100% { transform: scale(1) translateY(-20px); opacity: 0; }
         }
+        
+        /* UPDATED: Failure Feedback - Now same size as Sorted */
+        #feedback-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 240; /* Just below Sorted */
+            pointer-events: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem; /* UPDATED to match sorted text size */
+            font-weight: black; /* UPDATED to match sorted text weight */
+            color: #ef4444; /* Tailwind Red-500 */
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+        }
+        .feedback-animation {
+            animation: shakeAndFade 0.7s ease-out forwards;
+        }
+        @keyframes shakeAndFade {
+            0% { transform: translateX(0) scale(1); opacity: 1; }
+            20% { transform: translateX(-10px); }
+            40% { transform: translateX(10px); }
+            60% { transform: translateX(-10px); }
+            80% { transform: translateX(10px); }
+            100% { transform: translateX(0) scale(0.8); opacity: 0; }
+        }
+
 
         .police-car-figure {
             position: absolute;
             font-size: 3rem;
             line-height: 1;
-            /* SLOWER ARRIVAL: from 0.3s to 0.8s */
             transition: transform 0.8s ease-out; 
             z-index: 1000; /* Ensure it's above everything */
         }
         
-        /* Removed old #instructions-footer overlay styles */
     </style>
     <script>
         // --- GAME STATE AND CONSTANTS ---
@@ -166,9 +193,9 @@
         ];
         
         // --- TIMING CONSTANTS ---
-        const SP_LIFETIME = 3000; // Time character stands over the bag (LEAVER only)
-        const PICKUP_DELAY = 1000; // Time after dropping bag that a PICKUPPER picks it up (1 second)
-        const DELAYED_LOSS_TIME = 3000; // Grace period after character leaves SP (3 seconds)
+        const SP_LIFETIME = 3000; 
+        const PICKUP_DELAY = 1000; 
+        const DELAYED_LOSS_TIME = 3000; 
 
         const ENERGY_LOSS_MISSED = 20;
         const ENERGY_LOSS_WRONG = 10;
@@ -198,7 +225,8 @@
         let startButton;
         let shareButton;
         let flashOverlay;
-        let sortedOverlay; // New reference
+        let sortedOverlay; 
+        let feedbackOverlay; 
 
         // --- UTILITY FUNCTIONS ---
         const getRandomCode = () => {
@@ -245,70 +273,69 @@
             }
         };
         
-        // New: Flash "Sorted!" message on successful collection
+        // Flash "Sorted!" message on successful collection
         const flashSortedMessage = () => {
             sortedOverlay.style.display = 'flex';
             sortedOverlay.classList.add('opacity-100', 'sorted-animation');
-            // INCREASED DURATION: Set timeout to match 1.5s CSS animation
             setTimeout(() => {
                 sortedOverlay.classList.remove('opacity-100', 'sorted-animation');
                 sortedOverlay.style.display = 'none';
-            }, 1500); // Updated from 600ms
+            }, 1500); 
+        };
+        
+        // Flash Negative Feedback message
+        const flashNegativeFeedback = () => {
+            const messages = ["Thief!", "Lawyer up!"];
+            const message = messages[Math.floor(Math.random() * messages.length)];
+            
+            feedbackOverlay.innerHTML = `🔨 ${message} 🔨`;
+            feedbackOverlay.style.display = 'flex';
+            feedbackOverlay.classList.add('feedback-animation');
+            
+            setTimeout(() => {
+                feedbackOverlay.classList.remove('feedback-animation');
+                feedbackOverlay.style.display = 'none';
+            }, 700); 
         };
 
-        // New: Animate police car collecting the SP bag
+        // Animate police car collecting the SP bag
         const animatePoliceCollect = (bagElement) => {
             if (isGameOver) return;
 
             const bagRect = bagElement.getBoundingClientRect();
             const gameAreaRect = gameArea.getBoundingClientRect();
             
-            // Calculate starting and target positions relative to gameArea
-            const startX = gameAreaRect.width + 100; // Start off-screen right
-            
-            // Get the center of the bag relative to the game area
+            const startX = gameAreaRect.width + 100; 
             const bagCenterX = bagRect.left + (bagRect.width / 2) - gameAreaRect.left;
             const bagCenterY = bagRect.top + (bagRect.height / 2) - gameAreaRect.top;
             
-            // Create police car element
             const policeCar = document.createElement('div');
             policeCar.className = 'police-car-figure';
-            policeCar.textContent = '🚔'; // Police car emoji
+            policeCar.textContent = '🚔'; 
             policeCar.style.left = `${startX}px`;
-            // Position the car so its base is near the bag's center Y
             policeCar.style.top = `${bagCenterY - 10}px`; 
-            // policeCar.style.transition is set to 0.8s in CSS
 
             gameArea.appendChild(policeCar);
             
-            // 1. Drive to the bag position (Duration: 800ms via CSS)
-            // We need to move the car by the difference between its startX and the bagCenterX
             const moveDistance = startX - bagCenterX; 
 
-            // Use requestAnimationFrame for smooth immediate update
             requestAnimationFrame(() => {
                 policeCar.style.transform = `translateX(-${moveDistance}px)`;
             });
 
-            // 2. Drive away after arriving (Wait 800ms for arrival)
             setTimeout(() => {
-                // Remove the actual bag element now that the car has covered it
                 bagElement.remove();
                 
-                // *** NEW: Trigger flash AFTER collection (bag removal) ***
                 flashSortedMessage();
                 
-                // Drive away (off-screen left)
-                policeCar.style.transition = 'transform 1s ease-in'; // Departure duration: 1000ms
-                // Move it far off the left screen edge
+                policeCar.style.transition = 'transform 1s ease-in'; 
                 policeCar.style.transform = `translateX(${-startX}px)`;
                 
-                // 3. Cleanup (Wait 1000ms for departure to finish)
                 setTimeout(() => {
                     policeCar.remove();
-                }, 1000); // Wait 1 second for the departure animation
+                }, 1000); 
 
-            }, 800); // Wait 0.8 seconds for the arrival animation
+            }, 800); 
         };
 
         
@@ -318,17 +345,14 @@
 
             if (bagData.isSuspect) {
                 score++;
-                bagData.isResolved = true; // Mark as resolved immediately
-                
-                // Trigger police car animation and "Sorted" flash
+                bagData.isResolved = true; 
                 animatePoliceCollect(bagData.element); 
-                // flashSortedMessage() removed here, moved to animatePoliceCollect
-                
-                // NOTE: bagData.element.remove() is now handled inside animatePoliceCollect AFTER the car arrives.
-
             } else {
                 loseEnergy(ENERGY_LOSS_WRONG);
                 
+                // Trigger negative feedback flash
+                flashNegativeFeedback();
+
                 // For non-SP, we resolve and remove it immediately when clicked
                 bagData.isResolved = true;
                 bagData.element.remove();
@@ -339,7 +363,8 @@
 
         // Handles sharing the final score
         const handleShare = () => {
-            const shareMessage = `See it Say it Sorted - I detected ${score} of suspected packages before a detonation! Can you beat my score?`;
+            // UPDATED: Use the specific share message format
+            const shareMessage = `I detected ${score} suspected packages in See it Say it Sorted! Can you beat my score?`;
             
             if (navigator.share) {
                 navigator.share({
@@ -349,7 +374,6 @@
                 }).catch((error) => console.log('Error sharing:', error));
             } else {
                 console.log("Web Share API not supported. Providing alert fallback.");
-                // Fallback message for unsupported browsers
                 console.log(`Share Message (Copy & Paste): ${shareMessage}`);
             }
         };
@@ -379,12 +403,10 @@
 
                 // --- POSITIONAL DATA ---
                 // MODIFIED: Ensure a safe margin (120px) from the bottom of the game area. 
-                // This makes the game screen feel slightly shorter and keeps low-spawning entities visible.
                 const MIN_Y = 40;
                 
-                // MODIFIED: Increased bottom margin from 100px to 120px
                 const MAX_Y_TOP_POSITION = gameArea.clientHeight - 120;
-                const RANGE_LENGTH = Math.max(0, MAX_Y_TOP_POSITION - MIN_Y); // Ensure range is not negative
+                const RANGE_LENGTH = Math.max(0, MAX_Y_TOP_POSITION - MIN_Y); 
                 
                 this.y = Math.floor(Math.random() * RANGE_LENGTH) + MIN_Y; 
                 
@@ -407,7 +429,6 @@
                 this.container.className = 'entity-container';
                 this.container.style.top = `${this.y}px`;
                 this.container.style.transform = `translateX(${this.x}px)`;
-                // Z-Index: Lower Y (closer to bottom) is higher z-index (on top)
                 this.container.style.zIndex = Math.floor(this.y); 
 
                 this.figure = document.createElement('span');
@@ -435,7 +456,6 @@
                 this.bag.style.bottom = '10px'; 
                 
                 if (this.actionType !== 'WALKER') {
-                    // Note: Clicks on a carried bag are only handled if the character is paused over the drop spot
                     this.bag.onclick = () => this.handleCarriedBagClick();
                 }
                 
@@ -459,6 +479,7 @@
                     this.bag = null;
                 } else {
                     loseEnergy(ENERGY_LOSS_WRONG);
+                    flashNegativeFeedback(); // Negative feedback flash
                     
                     // If non-SP, and we click it, they leave it immediately 
                     if (this.actionType === 'LEAVER') {
@@ -680,7 +701,8 @@
 
             gameOverModal.style.display = 'none';
             introModal.style.display = 'none';
-            sortedOverlay.style.display = 'none'; // Ensure sorted flash is hidden
+            sortedOverlay.style.display = 'none'; 
+            feedbackOverlay.style.display = 'none'; 
 
             updateUI();
         }
@@ -714,7 +736,8 @@
             startButton = document.getElementById('start-button');
             flashOverlay = document.getElementById('flash-overlay');
             shareButton = document.getElementById('share-button');
-            sortedOverlay = document.getElementById('sorted-overlay'); // Get new ref
+            sortedOverlay = document.getElementById('sorted-overlay');
+            feedbackOverlay = document.getElementById('feedback-overlay'); 
 
             restartButton.onclick = restartGame;
             startButton.onclick = startGame;
@@ -733,9 +756,12 @@
         <!-- INTENSE FLASH OVERLAY - z-index is higher than game elements but lower than modals -->
         <div id="flash-overlay" class="absolute inset-0 z-[150] pointer-events-none opacity-0"></div>
         
-        <!-- SORTED MESSAGE OVERLAY -->
-        <div id="sorted-overlay" class="absolute inset-0 z-[180] pointer-events-none opacity-0 flex">
-            <!-- ADD SIREN EMOJIS -->
+        <!-- NEGATIVE FEEDBACK OVERLAY -->
+        <div id="feedback-overlay" class="absolute inset-0 z-[240] pointer-events-none opacity-0 flex">
+        </div>
+        
+        <!-- SUCCESS FEEDBACK OVERLAY - HIGHEST Z-INDEX -->
+        <div id="sorted-overlay" class="absolute inset-0 z-[250] pointer-events-none opacity-0 flex">
             🚨 SORTED! 🚨
         </div>
 
@@ -754,7 +780,7 @@
                     <ul class="list-disc list-inside ml-4 space-y-1">
                         <li>You have a **3-second** grace period after an SP is left behind.</li>
                         <li>If time runs out, the screen flashes and you lose **20 Energy**.</li>
-                        <li>Tapping a non-SP bag deducts **10 Energy**.</li>
+                        <li>Tapping a non-SP bag deducts **10 Energy** and triggers a **"Thief!"** warning.</li>
                         <li>**Non-SP bags now stay on the street, cluttering your view!**</li>
                     </ul>
                 </div>
@@ -799,7 +825,6 @@
         </div>
 
         <!-- Instructions Footer (NOW FIXED AT BOTTOM) -->
-        <!-- Moved outside the game-area to ensure visibility on small screens -->
         <div id="instructions-footer" class="p-3 bg-gray-900 text-xs text-center text-gray-300 border-t-4 border-gray-700 rounded-b-xl">
             <p>Monitor street traffic. Click "SP" bags once they are left behind.</p>
         </div>
