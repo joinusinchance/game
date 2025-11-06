@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>See it Say it Sorted: SP Spotter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Ensuring portrait mode focus and full viewport usage */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 450px; /* Max width for mobile feel */
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            position: relative; /* Needed for absolute modals and flash overlay */
+        }
+
+        /* Game specific styles */
+        #game-area {
+            position: relative;
+            flex-grow: 1;
+            background-color: #e2e8f0; /* Street/Pavement color */
+            overflow: hidden;
+            /* Using a gradient for a better street feel */
+            background-image: linear-gradient(to top, #cbd5e1 5%, #e2e8f0 95%);
+            border-radius: 0 0 16px 16px;
+        }
+
+        .entity-container {
+            position: absolute;
+            display: flex;
+            align-items: flex-end; /* Align character and bag to the ground line */
+            height: 60px; /* Base height for positioning */
+            pointer-events: none; /* Container is just for positioning */
+            transform: translateZ(0); /* Hardware acceleration */
+        }
+
+        .animal-figure {
+            font-size: 3rem;
+            line-height: 1;
+        }
+
+        .bag {
+            position: absolute;
+            cursor: pointer;
+            width: 40px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border-radius: 6px;
+            border: 2px solid;
+            box-shadow: 1px 1px 0;
+            transition: transform 0.1s, opacity 0.3s;
+            pointer-events: none; /* Default to non-clickable */
+        }
+
+        .bag.dropped {
+            pointer-events: auto; /* Clickable when dropped */
+        }
+
+        .bag:active {
+            transform: scale(0.9);
+        }
+
+        /* The SP bag keeps its pulsing red outline and shadow for immediate identification */
+        .sp-bag {
+            animation: pulse 0.5s infinite alternate; /* Alert animation */
+            border-color: #e53e3e !important; /* Override border with red */
+            box-shadow: 0 0 8px #e53e3e !important; /* Red shadow */
+        }
+
+        /* SP Pulse Animation */
+        @keyframes pulse {
+            from { opacity: 0.8; }
+            to { opacity: 1; transform: scale(1.05); }
+        }
+
+        /* Modals */
+        .game-modal {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 200; /* Max Z-index for modals */
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        /* Screen Flash for Missed SP - dedicated overlay */
+        .intense-flash {
+            animation: intenseFlashRedWhite 0.3s ease-in-out forwards;
+        }
+
+        @keyframes intenseFlashRedWhite {
+            0% { opacity: 1; background-color: rgba(255, 0, 0, 1); } /* Solid Red */
+            50% { opacity: 1; background-color: rgba(255, 255, 255, 1); } /* Solid White */
+            100% { opacity: 0; background-color: transparent; } /* Fade out */
+        }
+        
+        /* New Styles for Success Feedback */
+        #sorted-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 180;
+            pointer-events: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            font-weight: black;
+            color: #1e40af; /* Dark Blue (Tailwind Blue-700) */
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .sorted-animation {
+            /* INCREASED DURATION: from 0.6s to 1.5s */
+            animation: sortedPop 1.5s ease-out forwards;
+        }
+        @keyframes sortedPop {
+            0% { transform: scale(0.5) translateY(50px); opacity: 0; }
+            50% { transform: scale(1.5) translateY(0); opacity: 1; }
+            100% { transform: scale(1) translateY(-20px); opacity: 0; }
+        }
+
+        .police-car-figure {
+            position: absolute;
+            font-size: 3rem;
+            line-height: 1;
+            /* SLOWER ARRIVAL: from 0.3s to 0.8s */
+            transition: transform 0.8s ease-out; 
+            z-index: 1000; /* Ensure it's above everything */
+        }
+
+        /* NEW: Styles for the overlay footer to allow click-through */
+        #instructions-footer {
+            pointer-events: none; /* Allows clicks to pass through to elements beneath */
+            z-index: 190; /* Visual layer: above bags, below modals */
+            opacity: 0.9; /* Slight transparency for visual separation */
+        }
+    </style>
+    <script>
+        // --- GAME STATE AND CONSTANTS ---
+        const EMOJIS = ['🐱', '🐶', '🐷', '🐮', '🐒', '🦒', '🐘', '🐐', '🐸', '🐼'];
+        const ACTION_TYPES = ['WALKER', 'LEAVER', 'PICKUPPER']; 
+        const BAG_COLORS = [
+            { bg: '#3498db', text: 'white', border: '#2980b9' },
+            { bg: '#2ecc71', text: 'white', border: '#27ae60' },
+            { bg: '#f1c40f', text: 'black', border: '#f39c12' },
+            { bg: '#9b59b6', text: 'white', border: '#8e44ad' },
+            { bg: '#e67e22', text: 'white', border: '#d35400' },
+        ];
+        
+        // --- TIMING CONSTANTS ---
+        const SP_LIFETIME = 3000; // Time character stands over the bag (LEAVER only)
+        const PICKUP_DELAY = 1000; // Time after dropping bag that a PICKUPPER picks it up (1 second)
+        const DELAYED_LOSS_TIME = 3000; // Grace period after character leaves SP (3 seconds)
+
+        const ENERGY_LOSS_MISSED = 20;
+        const ENERGY_LOSS_WRONG = 10;
+        const INITIAL_SPAWN_INTERVAL = 2500;
+        const MIN_SPAWN_INTERVAL = 1000;
+        const SPEED_INCREMENT = 50; 
+
+        let score = 0;
+        let energy = 100;
+        let spawnInterval = INITIAL_SPAWN_INTERVAL;
+        let isGameOver = false;
+        let isGameRunning = false;
+        let lastSpawnTime = 0;
+        let lastFrameTime = performance.now();
+        let activeEntities = [];
+        let droppedBags = []; 
+
+        // --- DOM REFERENCES ---
+        let gameArea;
+        let scoreDisplay;
+        let energyBar;
+        let gameOverModal;
+        let finalScoreDisplay;
+        let restartButton;
+        let appContainer; 
+        let introModal;
+        let startButton;
+        let shareButton;
+        let flashOverlay;
+        let sortedOverlay; // New reference
+
+        // --- UTILITY FUNCTIONS ---
+        const getRandomCode = () => {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            return letters.charAt(Math.floor(Math.random() * 26)) + letters.charAt(Math.random() * 26);
+        };
+
+        const updateUI = () => {
+            scoreDisplay.textContent = score;
+            const currentEnergy = Math.max(0, energy);
+            energyBar.style.width = `${currentEnergy}%`;
+
+            if (currentEnergy <= 25) {
+                energyBar.className = 'h-full rounded-full transition-all duration-300 bg-red-500';
+            } else if (currentEnergy <= 50) {
+                energyBar.className = 'h-full rounded-full transition-all duration-300 bg-yellow-500';
+            } else {
+                energyBar.className = 'h-full rounded-full transition-all duration-300 bg-green-500';
+            }
+        };
+
+        const loseEnergy = (amount) => {
+            energy -= amount;
+            
+            // Only flash if the game is still running, and energy loss occurred
+            if (!isGameOver) {
+                flashScreen(); 
+            }
+            
+            if (energy <= 0) {
+                energy = 0;
+                gameOver();
+            }
+            updateUI();
+        };
+
+        const flashScreen = () => {
+            // Apply intense flash to the dedicated overlay element
+            if (!isGameOver) {
+                flashOverlay.classList.add('intense-flash');
+                setTimeout(() => {
+                    flashOverlay.classList.remove('intense-flash');
+                }, 300); // Matches CSS animation duration
+            }
+        };
+        
+        // New: Flash "Sorted!" message on successful collection
+        const flashSortedMessage = () => {
+            sortedOverlay.style.display = 'flex';
+            sortedOverlay.classList.add('opacity-100', 'sorted-animation');
+            // INCREASED DURATION: Set timeout to match 1.5s CSS animation
+            setTimeout(() => {
+                sortedOverlay.classList.remove('opacity-100', 'sorted-animation');
+                sortedOverlay.style.display = 'none';
+            }, 1500); // Updated from 600ms
+        };
+
+        // New: Animate police car collecting the SP bag
+        const animatePoliceCollect = (bagElement) => {
+            if (isGameOver) return;
+
+            const bagRect = bagElement.getBoundingClientRect();
+            const gameAreaRect = gameArea.getBoundingClientRect();
+            
+            // Calculate starting and target positions relative to gameArea
+            const startX = gameAreaRect.width + 100; // Start off-screen right
+            
+            // Get the center of the bag relative to the game area
+            const bagCenterX = bagRect.left + (bagRect.width / 2) - gameAreaRect.left;
+            const bagCenterY = bagRect.top + (bagRect.height / 2) - gameAreaRect.top;
+            
+            // Create police car element
+            const policeCar = document.createElement('div');
+            policeCar.className = 'police-car-figure';
+            policeCar.textContent = '🚔'; // Police car emoji
+            policeCar.style.left = `${startX}px`;
+            // Position the car so its base is near the bag's center Y
+            policeCar.style.top = `${bagCenterY - 10}px`; 
+            // policeCar.style.transition is set to 0.8s in CSS
+
+            gameArea.appendChild(policeCar);
+            
+            // 1. Drive to the bag position (Duration: 800ms via CSS)
+            // We need to move the car by the difference between its startX and the bagCenterX
+            const moveDistance = startX - bagCenterX; 
+
+            // Use requestAnimationFrame for smooth immediate update
+            requestAnimationFrame(() => {
+                policeCar.style.transform = `translateX(-${moveDistance}px)`;
+            });
+
+            // 2. Drive away after arriving (Wait 800ms for arrival)
+            setTimeout(() => {
+                // Remove the actual bag element now that the car has covered it
+                bagElement.remove();
+                
+                // *** NEW: Trigger flash AFTER collection (bag removal) ***
+                flashSortedMessage();
+                
+                // Drive away (off-screen left)
+                policeCar.style.transition = 'transform 1s ease-in'; // Departure duration: 1000ms
+                // Move it far off the left screen edge
+                policeCar.style.transform = `translateX(${-startX}px)`;
+                
+                // 3. Cleanup (Wait 1000ms for departure to finish)
+                setTimeout(() => {
+                    policeCar.remove();
+                }, 1000); // Wait 1 second for the departure animation
+
+            }, 800); // Wait 0.8 seconds for the arrival animation
+        };
+
+        
+        // Handles clicks on bags that have been left static on the ground
+        const handleStaticBagClick = (bagData) => {
+            if (isGameOver || bagData.isResolved) return;
+
+            if (bagData.isSuspect) {
+                score++;
+                bagData.isResolved = true; // Mark as resolved immediately
+                
+                // Trigger police car animation and "Sorted" flash
+                animatePoliceCollect(bagData.element); 
+                // flashSortedMessage() removed here, moved to animatePoliceCollect
+                
+                // NOTE: bagData.element.remove() is now handled inside animatePoliceCollect AFTER the car arrives.
+
+            } else {
+                loseEnergy(ENERGY_LOSS_WRONG);
+                
+                // For non-SP, we resolve and remove it immediately when clicked
+                bagData.isResolved = true;
+                bagData.element.remove();
+            }
+
+            updateUI();
+        };
+
+        // Handles sharing the final score
+        const handleShare = () => {
+            const shareMessage = `See it Say it Sorted - I detected ${score} of suspected packages before a detonation! Can you beat my score?`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'See it Say it Sorted',
+                    text: shareMessage,
+                    url: document.location.href, 
+                }).catch((error) => console.log('Error sharing:', error));
+            } else {
+                console.log("Web Share API not supported. Providing alert fallback.");
+                // Fallback message for unsupported browsers
+                console.log(`Share Message (Copy & Paste): ${shareMessage}`);
+            }
+        };
+
+        // --- ENTITY CLASS ---
+
+        class Entity {
+            constructor() {
+                this.id = crypto.randomUUID();
+                // 30% chance of SP
+                this.isSuspect = Math.random() < 0.30; 
+                this.bagCode = this.isSuspect ? 'SP' : getRandomCode();
+                this.emoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+                this.direction = Math.random() > 0.5 ? 1 : -1; 
+                
+                // 50% chance LEAVER
+                const actionRoll = Math.random();
+                if (actionRoll < 0.50) {
+                    this.actionType = 'LEAVER'; 
+                } else if (actionRoll < 0.75) {
+                    this.actionType = 'WALKER'; 
+                } else {
+                    this.actionType = 'PICKUPPER'; 
+                }
+
+                this.isBagDropped = false;
+
+                // --- POSITIONAL DATA ---
+                this.y = Math.floor(Math.random() * (gameArea.clientHeight - 80)) + 40; 
+                this.start_x = this.direction === 1 ? gameArea.clientWidth + 50 : -50;
+                this.end_x = this.direction === 1 ? -50 : gameArea.clientWidth + 50;
+                const dropZoneWidth = gameArea.clientWidth * 0.5;
+                const dropZoneStart = gameArea.clientWidth * 0.25;
+                this.drop_x = Math.floor(Math.random() * dropZoneWidth) + dropZoneStart;
+
+                this.x = this.start_x;
+                this.speed = (Math.random() * 0.05) + 0.05; 
+
+                // --- STATE MACHINE ---
+                this.state = 'WALKING_IN';
+                this.walkDuration = 0;
+                this.pauseStartTime = 0;
+
+                // --- DOM ELEMENTS ---
+                this.container = document.createElement('div');
+                this.container.className = 'entity-container';
+                this.container.style.top = `${this.y}px`;
+                this.container.style.transform = `translateX(${this.x}px)`;
+                // Z-Index: Lower Y (closer to bottom) is higher z-index (on top)
+                this.container.style.zIndex = Math.floor(this.y); 
+
+                this.figure = document.createElement('span');
+                this.figure.className = 'animal-figure';
+                this.figure.textContent = this.emoji;
+                this.figure.style.transform = this.direction === 1 ? 'scaleX(-1)' : 'scaleX(1)';
+
+                this.bag = document.createElement('div');
+                this.bag.classList.add('bag');
+                this.bag.textContent = this.bagCode;
+                
+                const randomColor = BAG_COLORS[Math.floor(Math.random() * BAG_COLORS.length)];
+                this.bag.style.backgroundColor = randomColor.bg;
+                this.bag.style.borderColor = randomColor.border;
+                this.bag.style.boxShadow = `1px 1px 0 ${randomColor.border}`;
+
+                if (this.isSuspect) {
+                    this.bag.style.color = 'white'; 
+                    this.bag.classList.add('sp-bag');
+                } else {
+                    this.bag.style.color = randomColor.text;
+                }
+                
+                this.bag.style.right = '40px'; 
+                this.bag.style.bottom = '10px'; 
+                
+                if (this.actionType !== 'WALKER') {
+                    // Note: Clicks on a carried bag are only handled if the character is paused over the drop spot
+                    this.bag.onclick = () => this.handleCarriedBagClick();
+                }
+                
+                this.container.appendChild(this.bag);
+                this.container.appendChild(this.figure);
+                gameArea.appendChild(this.container);
+            }
+
+            // Calculates the entity's central X position for proximity checks
+            getCenterX() {
+                return this.x + (this.direction === 1 ? -20 : 20); 
+            }
+
+            // Handles clicks while the character is standing over the bag
+            handleCarriedBagClick() {
+                if (isGameOver || this.state !== 'DROPPED' || !this.bag) return;
+                
+                if (this.isSuspect) {
+                    score++;
+                    this.bag.remove();
+                    this.bag = null;
+                } else {
+                    loseEnergy(ENERGY_LOSS_WRONG);
+                    
+                    // If non-SP, and we click it, they leave it immediately 
+                    if (this.actionType === 'LEAVER') {
+                         this.detachBag(performance.now()); 
+                    } else if (this.actionType === 'PICKUPPER') {
+                        // If PICKUPPER, they leave the bag behind
+                        this.bag.remove();
+                        this.bag = null;
+                    }
+                }
+                
+                // Character leaves immediately
+                this.state = 'WALKING_OUT';
+                this.isBagDropped = false; 
+                
+                updateUI();
+            }
+
+            // Detaches the bag from the character and adds it to the global droppedBags array (LEAVER only)
+            detachBag(currentTime) {
+                if (!this.bag) return;
+                
+                const bagRect = this.bag.getBoundingClientRect();
+                const gameAreaRect = gameArea.getBoundingClientRect();
+
+                const staticBag = this.bag.cloneNode(true);
+
+                staticBag.style.position = 'absolute';
+                staticBag.style.left = `${bagRect.left - gameAreaRect.left}px`;
+                staticBag.style.top = `${bagRect.top - gameAreaRect.top}px`;
+                staticBag.style.right = 'auto'; 
+                staticBag.style.bottom = 'auto'; 
+                staticBag.style.transform = 'none'; 
+                staticBag.classList.add('dropped'); 
+                staticBag.style.zIndex = Math.floor(this.y); 
+
+                const bagData = {
+                    element: staticBag,
+                    isSuspect: this.isSuspect,
+                    timeLeft: currentTime, // Timestamp when the bag was left behind
+                    isResolved: false,
+                };
+                
+                staticBag.onclick = () => handleStaticBagClick(bagData);
+                
+                gameArea.appendChild(staticBag);
+                droppedBags.push(bagData);
+
+                this.container.removeChild(this.bag);
+                this.bag = null;
+            }
+            
+
+            // Handles movement and state transitions
+            update(deltaTime, currentTime) {
+                this.walkDuration += deltaTime;
+                
+                this.container.style.zIndex = Math.floor(this.y); 
+
+                if (this.state === 'WALKING_IN') {
+                    if (this.actionType === 'WALKER') {
+                        this.x -= this.direction * this.speed * deltaTime;
+                    } else {
+                        const distanceToDrop = this.direction === 1 ? this.x - this.drop_x : this.drop_x - this.x;
+
+                        if (distanceToDrop <= 0) {
+                            this.state = 'DROPPED';
+                            this.isBagDropped = true;
+                            this.pauseStartTime = this.walkDuration;
+                            
+                            // Re-position bag to ground position
+                            if (this.bag) {
+                                this.bag.classList.add('dropped'); 
+                                this.bag.style.right = '0';
+                                this.bag.style.bottom = '-30px'; 
+                            }
+                        } else {
+                            this.x -= this.direction * this.speed * deltaTime;
+                        }
+                    }
+
+                } else if (this.state === 'DROPPED') {
+                    let shouldLeave = false;
+                    
+                    if (this.actionType === 'LEAVER') {
+                        // LEAVER stands for 3 seconds, then leaves the bag
+                        if (this.walkDuration - this.pauseStartTime >= SP_LIFETIME) {
+                            if (this.bag) {
+                                this.detachBag(currentTime);
+                            }
+                            shouldLeave = true;
+                        }
+                    } else if (this.actionType === 'PICKUPPER') {
+                        // PICKUPPER stands for 1 second, then picks up the bag and leaves
+                        if (this.walkDuration - this.pauseStartTime >= PICKUP_DELAY) {
+                            if (this.bag) {
+                                this.bag.classList.remove('dropped');
+                                this.bag.style.right = '40px'; 
+                                this.bag.style.bottom = '10px'; 
+                            }
+                            shouldLeave = true;
+                        }
+                    }
+
+                    if (shouldLeave) {
+                        this.state = 'WALKING_OUT';
+                        this.isBagDropped = false; 
+                    }
+
+                } else if (this.state === 'WALKING_OUT') {
+                    this.x -= this.direction * this.speed * deltaTime;
+
+                    const isOffScreen = this.direction === 1 ? this.x < this.end_x : this.x > this.end_x;
+                    if (isOffScreen) {
+                        this.container.remove();
+                        return 'DONE'; 
+                    }
+                }
+
+                this.container.style.transform = `translateX(${this.x}px)`;
+                return 'ACTIVE';
+            }
+        }
+
+        // --- GLOBAL THREAT CHECK ---
+
+        const checkGameThreats = (currentTime) => {
+            // Filter the droppedBags array, keeping only unresolved or non-detonated items
+            droppedBags = droppedBags.filter(bag => {
+                if (bag.isResolved) {
+                    return false; 
+                }
+
+                // Check if the 3-second grace period has passed
+                if (currentTime - bag.timeLeft >= DELAYED_LOSS_TIME) {
+                    
+                    if (bag.isSuspect) {
+                        // SP DETONATES: Critical loss, bag is removed from DOM.
+                        loseEnergy(ENERGY_LOSS_MISSED); 
+                        bag.isResolved = true; 
+                        bag.element.remove(); 
+                        return false; // Remove SP from droppedBags array
+                    } 
+                    
+                    // NON-SP REMAINS: It stays in the DOM, stays in the array, and no energy is lost.
+                    return true; 
+                }
+                return true; 
+            });
+        };
+
+
+        // --- GAME CONTROL FUNCTIONS ---
+
+        const spawnNewEntity = () => {
+            if (isGameOver) return;
+            activeEntities.push(new Entity());
+        };
+
+        const gameLoop = (currentTime) => {
+            if (isGameOver || !isGameRunning) return;
+
+            const deltaTime = currentTime - lastFrameTime;
+            lastFrameTime = currentTime;
+
+            // 1. Spawning Logic
+            if (currentTime - lastSpawnTime > spawnInterval) {
+                spawnNewEntity();
+                lastSpawnTime = currentTime;
+                spawnInterval = Math.max(MIN_SPAWN_INTERVAL, spawnInterval - SPEED_INCREMENT);
+            }
+
+            // 2. Entity Update (Movement & State)
+            const entitiesToKeep = [];
+            for (const entity of activeEntities) {
+                const result = entity.update(deltaTime, currentTime);
+                if (result === 'ACTIVE') {
+                    entitiesToKeep.push(entity);
+                }
+            }
+            activeEntities = entitiesToKeep;
+
+            // 3. Global Threats Check
+            checkGameThreats(currentTime);
+
+            // 4. Request next frame
+            requestAnimationFrame(gameLoop);
+        };
+
+        const gameOver = () => {
+            isGameRunning = false;
+            isGameOver = true;
+            
+            // --- CLEAN GAME OVER SCREEN ---
+            // Clear all active entities (characters)
+            activeEntities.forEach(e => e.container.remove());
+            activeEntities = [];
+
+            // Clear all dropped bags (SP and persistent non-SP)
+            droppedBags.forEach(b => b.element.remove());
+            droppedBags = [];
+            // --- END CLEANUP ---
+
+            finalScoreDisplay.textContent = score;
+            gameOverModal.style.display = 'flex';
+        };
+
+        const resetGameState = () => {
+             // Clean up all existing entities and bags from the DOM
+            activeEntities.forEach(e => e.container.remove());
+            droppedBags.forEach(b => b.element.remove());
+            
+            activeEntities = [];
+            droppedBags = [];
+            score = 0;
+            energy = 100;
+            spawnInterval = INITIAL_SPAWN_INTERVAL;
+            isGameOver = false;
+
+            gameOverModal.style.display = 'none';
+            introModal.style.display = 'none';
+            sortedOverlay.style.display = 'none'; // Ensure sorted flash is hidden
+
+            updateUI();
+        }
+
+        const startGame = () => {
+            resetGameState();
+            isGameRunning = true;
+            
+            // Start the game loop
+            lastFrameTime = performance.now();
+            lastSpawnTime = lastFrameTime;
+            spawnNewEntity(); 
+            requestAnimationFrame(gameLoop);
+        };
+        
+        const restartGame = () => {
+            startGame();
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            // Get DOM elements
+            gameArea = document.getElementById('game-area');
+            scoreDisplay = document.getElementById('score');
+            energyBar = document.getElementById('energy-bar');
+            gameOverModal = document.getElementById('game-over-modal');
+            finalScoreDisplay = document.getElementById('final-score');
+            restartButton = document.getElementById('restart-button');
+            appContainer = document.getElementById('app'); 
+            introModal = document.getElementById('intro-modal');
+            startButton = document.getElementById('start-button');
+            flashOverlay = document.getElementById('flash-overlay');
+            shareButton = document.getElementById('share-button');
+            sortedOverlay = document.getElementById('sorted-overlay'); // Get new ref
+
+            restartButton.onclick = restartGame;
+            startButton.onclick = startGame;
+            shareButton.onclick = handleShare;
+
+            // Show intro screen initially
+            introModal.style.display = 'flex';
+            updateUI();
+        };
+
+    </script>
+</head>
+<body>
+    <div id="app" class="shadow-2xl">
+        
+        <!-- INTENSE FLASH OVERLAY - z-index is higher than game elements but lower than modals -->
+        <div id="flash-overlay" class="absolute inset-0 z-[150] pointer-events-none opacity-0"></div>
+        
+        <!-- SORTED MESSAGE OVERLAY -->
+        <div id="sorted-overlay" class="absolute inset-0 z-[180] pointer-events-none opacity-0 flex">
+            <!-- ADD SIREN EMOJIS -->
+            🚨 SORTED! 🚨
+        </div>
+
+        <!-- INTRO MODAL -->
+        <div id="intro-modal" class="game-modal">
+            <div class="p-8 bg-white text-gray-900 rounded-xl shadow-2xl text-center border-4 border-indigo-500 max-w-sm mx-4">
+                <h2 class="text-3xl font-extrabold mb-4 text-indigo-600">SEE IT SAY IT SORTED</h2>
+                <p class="text-lg font-semibold mb-6">Your job is to spot Suspect Packages (SP).</p>
+                <div class="text-left text-sm space-y-3 mb-8">
+                    <p class="font-bold">🎯 The Goal:</p>
+                    <ul class="list-disc list-inside ml-4 space-y-1">
+                        <li>Watch for people leaving their bags (`LEAVER`).</li>
+                        <li>If the static bag is a **RED SP**, tap it quickly!</li>
+                    </ul>
+                    <p class="font-bold">🚨 The Threat:</p>
+                    <ul class="list-disc list-inside ml-4 space-y-1">
+                        <li>You have a **3-second** grace period after an SP is left behind.</li>
+                        <li>If time runs out, the screen flashes and you lose **20 Energy**.</li>
+                        <li>Tapping a non-SP bag deducts **10 Energy**.</li>
+                        <li>**Non-SP bags now stay on the street, cluttering your view!**</li>
+                    </ul>
+                </div>
+                <button id="start-button" class="px-8 py-3 text-lg font-bold text-white transition duration-300 bg-indigo-600 rounded-full hover:bg-indigo-700 shadow-lg hover:shadow-xl transform hover:scale-105">
+                    Start Surveillance
+                </button>
+            </div>
+        </div>
+
+        <!-- Header: Score and Energy -->
+        <div class="p-4 bg-white border-b-4 border-gray-100 rounded-t-xl">
+            <h1 class="text-xl font-extrabold text-center text-gray-800">SEE IT SAY IT SORTED</h1>
+            <div class="flex justify-between mt-3 text-sm font-semibold text-gray-700">
+                <span>SCORE: <span id="score" class="text-indigo-600">0</span></span>
+                <span>ENERGY: </span>
+            </div>
+            <!-- Energy Bar -->
+            <div class="h-4 mt-1 bg-gray-200 rounded-full">
+                <div id="energy-bar" class="h-full rounded-full transition-all duration-300 bg-green-500" style="width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- Game Area: The Street Scene -->
+        <div id="game-area">
+            <!-- Game Over Modal -->
+            <div id="game-over-modal" class="game-modal">
+                <div class="p-8 bg-gray-800 rounded-xl shadow-2xl text-center border-4 border-red-500 max-w-sm mx-4">
+                    <h2 class="text-4xl font-black mb-4 text-red-400">GAME OVER!</h2>
+                    <p class="text-xl mb-6 text-gray-300">A threat detonated on the street!</p>
+                    <p class="text-2xl font-bold mb-8 text-white">FINAL SCORE: <span id="final-score" class="text-green-400">0</span></p>
+                    
+                    <div class="space-y-4">
+                        <button id="restart-button" class="w-full px-8 py-3 text-lg font-bold text-white transition duration-300 bg-indigo-600 rounded-full hover:bg-indigo-700 shadow-lg hover:shadow-xl transform hover:scale-105">
+                            RESTART
+                        </button>
+                        <button id="share-button" class="w-full px-8 py-3 text-lg font-bold text-indigo-600 transition duration-300 bg-white border-2 border-indigo-600 rounded-full hover:bg-gray-100 shadow-lg hover:shadow-xl transform hover:scale-105">
+                            Share Score
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Instructions Footer (Now positioned as a click-through overlay inside game-area) -->
+            <div id="instructions-footer" class="absolute inset-x-0 bottom-0 p-3 bg-gray-900 text-xs text-center text-gray-300">
+                <p>Monitor street traffic. Click "SP" bags once they are left behind.</p>
+            </div>
+        </div>
+
+        <!-- Instructions Footer (OLD LOCATION REMOVED) -->
+        
+    </div>
+</body>
+</html>
