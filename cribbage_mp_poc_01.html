@@ -214,7 +214,7 @@
             // --- LOBBY/GAME CREATION METHODS ---
             
             async createGame() {
-                const gameId = this.el.gameIdInput.value.trim(); // <-- Trimmed input
+                const gameId = this.el.gameIdInput.value.trim(); 
                 
                 if (!gameId) {
                     this.el.lobbyStatus.textContent = "Please enter a Game ID.";
@@ -222,14 +222,33 @@
                 }
                 
                 const tempDocRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'cribbage_games', gameId);
+                this.el.lobbyStatus.textContent = `Checking for existing game ID "${gameId}"...`;
                 
+                let docSnap = null;
+                const MAX_RETRIES = 3;
+                const DELAY_MS = 500; 
+
                 try {
-                    const docSnap = await getDoc(tempDocRef);
+                    // 1. Retry loop to overcome potential "client is offline" errors
+                    for (let i = 0; i < MAX_RETRIES; i++) {
+                        docSnap = await getDoc(tempDocRef);
+                        // Check if we got a document snapshot (even if it's from cache)
+                        if (docSnap) break; 
+                        
+                        if (i < MAX_RETRIES - 1) {
+                             // Exponential backoff or simple delay
+                            await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+                        }
+                    }
+                    
+                    if (!docSnap) throw new Error("Failed to connect to Firebase after multiple retries.");
+
                     if (docSnap.exists()) {
                         this.el.lobbyStatus.textContent = `Error: Game ID "${gameId}" already exists. Try joining or choose a different ID.`;
                         return;
                     }
 
+                    // 2. Proceed with creation
                     const newState = {
                         ...this.getInitialState(),
                         player1Id: this.userId,
@@ -243,7 +262,11 @@
                     
                 } catch (error) {
                     console.error("Error creating game:", error);
-                    this.el.lobbyStatus.textContent = "Error creating game. Check console for details.";
+                    let displayMsg = error.message.includes("offline") 
+                        ? "Error: Connection failed. Please check your internet connection."
+                        : "Error creating game. Check console for details.";
+                        
+                    this.el.lobbyStatus.textContent = displayMsg;
                 }
             }
 
@@ -262,19 +285,19 @@
                 const MAX_RETRIES = 3;
                 const DELAY_MS = 500; // 0.5 second wait
 
-                // 1. Latency Fix: Retry finding the document
-                for (let i = 0; i < MAX_RETRIES; i++) {
-                    docSnap = await getDoc(tempDocRef);
-                    if (docSnap.exists()) {
-                        break; // Found it!
-                    }
-                    if (i < MAX_RETRIES - 1) {
-                         this.el.lobbyStatus.textContent = `Attempt ${i + 2} of ${MAX_RETRIES}: Game ID ${gameId} not found yet. Retrying in ${DELAY_MS/1000}s...`;
-                         await new Promise(resolve => setTimeout(resolve, DELAY_MS));
-                    }
-                }
-
                 try {
+                    // 1. Latency Fix: Retry finding the document
+                    for (let i = 0; i < MAX_RETRIES; i++) {
+                        docSnap = await getDoc(tempDocRef);
+                        if (docSnap.exists()) {
+                            break; // Found it!
+                        }
+                        if (i < MAX_RETRIES - 1) {
+                             this.el.lobbyStatus.textContent = `Attempt ${i + 2} of ${MAX_RETRIES}: Game ID ${gameId} not found yet. Retrying in ${DELAY_MS/1000}s...`;
+                             await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+                        }
+                    }
+
                     if (!docSnap || !docSnap.exists()) {
                         console.log(`Join failed after ${MAX_RETRIES} attempts: Document for ID "${gameId}" not found.`);
                         this.el.lobbyStatus.textContent = `Error: Game ID "${gameId}" not found after retries. Please verify the ID is **exact** (case sensitive) and Player 1 successfully created it.`;
