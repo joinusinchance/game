@@ -13,46 +13,19 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-firestore.js"; // Using v12.6.1 for setLogLevel
 
-        // --- User Provided External Config (for running outside Canvas) ---
-        // This configuration will be used if the app is run outside of the development environment.
-        const EXTERNAL_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyB-BW4jCwRVJN64f_ZSB_UfUL6p1lo6lvY",
-            authDomain: "util-ce85f.firebaseapp.com",
-            projectId: "util-ce85f",
-            storageBucket: "util-ce85f.firebasestorage.app",
-            messagingSenderId: "654619024656",
-            appId: "1:654619024656:web:cdc7cf569edf739ee05995",
-            measurementId: "G-ZZ8S4H0XPW"
-        };
-        // -----------------------------------------------------------------
+        setLogLevel('debug'); // Set to debug to see all Firebase traffic and help diagnose connection issues.
 
-        setLogLevel('error'); 
-
-        let firebaseConfig = {};
-        let appId = 'default-app-id';
-        let initialAuthToken = null;
-        let isExternalRun = true;
-
-        // --- Configuration Determination ---
-        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-            // Priority 1: Use Canvas environment config
-            firebaseConfig = JSON.parse(__firebase_config);
-            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-            isExternalRun = false;
-        } else if (EXTERNAL_FIREBASE_CONFIG.apiKey) {
-            // Priority 2: Use hardcoded external config
-            firebaseConfig = EXTERNAL_FIREBASE_CONFIG;
-            // Use projectId as the appId placeholder for external pathing consistency
-            appId = EXTERNAL_FIREBASE_CONFIG.projectId || 'external-host-app-id'; 
-        }
+        // Global variables provided by the environment
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
         let app, db, auth;
         let gameInstance;
 
-        // --- Core Card and Game Logic ---
+        // --- Core Card and Game Logic (Class definitions remain the same) ---
 
         class Card {
             constructor(rank, suit) {
@@ -110,10 +83,8 @@
                     userInfo: document.getElementById('user-info')
                 };
                 
-                // Set default game ID for easy testing
                 this.el.gameIdInput.value = 'TEST_CRIBBAGE_MATCH_1';
 
-                // Attach lobby listeners, using input value directly
                 this.el.createBtn.addEventListener('click', () => this.createGame());
                 this.el.joinBtn.addEventListener('click', () => this.joinGame());
             }
@@ -138,7 +109,7 @@
             
             initialize() {
                 // Initial render sets up the lobby view
-                this.el.userInfo.innerHTML = `Your unique User ID: **${this.userId.substring(0, 8)}...**`;
+                this.el.userInfo.innerHTML = `Your unique User ID: **${this.userId}**`;
                 this.render();
             }
 
@@ -194,8 +165,9 @@
                          this.render();
                     }
                 }, (error) => {
-                    console.error("Snapshot listener error:", error);
-                    this.el.gameStatus.textContent = "Error loading game state. Check connection.";
+                    console.error("Snapshot listener error (Check Security Rules and Pathing):", error);
+                    // This error is crucial to see. Setting it in the status.
+                    this.el.gameStatus.textContent = "Error loading game state (Firebase listener failed). See console for details.";
                 });
             }
 
@@ -224,24 +196,23 @@
                 const tempDocRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'cribbage_games', gameId);
                 this.el.lobbyStatus.textContent = `Checking for existing game ID "${gameId}"...`;
                 
-                let docSnap = null;
+                // Keep the retry loop as it helps overcome race conditions and immediate sign-in latency
                 const MAX_RETRIES = 3;
                 const DELAY_MS = 500; 
+                let docSnap = null;
 
                 try {
-                    // 1. Retry loop to overcome potential "client is offline" errors
+                    // 1. Retry loop for document check
                     for (let i = 0; i < MAX_RETRIES; i++) {
                         docSnap = await getDoc(tempDocRef);
-                        // Check if we got a document snapshot (even if it's from cache)
                         if (docSnap) break; 
                         
                         if (i < MAX_RETRIES - 1) {
-                             // Exponential backoff or simple delay
-                            await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+                            await new Promise(resolve => setTimeout(resolve, DELAY_MS * (i + 1))); // Exponential backoff
                         }
                     }
                     
-                    if (!docSnap) throw new Error("Failed to connect to Firebase after multiple retries.");
+                    if (!docSnap) throw new Error("Failed to connect or retrieve document after multiple retries. The client may be offline or lacking read permissions.");
 
                     if (docSnap.exists()) {
                         this.el.lobbyStatus.textContent = `Error: Game ID "${gameId}" already exists. Try joining or choose a different ID.`;
@@ -262,10 +233,8 @@
                     
                 } catch (error) {
                     console.error("Error creating game:", error);
-                    let displayMsg = error.message.includes("offline") 
-                        ? "Error: Connection failed. Please check your internet connection."
-                        : "Error creating game. Check console for details.";
-                        
+                    // Display the full error message in the status for user to debug
+                    let displayMsg = `Error creating game: ${error.name}: ${error.message}. Please verify Firebase setup.`;
                     this.el.lobbyStatus.textContent = displayMsg;
                 }
             }
@@ -286,7 +255,7 @@
                 const DELAY_MS = 500; // 0.5 second wait
 
                 try {
-                    // 1. Latency Fix: Retry finding the document
+                    // Latency Fix: Retry finding the document
                     for (let i = 0; i < MAX_RETRIES; i++) {
                         docSnap = await getDoc(tempDocRef);
                         if (docSnap.exists()) {
@@ -294,7 +263,7 @@
                         }
                         if (i < MAX_RETRIES - 1) {
                              this.el.lobbyStatus.textContent = `Attempt ${i + 2} of ${MAX_RETRIES}: Game ID ${gameId} not found yet. Retrying in ${DELAY_MS/1000}s...`;
-                             await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+                             await new Promise(resolve => setTimeout(resolve, DELAY_MS * (i + 1)));
                         }
                     }
 
@@ -335,11 +304,11 @@
 
                 } catch (error) {
                     console.error("Error joining game:", error);
-                    this.el.lobbyStatus.textContent = "Error joining game. Check console for details.";
+                    this.el.lobbyStatus.textContent = `Error joining game: ${error.name}: ${error.message}.`;
                 }
             }
             
-            // --- GAME LOGIC (Simplified from previous version) ---
+            // --- GAME LOGIC (Rest of game logic remains the same) ---
 
             startGame() {
                 // Called when P2 joins, or on game reset
@@ -385,7 +354,6 @@
                     this.state.scores = { 1: 0, 2: 0 };
                 }
 
-                // Use a custom message box instead of alert()
                 if (this.state.scores[1] >= 121 || this.state.scores[2] >= 121) {
                     this.el.peggingMsg.textContent = 'Game Over! New Match started.';
                     newDealer = 1;
@@ -409,7 +377,7 @@
             }
             
             discardCard(playerNum, cardIndex) {
-                if (this.currentUserIsP !== playerNum) return; // Only current user can discard their own cards
+                if (this.currentUserIsP !== playerNum) return; 
                 const handKey = `hand${playerNum}`;
                 const hand = this.state[handKey];
                 
@@ -425,26 +393,22 @@
             }
             
             checkDiscardComplete() {
-                // If both hands are down to 4 cards, move to cut phase
                 if (this.state.hand1.length === 4 && this.state.hand2.length === 4) {
                     this.cutCard();
                 }
             }
 
-            // Only dealer (P1 or P2) can cut the card
             cutCard() {
                 if (this.currentUserIsP !== this.state.dealer) return;
                 
-                // Only cut if hands are ready and phase is DISCARD
                 if (this.state.hand1.length === 4 && this.state.hand2.length === 4 && this.state.phase === 'DISCARD') {
-                    const deck = this.getDeck(); // Simplified: We just grab a new random card
+                    const deck = this.getDeck(); 
                     const starter = deck[0]; 
                     
                     this.updateState({
                         starter: starter,
                         phase: 'PEGGING',
                         peggingCount: 0,
-                        // Turn remains non-dealer to start pegging
                     });
                 }
             }
@@ -480,21 +444,17 @@
                 if (newCount === 31) {
                     points = 2;
                     msg += ` P${playerNum} scores 2 points for 31!`;
-                    // Reset play sequence. Current player starts the new sequence (turn=playerNum).
                     newTurn = playerNum; 
                     this.state.peggingCount = 0;
                     this.state.peggingPile = [];
                 } else if (!this.canPlayerPlay(nextPlayer)) {
-                    // Next player cannot play (Go). Current player scores 1 point.
                     points = 1; 
                     msg += ` P${nextPlayer} must say 'Go'. P${playerNum} scores 1 point.`;
                     
-                    // Current player keeps the turn if they can play again.
                     if (this.canPlayerPlay(playerNum)) {
                         newTurn = playerNum;
                         msg += ` P${playerNum} plays again.`;
                     } else {
-                        // Both players passed. Reset count. Turn passes to next player to start new count.
                         this.state.peggingCount = 0;
                         this.state.peggingPile = [];
                         newTurn = nextPlayer;
@@ -518,7 +478,6 @@
             checkPeggingEnd() {
                 if (this.state.hand1.length === 0 && this.state.hand2.length === 0) {
                     this.state.phase = 'SHOW';
-                    // Non-dealer shows first
                     this.state.turn = this.state.dealer === 1 ? 2 : 1; 
                     this.updateState({
                         phase: 'SHOW',
@@ -573,12 +532,10 @@
                 let nextTurn = playerNum === 1 ? 2 : 1;
                 
                 if (isDealer) {
-                    // Dealer scored, round is over
                     this.state.phase = 'HAND_END';
                     this.state.turn = 0; 
                     msg += " Round ended. New Dealer will be P" + nextTurn + ".";
                 } else {
-                    // Non-dealer scored, next is dealer's turn
                     this.state.turn = nextTurn;
                 }
                 
@@ -591,8 +548,7 @@
                 this.el.peggingMsg.textContent = msg;
             }
 
-            // --- UI RENDER METHODS ---
-
+            // --- UI RENDER METHODS (Unchanged for brevity) ---
             renderCard(card, isFaceUp = true) {
                 const suitColor = card.suit === 'H' || card.suit === 'D' ? 'text-red-600' : 'text-gray-900';
                 
@@ -637,7 +593,6 @@
             }
 
             renderHand(playerNum, hand) {
-                // Only show current user's hand face up
                 const isViewing = this.currentUserIsP === playerNum;
                 
                 let html = hand.map((card, index) => {
@@ -650,7 +605,6 @@
                             </div>
                         `;
                     } else {
-                        // Other player's hand is always face down
                         return this.renderCard(card, false);
                     }
                 }).join('');
@@ -708,18 +662,14 @@
                 const p1Hand = this.state.hand1;
                 const p2Hand = this.state.hand2;
                 
-                // 1. Update Player Info
-                this.el.playerInfo.innerHTML = `You are **Player ${this.currentUserIsP}** (User ID: ${this.userId.substring(0, 8)}...) | Game ID: **${this.gameId}**`;
+                this.el.playerInfo.innerHTML = `You are **Player ${this.currentUserIsP}** (User ID: ${this.userId}). Game ID: **${this.gameId}**`;
 
-                // 2. Update Scores
                 this.el.score1.textContent = this.state.scores[1];
                 this.el.score2.textContent = this.state.scores[2];
                 
-                // 3. Render Hands
                 this.el.hand1.innerHTML = this.renderHand(1, p1Hand);
                 this.el.hand2.innerHTML = this.renderHand(2, p2Hand);
                 
-                // 4. Render Game Board
                 this.el.starterCard.innerHTML = this.state.starter 
                     ? this.renderCard(this.state.starter, true)
                     : '<div class="w-16 h-24 sm:w-20 sm:h-28 bg-gray-300 rounded-lg flex items-center justify-center text-sm text-gray-600">Cut</div>';
@@ -727,7 +677,6 @@
                 this.el.peggingCount.textContent = this.state.peggingCount;
                 this.el.peggingPile.innerHTML = this.state.peggingPile.map(card => this.renderCard(card, true)).join('');
                 
-                // 5. Crib and Status
                 this.el.cribArea.innerHTML = this.state.crib.length > 0
                     ? `${this.state.crib.map(card => this.renderCard(card, false)).join('')}`
                     : '<div class="text-gray-400">Crib is empty.</div>';
@@ -763,7 +712,6 @@
                 
                 this.el.gameStatus.innerHTML = statusText;
                 
-                // 6. Render Action Buttons
                 let actionHtml = '';
                 if (this.state.phase === 'DISCARD' && this.state.dealer === this.currentUserIsP && this.state.hand1.length === 4 && this.state.hand2.length === 4) {
                     actionHtml = this.getCutButton();
@@ -774,7 +722,6 @@
                 }
                 this.el.actionBtns.innerHTML = actionHtml;
                 
-                // 7. Visibility Toggle for Hand Areas
                 document.getElementById('p1-section').classList.toggle('bg-yellow-100/30', this.state.turn === 1);
                 document.getElementById('p2-section').classList.toggle('bg-yellow-100/30', this.state.turn === 2);
             }
@@ -797,9 +744,7 @@
                 if (this.state.phase === 'WAITING') {
                     statusMsg = `<span class="text-indigo-600 font-bold">Game ID: ${this.gameId}</span> created. Waiting for Player 2 to join... **Share the ID with a friend!**`;
                 } else if (this.state.phase !== 'LOBBY' && this.gameId) {
-                    // This handles the case where P2 joins and the game state shifts
                     statusMsg = `<span class="text-green-600 font-bold">Game ID: ${this.gameId}</span> is active. You are Player ${this.currentUserIsP}. Redirecting...`;
-                    // Redirect to game view immediately
                     setTimeout(() => {
                          this.el.lobbyView.classList.add('hidden');
                          this.el.gameView.classList.remove('hidden');
@@ -813,9 +758,9 @@
         // --- Initialization and Auth ---
         
         const initApp = async () => {
-            if (Object.keys(firebaseConfig).length === 0) {
-                console.error("Firebase config not found. Cannot run multi-player mode.");
-                document.getElementById('lobby-status').textContent = 'Error: Firebase config missing for multi-player mode.';
+            if (!firebaseConfig) {
+                console.error("Firebase config is missing.");
+                document.getElementById('lobby-status').textContent = 'Error: Firebase configuration not found. Cannot run multi-player mode.';
                 return;
             }
             
@@ -823,38 +768,46 @@
             db = getFirestore(app);
             auth = getAuth(app);
             
-            // Set session persistence for anonymous or custom token sign-in
+            if (!db) {
+                console.error("Firestore database instance failed to initialize.");
+                document.getElementById('lobby-status').textContent = 'Error: Firestore database failed to initialize.';
+                return;
+            }
+
+            // Set session persistence (optional but good practice)
             setPersistence(auth, browserSessionPersistence);
 
             try {
+                // 1. Attempt to sign in
                 if (initialAuthToken) {
-                    // Authenticate using Canvas-provided custom token
                     await signInWithCustomToken(auth, initialAuthToken);
-                    console.log("Firebase Auth successful (Custom Token).");
                 } else {
-                    // Authenticate anonymously (required when running externally)
                     await signInAnonymously(auth);
-                    console.log("Firebase Auth successful (Anonymous).");
                 }
-                const userId = auth.currentUser.uid;
-                
-                window.gameInstance = new MultiplayerCribbageGame(db, userId, appId);
-                window.gameInstance.initialize();
+
+                // 2. CRITICAL: Wait for the auth state to settle before starting Firestore operations
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        const userId = user.uid;
+                        console.log("Firebase Auth successful. User ID:", userId);
+                        
+                        // Only initialize the game instance once, after successful authentication
+                        if (!window.gameInstance) {
+                            window.gameInstance = new MultiplayerCribbageGame(db, userId, appId);
+                            window.gameInstance.initialize();
+                        }
+                    } else {
+                        // User is signed out or sign-in failed
+                         document.getElementById('lobby-status').textContent = 'Error: Authentication failed. Please ensure Anonymous/Custom Token sign-in is enabled.';
+                    }
+                });
 
             } catch (error) {
-                console.error("Firebase authentication failed:", error);
-                
-                let statusMessage = 'Error: Firebase authentication failed.';
-                
-                if (isExternalRun) {
-                    statusMessage += '<br><br><strong>Action Required:</strong> If running this externally, you must ensure **Anonymous Authentication** is enabled in your Firebase console for project `util-ce85f`.';
-                }
-                
-                document.getElementById('lobby-status').innerHTML = statusMessage;
+                console.error("Firebase authentication process failed:", error);
+                document.getElementById('lobby-status').textContent = `Fatal Auth Error: ${error.message}`;
             }
         };
 
-        // Ensure the app starts after the DOM is ready
         window.onload = initApp;
 
     </script>
@@ -869,6 +822,10 @@
         .game-area {
             min-height: 250px;
         }
+        /* Style for turn indicator */
+        .player-section.bg-yellow-100\/30 {
+            border: 4px solid #FCD34D; /* A visually strong border for the current player */
+        }
     </style>
 </head>
 <body class="bg-gray-100 p-4 sm:p-8 font-sans">
@@ -880,7 +837,7 @@
         <!-- LOBBY VIEW (Visible initially) -->
         <div id="lobby-view" class="p-8 border border-gray-300 rounded-lg shadow-lg">
             <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Start or Join a Game</h2>
-             <p id="user-info" class="text-center text-sm mb-4 p-2 bg-yellow-100 rounded-lg border border-yellow-300 font-semibold text-gray-700"></p>
+             <p id="user-info" class="text-center text-sm mb-4 p-2 bg-yellow-100 rounded-lg border border-yellow-300 font-semibold text-gray-700">Initializing...</p>
              <div class="mb-4">
                 <label for="game-id-input" class="block text-sm font-medium text-gray-700 mb-1">Enter Game ID (Case Sensitive, No Spaces):</label>
                 <input type="text" id="game-id-input" placeholder="e.g., TEAM_ALPHA_1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg">
@@ -893,7 +850,7 @@
                     Step 2: Join Existing Game
                 </button>
             </div>
-            <p id="lobby-status" class="text-center mt-6 text-sm text-gray-500">Initializing...</p>
+            <p id="lobby-status" class="text-center mt-6 text-sm text-red-700 font-semibold">Waiting for authentication...</p>
         </div>
 
         <!-- GAME VIEW (Hidden until game starts) -->
