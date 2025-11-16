@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Cribbage</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        setLogLevel('error'); 
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        let app, db, auth;
+        let gameInstance;
+
+        // --- Core Card and Game Logic ---
+
+        class Card {
+            constructor(rank, suit) {
+                this.rank = rank;
+                this.suit = suit;
+                this.value = this.getCardValue();
+            }
+            getCardValue() {
+                if (['J', 'Q', 'K', 'T'].includes(this.rank)) return 10;
+                if (this.rank === 'A') return 1;
+                return parseInt(this.rank);
+            }
+            getFace() {
+                return this.rank + this.suit;
+            }
+            toObject() {
+                return { rank: this.rank, suit: this.suit };
+            }
+        }
+
+        /**
+         * Manages the entire Cribbage game state and Firebase synchronization.
+         */
+        class MultiplayerCribbageGame {
+            constructor(dbInstance, userId, appId) {
+                this.db = dbInstance;
+                this.userId = userId;
+                this.appId = appId;
+                this.gameId = null;
+                this.gameDocRef = null;
+                this.currentUserIsP = 0; // 1 or 2
+
+                this.state = this.getInitialState();
+
+                this.el = {
+                    lobbyView: document.getElementById('lobby-view'),
+                    gameView: document.getElementById('game-view'),
+                    score1: document.getElementById('score-p1'),
+                    score2: document.getElementById('score-p2'),
+                    hand1: document.getElementById('player-hand-1'),
+                    hand2: document.getElementById('player-hand-2'),
+                    peggingPile: document.getElementById('pegging-pile'),
+                    starterCard: document.getElementById('starter-card'),
+                    cribArea: document.getElementById('crib-area'),
+                    gameStatus: document.getElementById('game-status'),
+                    peggingCount: document.getElementById('pegging-count'),
+                    peggingMsg: document.getElementById('pegging-message'),
+                    actionBtns: document.getElementById('action-buttons'),
+                    // Lobby Elements
+                    gameIdInput: document.getElementById('game-id-input'),
+                    createBtn: document.getElementById('create-game-btn'),
+                    joinBtn: document.getElementById('join-game-btn'),
+                    lobbyStatus: document.getElementById('lobby-status'),
+                    playerInfo: document.getElementById('player-info'),
+                };
+                
+                // Set default game ID for easy testing
+                this.el.gameIdInput.value = 'TEST_CRIBBAGE_MATCH_1';
+
+                // Attach lobby listeners
+                this.el.createBtn.addEventListener('click', () => this.createGame(this.el.gameIdInput.value));
+                this.el.joinBtn.addEventListener('click', () => this.joinGame(this.el.gameIdInput.value));
+            }
+
+            getInitialState() {
+                return {
+                    scores: { 1: 0, 2: 0 },
+                    dealer: 1, // 1 or 2
+                    turn: 1, // 1 or 2
+                    phase: 'LOBBY', // 'LOBBY', 'WAITING', 'DISCARD', 'PEGGING', 'SHOW', 'HAND_END'
+                    peggingCount: 0,
+                    peggingPile: [], 
+                    hand1: [], 
+                    hand2: [],
+                    crib: [],
+                    starter: null, 
+                    player1Id: null, 
+                    player2Id: null, 
+                    lastUpdate: Date.now()
+                };
+            }
+            
+            initialize() {
+                // Initial render sets up the lobby view
+                this.render();
+            }
+
+            // --- FIREBASE SYNC METHODS ---
+
+            serializeState(state) {
+                const cardMapper = (arr) => arr.map(c => c.toObject());
+                return {
+                    ...state,
+                    hand1: cardMapper(state.hand1 || []),
+                    hand2: cardMapper(state.hand2 || []),
+                    crib: cardMapper(state.crib || []),
+                    peggingPile: cardMapper(state.peggingPile || []),
+                    starter: state.starter ? state.starter.toObject() : null,
+                    lastUpdate: Date.now()
+                };
+            }
+
+            deserializeState(data) {
+                const cardMapper = (arr) => arr.map(c => new Card(c.rank, c.suit));
+                return {
+                    ...data,
+                    hand1: cardMapper(data.hand1 || []),
+                    hand2: cardMapper(data.hand2 || []),
+                    crib: cardMapper(data.crib || []),
+                    peggingPile: cardMapper(data.peggingPile || []),
+                    starter: data.starter ? new Card(data.starter.rank, data.starter.suit) : null
+                };
+            }
+
+            async setupGameSync(gameId) {
+                this.gameId = gameId;
+                this.gameDocRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'cribbage_games', gameId);
+                
+                // Set up real-time listener for the game document
+                onSnapshot(this.gameDocRef, (docSnap) => {
+                    if (docSnap.exists() && docSnap.data().phase) {
+                        this.state = this.deserializeState(docSnap.data());
+                        
+                        // Identify current user's player number
+                        if (this.state.player1Id === this.userId) {
+                            this.currentUserIsP = 1;
+                        } else if (this.state.player2Id === this.userId) {
+                            this.currentUserIsP = 2;
+                        } else {
+                            this.currentUserIsP = 0; // Not a participant
+                        }
+                        
+                        this.render(); // Re-render every time state changes
+                    } else if (this.state.phase !== 'LOBBY') {
+                         this.state.phase = 'LOBBY'; // Go back to lobby if game is deleted
+                         this.render();
+                    }
+                }, (error) => {
+                    console.error("Snapshot listener error:", error);
+                    this.el.gameStatus.textContent = "Error loading game state.";
+                });
+            }
+
+            async updateState(newState) {
+                if (this.gameDocRef) {
+                    try {
+                        const serializedState = this.serializeState({ ...this.state, ...newState });
+                        await updateDoc(this.gameDocRef, serializedState);
+                    } catch (error) {
+                        console.error("Failed to update Firestore state:", error);
+                        this.el.gameStatus.textContent = 'Error: State update failed.';
+                    }
+                }
+            }
+            
+            // --- LOBBY/GAME CREATION METHODS ---
+            
+            async createGame(gameId) {
+                if (!gameId) {
+                    this.el.lobbyStatus.textContent = "Please enter a Game ID.";
+                    return;
+                }
+                
+                const tempDocRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'cribbage_games', gameId);
+                
+                try {
+                    const docSnap = await getDoc(tempDocRef);
+                    if (docSnap.exists()) {
+                        this.el.lobbyStatus.textContent = `Error: Game ID "${gameId}" already exists. Try joining or choose a different ID.`;
+                        return;
+                    }
+
+                    const newState = {
+                        ...this.getInitialState(),
+                        gameId: gameId,
+                        player1Id: this.userId,
+                        phase: 'WAITING', // Waiting for P2
+                    };
+                    
+                    await setDoc(tempDocRef, this.serializeState(newState));
+                    
+                    this.el.lobbyStatus.textContent = `Game "${gameId}" created! Waiting for Player 2 to join...`;
+                    await this.setupGameSync(gameId); // Start listening
+                    
+                } catch (error) {
+                    console.error("Error creating game:", error);
+                    this.el.lobbyStatus.textContent = "Error creating game. Check console for details.";
+                }
+            }
+
+            async joinGame(gameId) {
+                 if (!gameId) {
+                    this.el.lobbyStatus.textContent = "Please enter a Game ID to join.";
+                    return;
+                }
+
+                const tempDocRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'cribbage_games', gameId);
+
+                try {
+                    const docSnap = await getDoc(tempDocRef);
+                    if (!docSnap.exists()) {
+                        this.el.lobbyStatus.textContent = `Error: Game ID "${gameId}" not found. Try creating it.`;
+                        return;
+                    }
+                    
+                    const data = this.deserializeState(docSnap.data());
+                    
+                    if (data.player1Id === this.userId || data.player2Id === this.userId) {
+                        // User is already a participant, just load the game
+                        this.el.lobbyStatus.textContent = `Rejoining game "${gameId}".`;
+                        await this.setupGameSync(gameId);
+                        if (data.phase === 'WAITING' && data.player2Id) {
+                           this.startGame(); // P2 reconnecting, check if game should start
+                        }
+                        return;
+                    }
+                    
+                    if (data.player2Id) {
+                        this.el.lobbyStatus.textContent = `Error: Game "${gameId}" is already full (2 players).`;
+                        return;
+                    }
+                    
+                    // Join as P2
+                    const newState = {
+                        player2Id: this.userId
+                    };
+                    await updateDoc(tempDocRef, newState);
+                    
+                    this.el.lobbyStatus.textContent = `Joined game "${gameId}" as Player 2. Starting game...`;
+                    await this.setupGameSync(gameId); // Start listening
+                    
+                    // P2 joining triggers the start
+                    this.startGame();
+
+                } catch (error) {
+                    console.error("Error joining game:", error);
+                    this.el.lobbyStatus.textContent = "Error joining game. Check console for details.";
+                }
+            }
+            
+            // --- GAME LOGIC (Simplified from previous version) ---
+
+            startGame() {
+                // Called when P2 joins, or on game reset
+                const deck = this.getDeck();
+                const dealer = this.state.dealer;
+                const nonDealer = dealer === 1 ? 2 : 1;
+                
+                this.updateState({
+                    hand1: deck.splice(0, 6),
+                    hand2: deck.splice(0, 6),
+                    phase: 'DISCARD',
+                    turn: nonDealer, // Non-dealer starts discard/pegging
+                    crib: [],
+                    peggingPile: [],
+                    peggingCount: 0,
+                    starter: null,
+                });
+            }
+            
+            getDeck() {
+                const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'];
+                const suits = ['H', 'D', 'C', 'S'];
+                let deck = [];
+                for (let suit of suits) {
+                    for (let rank of ranks) {
+                        deck.push(new Card(rank, suit));
+                    }
+                }
+                // Shuffle
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+                return deck;
+            }
+
+            async resetGame(isNewMatch = false) {
+                if (!this.gameDocRef) return;
+                
+                let newDealer = this.state.dealer === 1 ? 2 : 1;
+                if (isNewMatch) {
+                    newDealer = 1;
+                    this.state.scores = { 1: 0, 2: 0 };
+                }
+
+                // Update scores if one player reached 121 (not implemented scoring fully, so just reset)
+                if (this.state.scores[1] >= 121 || this.state.scores[2] >= 121) {
+                    alert('Game Over! New Match.');
+                    newDealer = 1;
+                    this.state.scores = { 1: 0, 2: 0 };
+                }
+                
+                const deck = this.getDeck();
+                
+                await this.updateState({
+                    dealer: newDealer,
+                    turn: newDealer === 1 ? 2 : 1, // Non-dealer starts discard/pegging
+                    phase: 'DISCARD',
+                    hand1: deck.splice(0, 6),
+                    hand2: deck.splice(0, 6),
+                    crib: [],
+                    peggingPile: [],
+                    peggingCount: 0,
+                    starter: null,
+                    scores: this.state.scores
+                });
+            }
+            
+            discardCard(playerNum, cardIndex) {
+                if (this.currentUserIsP !== playerNum) return; // Only current user can discard their own cards
+                const handKey = `hand${playerNum}`;
+                const hand = this.state[handKey];
+                
+                if (hand.length > 4 && this.state.phase === 'DISCARD') { 
+                    const cardToDiscard = hand.splice(cardIndex, 1)[0];
+                    this.state.crib.push(cardToDiscard);
+                    
+                    this.updateState({
+                        [handKey]: hand,
+                        crib: this.state.crib
+                    }).then(() => this.checkDiscardComplete());
+                }
+            }
+            
+            checkDiscardComplete() {
+                // If both hands are down to 4 cards, move to cut phase
+                if (this.state.hand1.length === 4 && this.state.hand2.length === 4) {
+                    this.cutCard();
+                }
+            }
+
+            // Only dealer (P1 or P2) can cut the card
+            cutCard() {
+                if (this.currentUserIsP !== this.state.dealer) return;
+                
+                // Only cut if hands are ready and phase is DISCARD
+                if (this.state.hand1.length === 4 && this.state.hand2.length === 4 && this.state.phase === 'DISCARD') {
+                    const deck = this.getDeck(); // Simplified: We just grab a new random card
+                    const starter = deck[0]; 
+                    
+                    this.updateState({
+                        starter: starter,
+                        phase: 'PEGGING',
+                        peggingCount: 0,
+                        // Turn remains non-dealer to start pegging
+                    });
+                }
+            }
+            
+            canPlayerPlay(playerNum) {
+                const handKey = `hand${playerNum}`;
+                return this.state[handKey].some(card => (this.state.peggingCount + card.value) <= 31);
+            }
+
+            playCard(playerNum, cardIndex) {
+                if (this.currentUserIsP !== playerNum || this.state.turn !== playerNum || this.state.phase !== 'PEGGING') return;
+
+                const handKey = `hand${playerNum}`;
+                const hand = this.state[handKey];
+                const nextPlayer = playerNum === 1 ? 2 : 1;
+                const cardToPlay = hand[cardIndex];
+                const newCount = this.state.peggingCount + cardToPlay.value;
+
+                if (newCount > 31) {
+                    this.el.peggingMsg.textContent = "Illegal play: Count exceeds 31.";
+                    return;
+                }
+                
+                // Remove card from hand
+                const playedCard = hand.splice(cardIndex, 1)[0];
+                this.state.peggingPile.push(playedCard);
+                this.state.peggingCount = newCount;
+                
+                let points = 0;
+                let msg = `P${playerNum} played ${playedCard.getFace()}. Count is ${newCount}.`;
+                let newTurn = nextPlayer;
+
+                if (newCount === 31) {
+                    points = 2;
+                    msg += ` P${playerNum} scores 2 points for 31!`;
+                    // Reset play sequence. Current player starts the new sequence (turn=playerNum).
+                    newTurn = playerNum; 
+                    this.state.peggingCount = 0;
+                    this.state.peggingPile = [];
+                } else if (!this.canPlayerPlay(nextPlayer)) {
+                    // Next player cannot play (Go). Current player scores 1 point.
+                    points = 1; 
+                    msg += ` P${nextPlayer} must say 'Go'. P${playerNum} scores 1 point.`;
+                    
+                    // Current player keeps the turn if they can play again.
+                    if (this.canPlayerPlay(playerNum)) {
+                        newTurn = playerNum;
+                        msg += ` P${playerNum} plays again.`;
+                    } else {
+                        // Both players passed. Reset count. Turn passes to next player to start new count.
+                        this.state.peggingCount = 0;
+                        this.state.peggingPile = [];
+                        newTurn = nextPlayer;
+                        msg += ` Both players passed. Count reset. P${nextPlayer} starts the new sequence.`;
+                    }
+                }
+
+                this.state.scores[playerNum] += points;
+
+                this.updateState({
+                    [handKey]: hand,
+                    peggingPile: this.state.peggingPile,
+                    peggingCount: this.state.peggingCount,
+                    scores: this.state.scores,
+                    turn: newTurn,
+                }).then(() => {
+                    this.checkPeggingEnd();
+                });
+            }
+
+            checkPeggingEnd() {
+                if (this.state.hand1.length === 0 && this.state.hand2.length === 0) {
+                    this.state.phase = 'SHOW';
+                    // Non-dealer shows first
+                    this.state.turn = this.state.dealer === 1 ? 2 : 1; 
+                    this.updateState({
+                        phase: 'SHOW',
+                        turn: this.state.turn
+                    });
+                }
+            }
+            
+            // --- SCORING (Simplified) ---
+            calculateScore(hand, starter) {
+                const allCards = [...hand, starter];
+                let score = 0;
+                
+                // Only count 15s for simplicity
+                for (let i = 0; i < allCards.length; i++) {
+                    for (let j = i + 1; j < allCards.length; j++) {
+                        if (allCards[i].value + allCards[j].value === 15) {
+                            score += 2;
+                        }
+                    }
+                }
+                
+                // Knobs
+                for (const card of hand) {
+                    if (card.rank === 'J' && starter && card.suit === starter.suit) {
+                        score += 1;
+                    }
+                }
+                
+                return score;
+            }
+
+            scoreHand(playerNum) {
+                if (this.currentUserIsP !== playerNum || this.state.turn !== playerNum || this.state.phase !== 'SHOW') return;
+                
+                const handKey = `hand${playerNum}`;
+                const isDealer = (playerNum === this.state.dealer);
+                
+                let handScore = this.calculateScore(this.state[handKey], this.state.starter);
+                let cribScore = 0;
+                let msg = '';
+                
+                if (isDealer) {
+                    cribScore = this.calculateScore(this.state.crib, this.state.starter);
+                    msg = `P${playerNum} (Dealer) scores ${handScore} for hand and ${cribScore} for crib! Total: ${handScore + cribScore}`;
+                } else {
+                     msg = `P${playerNum} scored ${handScore} for hand.`;
+                }
+                
+                this.state.scores[playerNum] += handScore + cribScore;
+                
+                let nextTurn = playerNum === 1 ? 2 : 1;
+                
+                if (isDealer) {
+                    // Dealer scored, round is over
+                    this.state.phase = 'HAND_END';
+                    this.state.turn = 0; 
+                    msg += " Round ended. New Dealer will be P" + nextTurn + ".";
+                } else {
+                    // Non-dealer scored, next is dealer's turn
+                    this.state.turn = nextTurn;
+                }
+                
+                this.updateState({
+                    scores: this.state.scores,
+                    phase: this.state.phase,
+                    turn: this.state.turn,
+                });
+                
+                this.el.peggingMsg.textContent = msg;
+            }
+
+            // --- UI RENDER METHODS ---
+
+            renderCard(card, isFaceUp = true) {
+                const suitColor = card.suit === 'H' || card.suit === 'D' ? 'text-red-600' : 'text-gray-900';
+                
+                if (!isFaceUp) {
+                    return `
+                        <div class="card bg-indigo-900 shadow-xl rounded-lg w-16 h-24 sm:w-20 sm:h-28 flex items-center justify-center m-1 border-4 border-white transform transition duration-150">
+                            <svg class="w-10 h-10 text-white fill-current" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                            </svg>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="card bg-white shadow-xl rounded-lg w-16 h-24 sm:w-20 sm:h-28 flex flex-col justify-between p-2 m-1 border-4 border-gray-200 transform hover:scale-105 transition duration-150 ${suitColor}">
+                        <div class="text-xl font-bold">${card.rank}</div>
+                        <div class="text-3xl self-center">
+                            ${card.suit === 'H' ? '♥' : card.suit === 'D' ? '♦' : card.suit === 'C' ? '♣' : '♠'}
+                        </div>
+                        <div class="text-xl font-bold self-end">${card.rank}</div>
+                    </div>
+                `;
+            }
+            
+            getCardActionButton(playerNum, cardIndex, card) {
+                if (this.currentUserIsP !== playerNum) return '';
+                
+                let action = '';
+                let isDisabled = this.state.turn !== playerNum;
+
+                if (this.state.phase === 'DISCARD') {
+                    action = 'Discard';
+                    const disableDiscard = this.state[`hand${playerNum}`].length <= 4; 
+                    return `<button class="text-xs bg-red-500 hover:bg-red-700 text-white py-1 px-2 rounded mt-1 shadow-md" ${disableDiscard ? 'disabled' : ''} onclick="window.gameInstance.discardCard(${playerNum}, ${cardIndex})">${action}</button>`;
+                } else if (this.state.phase === 'PEGGING') {
+                    action = 'Play';
+                    const willExceed31 = (this.state.peggingCount + card.value) > 31;
+                    isDisabled = isDisabled || willExceed31;
+                    return `<button class="text-xs bg-green-500 hover:bg-green-700 text-white py-1 px-2 rounded mt-1 shadow-md" ${isDisabled ? 'disabled' : ''} onclick="window.gameInstance.playCard(${playerNum}, ${cardIndex})">${action}</button>`;
+                }
+                return '';
+            }
+
+            renderHand(playerNum, hand) {
+                // Only show current user's hand face up
+                const isViewing = this.currentUserIsP === playerNum;
+                
+                let html = hand.map((card, index) => {
+                    if (isViewing) {
+                        const actionButton = this.getCardActionButton(playerNum, index, card);
+                        return `
+                            <div class="flex flex-col items-center">
+                                ${this.renderCard(card, true)}
+                                ${actionButton}
+                            </div>
+                        `;
+                    } else {
+                        // Other player's hand is always face down
+                        return this.renderCard(card, false);
+                    }
+                }).join('');
+                
+                return `<div class="flex flex-wrap justify-center">${html}</div>`;
+            }
+
+            getScoreButton() {
+                if (this.state.phase === 'SHOW' && this.state.turn === this.currentUserIsP) {
+                    return `
+                        <button class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200"
+                            onclick="window.gameInstance.scoreHand(${this.currentUserIsP})">
+                            Score My Hand & Crib
+                        </button>
+                    `;
+                } else if (this.state.phase === 'SHOW' && this.state.turn !== 0) {
+                     return `
+                        <button class="bg-gray-400 text-white font-bold py-2 px-4 rounded-full shadow-lg" disabled>
+                            Waiting for P${this.state.turn} to Score
+                        </button>
+                    `;
+                }
+                return '';
+            }
+            
+            getNewHandButton() {
+                 if (this.state.phase === 'HAND_END' && this.state.dealer === this.currentUserIsP) {
+                     return `
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200"
+                            onclick="window.gameInstance.resetGame()">
+                            Start New Hand (P${this.currentUserIsP} is Dealer)
+                        </button>
+                    `;
+                 } else if (this.state.phase === 'HAND_END') {
+                      return `
+                        <button class="bg-gray-400 text-white font-bold py-2 px-4 rounded-full shadow-lg" disabled>
+                            Waiting for P${this.state.dealer}'s Action
+                        </button>
+                    `;
+                 }
+                 return '';
+            }
+            
+            // Main render function
+            render() {
+                if (this.state.phase === 'LOBBY' || this.state.phase === 'WAITING') {
+                    this.renderLobby();
+                    return;
+                }
+                
+                // Switch to Game View
+                this.el.lobbyView.classList.add('hidden');
+                this.el.gameView.classList.remove('hidden');
+
+                const p1Hand = this.state.hand1;
+                const p2Hand = this.state.hand2;
+                
+                // 1. Update Player Info
+                this.el.playerInfo.innerHTML = `You are **Player ${this.currentUserIsP}** (User ID: ${this.userId.substring(0, 8)}...) | Game ID: **${this.gameId}**`;
+
+                // 2. Update Scores
+                this.el.score1.textContent = this.state.scores[1];
+                this.el.score2.textContent = this.state.scores[2];
+                
+                // 3. Render Hands
+                this.el.hand1.innerHTML = this.renderHand(1, p1Hand);
+                this.el.hand2.innerHTML = this.renderHand(2, p2Hand);
+                
+                // 4. Render Game Board
+                this.el.starterCard.innerHTML = this.state.starter 
+                    ? this.renderCard(this.state.starter, true)
+                    : '<div class="w-16 h-24 sm:w-20 sm:h-28 bg-gray-300 rounded-lg flex items-center justify-center text-sm text-gray-600">Cut</div>';
+                
+                this.el.peggingCount.textContent = this.state.peggingCount;
+                this.el.peggingPile.innerHTML = this.state.peggingPile.map(card => this.renderCard(card, true)).join('');
+                
+                // 5. Crib and Status
+                this.el.cribArea.innerHTML = this.state.crib.length > 0
+                    ? `${this.state.crib.map(card => this.renderCard(card, false)).join('')}`
+                    : '<div class="text-gray-400">Crib is empty.</div>';
+                
+                const dealerText = this.state.dealer === 1 ? 'P1' : 'P2';
+                let statusText = `Phase: **${this.state.phase}**. Dealer: **${dealerText}**. `;
+                
+                if (this.state.phase === 'DISCARD') {
+                    const myHandSize = this.state[`hand${this.currentUserIsP}`].length;
+                    const opponentHandSize = this.state[`hand${this.currentUserIsP === 1 ? 2 : 1}`].length;
+                    
+                    if (myHandSize > 4) {
+                        statusText = `Your Turn (P${this.currentUserIsP}): Discard ${myHandSize - 4} more card(s) to the crib.`;
+                    } else if (opponentHandSize > 4) {
+                        statusText = `Waiting for P${this.currentUserIsP === 1 ? 2 : 1} to discard.`;
+                    } else if (this.state.dealer === this.currentUserIsP) {
+                         statusText = `Your Turn (P${this.currentUserIsP}, Dealer): Click 'Cut Card' below to start pegging.`;
+                         this.el.actionBtns.innerHTML = this.getCutButton();
+                    } else {
+                        statusText = `Waiting for Dealer (P${this.state.dealer}) to cut the card.`;
+                    }
+                } else if (this.state.phase === 'PEGGING') {
+                    statusText += `It is **P${this.state.turn}'s turn** to play a card.`;
+                    
+                    if (this.state.turn === this.currentUserIsP && !this.canPlayerPlay(this.currentUserIsP)) {
+                        statusText += ` You must declare **"Go"** (Wait for opponent's action).`;
+                    }
+                } else if (this.state.phase === 'SHOW') {
+                    statusText += `It is **P${this.state.turn}'s turn** to show and score.`;
+                } else if (this.state.phase === 'HAND_END') {
+                    statusText = `Hand Complete! Dealer: P${this.state.dealer}. Click 'New Hand' to continue.`;
+                }
+                
+                this.el.gameStatus.innerHTML = statusText;
+                
+                // 6. Render Action Buttons
+                let actionHtml = '';
+                if (this.state.phase === 'DISCARD' && this.state.dealer === this.currentUserIsP && this.state.hand1.length === 4 && this.state.hand2.length === 4) {
+                    actionHtml = this.getCutButton();
+                } else if (this.state.phase === 'SHOW') {
+                    actionHtml = this.getScoreButton();
+                } else if (this.state.phase === 'HAND_END') {
+                    actionHtml = this.getNewHandButton();
+                }
+                this.el.actionBtns.innerHTML = actionHtml;
+                
+                // 7. Visibility Toggle for Hand Areas
+                document.getElementById('p1-section').classList.toggle('bg-yellow-100', this.state.turn === 1);
+                document.getElementById('p2-section').classList.toggle('bg-yellow-100', this.state.turn === 2);
+            }
+            
+            getCutButton() {
+                return `
+                    <button class="bg-pink-600 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200"
+                        onclick="window.gameInstance.cutCard()">
+                        Cut Card (Start Pegging)
+                    </button>
+                `;
+            }
+
+            renderLobby() {
+                this.el.lobbyView.classList.remove('hidden');
+                this.el.gameView.classList.add('hidden');
+                
+                let statusMsg = 'Enter a Game ID above to create or join a cribbage match.';
+
+                if (this.state.phase === 'WAITING') {
+                    statusMsg = `<span class="text-indigo-600 font-bold">Game ID: ${this.gameId}</span> created. Waiting for Player 2 to join... Share the ID with a friend!`;
+                } else if (this.state.phase !== 'LOBBY' && this.gameId) {
+                    // This handles the case where P2 joins and the game state shifts
+                    statusMsg = `<span class="text-green-600 font-bold">Game ID: ${this.gameId}</span> is active. You are Player ${this.currentUserIsP}. Redirecting...`;
+                    // Redirect to game view immediately
+                    setTimeout(() => {
+                         this.el.lobbyView.classList.add('hidden');
+                         this.el.gameView.classList.remove('hidden');
+                    }, 500);
+                }
+
+                this.el.lobbyStatus.innerHTML = statusMsg;
+            }
+        }
+        
+        // --- Initialization and Auth ---
+        
+        const initApp = async () => {
+            if (Object.keys(firebaseConfig).length === 0) {
+                console.error("Firebase config not found. Cannot run multi-player mode.");
+                document.getElementById('game-status').textContent = 'Error: Firebase config missing for multi-player mode.';
+                return;
+            }
+            
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            setPersistence(auth, browserSessionPersistence);
+
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                const userId = auth.currentUser.uid;
+                
+                console.log("Firebase Auth successful. User ID:", userId);
+                
+                window.gameInstance = new MultiplayerCribbageGame(db, userId, appId);
+                window.gameInstance.initialize();
+
+            } catch (error) {
+                console.error("Firebase authentication failed:", error);
+                document.getElementById('game-status').textContent = 'Error: Firebase authentication failed.';
+            }
+        };
+
+        // Ensure the app starts after the DOM is ready
+        window.onload = initApp;
+
+    </script>
+    <style>
+        .card-container {
+            min-height: 120px; 
+        }
+        .card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            user-select: none;
+        }
+        .game-area {
+            min-height: 250px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 sm:p-8 font-sans">
+
+    <!-- Global App Container -->
+    <div id="app" class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-6 md:p-10 relative">
+        <h1 class="text-4xl font-extrabold text-center text-indigo-700 mb-6 border-b pb-3">Real-Time Multiplayer Cribbage</h1>
+        
+        <!-- LOBBY VIEW (Visible initially) -->
+        <div id="lobby-view" class="p-8 border border-gray-300 rounded-lg shadow-lg">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Start or Join a Game</h2>
+            <div class="mb-4">
+                <label for="game-id-input" class="block text-sm font-medium text-gray-700 mb-1">Enter Game ID:</label>
+                <input type="text" id="game-id-input" placeholder="e.g., TEAM_ALPHA_1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg">
+            </div>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 justify-center">
+                <button id="create-game-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-200">
+                    Create New Game
+                </button>
+                <button id="join-game-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-200">
+                    Join Existing Game
+                </button>
+            </div>
+            <p id="lobby-status" class="text-center mt-6 text-sm text-gray-500">Initializing Firebase...</p>
+        </div>
+
+        <!-- GAME VIEW (Hidden until game starts) -->
+        <div id="game-view" class="hidden">
+             <p id="player-info" class="text-center text-sm mb-4 p-2 bg-yellow-100 rounded-lg border border-yellow-300 font-semibold"></p>
+            
+            <!-- Scoreboard -->
+            <div class="flex justify-around items-center bg-indigo-100 p-4 rounded-lg mb-6 shadow-inner">
+                <div class="text-center">
+                    <h2 class="text-xl font-semibold text-gray-700">Player 1 Score</h2>
+                    <span id="score-p1" class="text-4xl font-black text-indigo-800">0</span>
+                </div>
+                <div class="text-center">
+                    <h2 class="text-xl font-semibold text-gray-700">Player 2 Score</h2>
+                    <span id="score-p2" class="text-4xl font-black text-indigo-800">0</span>
+                </div>
+            </div>
+
+            <!-- Common Game Area (Always Visible) -->
+            <div class="game-area bg-gray-50 border border-gray-200 rounded-lg p-4 mb-8 shadow-md">
+                <h3 class="text-2xl font-bold text-center text-gray-800 mb-4">The Play / Game Board</h3>
+                
+                <p id="game-status" class="text-center text-lg font-bold text-red-600 mb-4"></p>
+                <p id="pegging-message" class="text-center text-sm italic text-gray-600 mb-4"></p>
+
+                <!-- Pegging Count -->
+                <div class="text-center mb-4">
+                    <span class="text-lg font-semibold text-gray-700">Pegging Count:</span>
+                    <span id="pegging-count" class="text-5xl font-extrabold text-green-700 ml-2">0</span>
+                </div>
+
+                <!-- Pegging Pile & Starter Card -->
+                <div class="flex flex-col md:flex-row justify-center items-start md:space-x-8">
+                    <!-- Starter Card -->
+                    <div class="text-center mb-4 md:mb-0">
+                        <h4 class="font-semibold text-gray-600 mb-2">Starter Card</h4>
+                        <div id="starter-card" class="flex justify-center">
+                            <!-- Starter Card Renders Here -->
+                        </div>
+                    </div>
+
+                    <!-- Pegging Pile -->
+                    <div class="text-center w-full md:w-auto">
+                        <h4 class="font-semibold text-gray-600 mb-2">Pegging Pile (Last Cards Played)</h4>
+                        <div id="pegging-pile" class="flex flex-wrap justify-center card-container">
+                            <!-- Played Cards Render Here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Crib Area -->
+            <div class="bg-pink-50 border border-pink-200 rounded-lg p-4 mb-8 shadow-inner">
+                <h3 class="text-2xl font-bold text-center text-pink-700 mb-4">The Crib (Dealer's Cards)</h3>
+                <div id="crib-area" class="flex flex-wrap justify-center card-container">
+                    <!-- Crib Cards Render Here (always face down) -->
+                </div>
+            </div>
+
+            <!-- Dynamic Action Buttons (Score, New Hand, Cut) -->
+            <div id="action-buttons" class="flex justify-center mb-8">
+                <!-- Action Buttons Render Here -->
+            </div>
+
+            <!-- Player 1 Section (Your Hand) -->
+            <div id="p1-section" class="player-section bg-gray-800 text-white p-6 rounded-xl shadow-inner mb-4">
+                <h3 class="text-3xl font-extrabold text-center text-indigo-400 mb-4">Player 1's Hand</h3>
+                <p class="text-center text-sm mb-4">Your cards will appear here if you are P1. Actions disabled when it's P2's turn.</p>
+                <div id="player-hand-1" class="flex flex-wrap justify-center card-container">
+                    <!-- P1 Cards Render Here -->
+                </div>
+            </div>
+
+            <!-- Player 2 Section (Your Hand) -->
+            <div id="p2-section" class="player-section bg-gray-800 text-white p-6 rounded-xl shadow-inner">
+                <h3 class="text-3xl font-extrabold text-center text-indigo-400 mb-4">Player 2's Hand</h3>
+                <p class="text-center text-sm mb-4">Your cards will appear here if you are P2. Actions disabled when it's P1's turn.</p>
+                <div id="player-hand-2" class="flex flex-wrap justify-center card-container">
+                    <!-- P2 Cards Render Here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
