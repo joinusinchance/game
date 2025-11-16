@@ -77,14 +77,15 @@
                     joinBtn: document.getElementById('join-game-btn'),
                     lobbyStatus: document.getElementById('lobby-status'),
                     playerInfo: document.getElementById('player-info'),
+                    userInfo: document.getElementById('user-info')
                 };
                 
                 // Set default game ID for easy testing
                 this.el.gameIdInput.value = 'TEST_CRIBBAGE_MATCH_1';
 
-                // Attach lobby listeners
-                this.el.createBtn.addEventListener('click', () => this.createGame(this.el.gameIdInput.value));
-                this.el.joinBtn.addEventListener('click', () => this.joinGame(this.el.gameIdInput.value));
+                // Attach lobby listeners, using input value directly
+                this.el.createBtn.addEventListener('click', () => this.createGame());
+                this.el.joinBtn.addEventListener('click', () => this.joinGame());
             }
 
             getInitialState() {
@@ -107,6 +108,7 @@
             
             initialize() {
                 // Initial render sets up the lobby view
+                this.el.userInfo.innerHTML = `Your unique User ID: **${this.userId.substring(0, 8)}...**`;
                 this.render();
             }
 
@@ -162,7 +164,7 @@
                     }
                 }, (error) => {
                     console.error("Snapshot listener error:", error);
-                    this.el.gameStatus.textContent = "Error loading game state.";
+                    this.el.gameStatus.textContent = "Error loading game state. Check connection.";
                 });
             }
 
@@ -180,7 +182,9 @@
             
             // --- LOBBY/GAME CREATION METHODS ---
             
-            async createGame(gameId) {
+            async createGame() {
+                const gameId = this.el.gameIdInput.value.trim(); // <-- Trimmed input
+                
                 if (!gameId) {
                     this.el.lobbyStatus.textContent = "Please enter a Game ID.";
                     return;
@@ -197,7 +201,6 @@
 
                     const newState = {
                         ...this.getInitialState(),
-                        gameId: gameId,
                         player1Id: this.userId,
                         phase: 'WAITING', // Waiting for P2
                     };
@@ -213,18 +216,23 @@
                 }
             }
 
-            async joinGame(gameId) {
+            async joinGame() {
+                const gameId = this.el.gameIdInput.value.trim(); // <-- Trimmed input
+                
                  if (!gameId) {
                     this.el.lobbyStatus.textContent = "Please enter a Game ID to join.";
                     return;
                 }
 
                 const tempDocRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'cribbage_games', gameId);
+                this.el.lobbyStatus.textContent = `Attempting to join game: ${gameId}...`;
 
                 try {
                     const docSnap = await getDoc(tempDocRef);
+                    
                     if (!docSnap.exists()) {
-                        this.el.lobbyStatus.textContent = `Error: Game ID "${gameId}" not found. Try creating it.`;
+                        console.log(`Join failed: Document for ID "${gameId}" not found.`);
+                        this.el.lobbyStatus.textContent = `Error: Game ID "${gameId}" not found. Please try again or create a new game. (Did you type it exactly?)`;
                         return;
                     }
                     
@@ -235,7 +243,7 @@
                         this.el.lobbyStatus.textContent = `Rejoining game "${gameId}".`;
                         await this.setupGameSync(gameId);
                         if (data.phase === 'WAITING' && data.player2Id) {
-                           this.startGame(); // P2 reconnecting, check if game should start
+                           this.startGame(); 
                         }
                         return;
                     }
@@ -311,7 +319,8 @@
 
                 // Update scores if one player reached 121 (not implemented scoring fully, so just reset)
                 if (this.state.scores[1] >= 121 || this.state.scores[2] >= 121) {
-                    alert('Game Over! New Match.');
+                    // Use a custom message box instead of alert()
+                    this.el.peggingMsg.textContent = 'Game Over! New Match started.';
                     newDealer = 1;
                     this.state.scores = { 1: 0, 2: 0 };
                 }
@@ -699,8 +708,8 @@
                 this.el.actionBtns.innerHTML = actionHtml;
                 
                 // 7. Visibility Toggle for Hand Areas
-                document.getElementById('p1-section').classList.toggle('bg-yellow-100', this.state.turn === 1);
-                document.getElementById('p2-section').classList.toggle('bg-yellow-100', this.state.turn === 2);
+                document.getElementById('p1-section').classList.toggle('bg-yellow-100/30', this.state.turn === 1);
+                document.getElementById('p2-section').classList.toggle('bg-yellow-100/30', this.state.turn === 2);
             }
             
             getCutButton() {
@@ -719,7 +728,7 @@
                 let statusMsg = 'Enter a Game ID above to create or join a cribbage match.';
 
                 if (this.state.phase === 'WAITING') {
-                    statusMsg = `<span class="text-indigo-600 font-bold">Game ID: ${this.gameId}</span> created. Waiting for Player 2 to join... Share the ID with a friend!`;
+                    statusMsg = `<span class="text-indigo-600 font-bold">Game ID: ${this.gameId}</span> created. Waiting for Player 2 to join... **Share the ID with a friend!**`;
                 } else if (this.state.phase !== 'LOBBY' && this.gameId) {
                     // This handles the case where P2 joins and the game state shifts
                     statusMsg = `<span class="text-green-600 font-bold">Game ID: ${this.gameId}</span> is active. You are Player ${this.currentUserIsP}. Redirecting...`;
@@ -739,7 +748,7 @@
         const initApp = async () => {
             if (Object.keys(firebaseConfig).length === 0) {
                 console.error("Firebase config not found. Cannot run multi-player mode.");
-                document.getElementById('game-status').textContent = 'Error: Firebase config missing for multi-player mode.';
+                document.getElementById('lobby-status').textContent = 'Error: Firebase config missing for multi-player mode.';
                 return;
             }
             
@@ -764,7 +773,7 @@
 
             } catch (error) {
                 console.error("Firebase authentication failed:", error);
-                document.getElementById('game-status').textContent = 'Error: Firebase authentication failed.';
+                document.getElementById('lobby-status').textContent = 'Error: Firebase authentication failed.';
             }
         };
 
@@ -794,19 +803,20 @@
         <!-- LOBBY VIEW (Visible initially) -->
         <div id="lobby-view" class="p-8 border border-gray-300 rounded-lg shadow-lg">
             <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Start or Join a Game</h2>
-            <div class="mb-4">
-                <label for="game-id-input" class="block text-sm font-medium text-gray-700 mb-1">Enter Game ID:</label>
+             <p id="user-info" class="text-center text-sm mb-4 p-2 bg-yellow-100 rounded-lg border border-yellow-300 font-semibold text-gray-700"></p>
+             <div class="mb-4">
+                <label for="game-id-input" class="block text-sm font-medium text-gray-700 mb-1">Enter Game ID (Case Sensitive, No Spaces):</label>
                 <input type="text" id="game-id-input" placeholder="e.g., TEAM_ALPHA_1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg">
             </div>
             <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 justify-center">
                 <button id="create-game-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-200">
-                    Create New Game
+                    Step 1: Create New Game
                 </button>
                 <button id="join-game-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full shadow-lg transition duration-200">
-                    Join Existing Game
+                    Step 2: Join Existing Game
                 </button>
             </div>
-            <p id="lobby-status" class="text-center mt-6 text-sm text-gray-500">Initializing Firebase...</p>
+            <p id="lobby-status" class="text-center mt-6 text-sm text-gray-500">Initializing...</p>
         </div>
 
         <!-- GAME VIEW (Hidden until game starts) -->
@@ -818,10 +828,12 @@
                 <div class="text-center">
                     <h2 class="text-xl font-semibold text-gray-700">Player 1 Score</h2>
                     <span id="score-p1" class="text-4xl font-black text-indigo-800">0</span>
+                    <span class="text-xs text-gray-500 block">(Dealer: <span class="text-indigo-800 font-bold">P1</span>)</span>
                 </div>
                 <div class="text-center">
                     <h2 class="text-xl font-semibold text-gray-700">Player 2 Score</h2>
                     <span id="score-p2" class="text-4xl font-black text-indigo-800">0</span>
+                    <span class="text-xs text-gray-500 block">(Dealer: <span class="text-indigo-800 font-bold">P2</span>)</span>
                 </div>
             </div>
 
@@ -872,7 +884,7 @@
             </div>
 
             <!-- Player 1 Section (Your Hand) -->
-            <div id="p1-section" class="player-section bg-gray-800 text-white p-6 rounded-xl shadow-inner mb-4">
+            <div id="p1-section" class="player-section bg-gray-800 text-white p-6 rounded-xl shadow-inner mb-4 transition duration-300">
                 <h3 class="text-3xl font-extrabold text-center text-indigo-400 mb-4">Player 1's Hand</h3>
                 <p class="text-center text-sm mb-4">Your cards will appear here if you are P1. Actions disabled when it's P2's turn.</p>
                 <div id="player-hand-1" class="flex flex-wrap justify-center card-container">
@@ -881,7 +893,7 @@
             </div>
 
             <!-- Player 2 Section (Your Hand) -->
-            <div id="p2-section" class="player-section bg-gray-800 text-white p-6 rounded-xl shadow-inner">
+            <div id="p2-section" class="player-section bg-gray-800 text-white p-6 rounded-xl shadow-inner transition duration-300">
                 <h3 class="text-3xl font-extrabold text-center text-indigo-400 mb-4">Player 2's Hand</h3>
                 <p class="text-center text-sm mb-4">Your cards will appear here if you are P2. Actions disabled when it's P1's turn.</p>
                 <div id="player-hand-2" class="flex flex-wrap justify-center card-container">
