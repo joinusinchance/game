@@ -9,7 +9,7 @@
     
     <!-- Load Firebase SDKs -->
     <script type="module">
-        // Load Firebase SDKs (Updated to 12.6.0)
+        // Load Firebase SDKs (v12.6.0)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
@@ -30,20 +30,23 @@
 
         setLogLevel('error'); 
 
-        // --- Configuration Determination ---
         let firebaseConfig = {};
         let appId = 'default-app-id';
         let initialAuthToken = null;
+        let isExternalRun = true;
 
+        // --- Configuration Determination ---
         if (typeof __firebase_config !== 'undefined' && __firebase_config) {
             // Priority 1: Use Canvas environment config
             firebaseConfig = JSON.parse(__firebase_config);
             appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            isExternalRun = false;
         } else if (EXTERNAL_FIREBASE_CONFIG.apiKey) {
             // Priority 2: Use hardcoded external config
             firebaseConfig = EXTERNAL_FIREBASE_CONFIG;
-            appId = EXTERNAL_FIREBASE_CONFIG.projectId || 'external-host-app-id';
+            // Use projectId as the appId placeholder for external pathing consistency
+            appId = EXTERNAL_FIREBASE_CONFIG.projectId || 'external-host-app-id'; 
         }
         
         let app, db, auth;
@@ -168,6 +171,7 @@
 
             async setupGameSync(gameId) {
                 this.gameId = gameId;
+                // Path: /artifacts/{appId}/public/data/cribbage_games/{gameId}
                 this.gameDocRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'cribbage_games', gameId);
                 
                 // Set up real-time listener for the game document
@@ -358,9 +362,8 @@
                     this.state.scores = { 1: 0, 2: 0 };
                 }
 
-                // Update scores if one player reached 121 (not implemented scoring fully, so just reset)
+                // Use a custom message box instead of alert()
                 if (this.state.scores[1] >= 121 || this.state.scores[2] >= 121) {
-                    // Use a custom message box instead of alert()
                     this.el.peggingMsg.textContent = 'Game Over! New Match started.';
                     newDealer = 1;
                     this.state.scores = { 1: 0, 2: 0 };
@@ -797,24 +800,34 @@
             db = getFirestore(app);
             auth = getAuth(app);
             
+            // Set session persistence for anonymous or custom token sign-in
             setPersistence(auth, browserSessionPersistence);
 
             try {
                 if (initialAuthToken) {
+                    // Authenticate using Canvas-provided custom token
                     await signInWithCustomToken(auth, initialAuthToken);
+                    console.log("Firebase Auth successful (Custom Token).");
                 } else {
+                    // Authenticate anonymously (required when running externally)
                     await signInAnonymously(auth);
+                    console.log("Firebase Auth successful (Anonymous).");
                 }
                 const userId = auth.currentUser.uid;
-                
-                console.log("Firebase Auth successful. User ID:", userId);
                 
                 window.gameInstance = new MultiplayerCribbageGame(db, userId, appId);
                 window.gameInstance.initialize();
 
             } catch (error) {
                 console.error("Firebase authentication failed:", error);
-                document.getElementById('lobby-status').textContent = 'Error: Firebase authentication failed.';
+                
+                let statusMessage = 'Error: Firebase authentication failed.';
+                
+                if (isExternalRun) {
+                    statusMessage += '<br><br><strong>Action Required:</strong> If running this externally, you must ensure **Anonymous Authentication** is enabled in your Firebase console for project `util-ce85f`.';
+                }
+                
+                document.getElementById('lobby-status').innerHTML = statusMessage;
             }
         };
 
