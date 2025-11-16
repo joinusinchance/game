@@ -13,9 +13,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, updateDoc, collection, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-firestore.js"; // Using v12.6.1 for setLogLevel
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/12.6.1/firebase-firestore.js"; 
 
-        setLogLevel('debug'); // Set to debug to see all Firebase traffic and help diagnose connection issues.
+        setLogLevel('debug'); // Set to debug to see all Firebase traffic
 
         // Global variables provided by the environment
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
@@ -25,7 +25,7 @@
         let app, db, auth;
         let gameInstance;
 
-        // --- Core Card and Game Logic (Class definitions remain the same) ---
+        // --- Core Card and Game Logic (Classes remain the same) ---
 
         class Card {
             constructor(rank, suit) {
@@ -57,6 +57,7 @@
                 this.gameId = null;
                 this.gameDocRef = null;
                 this.currentUserIsP = 0; // 1 or 2
+                this.isAuthReady = true; // Auth is ready by the time this is constructed
 
                 this.state = this.getInitialState();
 
@@ -83,6 +84,7 @@
                     userInfo: document.getElementById('user-info')
                 };
                 
+                // Set default game ID for testing
                 this.el.gameIdInput.value = 'TEST_CRIBBAGE_MATCH_1';
 
                 this.el.createBtn.addEventListener('click', () => this.createGame());
@@ -110,6 +112,7 @@
             initialize() {
                 // Initial render sets up the lobby view
                 this.el.userInfo.innerHTML = `Your unique User ID: **${this.userId}**`;
+                this.el.lobbyStatus.textContent = 'Ready! Enter a Game ID and choose to Create or Join.';
                 this.render();
             }
 
@@ -166,8 +169,7 @@
                     }
                 }, (error) => {
                     console.error("Snapshot listener error (Check Security Rules and Pathing):", error);
-                    // This error is crucial to see. Setting it in the status.
-                    this.el.gameStatus.textContent = "Error loading game state (Firebase listener failed). See console for details.";
+                    this.el.gameStatus.textContent = "Error loading game state (Firebase listener failed). Check console/network tab for Firestore connection details.";
                 });
             }
 
@@ -178,7 +180,7 @@
                         await updateDoc(this.gameDocRef, serializedState);
                     } catch (error) {
                         console.error("Failed to update Firestore state:", error);
-                        this.el.gameStatus.textContent = 'Error: State update failed.';
+                        this.el.gameStatus.textContent = 'Error: State update failed. (Check write permissions)';
                     }
                 }
             }
@@ -193,16 +195,16 @@
                     return;
                 }
                 
+                // Path must be correct: /artifacts/{appId}/public/data/cribbage_games/{gameId}
                 const tempDocRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'cribbage_games', gameId);
                 this.el.lobbyStatus.textContent = `Checking for existing game ID "${gameId}"...`;
                 
-                // Keep the retry loop as it helps overcome race conditions and immediate sign-in latency
                 const MAX_RETRIES = 3;
                 const DELAY_MS = 500; 
                 let docSnap = null;
 
                 try {
-                    // 1. Retry loop for document check
+                    // Retry loop for document check
                     for (let i = 0; i < MAX_RETRIES; i++) {
                         docSnap = await getDoc(tempDocRef);
                         if (docSnap) break; 
@@ -212,14 +214,14 @@
                         }
                     }
                     
-                    if (!docSnap) throw new Error("Failed to connect or retrieve document after multiple retries. The client may be offline or lacking read permissions.");
+                    if (!docSnap) throw new Error("Failed to connect or retrieve document after multiple retries. This is a severe connection/permission issue.");
 
                     if (docSnap.exists()) {
                         this.el.lobbyStatus.textContent = `Error: Game ID "${gameId}" already exists. Try joining or choose a different ID.`;
                         return;
                     }
 
-                    // 2. Proceed with creation
+                    // Proceed with creation
                     const newState = {
                         ...this.getInitialState(),
                         player1Id: this.userId,
@@ -233,14 +235,13 @@
                     
                 } catch (error) {
                     console.error("Error creating game:", error);
-                    // Display the full error message in the status for user to debug
-                    let displayMsg = `Error creating game: ${error.name}: ${error.message}. Please verify Firebase setup.`;
+                    let displayMsg = `Error creating game: ${error.name}: ${error.message}. Please verify **Firebase Security Rules** and network access.`;
                     this.el.lobbyStatus.textContent = displayMsg;
                 }
             }
 
             async joinGame() {
-                const gameId = this.el.gameIdInput.value.trim(); // <-- Trimmed input
+                const gameId = this.el.gameIdInput.value.trim(); 
                 
                  if (!gameId) {
                     this.el.lobbyStatus.textContent = "Please enter a Game ID to join.";
@@ -252,31 +253,29 @@
 
                 let docSnap = null;
                 const MAX_RETRIES = 3;
-                const DELAY_MS = 500; // 0.5 second wait
+                const DELAY_MS = 500; 
 
                 try {
-                    // Latency Fix: Retry finding the document
+                    // Retry loop for finding the document
                     for (let i = 0; i < MAX_RETRIES; i++) {
                         docSnap = await getDoc(tempDocRef);
                         if (docSnap.exists()) {
                             break; // Found it!
                         }
                         if (i < MAX_RETRIES - 1) {
-                             this.el.lobbyStatus.textContent = `Attempt ${i + 2} of ${MAX_RETRIES}: Game ID ${gameId} not found yet. Retrying in ${DELAY_MS/1000}s...`;
+                             this.el.lobbyStatus.textContent = `Attempt ${i + 2} of ${MAX_RETRIES}: Game ID ${gameId} not found yet. Retrying...`;
                              await new Promise(resolve => setTimeout(resolve, DELAY_MS * (i + 1)));
                         }
                     }
 
                     if (!docSnap || !docSnap.exists()) {
-                        console.log(`Join failed after ${MAX_RETRIES} attempts: Document for ID "${gameId}" not found.`);
-                        this.el.lobbyStatus.textContent = `Error: Game ID "${gameId}" not found after retries. Please verify the ID is **exact** (case sensitive) and Player 1 successfully created it.`;
+                        this.el.lobbyStatus.textContent = `Error: Game ID "${gameId}" not found after retries. Verify ID and creation status.`;
                         return;
                     }
                     
                     const data = this.deserializeState(docSnap.data());
                     
                     if (data.player1Id === this.userId || data.player2Id === this.userId) {
-                        // User is already a participant, just load the game
                         this.el.lobbyStatus.textContent = `Rejoining game "${gameId}". You are Player ${data.player1Id === this.userId ? 1 : 2}.`;
                         await this.setupGameSync(gameId);
                         if (data.phase === 'WAITING' && data.player2Id) {
@@ -311,7 +310,6 @@
             // --- GAME LOGIC (Rest of game logic remains the same) ---
 
             startGame() {
-                // Called when P2 joins, or on game reset
                 const deck = this.getDeck();
                 const dealer = this.state.dealer;
                 const nonDealer = dealer === 1 ? 2 : 1;
@@ -349,12 +347,7 @@
                 if (!this.gameDocRef) return;
                 
                 let newDealer = this.state.dealer === 1 ? 2 : 1;
-                if (isNewMatch) {
-                    newDealer = 1;
-                    this.state.scores = { 1: 0, 2: 0 };
-                }
-
-                if (this.state.scores[1] >= 121 || this.state.scores[2] >= 121) {
+                if (isNewMatch || this.state.scores[1] >= 121 || this.state.scores[2] >= 121) {
                     this.el.peggingMsg.textContent = 'Game Over! New Match started.';
                     newDealer = 1;
                     this.state.scores = { 1: 0, 2: 0 };
@@ -739,7 +732,7 @@
                 this.el.lobbyView.classList.remove('hidden');
                 this.el.gameView.classList.add('hidden');
                 
-                let statusMsg = 'Enter a Game ID above to create or join a cribbage match.';
+                let statusMsg = this.el.lobbyStatus.textContent; // Retain current status message
 
                 if (this.state.phase === 'WAITING') {
                     statusMsg = `<span class="text-indigo-600 font-bold">Game ID: ${this.gameId}</span> created. Waiting for Player 2 to join... **Share the ID with a friend!**`;
@@ -756,56 +749,97 @@
         }
         
         // --- Initialization and Auth ---
+
+        const updateLobbyStatus = (message, isError = false) => {
+            const statusEl = document.getElementById('lobby-status');
+            statusEl.innerHTML = message;
+            statusEl.classList.toggle('text-red-700', isError);
+            statusEl.classList.toggle('text-green-700', !isError);
+        };
         
-        const initApp = async () => {
+        const initFirebase = () => {
+             // 1. Check for Config
             if (!firebaseConfig) {
                 console.error("Firebase config is missing.");
-                document.getElementById('lobby-status').textContent = 'Error: Firebase configuration not found. Cannot run multi-player mode.';
-                return;
+                updateLobbyStatus('FATAL ERROR: Firebase configuration not found. Cannot start multiplayer mode.', true);
+                return false;
             }
-            
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            
-            if (!db) {
-                console.error("Firestore database instance failed to initialize.");
-                document.getElementById('lobby-status').textContent = 'Error: Firestore database failed to initialize.';
-                return;
-            }
-
-            // Set session persistence (optional but good practice)
-            setPersistence(auth, browserSessionPersistence);
 
             try {
-                // 1. Attempt to sign in
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
+                // 2. Initialize App and Services
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                if (!db) {
+                    console.error("Firestore database instance failed to initialize.");
+                    updateLobbyStatus('ERROR: Firestore database failed to initialize after app setup.', true);
+                    return false;
                 }
-
-                // 2. CRITICAL: Wait for the auth state to settle before starting Firestore operations
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        const userId = user.uid;
-                        console.log("Firebase Auth successful. User ID:", userId);
-                        
-                        // Only initialize the game instance once, after successful authentication
-                        if (!window.gameInstance) {
-                            window.gameInstance = new MultiplayerCribbageGame(db, userId, appId);
-                            window.gameInstance.initialize();
-                        }
-                    } else {
-                        // User is signed out or sign-in failed
-                         document.getElementById('lobby-status').textContent = 'Error: Authentication failed. Please ensure Anonymous/Custom Token sign-in is enabled.';
-                    }
-                });
-
+                
+                return true;
             } catch (error) {
-                console.error("Firebase authentication process failed:", error);
-                document.getElementById('lobby-status').textContent = `Fatal Auth Error: ${error.message}`;
+                console.error("Firebase Initialization Failed:", error);
+                updateLobbyStatus(`CRITICAL: Firebase SDK initialization failed. Error: ${error.message}`, true);
+                return false;
             }
+        }
+        
+        const initApp = async () => {
+            // Start by attempting Firebase setup
+            if (!initFirebase()) {
+                return; // Stop if config or initialization failed
+            }
+            
+            // Set session persistence (optional but good practice)
+            setPersistence(auth, browserSessionPersistence);
+            updateLobbyStatus('Attempting authentication...');
+
+            // Wait for the auth state to settle before starting Firestore operations
+            const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                // Unsubscribe immediately after the first state change to prevent re-runs
+                unsubscribe(); 
+                
+                if (user) {
+                    const userId = user.uid;
+                    console.log("Firebase Auth successful. User ID:", userId);
+                    
+                    // Only initialize the game instance once
+                    if (!window.gameInstance) {
+                        window.gameInstance = new MultiplayerCribbageGame(db, userId, appId);
+                        window.gameInstance.initialize();
+                    }
+                } else {
+                    // User is not signed in, attempt sign-in
+                    try {
+                        if (initialAuthToken) {
+                            updateLobbyStatus('Attempting sign in with custom token...');
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            updateLobbyStatus('Attempting anonymous sign in...');
+                            await signInAnonymously(auth);
+                        }
+                        // The successful sign-in will trigger onAuthStateChanged again, which handles game initialization.
+                    } catch (error) {
+                         console.error("Firebase sign-in attempt failed:", error);
+                         updateLobbyStatus(`FATAL AUTH ERROR: Sign-in failed: ${error.message}. Please check token or Anonymous Auth setting.`, true);
+                    }
+                }
+            });
+            
+            // Trigger initial sign-in attempt (if the user isn't already logged in)
+            if (!auth.currentUser) {
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch(e) {
+                    // Errors caught here are duplicated by the onAuthStateChanged listener, so suppress the console log
+                }
+            }
+
         };
 
         window.onload = initApp;
@@ -837,7 +871,7 @@
         <!-- LOBBY VIEW (Visible initially) -->
         <div id="lobby-view" class="p-8 border border-gray-300 rounded-lg shadow-lg">
             <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Start or Join a Game</h2>
-             <p id="user-info" class="text-center text-sm mb-4 p-2 bg-yellow-100 rounded-lg border border-yellow-300 font-semibold text-gray-700">Initializing...</p>
+             <p id="user-info" class="text-center text-sm mb-4 p-2 bg-yellow-100 rounded-lg border border-yellow-300 font-semibold text-gray-700">Loading Firebase...</p>
              <div class="mb-4">
                 <label for="game-id-input" class="block text-sm font-medium text-gray-700 mb-1">Enter Game ID (Case Sensitive, No Spaces):</label>
                 <input type="text" id="game-id-input" placeholder="e.g., TEAM_ALPHA_1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg">
@@ -850,7 +884,7 @@
                     Step 2: Join Existing Game
                 </button>
             </div>
-            <p id="lobby-status" class="text-center mt-6 text-sm text-red-700 font-semibold">Waiting for authentication...</p>
+            <p id="lobby-status" class="text-center mt-6 text-sm text-red-700 font-semibold">Initializing...</p>
         </div>
 
         <!-- GAME VIEW (Hidden until game starts) -->
