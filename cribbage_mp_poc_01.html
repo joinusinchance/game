@@ -17,9 +17,36 @@
 
         setLogLevel('debug'); // Set to debug to see all Firebase traffic
 
-        // Global variables provided by the environment
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // --- FIREBASE MANUAL CONFIGURATION (FIX) ---
+        // 1. Go to Firebase Console > Project Settings > General > Your Apps > Config
+        // 2. Paste your config object below to replace 'null'
+        const manualFirebaseConfig =  {
+            apiKey: "AIzaSyB-BW4jCwRVJN64f_ZSB_UfUL6p1lo6lvY",
+            authDomain: "util-ce85f.firebaseapp.com",
+            projectId: "util-ce85f",
+            storageBucket: "util-ce85f.firebasestorage.app",
+            messagingSenderId: "654619024656",
+            appId: "1:654619024656:web:cdc7cf569edf739ee05995",
+            measurementId: "G-ZZ8S4H0XPW"
+        };
+
+
+
+        
+        /* Example format:
+        const manualFirebaseConfig = {
+            apiKey: "AIzaSy...",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+        */
+
+        // Global variables provided by the environment OR manual fallback
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : manualFirebaseConfig;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'public-cribbage-app'; // Fallback App ID for local use
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
         let app, db, auth;
