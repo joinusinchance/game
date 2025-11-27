@@ -1,825 +1,736 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cribbage Hot-Seat</title>
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, updateDoc, collection, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, RotateCcw, Trophy, User, ArrowRight, Shield } from 'lucide-react';
 
-        // IMPORTANT: Firestore requires security rules to be set up to allow this structure.
-        // Public Game Path: /artifacts/{__app_id}/public/data/cribbage_games/{gameId}
+/**
+ * UTILITY & LOGIC FUNCTIONS
+ */
+const SUITS = ['♠', '♥', '♣', '♦'];
+const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-        setLogLevel('error'); // Set to 'debug' for detailed logging
+const getCardValue = (rank) => {
+  if (['J', 'Q', 'K'].includes(rank)) return 10;
+  if (rank === 'A') return 1;
+  return parseInt(rank);
+};
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
-        // Only proceed if Firebase Config is available
-        if (Object.keys(firebaseConfig).length > 0) {
-            const app = initializeApp(firebaseConfig);
-            const db = getFirestore(app);
-            const auth = getAuth(app);
-            
-            // Set up persistence before signing in (optional but good practice)
-            setPersistence(auth, browserSessionPersistence);
+const createDeck = () => {
+  const deck = [];
+  SUITS.forEach(suit => {
+    RANKS.forEach((rank, index) => {
+      deck.push({
+        id: `${rank}${suit}`,
+        rank,
+        suit,
+        value: getCardValue(rank),
+        order: index + 1,
+        isRed: suit === '♥' || suit === '♦'
+      });
+    });
+  });
+  return deck.sort(() => Math.random() - 0.5);
+};
 
-            // 1. Authentication and Initialization
-            const initAuthAndFirebase = async () => {
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                    console.log("Firebase Auth successful. User ID:", auth.currentUser.uid);
-                    
-                    // After successful sign-in, start the game logic
-                    const userId = auth.currentUser.uid;
-                    const gameId = 'cribbage_game_' + appId; // Using app ID for a single shared document
-                    
-                    window.gameInstance = new CribbageGame(db, userId, appId, gameId);
-                    window.gameInstance.initialize();
+// --- SCORING ALGORITHMS ---
 
-                } catch (error) {
-                    console.error("Firebase authentication failed:", error);
-                    document.getElementById('game-status').textContent = 'Error: Firebase failed to initialize.';
-                }
-            };
+// Helper for combinations
+const getCombinations = (array, size) => {
+  const result = [];
+  const f = (prefix, array) => {
+    for (let i = 0; i < array.length; i++) {
+      const newPrefix = [...prefix, array[i]];
+      if (newPrefix.length === size) result.push(newPrefix);
+      else f(newPrefix, array.slice(i + 1));
+    }
+  };
+  f([], array);
+  return result;
+};
 
-            initAuthAndFirebase();
-        } else {
-            document.getElementById('game-status').textContent = 'Note: Running in offline/demo mode. Firebase config not found.';
-            window.gameInstance = new CribbageGame(null, 'demo_user', appId, 'demo_game');
-            window.gameInstance.initialize();
-        }
+const scoreHand = (hand, starter, isCrib = false) => {
+  let score = 0;
+  let breakdown = [];
+  const allCards = [...hand, starter];
 
-        // --- Core Card and Game Logic (Simplified) ---
+  // 1. Fifteen (2 points)
+  const combinations = [];
+  for (let i = 2; i <= 5; i++) {
+    combinations.push(...getCombinations(allCards, i));
+  }
+  combinations.forEach(combo => {
+    if (combo.reduce((acc, card) => acc + card.value, 0) === 15) {
+      score += 2;
+      breakdown.push('15 for 2');
+    }
+  });
 
-        /**
-         * Represents a playing card.
-         * @param {string} rank - 'A', '2', '3', ..., 'J', 'Q', 'K'
-         * @param {string} suit - 'H', 'D', 'C', 'S'
-         */
-        class Card {
-            constructor(rank, suit) {
-                this.rank = rank;
-                this.suit = suit;
-                this.value = this.getCardValue(); // Value for Pegging (A=1, 10/J/Q/K=10)
-            }
+  // 2. Pairs (2 points)
+  const pairs = getCombinations(allCards, 2);
+  pairs.forEach(pair => {
+    if (pair[0].rank === pair[1].rank) {
+      score += 2;
+      breakdown.push('Pair for 2');
+    }
+  });
 
-            // Get numerical value for pegging
-            getCardValue() {
-                if (['J', 'Q', 'K', 'T'].includes(this.rank)) return 10;
-                if (this.rank === 'A') return 1;
-                return parseInt(this.rank);
-            }
+  // 3. Runs (3+ points)
+  // Sort by order
+  const sorted = [...allCards].sort((a, b) => a.order - b.order);
+  
+  // Robust Run Check: Check all permutations of length 3, 4, 5
+  let runPoints = 0;
+  for (let len = 5; len >= 3; len--) {
+    const combos = getCombinations(allCards, len);
+    let foundRunOfLen = false;
+    combos.forEach(c => {
+      const cSorted = [...c].sort((a,b) => a.order - b.order);
+      let isRun = true;
+      for(let k=0; k<cSorted.length-1; k++){
+        if(cSorted[k+1].order !== cSorted[k].order + 1) isRun = false;
+      }
+      if(isRun) {
+        runPoints += len;
+        foundRunOfLen = true;
+      }
+    });
+    // If we found a run of 5, we don't count the runs of 4 or 3 inside it
+    if(foundRunOfLen) break; 
+  }
+  if(runPoints > 0) {
+    score += runPoints;
+    breakdown.push(`Runs for ${runPoints}`);
+  }
 
-            // Get display face
-            getFace() {
-                return this.rank + this.suit;
-            }
+  // 4. Flush (4 or 5 points)
+  if (!isCrib) {
+    const suit = hand[0].suit;
+    if (hand.every(c => c.suit === suit)) {
+      if (starter.suit === suit) {
+        score += 5;
+        breakdown.push('Flush for 5');
+      } else {
+        score += 4;
+        breakdown.push('Flush for 4');
+      }
+    }
+  } else {
+    // Crib needs 5 cards for flush
+    const suit = starter.suit;
+    if (hand.every(c => c.suit === suit) && starter.suit === suit) {
+      score += 5;
+      breakdown.push('Crib Flush for 5');
+    }
+  }
 
-            // For JSON serialization/deserialization
-            toObject() {
-                return { rank: this.rank, suit: this.suit };
-            }
-        }
+  // 5. Nobs (1 point)
+  const jack = hand.find(c => c.rank === 'J' && c.suit === starter.suit);
+  if (jack) {
+    score += 1;
+    breakdown.push('Nobs for 1');
+  }
 
-        /**
-         * Manages the entire Cribbage game state and Firebase synchronization.
-         */
-        class CribbageGame {
-            constructor(db, userId, appId, gameId) {
-                this.db = db;
-                this.userId = userId;
-                this.appId = appId;
-                this.gameId = gameId;
-                this.gameDocRef = db ? doc(db, 'artifacts', appId, 'public', 'data', 'cribbage_games', gameId) : null;
-                
-                // Local state for UI visibility control (Crucial for the "Hand Phone" requirement)
-                this.currentViewer = 1; // 1 or 2
-                this._isSwitching = false; // Local state for blanking the screen during handover
-                
-                // Game state (synced via Firestore)
-                this.state = this.getInitialState();
+  return { score, breakdown };
+};
 
-                // UI Elements
-                this.el = {
-                    score1: document.getElementById('score-p1'),
-                    score2: document.getElementById('score-p2'),
-                    hand1: document.getElementById('player-hand-1'),
-                    hand2: document.getElementById('player-hand-2'),
-                    peggingPile: document.getElementById('pegging-pile'),
-                    starterCard: document.getElementById('starter-card'),
-                    cribArea: document.getElementById('crib-area'),
-                    gameStatus: document.getElementById('game-status'),
-                    peggingCount: document.getElementById('pegging-count'),
-                    peggingMsg: document.getElementById('pegging-message'),
-                    actionBtns: document.getElementById('action-buttons'),
-                    switchBtn: document.getElementById('switch-player-btn'),
-                    newGameBtn: document.getElementById('new-game-btn'),
-                    // New elements for the blank screen overlay
-                    switchOverlay: document.getElementById('switch-overlay'),
-                    gameContent: document.getElementById('game-content')
-                };
-            }
+const scorePegging = (playedCards) => {
+  // Returns points gained by the LAST card played
+  if (playedCards.length === 0) return 0;
+  
+  let points = 0;
+  const recent = [...playedCards].reverse(); // Newest first
 
-            getInitialState() {
-                return {
-                    scores: { 1: 0, 2: 0 },
-                    dealer: 1, // 1 or 2
-                    turn: 1, // 1 or 2 (for pegging)
-                    phase: 'DEAL', // 'DEAL', 'DISCARD', 'CUT', 'PEGGING', 'SHOW'
-                    peggingCount: 0,
-                    peggingPile: [], // Array of Card objects
-                    hand1: [], // Array of Card objects
-                    hand2: [],
-                    crib: [],
-                    starter: null, // Card object
-                    // Simplified: We use a static P1/P2 mapping for this hot-seat simulation
-                    player1Id: this.userId + '_P1', 
-                    player2Id: this.userId + '_P2', 
-                    lastUpdate: Date.now()
-                };
-            }
+  // 15
+  const total = playedCards.reduce((a, b) => a + b.value, 0);
+  if (total === 15) points += 2;
+  if (total === 31) points += 2;
 
-            /** Initializes the game state, loads from Firestore, and sets up listener. */
-            async initialize() {
-                if (this.db) {
-                    // Try to load existing state
-                    const docSnap = await getDoc(this.gameDocRef);
-                    if (docSnap.exists() && docSnap.data().phase) {
-                        this.state = this.deserializeState(docSnap.data());
-                        console.log("Game loaded from Firestore.");
-                    } else {
-                        // Create new game if it doesn't exist
-                        await this.resetGame();
-                        console.log("New game created in Firestore.");
-                    }
-                    
-                    // Set up real-time listener
-                    onSnapshot(this.gameDocRef, (doc) => {
-                        if (doc.exists() && doc.data().phase) {
-                            this.state = this.deserializeState(doc.data());
-                            this.render(); // Re-render every time state changes
-                        }
-                    }, (error) => {
-                        console.error("Snapshot listener error:", error);
-                        this.el.gameStatus.textContent = "Error loading game state.";
-                    });
-                } else {
-                    // Offline/Demo mode: Start new game
-                    this.state.player1Id = 'Demo_P1';
-                    this.state.player2Id = 'Demo_P2';
-                    this.resetGameOffline();
-                }
-                
-                // Initialize the UI elements and listeners
-                this.el.newGameBtn.addEventListener('click', () => this.resetGame());
-                this.el.switchBtn.addEventListener('click', () => this.startSwitching());
-                
-                this.render();
-            }
-            
-            // --- FIREBASE SYNC METHODS ---
+  // Pairs
+  let pairCount = 0;
+  for (let i = 1; i < recent.length; i++) {
+    if (recent[i].rank === recent[0].rank) pairCount++;
+    else break;
+  }
+  if (pairCount === 1) points += 2;
+  if (pairCount === 2) points += 6;
+  if (pairCount === 3) points += 12;
 
-            serializeState(state) {
-                // Convert Card objects arrays to simple object arrays
-                return {
-                    ...state,
-                    hand1: state.hand1.map(c => c.toObject()),
-                    hand2: state.hand2.map(c => c.toObject()),
-                    crib: state.crib.map(c => c.toObject()),
-                    peggingPile: state.peggingPile.map(c => c.toObject()),
-                    starter: state.starter ? state.starter.toObject() : null,
-                    lastUpdate: Date.now()
-                };
-            }
+  // Runs
+  // Check depth 3, then 4, etc.
+  let longestRun = 0;
+  for (let depth = 3; depth <= recent.length; depth++) {
+    const sub = recent.slice(0, depth);
+    const subSorted = [...sub].sort((a,b) => a.order - b.order);
+    let isRun = true;
+    for(let k=0; k<subSorted.length-1; k++){
+      if(subSorted[k+1].order !== subSorted[k].order + 1) isRun = false;
+    }
+    if (isRun) longestRun = depth;
+  }
+  if (longestRun > 0) points += longestRun;
 
-            deserializeState(data) {
-                // Convert object arrays back to Card objects
-                const cardMapper = (arr) => arr.map(c => new Card(c.rank, c.suit));
-                return {
-                    ...data,
-                    hand1: cardMapper(data.hand1 || []),
-                    hand2: cardMapper(data.hand2 || []),
-                    crib: cardMapper(data.crib || []),
-                    peggingPile: cardMapper(data.peggingPile || []),
-                    starter: data.starter ? new Card(data.starter.rank, data.starter.suit) : null
-                };
-            }
+  return points;
+};
 
-            async updateState(newState) {
-                if (this.db) {
-                    try {
-                        const serializedState = this.serializeState({ ...this.state, ...newState });
-                        await updateDoc(this.gameDocRef, serializedState);
-                        // State will be updated locally via the onSnapshot listener
-                    } catch (error) {
-                        console.error("Failed to update Firestore state:", error);
-                        this.el.gameStatus.textContent = 'Error: State update failed.';
-                    }
-                } else {
-                    // Offline/Demo mode
-                    this.state = { ...this.state, ...newState };
-                    this.render();
-                }
-            }
-            
-            // --- GAME ACTIONS ---
+/**
+ * COMPONENT: SLIDE TO UNLOCK (Pass Phone)
+ */
+const Slider = ({ onUnlock, nextPlayer }) => {
+  const [dragX, setDragX] = useState(0);
+  const containerRef = useRef(null);
+  const isDragging = useRef(false);
 
-            getDeck() {
-                const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'];
-                const suits = ['H', 'D', 'C', 'S'];
-                let deck = [];
-                for (let suit of suits) {
-                    for (let rank of ranks) {
-                        deck.push(new Card(rank, suit));
-                    }
-                }
-                // Shuffle
-                for (let i = deck.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [deck[i], deck[j]] = [deck[j], deck[i]];
-                }
-                return deck;
-            }
+  const handleStart = (e) => {
+    isDragging.current = true;
+  };
 
-            // Used for both online and offline reset
-            _internalReset() {
-                const deck = this.getDeck();
-                const newDealer = this.state.dealer === 1 ? 2 : 1;
-                
-                this.state = {
-                    ...this.getInitialState(), // Reset all non-score/ID state
-                    scores: this.state.scores, // Keep current scores until full game ends
-                    dealer: newDealer,
-                    turn: newDealer === 1 ? 2 : 1, // Non-dealer goes first in discard
-                    phase: 'DISCARD',
-                    hand1: deck.splice(0, 6),
-                    hand2: deck.splice(0, 6),
-                    crib: [],
-                    peggingPile: [],
-                    peggingCount: 0,
-                    starter: null,
-                };
-            }
+  const handleMove = (e) => {
+    if (!isDragging.current || !containerRef.current) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const rect = containerRef.current.getBoundingClientRect();
+    const offsetX = Math.min(Math.max(0, clientX - rect.left - 25), rect.width - 50);
+    setDragX(offsetX);
+    
+    // Unlock threshold
+    if (offsetX > rect.width - 60) {
+      isDragging.current = false;
+      onUnlock();
+    }
+  };
 
-            async resetGame() {
-                this._internalReset();
-                // Persist the full new state (includes scores)
-                await setDoc(this.gameDocRef, this.serializeState(this.state));
-            }
-            
-            resetGameOffline() {
-                this._internalReset();
-                this.render();
-            }
+  const handleEnd = () => {
+    isDragging.current = false;
+    setDragX(0);
+  };
 
-
-            // --- DISCARD PHASE ---
-
-            // Player selects cards to move from hand to crib
-            discardCard(playerNum, cardIndex) {
-                const handKey = `hand${playerNum}`;
-                const hand = this.state[handKey];
-                
-                // FIX: Allow discard if the hand size is 5 or 6 (i.e., greater than 4)
-                if (hand.length > 4 && this.state.phase === 'DISCARD') { 
-                    const cardToDiscard = hand.splice(cardIndex, 1)[0];
-                    this.state.crib.push(cardToDiscard);
-                    
-                    this.updateState({
-                        [handKey]: hand,
-                        crib: this.state.crib
-                    }).then(() => this.checkDiscardComplete());
-                }
-            }
-            
-            checkDiscardComplete() {
-                // Both hands should now have 4 cards, and crib 4
-                if (this.state.hand1.length === 4 && this.state.hand2.length === 4) {
-                    this.cutCard();
-                }
-            }
-
-            // --- CUT/STARTER PHASE ---
-            cutCard() {
-                const deck = this.getDeck(); // Simplified: We just grab a new random card
-                const starter = deck[0]; 
-                this.state.starter = starter;
-                this.state.phase = 'PEGGING';
-                this.state.peggingCount = 0;
-                this.state.turn = this.state.dealer === 1 ? 2 : 1; // Non-dealer starts pegging
-                this.updateState({
-                    starter: starter,
-                    phase: 'PEGGING',
-                    peggingCount: 0,
-                    turn: this.state.turn
-                });
-            }
-
-            // --- PEGGING PHASE ---
-
-            // Check if player has any card that fits under 31
-            canPlayerPlay(playerNum) {
-                const handKey = `hand${playerNum}`;
-                return this.state[handKey].some(card => (this.state.peggingCount + card.value) <= 31);
-            }
-
-            /**
-             * Handles playing a card, scoring 31/Go, and managing turn progression.
-             */
-            playCard(playerNum, cardIndex) {
-                const handKey = `hand${playerNum}`;
-                const hand = this.state[handKey];
-                const nextTurn = playerNum === 1 ? 2 : 1;
-
-                if (this.state.phase === 'PEGGING' && this.state.turn === playerNum) {
-                    const cardToPlay = hand.splice(cardIndex, 1)[0];
-                    const newCount = this.state.peggingCount + cardToPlay.value;
-
-                    if (newCount <= 31) {
-                        this.state.peggingPile.push(cardToPlay);
-                        this.state.peggingCount = newCount;
-                        
-                        let points = 0;
-                        let msg = '';
-
-                        if (newCount === 31) {
-                            // Player scored 31
-                            points = 2;
-                            msg = `P${playerNum} scores 2 points for 31!`;
-                            
-                            // Reset play sequence. The current player starts the new sequence.
-                            this.state.peggingCount = 0;
-                            this.state.peggingPile = [];
-                            this.state.turn = playerNum; 
-
-                            // Check if the current player (P_current) can play on the new count (0).
-                            if (this.state.hand1.length === 0 && this.state.hand2.length === 0) {
-                                // Game over check
-                            } else if (!this.canPlayerPlay(playerNum) && this.canPlayerPlay(nextTurn)) {
-                                // P_current is out of cards, P_next takes over
-                                this.state.turn = nextTurn;
-                                msg += ` P${playerNum} is out. P${nextTurn} starts the next sequence.`;
-                            }
-                            
-                        } else {
-                            // Normal play, check the next player
-                            if (this.canPlayerPlay(nextTurn)) {
-                                // Normal turn switch
-                                this.state.turn = nextTurn;
-                            } else {
-                                // P_next cannot play (Go). P_current scores 1 point.
-                                points = 1; 
-                                msg = `P${nextTurn} must say 'Go'. P${playerNum} scores 1 point.`;
-                                
-                                // Check if P_current can play again (on the existing count)
-                                if (this.canPlayerPlay(playerNum)) {
-                                    // P_current keeps the turn.
-                                    this.state.turn = playerNum; 
-                                    msg += ` P${playerNum} plays again.`;
-                                } else {
-                                    // P_current also cannot play (Double Go or End of Play). Reset count.
-                                    this.state.peggingCount = 0;
-                                    this.state.peggingPile = [];
-                                    
-                                    // Turn passes to the other player (nextTurn) to start the new count.
-                                    this.state.turn = nextTurn; 
-                                    msg += ` Both players passed. Count reset. P${nextTurn} starts the next sequence.`;
-                                }
-                            }
-                        }
-
-                        // Apply points and update message
-                        this.state.scores[playerNum] += points;
-                        this.el.peggingMsg.textContent = msg;
-
-                        this.updateState({
-                            [handKey]: hand,
-                            peggingPile: this.state.peggingPile,
-                            peggingCount: this.state.peggingCount,
-                            scores: this.state.scores,
-                            turn: this.state.turn,
-                        }).then(() => {
-                            this.checkPeggingEnd();
-                        });
-                        
-                    } else {
-                        // Card exceeds 31, illegal move
-                        this.el.peggingMsg.textContent = "Illegal play: Count exceeds 31.";
-                    }
-                }
-            }
-
-
-            checkPeggingEnd() {
-                // If both hands are empty, pegging is over
-                if (this.state.hand1.length === 0 && this.state.hand2.length === 0) {
-                    this.state.phase = 'SHOW';
-                    this.state.turn = this.state.dealer === 1 ? 2 : 1; // Non-dealer shows first
-                    this.el.peggingMsg.textContent = "Pegging complete. Starting the Show phase.";
-                    this.updateState({
-                        phase: 'SHOW',
-                        turn: this.state.turn
-                    });
-                }
-            }
-
-            // --- SHOW PHASE (Highly Simplified) ---
-            
-            // This is the main simplification: we only implement 15s scoring
-            calculateScore(hand, starter) {
-                const allCards = [...hand, starter];
-                let score = 0;
-                
-                // Only count 15s (most common score) for simplicity
-                for (let i = 0; i < allCards.length; i++) {
-                    for (let j = i + 1; j < allCards.length; j++) {
-                        if (allCards[i].value + allCards[j].value === 15) {
-                            score += 2;
-                        }
-                    }
-                }
-                
-                // Add 1 for the 'knobs' (Jack of same suit as starter)
-                for (const card of hand) {
-                    if (card.rank === 'J' && card.suit === starter.suit) {
-                        score += 1;
-                    }
-                }
-                
-                return score;
-            }
-
-            scoreHand(playerNum) {
-                if (this.state.phase === 'SHOW' && this.state.turn === playerNum) {
-                    const handKey = `hand${playerNum}`;
-                    const isCrib = (playerNum === this.state.dealer);
-                    
-                    // The crib is scored last, so if it's the dealer's turn, we score the crib too.
-                    const handToScore = this.state[handKey]; 
-                    
-                    let handScore = this.calculateScore(handToScore, this.state.starter);
-                    let cribScore = 0;
-                    
-                    if (isCrib) {
-                        // The dealer scores their hand + the crib
-                        cribScore = this.calculateScore(this.state.crib, this.state.starter);
-                        this.el.peggingMsg.textContent = `P${playerNum} (Dealer) scored ${handScore} for hand and ${cribScore} for crib! Total: ${handScore + cribScore}`;
-                    } else {
-                         this.el.peggingMsg.textContent = `P${playerNum} scored ${handScore} for hand.`;
-                    }
-                    
-                    this.state.scores[playerNum] += handScore + cribScore;
-                    
-                    let nextTurn = playerNum === 1 ? 2 : 1;
-                    
-                    if (nextTurn !== this.state.dealer) {
-                        // Next is the dealer (who also scores the crib, which ends the round)
-                        this.state.turn = nextTurn;
-                    } else {
-                        // Everyone scored, reset for the next hand
-                        this.state.phase = 'HAND_END';
-                        this.el.peggingMsg.textContent += " Round ended. Starting next hand (click New Hand).";
-                        this.el.actionBtns.innerHTML = this.getNewHandButton();
-                        this.state.turn = 0; // Lock turns
-                    }
-                    
-                    this.updateState({
-                        scores: this.state.scores,
-                        phase: this.state.phase,
-                        turn: this.state.turn,
-                    });
-                }
-            }
-
-
-            // --- UI RENDER AND VISIBILITY CONTROL ---
-            
-            startSwitching() {
-                if (this._isSwitching) return; // Prevent double click
-                
-                const nextViewer = this.currentViewer === 1 ? 2 : 1;
-                this._isSwitching = true;
-                
-                this.render(); // Show the overlay immediately
-
-                setTimeout(() => {
-                    // After 2 second 'hand-over'
-                    this.currentViewer = nextViewer;
-                    this._isSwitching = false;
-                    this.render(); // Show the new player's hand
-                }, 2000); // 2 second delay for realism
-            }
-            
-            // Maintain old name for consistency in listeners, though it now calls startSwitching
-            switchViewer() {
-                this.startSwitching(); 
-            }
-
-            renderCard(card, isFaceUp = true) {
-                const suitColor = card.suit === 'H' || card.suit === 'D' ? 'text-red-600' : 'text-gray-900';
-                
-                if (!isFaceUp) {
-                    return `
-                        <div class="card bg-blue-900 shadow-xl rounded-lg w-16 h-24 sm:w-20 sm:h-28 flex items-center justify-center m-1 border-4 border-white transform hover:scale-105 transition duration-150">
-                            <svg class="w-10 h-10 text-white fill-current" viewBox="0 0 24 24">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-                            </svg>
-                        </div>
-                    `;
-                }
-
-                return `
-                    <div class="card bg-white shadow-xl rounded-lg w-16 h-24 sm:w-20 sm:h-28 flex flex-col justify-between p-2 m-1 border-4 border-gray-200 transform hover:scale-105 transition duration-150 ${suitColor}">
-                        <div class="text-xl font-bold">${card.rank}</div>
-                        <div class="text-3xl self-center">
-                            ${card.suit === 'H' ? '♥' : card.suit === 'D' ? '♦' : card.suit === 'C' ? '♣' : '♠'}
-                        </div>
-                        <div class="text-xl font-bold self-end">${card.rank}</div>
-                    </div>
-                `;
-            }
-            
-            getCardActionButton(playerNum, cardIndex, card) {
-                let action = '';
-                let isDisabled = this.state.turn !== playerNum;
-
-                if (this.state.phase === 'DISCARD') {
-                    action = 'Discard';
-                    // Button is enabled if hand size is 5 or 6 (i.e., not yet down to 4)
-                    const disableDiscard = this.state[`hand${playerNum}`].length <= 4; 
-                    return `<button class="text-xs bg-red-500 hover:bg-red-700 text-white py-1 px-2 rounded mt-1" ${disableDiscard ? 'disabled' : ''} onclick="window.gameInstance.discardCard(${playerNum}, ${cardIndex})">${action}</button>`;
-                } else if (this.state.phase === 'PEGGING') {
-                    action = 'Play';
-                    const willExceed31 = (this.state.peggingCount + card.value) > 31;
-                    isDisabled = isDisabled || willExceed31;
-                    return `<button class="text-xs bg-green-500 hover:bg-green-700 text-white py-1 px-2 rounded mt-1" ${isDisabled ? 'disabled' : ''} onclick="window.gameInstance.playCard(${playerNum}, ${cardIndex})">${action}</button>`;
-                }
-                return '';
-            }
-
-            renderHand(playerNum, hand) {
-                // If switching, or not the current viewer, hide the face cards
-                const isViewing = this.currentViewer === playerNum && !this._isSwitching;
-                let html = '';
-                
-                if (!isViewing) {
-                    // Hide the hand completely, showing only back of cards
-                    html = hand.map(card => this.renderCard(card, false)).join('');
-                    return `<div class="flex flex-wrap justify-center">${html}</div>`;
-                }
-
-                // If viewing, show the hand
-                html = hand.map((card, index) => {
-                    const actionButton = this.getCardActionButton(playerNum, index, card);
-                    return `
-                        <div class="flex flex-col items-center">
-                            ${this.renderCard(card, true)}
-                            ${actionButton}
-                        </div>
-                    `;
-                }).join('');
-                
-                return `<div class="flex flex-wrap justify-center">${html}</div>`;
-            }
-
-            getScoreButton() {
-                if (this.state.phase === 'SHOW' && this.state.turn !== 0) {
-                    return `
-                        <button class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200"
-                            onclick="window.gameInstance.scoreHand(${this.state.turn})">
-                            P${this.state.turn}'s Turn: Score Hand & Crib
-                        </button>
-                    `;
-                }
-                return '';
-            }
-            
-            getNewHandButton() {
-                 return `
-                    <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200"
-                        onclick="window.gameInstance.resetGame()">
-                        Start New Hand
-                    </button>
-                `;
-            }
-
-            // Main render function
-            render() {
-                const p1Hand = this.state.hand1;
-                const p2Hand = this.state.hand2;
-                const currentP = this.currentViewer;
-                const nextP = currentP === 1 ? 2 : 1;
-                
-                // --- SWITCHING OVERLAY LOGIC ---
-                if (this._isSwitching) {
-                    this.el.switchOverlay.classList.remove('hidden');
-                    this.el.gameContent.classList.add('hidden');
-                    
-                    // Determine which player is receiving the device
-                    const incomingP = nextP; 
-                    const outgoingP = currentP;
-
-                    this.el.switchOverlay.innerHTML = `
-                        <p class="mb-4 text-3xl font-normal text-gray-400">HANDING DEVICE TO...</p>
-                        <p class="text-7xl font-extrabold text-yellow-400">PLAYER ${incomingP}</p>
-                        <p class="mt-8 text-2xl font-light text-gray-300">Player ${outgoingP}, please look away!</p>
-                    `;
-                    this.el.switchBtn.textContent = 'Switching... (Please wait)';
-                    this.el.switchBtn.disabled = true;
-                    return; // Stop rendering the rest of the game elements
-                } else {
-                    this.el.switchOverlay.classList.add('hidden');
-                    this.el.gameContent.classList.remove('hidden');
-                    this.el.switchBtn.disabled = false;
-                }
-                // --- END SWITCHING OVERLAY LOGIC ---
-                
-                // 1. Update Scores
-                this.el.score1.textContent = this.state.scores[1];
-                this.el.score2.textContent = this.state.scores[2];
-                
-                // 2. Render Hands (Visibility Logic Applied Here)
-                this.el.hand1.innerHTML = this.renderHand(1, p1Hand);
-                this.el.hand2.innerHTML = this.renderHand(2, p2Hand);
-                
-                // 3. Render Game Board
-                this.el.starterCard.innerHTML = this.state.starter 
-                    ? this.renderCard(this.state.starter, true)
-                    : this.state.phase === 'PEGGING' || this.state.phase === 'SHOW'
-                        ? '<div class="w-16 h-24 sm:w-20 sm:h-28 bg-gray-300 rounded-lg flex items-center justify-center text-sm text-gray-600">Cut</div>'
-                        : '<div class="w-16 h-24 sm:w-20 sm:h-28 bg-gray-300 rounded-lg flex items-center justify-center text-sm text-gray-600">Waiting</div>';
-                
-                this.el.peggingCount.textContent = this.state.peggingCount;
-                this.el.peggingPile.innerHTML = this.state.peggingPile.map(card => this.renderCard(card, true)).join('');
-                
-                // 4. Crib and Status
-                this.el.cribArea.innerHTML = this.state.crib.length > 0
-                    ? `${this.state.crib.map(card => this.renderCard(card, false)).join('')}`
-                    : '<div class="text-gray-400">Crib is empty.</div>';
-                
-                const dealerText = this.state.dealer === 1 ? 'P1' : 'P2';
-                let statusText = `Phase: ${this.state.phase}. Dealer: ${dealerText}. `;
-                if (this.state.phase === 'DISCARD') {
-                    statusText += `P1 has ${6 - p1Hand.length} cards to discard. P2 has ${6 - p2Hand.length} cards to discard.`;
-                } else if (this.state.phase === 'PEGGING') {
-                    statusText += `P${this.state.turn}'s turn to play a card.`;
-                } else if (this.state.phase === 'SHOW') {
-                    statusText += `P${this.state.turn}'s turn to show and score.`;
-                } else if (this.state.phase === 'HAND_END') {
-                    statusText = `Hand Complete! Dealer switches. Click 'New Hand' to continue.`;
-                }
-                
-                this.el.gameStatus.textContent = statusText;
-                
-                // 5. Render Action Buttons
-                let actionHtml = '';
-                if (this.state.phase === 'SHOW') {
-                    actionHtml = this.getScoreButton();
-                } else if (this.state.phase === 'HAND_END') {
-                    actionHtml = this.getNewHandButton();
-                }
-                this.el.actionBtns.innerHTML = actionHtml;
-                
-                // 6. Update Switch Button Text
-                this.el.switchBtn.textContent = `Hand Phone to Other Player (P${nextP} View)`;
-                
-                // 7. Visibility Toggle for Hand Areas
-                document.getElementById('p1-section').classList.toggle('hidden', currentP !== 1);
-                document.getElementById('p2-section').classList.toggle('hidden', currentP !== 2);
-            }
-        }
-    </script>
-    <style>
-        .card-container {
-            min-height: 120px; /* Ensure space for cards even if hand is empty */
-        }
-        .card {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
-            user-select: none;
-            cursor: pointer;
-        }
-        .card-face {
-            font-family: 'Inter', sans-serif;
-        }
-        .game-area {
-            min-height: 250px;
-        }
-    </style>
-</head>
-<body class="bg-gray-100 p-4 sm:p-8 font-sans">
-
-    <!-- Global App Container -->
-    <div id="app" class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-6 md:p-10 relative">
-        <h1 class="text-4xl font-extrabold text-center text-indigo-700 mb-6 border-b pb-3">Cribbage Hot-Seat (P1 vs P2)</h1>
-        
-        <!-- Visibility Switch Button (The Core Mechanic) - Needs to be outside the main content wrapper -->
-        <div class="flex justify-center mb-8">
-            <button id="switch-player-btn" class="bg-yellow-500 hover:bg-yellow-600 text-gray-800 font-bold py-3 px-6 rounded-full shadow-xl transition duration-300 transform hover:scale-105">
-                Hand Phone to Other Player (P2 View)
-            </button>
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-emerald-900 text-white p-6 space-y-8 animate-in fade-in">
+      <div className="text-center space-y-4">
+        <div className="w-20 h-20 bg-emerald-700 rounded-full flex items-center justify-center mx-auto shadow-inner">
+          <Shield size={40} className="text-emerald-300" />
         </div>
+        <h1 className="text-3xl font-bold">Pass to {nextPlayer}</h1>
+        <p className="text-emerald-200">Hide your screen while passing!</p>
+      </div>
 
-        <!-- FULL SCREEN OVERLAY FOR HANDOVER -->
-        <!-- This is a fixed element that covers everything when switching players -->
-        <div id="switch-overlay" class="fixed inset-0 bg-gray-900 z-50 flex flex-col items-center justify-center text-white text-center transition-opacity duration-300 hidden">
-            <p class="mb-4 text-3xl font-normal text-gray-400">HANDING DEVICE TO...</p>
-            <p class="text-7xl font-extrabold text-yellow-400 animate-pulse">PLAYER</p>
-            <p class="mt-8 text-2xl font-light text-gray-300">Please wait 2 seconds.</p>
+      <div 
+        ref={containerRef}
+        className="relative w-full max-w-xs h-16 bg-emerald-800 rounded-full shadow-inner border border-emerald-700 overflow-hidden"
+        onMouseMove={handleMove}
+        onTouchMove={handleMove}
+        onMouseUp={handleEnd}
+        onTouchEnd={handleEnd}
+        onMouseLeave={handleEnd}
+      >
+        <div className="absolute inset-0 flex items-center justify-center text-emerald-500 font-semibold tracking-wider pointer-events-none opacity-50">
+          SLIDE TO START
         </div>
-
-        <!-- Main Game Content (Everything except the title and switch button) -->
-        <div id="game-content">
-            <!-- Scoreboard -->
-            <div class="flex justify-around items-center bg-indigo-100 p-4 rounded-lg mb-6 shadow-inner">
-                <div class="text-center">
-                    <h2 class="text-xl font-semibold text-gray-700">Player 1 Score</h2>
-                    <span id="score-p1" class="text-4xl font-black text-indigo-800">0</span>
-                </div>
-                <div class="text-center">
-                    <h2 class="text-xl font-semibold text-gray-700">Player 2 Score</h2>
-                    <span id="score-p2" class="text-4xl font-black text-indigo-800">0</span>
-                </div>
-            </div>
-
-            <!-- Common Game Area (Always Visible) -->
-            <div class="game-area bg-gray-50 border border-gray-200 rounded-lg p-4 mb-8 shadow-md">
-                <h3 class="text-2xl font-bold text-center text-gray-800 mb-4">The Play / Game Board</h3>
-                
-                <p id="game-status" class="text-center text-sm font-medium text-red-600 mb-4">Initializing game...</p>
-                <p id="pegging-message" class="text-center text-sm italic text-gray-600 mb-4"></p>
-
-                <!-- Pegging Count -->
-                <div class="text-center mb-4">
-                    <span class="text-lg font-semibold text-gray-700">Pegging Count:</span>
-                    <span id="pegging-count" class="text-5xl font-extrabold text-green-700 ml-2">0</span>
-                </div>
-
-                <!-- Pegging Pile & Starter Card -->
-                <div class="flex flex-col md:flex-row justify-center items-start md:space-x-8">
-                    <!-- Starter Card -->
-                    <div class="text-center mb-4 md:mb-0">
-                        <h4 class="font-semibold text-gray-600 mb-2">Starter Card</h4>
-                        <div id="starter-card" class="flex justify-center">
-                            <div class="w-16 h-24 sm:w-20 sm:h-28 bg-gray-300 rounded-lg flex items-center justify-center text-sm text-gray-600">Cut</div>
-                        </div>
-                    </div>
-
-                    <!-- Pegging Pile -->
-                    <div class="text-center w-full md:w-auto">
-                        <h4 class="font-semibold text-gray-600 mb-2">Pegging Pile (Last Cards Played)</h4>
-                        <div id="pegging-pile" class="flex flex-wrap justify-center card-container">
-                            <!-- Played Cards Render Here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Crib Area (Hidden, only visible to dealer during SHOW, but always present in hot-seat) -->
-            <div class="bg-pink-50 border border-pink-200 rounded-lg p-4 mb-8 shadow-inner">
-                <h3 class="text-2xl font-bold text-center text-pink-700 mb-4">The Crib (Dealer's Prize)</h3>
-                <div id="crib-area" class="flex flex-wrap justify-center card-container">
-                    <!-- Crib Cards Render Here (usually face down) -->
-                </div>
-            </div>
-
-            <!-- Dynamic Action Buttons (Score, New Hand) -->
-            <div id="action-buttons" class="flex justify-center mb-8">
-                <button id="new-game-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-200">
-                    Start New Hand
-                </button>
-            </div>
-
-            <!-- Player 1 Section (Toggled Visibility) -->
-            <div id="p1-section" class="player-section bg-gray-800 text-white p-6 rounded-xl shadow-inner hidden">
-                <h3 class="text-3xl font-extrabold text-center text-indigo-400 mb-4">Player 1's Hand</h3>
-                <p class="text-center text-sm mb-4">Click cards to discard (at start) or play (during pegging).</p>
-                <div id="player-hand-1" class="flex flex-wrap justify-center card-container">
-                    <!-- P1 Cards Render Here -->
-                </div>
-            </div>
-
-            <!-- Player 2 Section (Toggled Visibility) -->
-            <div id="p2-section" class="player-section bg-gray-800 text-white p-6 rounded-xl shadow-inner hidden">
-                <h3 class="text-3xl font-extrabold text-center text-indigo-400 mb-4">Player 2's Hand</h3>
-                <p class="text-center text-sm mb-4">Click cards to discard (at start) or play (during pegging).</p>
-                <div id="player-hand-2" class="flex flex-wrap justify-center card-container">
-                    <!-- P2 Cards Render Here -->
-                </div>
-            </div>
+        <div 
+          className="absolute top-1 left-1 h-14 w-14 bg-white rounded-full shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing z-10"
+          style={{ transform: `translateX(${dragX}px)` }}
+          onMouseDown={handleStart}
+          onTouchStart={handleStart}
+        >
+          <ArrowRight className="text-emerald-900" />
         </div>
+      </div>
     </div>
+  );
+};
 
-</body>
-</html>
+/**
+ * COMPONENT: PLAYING CARD
+ */
+const Card = ({ card, onClick, selected, disabled, hidden, small }) => {
+  if (hidden) {
+    return (
+      <div className={`
+        ${small ? 'w-10 h-14' : 'w-16 h-24 sm:w-20 sm:h-28'} 
+        bg-blue-800 rounded-lg border-2 border-white shadow-md
+        bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]
+      `} />
+    );
+  }
+
+  return (
+    <div 
+      onClick={() => !disabled && onClick && onClick(card)}
+      className={`
+        relative flex flex-col items-center justify-between
+        ${small ? 'w-10 h-14 text-xs p-1' : 'w-16 h-24 sm:w-20 sm:h-28 p-2 text-lg sm:text-xl'} 
+        bg-white rounded-lg shadow-md transition-all duration-200
+        ${selected ? 'ring-4 ring-yellow-400 -translate-y-4' : ''}
+        ${disabled ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer hover:-translate-y-1'}
+        ${card.isRed ? 'text-red-600' : 'text-slate-900'}
+      `}
+    >
+      <div className="self-start font-bold leading-none">{card.rank}</div>
+      <div className={`${small ? 'text-lg' : 'text-3xl'}`}>{card.suit}</div>
+      <div className="self-end font-bold leading-none rotate-180">{card.rank}</div>
+    </div>
+  );
+};
+
+/**
+ * MAIN GAME COMPONENT
+ */
+export default function CribbageGame() {
+  // Game State
+  const [phase, setPhase] = useState('SETUP'); // SETUP, DEAL, DISCARD, CUT, PEGGING, SHOW, OVER
+  const [players, setPlayers] = useState({ p1: { name: 'Player 1', score: 0 }, p2: { name: 'Player 2', score: 0 } });
+  const [dealer, setDealer] = useState('p1');
+  const [turn, setTurn] = useState('p1');
+  
+  // Card State
+  const [hands, setHands] = useState({ p1: [], p2: [], crib: [] });
+  const [deck, setDeck] = useState([]);
+  const [starter, setStarter] = useState(null);
+  const [playedCards, setPlayedCards] = useState([]); // Cards currently on the table (for 31 count)
+  const [peggingHistory, setPeggingHistory] = useState([]); // All cards played this phase
+  const [count, setCount] = useState(0);
+
+  // UX State
+  const [message, setMessage] = useState("Welcome to Cribbage!");
+  const [transitioning, setTransitioning] = useState(false);
+  const [transitionTarget, setTransitionTarget] = useState(null);
+  const [lastScore, setLastScore] = useState(null);
+
+  // --- ACTIONS ---
+
+  const startGame = () => {
+    setDeck(createDeck());
+    setPhase('DEAL');
+    setMessage("Shuffling...");
+    setTimeout(dealCards, 1000);
+  };
+
+  const dealCards = () => {
+    const newDeck = createDeck();
+    const h1 = newDeck.slice(0, 6);
+    const h2 = newDeck.slice(6, 12);
+    const remaining = newDeck.slice(12);
+
+    setHands({ p1: h1, p2: h2, crib: [] });
+    setDeck(remaining);
+    setPhase('DISCARD');
+    setStarter(null);
+    setPlayedCards([]);
+    setPeggingHistory([]);
+    setCount(0);
+    setTurn(dealer === 'p1' ? 'p2' : 'p1'); // Non-dealer starts discard/pegging usually irrelevant for discard, but logic holds
+    
+    // Start with whoever needs to discard first. Let's force dealer to discard last conventionally, 
+    // but in this app we can let them do it in any order. 
+    // To simplify Pass-Phone logic: Dealer is P1? P2 discards first.
+    const firstActor = dealer === 'p1' ? 'p2' : 'p1';
+    triggerTransition(firstActor, `${firstActor === 'p1' ? players.p1.name : players.p2.name}, discard 2 cards.`);
+  };
+
+  const discard = (cards) => {
+    // Current player removes 2 cards
+    const player = turn;
+    const newHand = hands[player].filter(c => !cards.find(x => x.id === c.id));
+    
+    setHands(prev => ({
+      ...prev,
+      [player]: newHand,
+      crib: [...prev.crib, ...cards]
+    }));
+
+    // Switch turn or move to Cut
+    if (hands.crib.length === 0) {
+      // Only first player has discarded
+      const nextPlayer = player === 'p1' ? 'p2' : 'p1';
+      triggerTransition(nextPlayer, "Your turn to discard.");
+    } else {
+      // Both discarded
+      setPhase('CUT');
+      setMessage("Cutting the deck...");
+      setTimeout(cutDeck, 1500);
+    }
+  };
+
+  const cutDeck = () => {
+    const cutCard = deck[0];
+    setStarter(cutCard);
+    
+    let msg = `Cut: ${cutCard.rank}${cutCard.suit}`;
+    if (cutCard.rank === 'J') {
+      msg += " - His Heels! Dealer +2";
+      scorePoints(dealer, 2);
+    }
+    setMessage(msg);
+    
+    setTimeout(() => {
+      setPhase('PEGGING');
+      const firstPegger = dealer === 'p1' ? 'p2' : 'p1';
+      triggerTransition(firstPegger, "Start Pegging!");
+    }, 2000);
+  };
+
+  // --- PEGGING LOGIC ---
+
+  const playCard = (card) => {
+    if (count + card.value > 31) return; // Should be disabled in UI, but safety check
+
+    const newPlayed = [...playedCards, card];
+    const newCount = count + card.value;
+    
+    // Calculate new hand state immediately for logic checks
+    const nextHand = hands[turn].filter(c => c.id !== card.id);
+    // Create a snapshot of the future state of hands
+    const futureHands = {
+      ...hands,
+      [turn]: nextHand
+    };
+    
+    // Update state
+    setHands(prev => ({
+      ...prev,
+      [turn]: nextHand
+    }));
+
+    setPlayedCards(newPlayed);
+    setPeggingHistory(prev => [...prev, { ...card, player: turn }]);
+    setCount(newCount);
+
+    // Score
+    const pts = scorePegging(newPlayed);
+    let msg = `${players[turn].name} plays ${card.rank}`;
+    if (pts > 0) {
+      scorePoints(turn, pts);
+      msg += ` (+${pts})`;
+    }
+    setMessage(msg);
+
+    // Check for 31
+    if (newCount === 31) {
+      setMessage("31! 2 points. Count resets.");
+      // Use futureHands to avoid stale closure issues in resetCount
+      setTimeout(() => resetCount(turn === 'p1' ? 'p2' : 'p1', futureHands), 1500);
+      return;
+    }
+
+    // Determine Next Player
+    const nextPlayer = turn === 'p1' ? 'p2' : 'p1';
+    
+    // Helper to check playability using the FUTURE state
+    const canPlayerPlay = (player) => {
+      return futureHands[player].some(c => newCount + c.value <= 31);
+    };
+    
+    // Check if next player CAN play
+    if (canPlayerPlay(nextPlayer)) {
+      triggerTransition(nextPlayer, "Your turn to play.");
+    } else if (canPlayerPlay(turn)) {
+      // Next player can't play, but current player can ("Go" logic)
+      // NOTE: We do NOT score 1 point here. You only get the "Go" point when NOBODY can play (1 for Last).
+      setMessage(`${players[nextPlayer].name} says Go. ${players[turn].name} plays again.`);
+      // No transition needed, stay on current player
+    } else {
+      // Neither can play
+      scorePoints(turn, 1); // 1 for last card
+      setMessage("1 for Last. Count resets.");
+      setTimeout(() => resetCount(nextPlayer, futureHands), 1500);
+    }
+  };
+
+  const canPlay = (player, currentCount) => {
+    // This function is for UI rendering (current state), not logic prediction
+    return hands[player].some(c => currentCount + c.value <= 31);
+  };
+
+  const resetCount = (nextStarter, handsSnapshot) => {
+    // handsSnapshot ensures we aren't using stale state from the closure when this runs via setTimeout
+    const currentHands = handsSnapshot || hands;
+
+    setPlayedCards([]);
+    setCount(0);
+    
+    // Check if hand is over
+    if (currentHands.p1.length === 0 && currentHands.p2.length === 0) {
+      setPhase('SHOW');
+      // Non-dealer shows first
+      const firstShow = dealer === 'p1' ? 'p2' : 'p1';
+      triggerTransition(firstShow, "Counting hands...");
+    } else {
+      // Find who has cards left
+      if (currentHands[nextStarter].length > 0) {
+        triggerTransition(nextStarter, "New count started.");
+      } else {
+        triggerTransition(nextStarter === 'p1' ? 'p2' : 'p1', "New count started.");
+      }
+    }
+  };
+
+  // --- SHOW LOGIC ---
+
+  const calculateShow = () => {
+    // Reconstruct hand from pegging history for the active player
+    const playerCards = peggingHistory.filter(c => c.player === turn);
+    
+    // Fallback: If for some reason history is empty (shouldn't happen), use empty array
+    const handToScore = playerCards.length > 0 ? playerCards : [];
+
+    const { score, breakdown } = scoreHand(handToScore, starter, false);
+    
+    setMessage(`${players[turn].name} scores ${score}: ${breakdown.join(', ') || '0 points'}`);
+    scorePoints(turn, score);
+    setLastScore({ score, breakdown, player: turn });
+
+    setTimeout(() => {
+      if (turn !== dealer) {
+        // Non-dealer just went, now dealer goes
+        triggerTransition(dealer, "Dealer's Show.");
+      } else {
+        // Dealer just went, now dealer counts Crib
+        countCrib();
+      }
+    }, 3500);
+  };
+
+  const countCrib = () => {
+    const { score, breakdown } = scoreHand(hands.crib, starter, true);
+    setMessage(`Dealer (Crib) scores ${score}: ${breakdown.join(', ') || '0 points'}`);
+    scorePoints(dealer, score);
+    setLastScore({ score, breakdown, player: 'Crib' });
+    
+    setTimeout(() => {
+      // End Round
+      if (players.p1.score >= 121 || players.p2.score >= 121) return; // Game over handled in scorePoints
+      
+      const newDealer = dealer === 'p1' ? 'p2' : 'p1';
+      setDealer(newDealer);
+      setDealer(newDealer); // React batching safety
+      setMessage(`Round over! ${players[newDealer].name} deals next.`);
+      setPhase('DEAL');
+      setTimeout(startGame, 2000);
+    }, 3500);
+  };
+
+  // --- UTILS ---
+
+  const scorePoints = (player, points) => {
+    setPlayers(prev => {
+      const newScore = prev[player].score + points;
+      if (newScore >= 121) {
+        setPhase('OVER');
+        return { ...prev, [player]: { ...prev[player], score: 121 } }; // Cap at 121
+      }
+      return { ...prev, [player]: { ...prev[player], score: newScore } };
+    });
+  };
+
+  const triggerTransition = (nextPlayer, msg) => {
+    setTurn(nextPlayer);
+    setMessage(msg || `Pass to ${players[nextPlayer].name}`);
+    setTransitionTarget(nextPlayer);
+    setTransitioning(true);
+  };
+
+  // --- RENDER HELPERS ---
+
+  useEffect(() => {
+    if (phase === 'SHOW' && !transitioning) {
+      calculateShow();
+    }
+  }, [phase, turn, transitioning]);
+
+  // Discard Selection State
+  const [selectedDiscards, setSelectedDiscards] = useState([]);
+  
+  const handleCardClick = (card) => {
+    if (phase === 'DISCARD') {
+      if (selectedDiscards.find(c => c.id === card.id)) {
+        setSelectedDiscards(selectedDiscards.filter(c => c.id !== card.id));
+      } else {
+        if (selectedDiscards.length < 2) {
+          setSelectedDiscards([...selectedDiscards, card]);
+        }
+      }
+    } else if (phase === 'PEGGING') {
+      if (count + card.value <= 31) {
+        playCard(card);
+      } else {
+        setMessage("Total cannot exceed 31!");
+      }
+    }
+  };
+
+  const submitDiscards = () => {
+    if (selectedDiscards.length === 2) {
+      discard(selectedDiscards);
+      setSelectedDiscards([]);
+    }
+  };
+
+  // --- MAIN RENDER ---
+
+  if (transitioning) {
+    return (
+      <Slider 
+        nextPlayer={players[transitionTarget].name} 
+        onUnlock={() => setTransitioning(false)} 
+      />
+    );
+  }
+
+  if (phase === 'OVER') {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-emerald-900 text-white p-8">
+        <Trophy size={64} className="text-yellow-400 mb-4" />
+        <h1 className="text-4xl font-bold mb-4">GAME OVER</h1>
+        <p className="text-2xl mb-8">
+          {players.p1.score >= 121 ? players.p1.name : players.p2.name} Wins!
+        </p>
+        <div className="bg-emerald-800 p-6 rounded-lg w-full max-w-sm">
+          <div className="flex justify-between mb-2">
+            <span>{players.p1.name}</span>
+            <span className="font-bold">{players.p1.score}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>{players.p2.name}</span>
+            <span className="font-bold">{players.p2.score}</span>
+          </div>
+        </div>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-8 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-full shadow-lg"
+        >
+          Play Again
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-emerald-900 text-slate-100 overflow-hidden font-sans select-none">
+      
+      {/* HEADER / SCOREBOARD */}
+      <div className="flex justify-between items-center p-4 bg-emerald-950 shadow-md">
+        <div className={`flex flex-col items-start ${turn === 'p1' ? 'text-yellow-400' : 'text-slate-400'}`}>
+          <div className="flex items-center space-x-2">
+            <User size={16} />
+            <span className="font-bold">{players.p1.name}</span>
+            {dealer === 'p1' && <span className="text-xs bg-slate-700 px-1 rounded">D</span>}
+          </div>
+          <div className="text-2xl font-mono">{players.p1.score}</div>
+        </div>
+
+        <div className="flex flex-col items-center">
+           <div className="text-xs uppercase tracking-widest text-emerald-500 font-bold mb-1">{phase}</div>
+           {phase === 'PEGGING' && (
+             <div className="bg-black/30 px-4 py-1 rounded-full text-xl font-mono border border-emerald-700">
+               {count}
+             </div>
+           )}
+        </div>
+
+        <div className={`flex flex-col items-end ${turn === 'p2' ? 'text-yellow-400' : 'text-slate-400'}`}>
+          <div className="flex items-center space-x-2">
+            {dealer === 'p2' && <span className="text-xs bg-slate-700 px-1 rounded">D</span>}
+            <span className="font-bold">{players.p2.name}</span>
+            <User size={16} />
+          </div>
+          <div className="text-2xl font-mono">{players.p2.score}</div>
+        </div>
+      </div>
+
+      {/* GAME AREA */}
+      <div className="flex-1 relative flex flex-col items-center justify-center p-2 space-y-4">
+        
+        {/* Opponent's Hand (Hidden) */}
+        <div className="flex justify-center -space-x-4 opacity-50 scale-75">
+          {[1,2,3,4].map(i => <Card key={i} hidden small />)}
+        </div>
+
+        {/* Table Area */}
+        <div className="w-full max-w-lg bg-emerald-800/50 rounded-xl p-4 min-h-[160px] flex flex-col items-center justify-center border border-emerald-700/50 relative">
+          
+          {phase === 'SETUP' && (
+            <button 
+              onClick={startGame}
+              className="bg-yellow-500 hover:bg-yellow-600 text-emerald-950 font-bold py-3 px-8 rounded-full shadow-lg flex items-center space-x-2 transform transition hover:scale-105"
+            >
+              <Play size={20} /> <span>Start Game</span>
+            </button>
+          )}
+
+          <div className="text-center text-emerald-200 font-medium mb-4 animate-pulse">
+            {message}
+          </div>
+
+          <div className="flex items-center space-x-6">
+            {/* Starter Card */}
+            {starter ? (
+              <div className="relative">
+                <span className="absolute -top-6 left-0 w-full text-center text-xs text-emerald-400 uppercase">Starter</span>
+                <Card card={starter} />
+              </div>
+            ) : (phase !== 'SETUP' && phase !== 'DEAL') && (
+              <div className="w-16 h-24 border-2 border-dashed border-emerald-600 rounded flex items-center justify-center opacity-30">
+                <span className="text-2xl">?</span>
+              </div>
+            )}
+
+            {/* Played Cards (Pegging) */}
+            {phase === 'PEGGING' && (
+              <div className="flex -space-x-8 pl-4">
+                {playedCards.map((c, i) => (
+                  <div key={i} className="transform hover:-translate-y-2 transition-transform" style={{ zIndex: i }}>
+                    <Card card={c} />
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Show Phase Display */}
+            {phase === 'SHOW' && lastScore && (
+               <div className="flex flex-col items-center animate-in zoom-in">
+                  <div className="text-xl font-bold text-yellow-400 mb-2">
+                    +{lastScore.score}
+                  </div>
+               </div>
+            )}
+          </div>
+        </div>
+
+        {/* Player's Hand */}
+        <div className="w-full flex flex-col items-center pb-6">
+          <div className="flex justify-center -space-x-2 sm:space-x-2">
+            {hands[turn].map((card) => (
+              <div key={card.id} className="transform transition-transform hover:-translate-y-4">
+                <Card 
+                  card={card} 
+                  onClick={handleCardClick} 
+                  selected={selectedDiscards.find(c => c.id === card.id)}
+                  disabled={phase === 'PEGGING' && count + card.value > 31}
+                />
+              </div>
+            ))}
+          </div>
+          
+          {phase === 'DISCARD' && (
+            <button 
+              onClick={submitDiscards}
+              disabled={selectedDiscards.length !== 2}
+              className={`
+                mt-6 py-2 px-8 rounded-full font-bold shadow-lg transition-all
+                ${selectedDiscards.length === 2 
+                  ? 'bg-blue-500 hover:bg-blue-600 text-white translate-y-0' 
+                  : 'bg-slate-700 text-slate-500 cursor-not-allowed translate-y-2 opacity-0'}
+              `}
+            >
+              Discard 2 Cards
+            </button>
+          )}
+
+          {phase === 'PEGGING' && !canPlay(turn, count) && hands[turn].length > 0 && (
+             <div className="mt-4 text-yellow-400 font-bold animate-bounce">
+                Press any card to call "Go" (if automated check fails)
+                {/* Note: logic handles GO automatically, but visually seeing cards disabled is helpful */}
+             </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
