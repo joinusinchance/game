@@ -17,7 +17,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             color: #fff;
             user-select: none;
             -webkit-user-select: none;
@@ -27,7 +27,7 @@
             position: relative;
             width: 100%;
             max-width: 600px;
-            height: 100%;
+            height: 100vh;
             background: linear-gradient(180deg, #3a3a3a 0%, #222 100%);
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
             display: flex;
@@ -274,7 +274,8 @@ const AudioEngine = (() => {
     const FX_URL = 'https://joinusinchance.github.io/game/mixkit-little-cat-pain-meow-87.wav';
     
     // Base frequency assumption for the meow sample (used for pitch calculation)
-    const BASE_FREQUENCY = 261.63; 
+    const BASE_FREQUENCY = 261.63; // C4
+    const OCTAVE_OFFSET = 0.65; // NEW: Multiplier to drop the pitch by one octave (1.0 -> 0.5)
 
     // STANDARD NOTE FREQUENCIES
     const NOTE_FREQS = {
@@ -334,6 +335,7 @@ const AudioEngine = (() => {
 
     /**
      * Plays the loaded meow sample for the melody.
+     * The playback rate is halved (multiplied by 0.5) to drop the pitch by one octave.
      */
     function playMeow(freq) {
         if (!ctx || !meowBuffer || !isFinite(freq)) return;
@@ -342,7 +344,8 @@ const AudioEngine = (() => {
         source.buffer = meowBuffer;
 
         // Calculate playback rate ratio: (Target Frequency) / (Base Frequency of sample)
-        const playbackRate = freq / BASE_FREQUENCY;
+        // Multiply by 0.5 to drop the pitch by one octave.
+        const playbackRate = (freq / BASE_FREQUENCY) * OCTAVE_OFFSET;
         source.playbackRate.value = playbackRate;
 
         const gainNode = ctx.createGain();
