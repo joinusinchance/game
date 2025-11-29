@@ -263,17 +263,20 @@ const LANE_ITEMS = ['👜', '💊', '🐿️', '🥐'];
 const AudioEngine = (() => {
     let ctx = null;
     let masterGain = null;
-    let meowBuffer = null; // Buffer for the loaded WAV file
+    let meowBuffer = null; // Buffer for the note melody
+    let fxBuffer = null; // Buffer for the button/ui feedback
+    let loadedCount = 0;
+    const TOTAL_SOUNDS = 2;
     let isLoaded = false;
     
-    // URL for the cat meow WAV file
+    // URLs for the sound files
     const MEOW_URL = 'https://joinusinchance.github.io/game/mixkit-sweet-kitty-meow-93.wav';
+    const FX_URL = 'https://joinusinchance.github.io/game/mixkit-little-cat-pain-meow-87.wav';
     
     // Base frequency assumption for the meow sample (used for pitch calculation)
-    // We assume the sample is recorded near C4 (261.63 Hz) for pitch scaling.
     const BASE_FREQUENCY = 261.63; 
 
-    // EXPANDED NOTE FREQUENCIES (Standard Western Equal Temperament)
+    // STANDARD NOTE FREQUENCIES
     const NOTE_FREQS = {
         'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'D#2': 77.78, 'E2': 82.41, 'F2': 87.31, 'F#2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'A2': 110.00, 'A#2': 116.54, 'B2': 123.47,
         'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81, 'F3': 174.61, 'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'B3': 246.94,
@@ -283,48 +286,54 @@ const AudioEngine = (() => {
     };
 
     /**
-     * Loads the external WAV file into the audio buffer.
+     * Generic function to load an audio file.
      */
-    async function loadAudio() {
-        if (isLoaded) return;
+    async function loadAudioFile(url, bufferName) {
         try {
-            // Fetch the audio file
-            const response = await fetch(MEOW_URL);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status} for ${url}`);
             const arrayBuffer = await response.arrayBuffer();
+            const buffer = await ctx.decodeAudioData(arrayBuffer);
             
-            // Decode the audio data
-            meowBuffer = await ctx.decodeAudioData(arrayBuffer);
-            isLoaded = true;
-            console.log("Cat meow audio loaded successfully.");
+            if (bufferName === 'meowBuffer') meowBuffer = buffer;
+            if (bufferName === 'fxBuffer') fxBuffer = buffer;
+
+            loadedCount++;
+            console.log(`${bufferName} loaded. (${loadedCount}/${TOTAL_SOUNDS})`);
             
-            // Signal the UI that loading is complete
-            document.getElementById('start-btn').disabled = false;
-            document.getElementById('loading-status').innerText = "Audio Ready! Tap to Start.";
+            if (loadedCount === TOTAL_SOUNDS) {
+                isLoaded = true;
+                // Signal the UI that loading is complete
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('loading-status').innerText = "Audio Ready! Tap to Start.";
+            }
 
         } catch (error) {
-            console.error("Error loading cat meow audio:", error);
+            console.error(`Error loading ${bufferName} from ${url}:`, error);
             document.getElementById('loading-status').innerText = "Error loading audio. Check console.";
         }
     }
 
     /**
-     * Initializes the AudioContext and loads the meow sample.
+     * Initializes the AudioContext and loads both sound files.
      */
     function init() {
         if (!ctx) {
             ctx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = ctx.createGain();
-            masterGain.gain.value = 0.6; // Increase volume slightly
+            masterGain.gain.value = 0.6; 
             masterGain.connect(ctx.destination);
-            loadAudio(); // Start loading immediately
+            
+            // Start loading both sounds simultaneously
+            loadAudioFile(MEOW_URL, 'meowBuffer');
+            loadAudioFile(FX_URL, 'fxBuffer');
         }
         if (ctx.state === 'suspended') ctx.resume();
         return isLoaded;
     }
 
     /**
-     * Plays the loaded meow sample, pitch-adjusted by setting the playbackRate.
+     * Plays the loaded meow sample for the melody.
      */
     function playMeow(freq) {
         if (!ctx || !meowBuffer || !isFinite(freq)) return;
@@ -336,7 +345,6 @@ const AudioEngine = (() => {
         const playbackRate = freq / BASE_FREQUENCY;
         source.playbackRate.value = playbackRate;
 
-        // Simple gain envelope to control volume
         const gainNode = ctx.createGain();
         gainNode.gain.setValueAtTime(1.0, ctx.currentTime);
         
@@ -344,12 +352,35 @@ const AudioEngine = (() => {
         gainNode.connect(masterGain);
         
         source.start(0);
-        // Clean up node when finished playing (optional, but good practice)
         source.onended = () => {
             source.disconnect();
             gainNode.disconnect();
         };
     }
+    
+    /**
+     * Plays the loaded UI sound effect.
+     */
+    function playUISound() {
+        if (!ctx || !fxBuffer) return;
+
+        const source = ctx.createBufferSource();
+        source.buffer = fxBuffer;
+        
+        // Lower the volume slightly for UI FX
+        const gainNode = ctx.createGain();
+        gainNode.gain.value = 0.4; 
+        
+        source.connect(gainNode);
+        gainNode.connect(masterGain);
+        
+        source.start(0);
+        source.onended = () => {
+            source.disconnect();
+            gainNode.disconnect();
+        };
+    }
+
 
     /**
      * Plays synthesized sounds for hit/miss feedback, distinct from the meow melody.
@@ -393,7 +424,15 @@ const AudioEngine = (() => {
 
     function getCurrentTime() { return ctx ? ctx.currentTime : 0; }
 
-    return { init, playMeow, playHitSound, getCurrentTime, NOTE_FREQS, get isLoaded() { return isLoaded; } };
+    return { 
+        init, 
+        playMeow, 
+        playHitSound, 
+        playUISound, // New UI sound function
+        getCurrentTime, 
+        NOTE_FREQS, 
+        get isLoaded() { return isLoaded; } 
+    };
 })();
 
 /**
@@ -580,6 +619,8 @@ function startGame() {
         return;
     }
     
+    AudioEngine.playUISound(); // Play FX when starting
+    
     const songId = document.getElementById('song-select').value;
     AudioEngine.init(); // Resume context if suspended
     
@@ -640,6 +681,8 @@ function spawnParticles(x, y, color) {
 }
 
 function shareScore() {
+    AudioEngine.playUISound(); // Play FX when sharing
+
     const shareBtn = document.getElementById('share-btn');
     const originalText = shareBtn.innerText;
 
@@ -904,17 +947,19 @@ canvas.addEventListener('mousedown', (e) => {
     if (lane >= 0 && lane < 4) handleInput(lane);
 });
 
+// UI Event Handlers
 document.getElementById('start-btn').addEventListener('click', startGame);
+
 document.getElementById('restart-btn').addEventListener('click', () => {
+    AudioEngine.playUISound(); // Play FX when restarting
     gameOverScreen.classList.add('hidden');
     startScreen.classList.remove('hidden');
 });
+
 document.getElementById('share-btn').addEventListener('click', shareScore);
 
 // Initial setup call
 document.addEventListener('DOMContentLoaded', () => {
-    // Attempt to initialize audio context and start loading on DOMContentLoaded
-    // Note: AudioContext needs user interaction to start, but loading can happen early.
     AudioEngine.init(); 
 });
 </script>
