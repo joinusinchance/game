@@ -104,6 +104,12 @@
             transform: translateY(4px);
             box-shadow: 0 2px 0 #2a9d8f;
         }
+        
+        .btn:disabled {
+            background: #777;
+            box-shadow: 0 4px 0 #555;
+            cursor: default;
+        }
 
         .btn-secondary {
             background: #ff6b6b;
@@ -115,6 +121,13 @@
             color: #5e3a58;
             box-shadow: 0 6px 0 #d4c04d;
         }
+        
+        #loading-status {
+            font-size: 1rem;
+            color: #4ECDC4;
+            margin-top: 10px;
+        }
+
 
         /* HUD */
         #hud-layer {
@@ -211,15 +224,16 @@
         <div style="margin: 20px 0; width: 100%; text-align: center;">
             <label for="song-select" style="font-size: 1.2rem; color: #4ECDC4;">Select Track:</label><br>
             <select id="song-select">
-                <option value="camptown">Camptown Races</option>
-                <option value="entertainer">The Entertainer</option>
-                <option value="korobeiniki">Korobeiniki (Tetris)</option>
-                <option value="mountain">Hall of Mountain King</option>
-                <option value="ode">Ode to Joy</option>
+                <option value="camptown">Camptown Races (Long)</option>
+                <option value="entertainer">The Entertainer (Long)</option>
+                <option value="korobeiniki">Korobeiniki (Tetris) (Long)</option>
+                <option value="mountain">Hall of Mountain King (Long)</option>
+                <option value="ode">Ode to Joy (Long)</option>
             </select>
         </div>
         
-        <button class="btn" id="start-btn">Start Purring</button>
+        <button class="btn" id="start-btn" disabled>Start Purring</button>
+        <div id="loading-status">Loading Cat Audio...</div>
         <p style="font-size: 0.9rem; opacity: 0.7; margin-top: 20px;">Use D, F, J, K or Touch the Lanes</p>
     </div>
 
@@ -249,8 +263,17 @@ const LANE_ITEMS = ['👜', '💊', '🐿️', '🥐'];
 const AudioEngine = (() => {
     let ctx = null;
     let masterGain = null;
+    let meowBuffer = null; // Buffer for the loaded WAV file
+    let isLoaded = false;
+    
+    // URL for the cat meow WAV file
+    const MEOW_URL = 'https://joinusinchance.github.io/game/mixkit-sweet-kitty-meow-93.wav';
+    
+    // Base frequency assumption for the meow sample (used for pitch calculation)
+    // We assume the sample is recorded near C4 (261.63 Hz) for pitch scaling.
+    const BASE_FREQUENCY = 261.63; 
 
-    // EXPANDED NOTE FREQUENCIES
+    // EXPANDED NOTE FREQUENCIES (Standard Western Equal Temperament)
     const NOTE_FREQS = {
         'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'D#2': 77.78, 'E2': 82.41, 'F2': 87.31, 'F#2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'A2': 110.00, 'A#2': 116.54, 'B2': 123.47,
         'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81, 'F3': 174.61, 'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'B3': 246.94,
@@ -259,150 +282,217 @@ const AudioEngine = (() => {
         'C6': 1046.50
     };
 
+    /**
+     * Loads the external WAV file into the audio buffer.
+     */
+    async function loadAudio() {
+        if (isLoaded) return;
+        try {
+            // Fetch the audio file
+            const response = await fetch(MEOW_URL);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const arrayBuffer = await response.arrayBuffer();
+            
+            // Decode the audio data
+            meowBuffer = await ctx.decodeAudioData(arrayBuffer);
+            isLoaded = true;
+            console.log("Cat meow audio loaded successfully.");
+            
+            // Signal the UI that loading is complete
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('loading-status').innerText = "Audio Ready! Tap to Start.";
+
+        } catch (error) {
+            console.error("Error loading cat meow audio:", error);
+            document.getElementById('loading-status').innerText = "Error loading audio. Check console.";
+        }
+    }
+
+    /**
+     * Initializes the AudioContext and loads the meow sample.
+     */
     function init() {
         if (!ctx) {
             ctx = new (window.AudioContext || window.webkitAudioContext)();
             masterGain = ctx.createGain();
-            masterGain.gain.value = 0.3;
+            masterGain.gain.value = 0.6; // Increase volume slightly
             masterGain.connect(ctx.destination);
+            loadAudio(); // Start loading immediately
         }
         if (ctx.state === 'suspended') ctx.resume();
+        return isLoaded;
     }
 
-    function playTone(freq, duration, type = 'triangle') {
-        if (!ctx) return;
-        if (!freq || !isFinite(freq)) {
-            return; 
-        }
+    /**
+     * Plays the loaded meow sample, pitch-adjusted by setting the playbackRate.
+     */
+    function playMeow(freq) {
+        if (!ctx || !meowBuffer || !isFinite(freq)) return;
 
-        try {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, ctx.currentTime);
-            
-            gain.gain.setValueAtTime(0, ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-            
-            osc.connect(gain);
-            gain.connect(masterGain);
-            
-            osc.start();
-            osc.stop(ctx.currentTime + duration + 0.1);
-        } catch (e) {
-            console.error("Audio Error:", e);
-        }
+        const source = ctx.createBufferSource();
+        source.buffer = meowBuffer;
+
+        // Calculate playback rate ratio: (Target Frequency) / (Base Frequency of sample)
+        const playbackRate = freq / BASE_FREQUENCY;
+        source.playbackRate.value = playbackRate;
+
+        // Simple gain envelope to control volume
+        const gainNode = ctx.createGain();
+        gainNode.gain.setValueAtTime(1.0, ctx.currentTime);
+        
+        source.connect(gainNode);
+        gainNode.connect(masterGain);
+        
+        source.start(0);
+        // Clean up node when finished playing (optional, but good practice)
+        source.onended = () => {
+            source.disconnect();
+            gainNode.disconnect();
+        };
     }
 
+    /**
+     * Plays synthesized sounds for hit/miss feedback, distinct from the meow melody.
+     */
     function playHitSound(rating) {
         if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(masterGain);
+
         if (rating === 'miss') {
-            playTone(100, 0.1, 'sawtooth');
-        } else if (rating === 'perfect') {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(1200, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(2000, ctx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.2, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-            osc.connect(gain);
-            gain.connect(masterGain);
+            // Low-pitched growl/hiss (synthesized)
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(80, now);
+            osc.frequency.linearRampToValueAtTime(60, now + 0.1);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.linearRampToValueAtTime(0.001, now + 0.2);
             osc.start();
-            osc.stop(ctx.currentTime + 0.1);
+            osc.stop(now + 0.2);
+        } else if (rating === 'perfect') {
+            // A cheerful purr-trill (synthesized)
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.exponentialRampToValueAtTime(1000, now + 0.15);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            osc.start();
+            osc.stop(now + 0.2);
         } else {
-            playTone(800, 0.05, 'sine');
+            // Simple click for other hits
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(1200, now);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            osc.start();
+            osc.stop(now + 0.05);
         }
     }
 
     function getCurrentTime() { return ctx ? ctx.currentTime : 0; }
 
-    return { init, playTone, playHitSound, getCurrentTime, NOTE_FREQS };
+    return { init, playMeow, playHitSound, getCurrentTime, NOTE_FREQS, get isLoaded() { return isLoaded; } };
 })();
 
 /**
- * SONG DATA
+ * SONG DATA (Full length tracks)
  */
+// Define the core phrases
+const camptown_phrase = [
+    ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],
+    ['E4',1],['D4',1],['C4',2], ['E4',1],['D4',1],['C4',2],
+    ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],
+    ['D4',1],['E4',1],['F4',1],['D4',1], ['C4',4]
+]; // 24 beats total
+
+const korobeiniki_phrase = [
+    ['E4', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['C4', 0.5], ['B3', 0.5],
+    ['A3', 1], ['A3', 0.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5],
+    ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1],
+    ['C4', 1], ['A3', 1], ['A3', 1],
+    ['D4', 1.5], ['F4', 0.5], ['A4', 1], ['G4', 0.5], ['F4', 0.5],
+    ['E4', 1.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5],
+    ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1],
+    ['C4', 1], ['A3', 1], ['A3', 1]
+]; // 32 beats total
+
+const entertainer_phrase = [
+    ['D5',0.5],['E5',0.5],['C5',0.5],['A4',1],['B4',0.5],['G4',0.5],
+    ['D4',0.5],['E4',0.5],['C4',0.5],['A3',1],['B3',0.5],['G3',0.5],
+    ['D3',0.5],['E3',0.5],['C3',0.5],['A2',1],['B2',0.5],['A2',0.5],['G#2',0.5],['G2',2],
+    ['D4',0.5],['D#4',0.5],['E4',0.5],['C5',1],['E4',0.5],['C5',1],['E4',0.5],['C5',2],
+    ['C5',0.5],['D5',0.5],['D#5',0.5],['E5',0.5],['C5',0.5],['D5',0.5],['E5',2]
+]; // 30 beats total
+
+const mountain_phrase = [
+    ['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1],
+    ['F#4',0.5],['D4',0.5],['F#4',1], ['F#4',0.5],['D4',0.5],['F#4',1],
+    ['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1],
+    ['A4',0.5],['G4',0.5],['E4',1], ['F#4',0.5],['D4',0.5],['B3',1]
+]; // 24 beats total
+
+const ode_phrase = [
+    ['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1],
+    ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1],
+    ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1],
+    ['E4', 1.5], ['D4', 0.5], ['D4', 2]
+]; // 16 beats total
+
+// Helper to repeat an array
+const repeat = (arr, times) => Array(times).fill(arr).flat();
+
 const SONGS = {
     'camptown': {
         bpm: 110,
-        notes: [
-            ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],
-            ['E4',1],['D4',1],['C4',2], ['E4',1],['D4',1],['C4',2],
-            ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],
-            ['D4',1],['E4',1],['F4',1],['D4',1], ['C4',4]
-        ],
+        notes: repeat(camptown_phrase, 4), // 96 beats (approx 52 seconds)
         lyrics: [
-            {beat: 0, text: "Camptown ladies sing this song"},
-            {beat: 7, text: "Doo-dah!"},
-            {beat: 10, text: "Doo-dah!"},
-            {beat: 13, text: "Camptown racetrack five miles long"},
-            {beat: 20, text: "Oh, doo-dah day!"}
+            {beat: 0, text: "Camptown ladies sing this song..."},
+            {beat: 24, text: "Doo-dah! Oh, doo-dah day!"},
+            {beat: 48, text: "We're going to run all night..."},
+            {beat: 72, text: "Camptown forever!"}
         ]
     },
     'korobeiniki': {
         bpm: 140,
-        notes: [
-            ['E4', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['C4', 0.5], ['B3', 0.5],
-            ['A3', 1], ['A3', 0.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5],
-            ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1],
-            ['C4', 1], ['A3', 1], ['A3', 1],
-            ['D4', 1.5], ['F4', 0.5], ['A4', 1], ['G4', 0.5], ['F4', 0.5],
-            ['E4', 1.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5],
-            ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1],
-            ['C4', 1], ['A3', 1], ['A3', 1]
-        ],
+        notes: repeat(korobeiniki_phrase, 4), // 128 beats (approx 55 seconds)
         lyrics: [
             {beat: 0, text: "Stacking boxes in a row..."},
-            {beat: 6, text: "Twisting shapes to make them fit!"},
-            {beat: 12, text: "Cats fit in boxes, don't you know?"},
-            {beat: 19, text: "If I fits, I sits!"},
-            {beat: 25, text: "Meow meow meow meow..."}
+            {beat: 32, text: "Twisting shapes to make them fit!"},
+            {beat: 64, text: "Cats fit in boxes, don't you know?"},
+            {beat: 96, text: "If I fits, I sits! Forever!"}
         ]
     },
     'entertainer': {
         bpm: 140, 
-        notes: [
-            ['D5',0.5],['E5',0.5],['C5',0.5],['A4',1],['B4',0.5],['G4',0.5],
-            ['D4',0.5],['E4',0.5],['C4',0.5],['A3',1],['B3',0.5],['G3',0.5],
-            ['D3',0.5],['E3',0.5],['C3',0.5],['A2',1],['B2',0.5],['A2',0.5],['G#2',0.5],['G2',2],
-            ['D4',0.5],['D#4',0.5],['E4',0.5],['C5',1],['E4',0.5],['C5',1],['E4',0.5],['C5',2],
-            ['C5',0.5],['D5',0.5],['D#5',0.5],['E5',0.5],['C5',0.5],['D5',0.5],['E5',2]
-        ],
+        notes: repeat(entertainer_phrase, 4), // 120 beats (approx 51 seconds)
         lyrics: [
-            {beat: 0, text: "(Ragtime Intro)"},
-            {beat: 19, text: "Here comes the music!"},
-            {beat: 27, text: "Dancing on the keys..."}
+            {beat: 0, text: "Ragtime Intro... Tap those feet!"},
+            {beat: 30, text: "The cat is here to entertain!"},
+            {beat: 60, text: "Dancing on the keys, faster now!"},
+            {beat: 90, text: "A true meow-sical sensation!"}
         ]
     },
     'mountain': {
         bpm: 160,
-        notes: [
-            ['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1],
-            ['F#4',0.5],['D4',0.5],['F#4',1], ['F#4',0.5],['D4',0.5],['F#4',1],
-            ['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1],
-            ['A4',0.5],['G4',0.5],['E4',1], ['F#4',0.5],['D4',0.5],['B3',1]
-        ],
+        notes: repeat(mountain_phrase, 4), // 96 beats (approx 36 seconds)
         lyrics: [
             {beat: 0, text: "Creeping down the mountain hall..."},
-            {beat: 8, text: "Trolls are watching!"},
-            {beat: 13, text: "Running faster now!"},
-            {beat: 20, text: "Escape!"}
+            {beat: 24, text: "Trolls are watching! Run!"},
+            {beat: 48, text: "Running faster now! Keep going!"},
+            {beat: 72, text: "Escape is near!"}
         ]
     },
     'ode': {
         bpm: 120,
-        notes: [
-            ['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1],
-            ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1],
-            ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1],
-            ['E4', 1.5], ['D4', 0.5], ['D4', 2]
-        ],
+        notes: repeat(ode_phrase, 5), // 80 beats (approx 40 seconds)
         lyrics: [
-            {beat: 0, text: "Joy, beautiful spark of Divinity"},
-            {beat: 8, text: "Daughter of Elysium"},
-            {beat: 12, text: "We enter, drunk with fire"}
+            {beat: 0, text: "Joy, beautiful spark of Divinity..."},
+            {beat: 16, text: "Daughter of Elysium..."},
+            {beat: 32, text: "We enter, drunk with fire..."},
+            {beat: 48, text: "Your magic joins again..."},
+            {beat: 64, text: "All that custom has divided!"}
         ]
     }
 };
@@ -485,8 +575,13 @@ function parseSong(songId) {
 }
 
 function startGame() {
+    if (!AudioEngine.isLoaded) {
+        document.getElementById('loading-status').innerText = "Audio not fully loaded yet!";
+        return;
+    }
+    
     const songId = document.getElementById('song-select').value;
-    AudioEngine.init();
+    AudioEngine.init(); // Resume context if suspended
     
     const songData = parseSong(songId);
     gameState.notes = songData.notes;
@@ -657,14 +752,15 @@ function gameLoop() {
 
     let allNotesFinished = true;
 
-    // Draw & Update Notes (Now Emojis, no background circle)
+    // Draw & Update Notes (Emojiss, no background circle)
     gameState.notes.forEach(note => {
         const timeDiff = note.time - gameTime;
         const y = gameState.hitY - (timeDiff * gameState.speed);
 
-        // Auto-play audio
+        // Auto-play audio (The Meow)
         if (timeDiff <= 0 && !note.played) {
-            AudioEngine.playTone(note.freq, note.duration * 0.9); 
+            // Play the meow audio with pitch adjustment
+            AudioEngine.playMeow(note.freq); 
             note.played = true;
         }
 
@@ -674,7 +770,7 @@ function gameLoop() {
             note.visible = false;
             gameState.combo = 0;
             updateScore();
-            createFloatingText("Miss", note.lane * laneWidth + laneWidth/2, canvas.height - 50, "#888");
+            createFloatingText("Hiss", note.lane * laneWidth + laneWidth/2, canvas.height - 50, "#888");
             AudioEngine.playHitSound('miss');
         }
 
@@ -687,8 +783,6 @@ function gameLoop() {
             ctx.font = '40px sans-serif'; // Use a standard font for reliable emoji rendering
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            
-            // --- NO BACKGROUND CIRCLE DRAWING HERE ---
             
             // Draw the emoji with a white shadow for contrast against the dark background
             ctx.shadowColor = 'rgba(255, 255, 255, 1.0)';
@@ -782,6 +876,7 @@ function handleInput(lane) {
         } else {
             txt = "Meh"; col = "#F7D794"; gameState.score += 10;
             gameState.combo = 0; // Combo breaker
+            AudioEngine.playHitSound('meh');
         }
         createFloatingText(txt, x, gameState.hitY - 80, col);
         spawnParticles(x, gameState.hitY, LANE_COLORS[lane]);
@@ -816,6 +911,12 @@ document.getElementById('restart-btn').addEventListener('click', () => {
 });
 document.getElementById('share-btn').addEventListener('click', shareScore);
 
+// Initial setup call
+document.addEventListener('DOMContentLoaded', () => {
+    // Attempt to initialize audio context and start loading on DOMContentLoaded
+    // Note: AudioContext needs user interaction to start, but loading can happen early.
+    AudioEngine.init(); 
+});
 </script>
 </body>
 </html>
