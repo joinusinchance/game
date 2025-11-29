@@ -545,27 +545,50 @@ function spawnParticles(x, y, color) {
 }
 
 function shareScore() {
+    const shareBtn = document.getElementById('share-btn');
+    const originalText = shareBtn.innerText;
+
     const finalRank = rankTextEl.innerText || "Stray Cat";
     const text = `I scored ${gameState.score} points (${finalRank}) on I-mog-en: The Mewsical! Can you beat my combo of ${gameState.maxCombo}? 🐱🎵`;
+    
+    // Function to restore button text
+    const restoreButton = (newText, duration = 2000) => {
+        shareBtn.innerText = newText;
+        setTimeout(() => shareBtn.innerText = originalText, duration);
+    };
+
     if (navigator.share) {
         navigator.share({
             title: 'I-mog-en: The Mewsical',
             text: text,
             url: window.location.href
-        }).catch(console.error);
+        }).catch(error => {
+            // Handle user cancellation (AbortError) silently
+            if (error.name === 'AbortError') {
+                restoreButton("Share Canceled");
+            } else {
+                console.error('Error sharing:', error);
+                restoreButton("Sharing Failed", 3000);
+            }
+        });
     } else {
-        // Fallback for browsers/environments without navigator.share
+        // Fallback for browsers/environments without navigator.share (Clipboard Copy)
         const textArea = document.createElement("textarea");
         textArea.value = text;
+        textArea.style.position = 'fixed'; // Keep it off-screen
+        textArea.style.left = '-9999px';
         document.body.appendChild(textArea);
         textArea.select();
+        
         try {
             document.execCommand('copy');
-            alert("Score copied to clipboard!");
+            restoreButton("Copied to Clipboard!", 2500); // UI message instead of alert
         } catch (err) {
             console.error('Unable to copy', err);
+            restoreButton("Copy Failed", 3000);
+        } finally {
+            document.body.removeChild(textArea);
         }
-        document.body.removeChild(textArea);
     }
 }
 
@@ -634,7 +657,7 @@ function gameLoop() {
 
     let allNotesFinished = true;
 
-    // Draw & Update Notes (Now Emojis)
+    // Draw & Update Notes (Now Emojis, no background circle)
     gameState.notes.forEach(note => {
         const timeDiff = note.time - gameTime;
         const y = gameState.hitY - (timeDiff * gameState.speed);
@@ -665,14 +688,10 @@ function gameLoop() {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             
-            // Draw a background circle for contrast
-            ctx.fillStyle = LANE_COLORS[note.lane] + '80'; // Semi-transparent version of lane color
-            ctx.beginPath(); 
-            ctx.arc(x, y, 30, 0, Math.PI*2); 
-            ctx.fill();
-
-            // Draw the emoji
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+            // --- NO BACKGROUND CIRCLE DRAWING HERE ---
+            
+            // Draw the emoji with a white shadow for contrast against the dark background
+            ctx.shadowColor = 'rgba(255, 255, 255, 1.0)';
             ctx.shadowBlur = 4;
             ctx.fillText(item, x, y); 
 
