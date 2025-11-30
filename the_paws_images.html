@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I-mog-en: The Mewsical</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Fredoka One for a fun, playful look -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Embedded CSS adapted from React Component styles */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #2b2b2b;
+            font-family: 'Fredoka One', cursive;
+            overflow: hidden;
+            touch-action: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 100vh;
+            background: linear-gradient(180deg, #3a3a3a 0%, #222 100%);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Overlays */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(43, 43, 43, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            transition: opacity 0.3s;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: #FF6B6B;
+            text-shadow: 3px 3px 0px #4ECDC4;
+            margin-bottom: 5px;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #FFE66D;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.2rem;
+            text-align: center;
+            margin: 10px 20px;
+            color: #ddd;
+        }
+
+        .btn {
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Fredoka One', cursive;
+            margin-top: 15px;
+            box-shadow: 0 6px 0 #2a9d8f;
+            transition: transform 0.1s;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #2a9d8f;
+        }
+        
+        .btn:disabled {
+            background: #777;
+            box-shadow: 0 4px 0 #555;
+            cursor: default;
+        }
+
+        .btn-secondary {
+            background: #ff6b6b;
+            box-shadow: 0 6px 0 #c44d4d;
+        }
+        
+        .btn-share {
+            background: #ffe66d;
+            color: #5e3a58;
+            box-shadow: 0 6px 0 #d4c04d;
+        }
+        
+        #loading-status {
+            font-size: 1rem;
+            color: #4ECDC4;
+            margin-top: 10px;
+        }
+
+        /* HUD */
+        #hud-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #score-board {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            font-size: 1.5rem;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        #combo-board {
+            position: absolute;
+            top: 45px;
+            left: 15px;
+            font-size: 1.2rem;
+            color: #ffe66d;
+            text-shadow: 1px 1px 0 #000;
+        }
+
+        /* Lyrics Container */
+        #lyrics-container {
+            position: absolute;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            z-index: 5;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .lyric-line {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.4);
+            transition: all 0.2s ease-out;
+            margin: 5px 0;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lyric-active {
+            font-size: 1.6rem;
+            color: #ff6b6b;
+            transform: scale(1.05);
+            text-shadow: 2px 2px 0px #fff;
+            opacity: 1;
+        }
+
+        select {
+            font-size: 1.2rem; 
+            padding: 12px; 
+            border-radius: 15px; 
+            margin-top: 5px; 
+            border: 3px solid #ff6b6b; 
+            background: white; 
+            font-family: 'Fredoka One';
+            width: 80%;
+            max-width: 300px;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="hud-layer">
+            <div id="score-board">Score: 0</div>
+            <div id="combo-board">Combo: x0</div>
+            <div id="lyrics-container"></div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="overlay">
+            <h1>I-mog-en:<br/>The Mewsical</h1>
+            <div class="subtitle">Rhythm Action Game</div>
+            
+            <div style="margin: 20px 0; width: 100%; text-align: center;">
+                <label for="song-select" style="font-size: 1.2rem; color: #4ECDC4;">Select Track:</label><br/>
+                <select id="song-select">
+                    <option value="camptown">Camptown Races (Long)</option>
+                    <option value="entertainer">The Entertainer (Long)</option>
+                    <option value="korobeiniki">Korobeiniki (Tetris) (Long)</option>
+                    <option value="mountain">Hall of Mountain King (Long)</option>
+                    <option value="ode">Ode to Joy (Long)</option>
+                </select>
+            </div>
+            
+            <button class="btn" id="start-btn" disabled>
+                Start Purring
+            </button>
+            <div id="loading-status">Loading Assets...</div>
+            <p style="font-size: 0.9rem; opacity: 0.7; margin-top: 20px;">Use D, F, J, K or Touch the Lanes</p>
+        </div>
+
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="overlay hidden" style="display: none;">
+            <h1>Finished!</h1>
+            <p>Score: <span id="final-score" style="color:#4ECDC4;">0</span></p>
+            <p>Best Combo: <span id="max-combo" style="color:#ffe66d;">0</span></p>
+            <p id="rank-text" style="font-size: 2rem; color: #ff6b6b; margin: 10px 0"></p>
+            
+            <button class="btn btn-share" id="share-btn">Share Score</button>
+            <button class="btn btn-secondary" id="restart-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Constants ---
+        const LANE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#FF9F43'];
+        const LANE_ITEMS = ['👜', '💊', '🐿️', '🥐']; 
+        const MEOW_URL = 'https://joinusinchance.github.io/game/mixkit-sweet-kitty-meow-93.wav';
+        const FX_URL = 'https://joinusinchance.github.io/game/mixkit-little-cat-pain-meow-87.wav';
+        const PAW_IMAGE_URL = 'https://joinusinchance.github.io/game/paw.png'; // New: Paw image URL
+        const BASE_FREQUENCY = 261.63; // C4
+        const OCTAVE_OFFSET = 0.65; 
+        const keyMap = { 'KeyD': 0, 'KeyF': 1, 'KeyJ': 2, 'KeyK': 3 };
+
+        // Standard Note Frequencies
+        const NOTE_FREQS = {
+            'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'D#2': 77.78, 'E2': 82.41, 'F2': 87.31, 'F#2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'A2': 110.00, 'A#2': 116.54, 'B2': 123.47,
+            'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81, 'F3': 174.61, 'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'B3': 246.94,
+            'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+            'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.25, 'F5': 698.46, 'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'A#5': 932.33, 'B5': 987.77,
+            'C6': 1046.50
+        };
+
+        // Helper to repeat an array
+        const repeat = (arr, times) => Array(times).fill(arr).flat();
+
+        const camptown_phrase = [
+            ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],
+            ['E4',1],['D4',1],['C4',2], ['E4',1],['D4',1],['C4',2],
+            ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],
+            ['D4',1],['E4',1],['F4',1],['D4',1], ['C4',4]
+        ];
+        const korobeiniki_phrase = [
+            ['E4', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['C4', 0.5], ['B3', 0.5],
+            ['A3', 1], ['A3', 0.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5],
+            ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1],
+            ['C4', 1], ['A3', 1], ['A3', 1],
+            ['D4', 1.5], ['F4', 0.5], ['A4', 1], ['G4', 0.5], ['F4', 0.5],
+            ['E4', 1.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5],
+            ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1],
+            ['C4', 1], ['A3', 1], ['A3', 1]
+        ];
+        const entertainer_phrase = [
+            ['D5',0.5],['E5',0.5],['C5',0.5],['A4',1],['B4',0.5],['G4',0.5],
+            ['D4',0.5],['E4',0.5],['C4',0.5],['A3',1],['B3',0.5],['G3',0.5],
+            ['D3',0.5],['E3',0.5],['C3',0.5],['A2',1],['B2',0.5],['A2',0.5],['G#2',0.5],['G2',2],
+            ['D4',0.5],['D#4',0.5],['E4',0.5],['C5',1],['E4',0.5],['C5',1],['E4',0.5],['C5',2],
+            ['C5',0.5],['D5',0.5],['D#5',0.5],['E5',0.5],['C5',0.5],['D5',0.5],['E5',2]
+        ];
+        const mountain_phrase = [
+            ['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1],
+            ['F#4',0.5],['D4',0.5],['F#4',1], ['F#4',0.5],['D4',0.5],['F#4',1],
+            ['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1],
+            ['A4',0.5],['G4',0.5],['E4',1], ['F#4',0.5],['D4',0.5],['B3',1]
+        ];
+        const ode_phrase = [
+            ['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1],
+            ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1],
+            ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1],
+            ['E4', 1.5], ['D4', 0.5], ['D4', 2]
+        ];
+
+        const SONGS = {
+            'camptown': { bpm: 110, notes: repeat(camptown_phrase, 4), lyrics: [
+                {beat: 0, text: "Camptown ladies sing this song..."}, {beat: 24, text: "Doo-dah! Oh, doo-dah day!"},
+                {beat: 48, text: "We're going to run all night..."}, {beat: 72, text: "Camptown forever!"}
+            ]},
+            'korobeiniki': { bpm: 140, notes: repeat(korobeiniki_phrase, 4), lyrics: [
+                {beat: 0, text: "Stacking boxes in a row..."}, {beat: 32, text: "Twisting shapes to make them fit!"},
+                {beat: 64, text: "Cats fit in boxes, don't you know?"}, {beat: 96, text: "If I fits, I sits! Forever!"}
+            ]},
+            'entertainer': { bpm: 140, notes: repeat(entertainer_phrase, 4), lyrics: [
+                {beat: 0, text: "Ragtime Intro... Tap those feet!"}, {beat: 30, text: "The cat is here to entertain!"},
+                {beat: 60, text: "Dancing on the keys, faster now!"}, {beat: 90, text: "A true meow-sical sensation!"}
+            ]},
+            'mountain': { bpm: 160, notes: repeat(mountain_phrase, 4), lyrics: [
+                {beat: 0, text: "Creeping down the mountain hall..."}, {beat: 24, text: "Trolls are watching! Run!"},
+                {beat: 48, text: "Running faster now! Keep going!"}, {beat: 72, text: "Escape is near!"}
+            ]},
+            'ode': { bpm: 120, notes: repeat(ode_phrase, 5), lyrics: [
+                {beat: 0, text: "Joy, beautiful spark of Divinity..."}, {beat: 16, text: "Daughter of Elysium..."},
+                {beat: 32, text: "We enter, drunk with fire..."}, {beat: 48, text: "Your magic joins again..."},
+                {beat: 64, text: "All that custom has divided!"}
+            ]}
+        };
+
+        // --- Global Game State ---
+        let canvas, ctx;
+        let gameState = {};
+        let audioEngine = null;
+        let animationFrameId;
+        let floatingTexts = [];
+        let activeLanes = [false, false, false, false];
+        let pawStamps = []; // New array for paw stamps
+        const pawImage = new Image(); // Paw image object
+
+        // --- UI Elements ---
+        const ui = {
+            startScreen: null, gameOverScreen: null, startBtn: null, 
+            loadingStatus: null, scoreBoard: null, comboBoard: null, 
+            finalScore: null, maxCombo: null, rankText: null, 
+            songSelect: null, lyricsContainer: null, shareBtn: null, restartBtn: null
+        };
+        
+        // --- Game Setup ---
+
+        const initUI = () => {
+            ui.startScreen = document.getElementById('start-screen');
+            ui.gameOverScreen = document.getElementById('game-over-screen');
+            ui.startBtn = document.getElementById('start-btn');
+            ui.loadingStatus = document.getElementById('loading-status');
+            ui.scoreBoard = document.getElementById('score-board');
+            ui.comboBoard = document.getElementById('combo-board');
+            ui.finalScore = document.getElementById('final-score');
+            ui.maxCombo = document.getElementById('max-combo');
+            ui.rankText = document.getElementById('rank-text');
+            ui.songSelect = document.getElementById('song-select');
+            ui.lyricsContainer = document.getElementById('lyrics-container');
+            ui.shareBtn = document.getElementById('share-btn');
+            ui.restartBtn = document.getElementById('restart-btn');
+        };
+
+        const resize = () => {
+            if (canvas) {
+                canvas.width = canvas.parentElement.offsetWidth;
+                canvas.height = canvas.parentElement.offsetHeight;
+                // Set the hit line 100px from the bottom to define the extended hit zone
+                gameState.hitY = canvas.height - 100;
+            }
+        };
+
+        // --- Audio Engine ---
+        const initAudioEngine = async () => {
+            let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            let masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.6; 
+            masterGain.connect(audioCtx.destination);
+            
+            let meowBuffer = null;
+            let fxBuffer = null;
+            let loadedCount = 0;
+            const TOTAL_ASSETS = 3; // Audio FX, Meow Audio, Paw Image
+            let isLoaded = false;
+
+            const updateLoadingStatus = (message) => {
+                if (ui.loadingStatus) ui.loadingStatus.innerText = message;
+            };
+
+            const checkLoadComplete = () => {
+                loadedCount++;
+                if (loadedCount === TOTAL_ASSETS) {
+                    isLoaded = true;
+                    updateLoadingStatus("Audio & Assets Ready! Tap to Start.");
+                    ui.startBtn.disabled = false;
+                }
+            };
+            
+            const loadAudioFile = async (url, bufferName) => {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status} for ${url}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const buffer = await audioCtx.decodeAudioData(arrayBuffer);
+                    
+                    if (bufferName === 'meowBuffer') meowBuffer = buffer;
+                    if (bufferName === 'fxBuffer') fxBuffer = buffer;
+
+                    checkLoadComplete();
+                } catch (error) {
+                    console.error(`Error loading ${bufferName}:`, error);
+                    updateLoadingStatus("Error loading audio. Check console.");
+                }
+            };
+
+            // Load Paw Image
+            const loadPawImage = () => {
+                pawImage.onload = checkLoadComplete;
+                pawImage.onerror = (e) => {
+                    console.error("Error loading paw image:", e);
+                    updateLoadingStatus("Error loading paw image.");
+                };
+                pawImage.src = PAW_IMAGE_URL;
+                pawImage.crossOrigin = "anonymous";
+            };
+
+            updateLoadingStatus("Loading Cat Audio & Assets...");
+            loadAudioFile(MEOW_URL, 'meowBuffer');
+            loadAudioFile(FX_URL, 'fxBuffer');
+            loadPawImage();
+
+            audioEngine = {
+                init: () => { if (audioCtx.state === 'suspended') audioCtx.resume(); },
+                playMeow: (freq) => {
+                    if (!audioCtx || !meowBuffer || !isFinite(freq)) return;
+                    const source = audioCtx.createBufferSource();
+                    source.buffer = meowBuffer;
+                    const playbackRate = (freq / BASE_FREQUENCY) * OCTAVE_OFFSET;
+                    source.playbackRate.value = playbackRate;
+                    const gainNode = audioCtx.createGain();
+                    gainNode.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                    source.connect(gainNode);
+                    gainNode.connect(masterGain);
+                    source.start(0);
+                    source.onended = () => { source.disconnect(); gainNode.disconnect(); };
+                },
+                playUISound: () => {
+                    if (!audioCtx || !fxBuffer) return;
+                    const source = audioCtx.createBufferSource();
+                    source.buffer = fxBuffer;
+                    const gainNode = audioCtx.createGain();
+                    gainNode.gain.value = 0.4; 
+                    source.connect(gainNode);
+                    gainNode.connect(masterGain);
+                    source.start(0);
+                    source.onended = () => { source.disconnect(); gainNode.disconnect(); };
+                },
+                playHitSound: (rating) => {
+                    if (!audioCtx) return;
+                    const now = audioCtx.currentTime;
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+
+                    if (rating === 'miss') {
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(80, now);
+                        osc.frequency.linearRampToValueAtTime(60, now + 0.1);
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.2);
+                        osc.start();
+                        osc.stop(now + 0.2);
+                    } else if (rating === 'perfect') {
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(600, now);
+                        osc.frequency.exponentialRampToValueAtTime(1000, now + 0.15);
+                        gain.gain.setValueAtTime(0.3, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                        osc.start();
+                        osc.stop(now + 0.2);
+                    } else {
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(1200, now);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                        osc.start();
+                        osc.stop(now + 0.05);
+                    }
+                },
+                getCurrentTime: () => audioCtx.currentTime, 
+                isLoaded: () => isLoaded,
+                NOTE_FREQS
+            };
+        };
+
+        // --- Game Logic Helpers ---
+
+        const updateScoreboard = () => {
+            if (ui.scoreBoard) ui.scoreBoard.innerText = `Score: ${gameState.score}`;
+            if (ui.comboBoard) ui.comboBoard.innerText = `Combo: x${gameState.combo}`;
+        };
+
+        const createFloatingText = (text, x, y, color) => {
+            floatingTexts.push({ text, x, y, color, life: 1.0 });
+        };
+
+        const spawnParticles = (x, y, color) => {
+            for (let i = 0; i < 10; i++) {
+                gameState.particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15,
+                    life: 1.0, color: color
+                });
+            }
+        };
+
+        // Paw Stamp Creation Function - Updated to include lane index
+        const createPawStamp = (lane, x, y, color) => {
+            if (!pawImage.complete) return;
+            pawStamps.push({
+                lane: lane, // NEW: Store the lane index
+                x: x, 
+                y: y, 
+                rotation: (Math.random() - 0.5) * Math.PI / 4, // Random angle +/- 45 degrees
+                size: 70 + Math.random() * 30, // Random size between 70-100
+                life: 1.0, // Fade out over time
+                color: color
+            });
+        };
+
+        // Simplified Paw Drawing for the target area
+        const drawPaw = (ctx, x, y, size, color) => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+            const tDist = size * 1.2;
+            const tSize = size * 0.4;
+            ctx.beginPath(); ctx.arc(x - tDist*0.7, y - tDist*0.7, tSize, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y - tDist, tSize*1.1, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + tDist*0.7, y - tDist*0.7, tSize, 0, Math.PI*2); ctx.fill();
+        };
+
+        const endGame = () => {
+            gameState.isPlaying = false;
+            cancelAnimationFrame(animationFrameId);
+            
+            setTimeout(() => {
+                // Update UI
+                ui.startScreen.style.display = 'none';
+                ui.gameOverScreen.style.display = 'flex';
+
+                ui.finalScore.innerText = gameState.score;
+                ui.maxCombo.innerText = gameState.maxCombo;
+
+                const maxPossibleScore = gameState.notes.length * 100;
+                const pct = maxPossibleScore > 0 ? gameState.score / maxPossibleScore : 0;
+
+                let rank = "Stray Cat";
+                if (pct > 0.9) rank = "Pop Star Purrfection!";
+                else if (pct > 0.7) rank = "Cool Cat";
+                else if (pct > 0.5) rank = "House Cat";
+                
+                ui.rankText.innerText = rank;
+            }, 1000);
+        };
+
+        // --- Game Loop ---
+        const gameLoop = () => {
+            if (!gameState.isPlaying || !ctx || !canvas || !audioEngine) {
+                 // Keep loop alive for effects outside of playing state
+                 animationFrameId = requestAnimationFrame(gameLoop);
+                 return;
+            }
+
+            const AE = audioEngine;
+            const audioTime = AE.getCurrentTime();
+            const gameTime = audioTime - gameState.startTime;
+            const laneWidth = canvas.width / gameState.laneCount;
+            const hitZoneTop = gameState.hitY;
+            
+            // Clear & BG
+            ctx.fillStyle = "#2b2b2b";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update Lyrics
+            gameState.lyrics.forEach(lyric => {
+                if (!lyric.shown && gameTime >= lyric.time) {
+                    lyric.shown = true;
+                    ui.lyricsContainer.innerHTML = `<div class="lyric-line lyric-active">${lyric.text}</div>`;
+                }
+            });
+
+            // Draw Lanes
+            for (let i = 0; i < gameState.laneCount; i++) {
+                // Gradient Lane
+                const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                grd.addColorStop(0, "rgba(255,255,255,0)");
+                grd.addColorStop(1, "rgba(255,255,255,0.05)");
+                ctx.fillStyle = grd;
+                ctx.fillRect(i * laneWidth, 0, laneWidth, canvas.height);
+                
+                // Separator
+                ctx.strokeStyle = "rgba(255,255,255,0.1)";
+                ctx.beginPath(); ctx.moveTo(i*laneWidth, 0); ctx.lineTo(i*laneWidth, canvas.height); ctx.stroke();
+
+                // --- Draw the fixed Hit Target ZONE (The "Cat's Arm") ---
+                const targetHeight = canvas.height - hitZoneTop;
+                const xCenter = i * laneWidth + laneWidth / 2;
+
+                // 1. Draw the static target zone background
+                ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+                ctx.fillRect(i * laneWidth, hitZoneTop, laneWidth, targetHeight);
+
+                // 2. Draw the highlight (the "hit" visual)
+                if (activeLanes[i]) {
+                    ctx.fillStyle = LANE_COLORS[i];
+                    ctx.fillRect(i * laneWidth, hitZoneTop, laneWidth, targetHeight);
+                    
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = LANE_COLORS[i];
+                    
+                    // Draw a static, subtle paw inside the hit zone
+                    ctx.save();
+                    ctx.translate(xCenter, hitZoneTop + targetHeight / 2);
+                    drawPaw(ctx, 0, 0, 25, 'rgba(255,255,255,0.8)');
+                    ctx.restore();
+                }
+                
+                ctx.shadowBlur = 0;
+                
+                // 3. Draw a strong line/border at the strike position (top of the arm)
+                ctx.strokeStyle = activeLanes[i] ? "#fff" : LANE_COLORS[i];
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.moveTo(i * laneWidth, hitZoneTop);
+                ctx.lineTo((i + 1) * laneWidth, hitZoneTop);
+                ctx.stroke();
+            }
+
+            let allNotesFinished = true;
+
+            // Draw & Update Notes
+            gameState.notes.forEach(note => {
+                const timeDiff = note.time - gameTime;
+                const y = hitZoneTop - (timeDiff * gameState.speed);
+
+                // Auto-play audio (The Meow)
+                if (timeDiff <= 0 && !note.played) {
+                    AE.playMeow(note.freq); 
+                    note.played = true;
+                }
+
+                // Miss Logic (Note passes the bottom of the visible area/arm)
+                if (y > canvas.height + 50 && !note.hit && !note.missed) {
+                    note.missed = true;
+                    note.visible = false;
+                    gameState.combo = 0;
+                    updateScoreboard();
+                    createFloatingText("Hiss", note.lane * laneWidth + laneWidth/2, hitZoneTop + 50, "#888");
+                    AE.playHitSound('miss');
+                }
+
+                // Draw Item (Emoji)
+                if (note.visible && y > -50 && y < canvas.height + 50) {
+                    allNotesFinished = false;
+                    const x = note.lane * laneWidth + laneWidth / 2;
+                    const item = LANE_ITEMS[note.lane];
+
+                    ctx.font = '40px sans-serif'; 
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    ctx.shadowColor = 'rgba(255, 255, 255, 1.0)';
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(item, x, y); 
+
+                    ctx.shadowBlur = 0; 
+                } else if (!note.missed && !note.hit && note.time > gameTime) {
+                    allNotesFinished = false;
+                }
+            });
+
+            // Particles
+            for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                const p = gameState.particles[i];
+                p.x += p.vx; p.y += p.vy; p.vy += 0.8; p.life -= 0.04;
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = p.color;
+                ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI*2); ctx.fill();
+                ctx.globalAlpha = 1;
+                if (p.life <= 0) gameState.particles.splice(i, 1);
+            }
+
+            // Paw Stamps (Updated Rendering Logic for the Long Trail)
+            for (let i = pawStamps.length - 1; i >= 0; i--) {
+                const stamp = pawStamps[i];
+                stamp.life -= 0.03; // Fade out
+                
+                if (stamp.life <= 0) {
+                    pawStamps.splice(i, 1);
+                    continue;
+                }
+
+                const laneX = stamp.lane * laneWidth;
+                
+                // --- 1. Draw the Extended Hit Trail (The "Long Paw Stamp") ---
+                // Fades out quickly and is slightly transparent
+                ctx.globalAlpha = Math.max(0, stamp.life * 0.7); 
+                ctx.fillStyle = stamp.color;
+                // Draw from the hit line (gameState.hitY) down to the bottom of the screen (canvas.height)
+                ctx.fillRect(laneX, hitZoneTop, laneWidth, canvas.height - hitZoneTop);
+                
+                ctx.globalAlpha = 1; // Reset alpha for drawing the icon
+
+                // --- 2. Draw the Paw Icon at the strike point (middle of the hit zone) ---
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, stamp.life); // Icon fades out
+                ctx.translate(stamp.x, stamp.y);
+                ctx.rotate(stamp.rotation);
+                
+                if (pawImage.complete) {
+                    const imgSize = stamp.size;
+                    // Draw the paw image with a white shadow for visibility over the trail
+                    ctx.filter = `drop-shadow(0 0 5px #fff)`; 
+                    ctx.drawImage(pawImage, -imgSize / 2, -imgSize / 2, imgSize, imgSize);
+                }
+
+                ctx.filter = 'none'; // Reset filter
+                ctx.globalAlpha = 1;
+                ctx.restore();
+            }
+
+
+            // Floating Text
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const ft = floatingTexts[i];
+                ft.y -= 2; ft.life -= 0.03;
+                
+                if (ft.life <= 0) {
+                    floatingTexts.splice(i, 1);
+                    continue;
+                }
+
+                ctx.globalAlpha = Math.max(0, ft.life);
+                ctx.save();
+                ctx.translate(ft.x, ft.y);
+                const scale = 1 + (1-ft.life)*0.5;
+                ctx.scale(scale, scale);
+                ctx.fillStyle = ft.color;
+                ctx.font = "bold 30px 'Fredoka One'";
+                ctx.textAlign = "center";
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 3;
+                ctx.strokeText(ft.text, 0, 0);
+                ctx.fillText(ft.text, 0, 0);
+                ctx.restore();
+                ctx.globalAlpha = 1;
+            }
+
+            if (allNotesFinished && gameState.notes.length > 0) {
+                if (gameTime > gameState.notes[gameState.notes.length-1].time + 1.5) {
+                    endGame();
+                    return;
+                }
+            }
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        };
+
+        // --- Input Handling ---
+
+        const handleInput = (lane) => {
+            if (!gameState.isPlaying || !audioEngine) return;
+
+            // Visual feedback
+            activeLanes[lane] = true;
+            setTimeout(() => { activeLanes[lane] = false; }, 100);
+
+            const AE = audioEngine;
+            const gameTime = AE.getCurrentTime() - gameState.startTime;
+            const laneWidth = canvas.width / gameState.laneCount;
+            const x = lane * laneWidth + laneWidth / 2;
+            const yStamp = gameState.hitY + 50; // Center of the 100px hit zone
+
+            // UPDATED CALL: Pass the lane index
+            createPawStamp(lane, x, yStamp, LANE_COLORS[lane]); 
+
+            const candidates = gameState.notes.filter(n => 
+                // Check if note is in the hit zone (time +/- 0.35s)
+                n.lane === lane && !n.hit && !n.missed && Math.abs(n.time - gameTime) < 0.35
+            );
+
+            if (candidates.length > 0) {
+                const note = candidates[0];
+                const diff = Math.abs(note.time - gameTime);
+                note.hit = true;
+                note.visible = false;
+                
+                let txt = "", col = "";
+                let scoreDelta = 0;
+                let comboDelta = 0;
+
+                if (diff < 0.1) {
+                    txt = "PURRFECT!"; col = "#FF6B6B"; scoreDelta = 100 + (gameState.combo*5);
+                    comboDelta = 1;
+                    AE.playHitSound('perfect');
+                } else if (diff < 0.25) {
+                    txt = "Good!"; col = "#4ECDC4"; scoreDelta = 50 + (gameState.combo*2);
+                    comboDelta = 1;
+                    AE.playHitSound('good');
+                } else {
+                    txt = "Meh"; col = "#F7D794"; scoreDelta = 10;
+                    comboDelta = -gameState.combo;
+                    AE.playHitSound('meh');
+                }
+
+                gameState.combo = Math.max(0, gameState.combo + comboDelta);
+                gameState.score += scoreDelta;
+                
+                if (gameState.combo > gameState.maxCombo) {
+                    gameState.maxCombo = gameState.combo;
+                }
+                
+                updateScoreboard();
+
+                // Floating text starts near the top of the hit zone
+                createFloatingText(txt, x, gameState.hitY - 30, col);
+                spawnParticles(x, gameState.hitY + 50, LANE_COLORS[lane]);
+            }
+        };
+
+        const handleKey = (e) => {
+            if (keyMap.hasOwnProperty(e.code)) handleInput(keyMap[e.code]);
+        };
+        const handleTouch = (e) => {
+            if (!gameState.isPlaying) return;
+            e.preventDefault();
+            const canvasRect = canvas.getBoundingClientRect();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const x = e.changedTouches[i].clientX - canvasRect.left;
+                // Only process touches within the new 100px hit zone
+                const y = e.changedTouches[i].clientY - canvasRect.top;
+                if (y > gameState.hitY) {
+                    const lane = Math.floor(x / (canvasRect.width / 4));
+                    if (lane >= 0 && lane < 4) handleInput(lane);
+                }
+            }
+        };
+        const handleMouse = (e) => {
+            if (!gameState.isPlaying) return;
+            const canvasRect = canvas.getBoundingClientRect();
+            const x = e.clientX - canvasRect.left;
+            const y = e.clientY - canvasRect.top;
+            // Only process clicks within the new 100px hit zone
+            if (y > gameState.hitY) {
+                const lane = Math.floor(x / (canvasRect.width / 4));
+                if (lane >= 0 && lane < 4) handleInput(lane);
+            }
+        };
+        
+        // --- Game Flow Functions ---
+
+        const parseSong = (songId) => {
+            const song = SONGS[songId];
+            if (!song) return { notes: [], lyrics: [] };
+
+            const beatTime = 60 / song.bpm;
+            let currentNoteTime = 2.0;
+
+            const gameNotes = song.notes.map((n, index) => {
+                const freq = NOTE_FREQS[n[0]];
+                const duration = n[1];
+                let lane = index % 4;
+                
+                if (index % 3 === 0) lane = (lane + 1) % 4;
+                if (n[0].indexOf('5') > -1 || n[0].indexOf('6') > -1) lane = 3; 
+                if (n[0].indexOf('2') > -1) lane = 0; 
+
+                const noteObj = {
+                    time: currentNoteTime,
+                    lane: lane,
+                    freq: freq,
+                    duration: duration * beatTime,
+                    played: false, hit: false, missed: false, visible: true
+                };
+                currentNoteTime += duration * beatTime;
+                return noteObj;
+            });
+
+            const gameLyrics = song.lyrics ? song.lyrics.map(l => ({
+                time: 2.0 + (l.beat * beatTime),
+                text: l.text,
+                shown: false
+            })) : [];
+
+            return { notes: gameNotes, lyrics: gameLyrics };
+        };
+
+
+        const startGame = () => {
+            if (!audioEngine || !audioEngine.isLoaded()) return;
+            
+            audioEngine.playUISound();
+            audioEngine.init();
+            
+            const selectedSongId = ui.songSelect.value;
+            const songData = parseSong(selectedSongId);
+            
+            gameState = {
+                isPlaying: true,
+                startTime: audioEngine.getCurrentTime(),
+                score: 0,
+                combo: 0,
+                maxCombo: 0,
+                notes: songData.notes,
+                lyrics: songData.lyrics,
+                particles: [],
+                laneCount: 4, 
+                speed: 500, 
+                hitY: gameState.hitY, // Keeps the value set by resize()
+            };
+            
+            floatingTexts = [];
+            pawStamps = [];
+
+            updateScoreboard();
+            
+            // Hide start screen, show game
+            ui.startScreen.style.display = 'none';
+            ui.lyricsContainer.innerHTML = '<div class="lyric-line lyric-active">Ready...</div>';
+
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(gameLoop);
+        };
+
+        const restartGame = () => {
+            audioEngine?.playUISound();
+            // Hide game over screen, show start screen
+            ui.gameOverScreen.style.display = 'none';
+            ui.startScreen.style.display = 'flex';
+        };
+
+        const shareScore = () => {
+            audioEngine?.playUISound();
+            
+            const originalText = ui.shareBtn.innerText;
+            
+            const finalRankText = ui.rankText.innerText || "Stray Cat";
+            const text = `I scored ${gameState.score} points (${finalRankText}) on I-mog-en: The Mewsical! Can you beat my combo of ${gameState.maxCombo}? 🐱🎵`;
+            
+            const restoreButton = (newText, duration = 2000) => {
+                ui.shareBtn.innerText = newText;
+                setTimeout(() => ui.shareBtn.innerText = originalText, duration);
+            };
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'I-mog-en: The Mewsical',
+                    text: text,
+                    url: window.location.href
+                }).catch(error => {
+                    if (error.name !== 'AbortError') restoreButton("Sharing Failed", 3000);
+                });
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = 'fixed'; 
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    restoreButton("Copied to Clipboard!", 2500); 
+                } catch (err) {
+                    restoreButton("Copy Failed", 3000);
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+            }
+        };
+
+
+        // --- Initialization on Load ---
+        window.onload = function () {
+            initUI();
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Initialize basic game state defaults
+            gameState = {
+                isPlaying: false, startTime: 0, score: 0, combo: 0, maxCombo: 0,
+                notes: [], lyrics: [], particles: [], laneCount: 4, speed: 500, hitY: 0,
+            };
+            
+            resize();
+            initAudioEngine();
+
+            // Setup Event Listeners
+            window.addEventListener('resize', resize);
+            window.addEventListener('keydown', handleKey);
+            // Updated: Passive touch listener to allow event.preventDefault() for input area
+            canvas.addEventListener('touchstart', handleTouch, {passive: false}); 
+            canvas.addEventListener('mousedown', handleMouse);
+            ui.startBtn.addEventListener('click', startGame);
+            ui.restartBtn.addEventListener('click', restartGame);
+            ui.shareBtn.addEventListener('click', shareScore);
+
+            // Start the main loop (keeps effects alive even if not playing)
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
