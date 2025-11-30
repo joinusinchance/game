@@ -187,6 +187,7 @@
             opacity: 1;
         }
 
+        /* Updated select styles for black text and better contrast */
         select {
             font-size: 1.2rem; 
             padding: 12px; 
@@ -198,6 +199,10 @@
             width: 80%;
             max-width: 300px;
             outline: none;
+            color: #000; /* Text color set to black */
+        }
+        select option {
+            color: #000; /* Ensure options text is black */
         }
     </style>
 </head>
@@ -220,11 +225,11 @@
             <div style="margin: 20px 0; width: 100%; text-align: center;">
                 <label for="song-select" style="font-size: 1.2rem; color: #4ECDC4;">Select Track:</label><br/>
                 <select id="song-select">
-                    <option value="camptown">Camptown Races (Long)</option>
-                    <option value="entertainer">The Entertainer (Long)</option>
-                    <option value="korobeiniki">Korobeiniki (Tetris) (Long)</option>
-                    <option value="mountain">Hall of Mountain King (Long)</option>
-                    <option value="ode">Ode to Joy (Long)</option>
+                    <option value="camptown">Camptown Races</option>
+                    <option value="entertainer">The Entertainer</option>
+                    <option value="korobeiniki">Korobeiniki (Tetris)</option>
+                    <option value="mountain">Hall of Mountain King</option>
+                    <option value="ode">Ode to Joy</option>
                 </select>
             </div>
             
@@ -251,15 +256,16 @@
     <script>
         // --- Constants ---
         const LANE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#FF9F43'];
+        // Icons: Purse, Pill, Squirrel, Croissant
         const LANE_ITEMS = ['👜', '💊', '🐿️', '🥐']; 
         const MEOW_URL = 'https://joinusinchance.github.io/game/mixkit-sweet-kitty-meow-93.wav';
         const FX_URL = 'https://joinusinchance.github.io/game/mixkit-little-cat-pain-meow-87.wav';
-        const PAW_IMAGE_URL = 'https://joinusinchance.github.io/game/paw.png'; // New: Paw image URL
+        const PAW_IMAGE_URL = 'https://joinusinchance.github.io/game/paw.png'; 
         const BASE_FREQUENCY = 261.63; // C4
         const OCTAVE_OFFSET = 0.65; 
         const keyMap = { 'KeyD': 0, 'KeyF': 1, 'KeyJ': 2, 'KeyK': 3 };
 
-        // Standard Note Frequencies
+        // Standard Note Frequencies (Unchanged)
         const NOTE_FREQS = {
             'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'D#2': 77.78, 'E2': 82.41, 'F2': 87.31, 'F#2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'A2': 110.00, 'A#2': 116.54, 'B2': 123.47,
             'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81, 'F3': 174.61, 'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'B3': 246.94,
@@ -268,7 +274,7 @@
             'C6': 1046.50
         };
 
-        // Helper to repeat an array
+        // Helper to repeat an array (Unchanged)
         const repeat = (arr, times) => Array(times).fill(arr).flat();
 
         const camptown_phrase = [
@@ -338,8 +344,8 @@
         let animationFrameId;
         let floatingTexts = [];
         let activeLanes = [false, false, false, false];
-        let pawStamps = []; // New array for paw stamps
-        const pawImage = new Image(); // Paw image object
+        let pawStamps = []; 
+        const pawImage = new Image(); 
 
         // --- UI Elements ---
         const ui = {
@@ -376,7 +382,7 @@
             }
         };
 
-        // --- Audio Engine ---
+        // --- Audio Engine (Unchanged) ---
         const initAudioEngine = async () => {
             let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             let masterGain = audioCtx.createGain();
@@ -500,7 +506,7 @@
             };
         };
 
-        // --- Game Logic Helpers ---
+        // --- Game Logic Helpers (Unchanged) ---
 
         const updateScoreboard = () => {
             if (ui.scoreBoard) ui.scoreBoard.innerText = `Score: ${gameState.score}`;
@@ -526,17 +532,17 @@
         const createPawStamp = (lane, x, y, color) => {
             if (!pawImage.complete) return;
             pawStamps.push({
-                lane: lane, // NEW: Store the lane index
+                lane: lane, 
                 x: x, 
                 y: y, 
-                rotation: (Math.random() - 0.5) * Math.PI / 4, // Random angle +/- 45 degrees
-                size: 70 + Math.random() * 30, // Random size between 70-100
-                life: 1.0, // Fade out over time
+                rotation: (Math.random() - 0.5) * Math.PI / 4, 
+                size: 70 + Math.random() * 30, 
+                life: 1.0, 
                 color: color
             });
         };
 
-        // Simplified Paw Drawing for the target area
+        // Simplified Paw Drawing for the target area 
         const drawPaw = (ctx, x, y, size, color) => {
             ctx.fillStyle = color;
             ctx.beginPath();
@@ -573,7 +579,7 @@
             }, 1000);
         };
 
-        // --- Game Loop ---
+        // --- Game Loop (Updated Icon Drawing) ---
         const gameLoop = () => {
             if (!gameState.isPlaying || !ctx || !canvas || !audioEngine) {
                  // Keep loop alive for effects outside of playing state
@@ -675,13 +681,18 @@
                     const x = note.lane * laneWidth + laneWidth / 2;
                     const item = LANE_ITEMS[note.lane];
 
-                    ctx.font = '40px sans-serif'; 
+                    // --- UPDATED: Increased Size and MAXIMIZED Glow ---
+                    ctx.font = '60px sans-serif'; // Increased size from 55px to 60px
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     
+                    // Set full brightness and a stronger shadow/glow
                     ctx.shadowColor = 'rgba(255, 255, 255, 1.0)';
-                    ctx.shadowBlur = 4;
+                    ctx.shadowBlur = 15; // Increased shadow blur for a much stronger glow
+                    
+                    ctx.globalAlpha = 1.0; 
                     ctx.fillText(item, x, y); 
+                    ctx.globalAlpha = 1.0; 
 
                     ctx.shadowBlur = 0; 
                 } else if (!note.missed && !note.hit && note.time > gameTime) {
@@ -700,10 +711,10 @@
                 if (p.life <= 0) gameState.particles.splice(i, 1);
             }
 
-            // Paw Stamps (Updated Rendering Logic for the Long Trail)
+            // Paw Stamps 
             for (let i = pawStamps.length - 1; i >= 0; i--) {
                 const stamp = pawStamps[i];
-                stamp.life -= 0.03; // Fade out
+                stamp.life -= 0.03; 
                 
                 if (stamp.life <= 0) {
                     pawStamps.splice(i, 1);
@@ -713,28 +724,25 @@
                 const laneX = stamp.lane * laneWidth;
                 
                 // --- 1. Draw the Extended Hit Trail (The "Long Paw Stamp") ---
-                // Fades out quickly and is slightly transparent
                 ctx.globalAlpha = Math.max(0, stamp.life * 0.7); 
                 ctx.fillStyle = stamp.color;
-                // Draw from the hit line (gameState.hitY) down to the bottom of the screen (canvas.height)
                 ctx.fillRect(laneX, hitZoneTop, laneWidth, canvas.height - hitZoneTop);
                 
-                ctx.globalAlpha = 1; // Reset alpha for drawing the icon
+                ctx.globalAlpha = 1; 
 
                 // --- 2. Draw the Paw Icon at the strike point (middle of the hit zone) ---
                 ctx.save();
-                ctx.globalAlpha = Math.max(0, stamp.life); // Icon fades out
+                ctx.globalAlpha = Math.max(0, stamp.life); 
                 ctx.translate(stamp.x, stamp.y);
                 ctx.rotate(stamp.rotation);
                 
                 if (pawImage.complete) {
                     const imgSize = stamp.size;
-                    // Draw the paw image with a white shadow for visibility over the trail
                     ctx.filter = `drop-shadow(0 0 5px #fff)`; 
                     ctx.drawImage(pawImage, -imgSize / 2, -imgSize / 2, imgSize, imgSize);
                 }
 
-                ctx.filter = 'none'; // Reset filter
+                ctx.filter = 'none'; 
                 ctx.globalAlpha = 1;
                 ctx.restore();
             }
@@ -776,7 +784,7 @@
             animationFrameId = requestAnimationFrame(gameLoop);
         };
 
-        // --- Input Handling ---
+        // --- Input Handling (Unchanged) ---
 
         const handleInput = (lane) => {
             if (!gameState.isPlaying || !audioEngine) return;
@@ -791,7 +799,6 @@
             const x = lane * laneWidth + laneWidth / 2;
             const yStamp = gameState.hitY + 50; // Center of the 100px hit zone
 
-            // UPDATED CALL: Pass the lane index
             createPawStamp(lane, x, yStamp, LANE_COLORS[lane]); 
 
             const candidates = gameState.notes.filter(n => 
@@ -867,7 +874,7 @@
             }
         };
         
-        // --- Game Flow Functions ---
+        // --- Game Flow Functions (Unchanged) ---
 
         const parseSong = (songId) => {
             const song = SONGS[songId];
@@ -926,7 +933,7 @@
                 particles: [],
                 laneCount: 4, 
                 speed: 500, 
-                hitY: gameState.hitY, // Keeps the value set by resize()
+                hitY: gameState.hitY,
             };
             
             floatingTexts = [];
@@ -1008,7 +1015,6 @@
             // Setup Event Listeners
             window.addEventListener('resize', resize);
             window.addEventListener('keydown', handleKey);
-            // Updated: Passive touch listener to allow event.preventDefault() for input area
             canvas.addEventListener('touchstart', handleTouch, {passive: false}); 
             canvas.addEventListener('mousedown', handleMouse);
             ui.startBtn.addEventListener('click', startGame);
