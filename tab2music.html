@@ -8,8 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Tone.js for Audio Playback -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
-    <!-- Load MidiWriterJS for MIDI File Generation -->
-    <script src="https://unpkg.com/midi-writer-js@2.1.0/dist/midi-writer-js.min.js"></script>
+    <!-- 
+        MidiWriterJS is now imported inside the module script below
+        <script src="https://unpkg.com/midi-writer-js@2.1.0/dist/midi-writer-js.min.js"></script>
+    -->
     <style>
         /* Custom scrollbar styling for the tablature area */
         #tablature-input::-webkit-scrollbar { width: 8px; }
@@ -100,11 +102,15 @@
         </div>
     </div>
 
-    <!-- Firebase SDK Imports -->
+    <!-- Firebase SDK Imports and Application Logic (Module Scope) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Import MidiWriterJS globally within the module scope
+        import 'https://unpkg.com/midi-writer-js@2.1.0/dist/midi-writer-js.min.js';
+
 
         // Global variables provided by the Canvas environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -171,9 +177,7 @@
         } catch (error) {
             window.showStatus(`Firebase Initialization Error: ${error.message}`, 'error');
         }
-    </script>
     
-    <script>
         // --- Global Constants and Mappings ---
 
         const NOTES_PER_OCTAVE = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -414,6 +418,50 @@
         // --- File Generation Functions ---
 
         /**
+         * Generates and downloads the MIDI file.
+         * @param {Array<Object>} notes - Parsed notes array.
+         */
+        function generateMIDI(notes) {
+            // MidiWriter is now accessible here due to the import above
+            const track = new MidiWriter.Track();
+            track.setTempo(parseFloat(document.getElementById('bpm').value));
+            
+            notes.forEach(note => {
+                // Convert Tone.js rhythm (e.g., '4n.') to MidiWriter format (e.g., '4.')
+                let midiDuration = note.rhythm.replace('n', ''); 
+
+                if (note.pitch) {
+                    // It's a note
+                    track.addNote({
+                        pitch: [note.pitch], // Pitch must be an array for addNote
+                        duration: midiDuration, 
+                        velocity: 90
+                    });
+                } else {
+                    // It's a rest, use pitch: [] which the library interprets as a rest duration
+                    track.addNote({
+                        pitch: [],
+                        duration: midiDuration
+                    });
+                }
+            });
+
+            // The library creates a "writer" object
+            const writer = new MidiWriter.Writer(track);
+            const dataUri = writer.dataUri();
+            
+            // Create a temporary link and trigger download
+            const link = document.createElement('a');
+            link.href = dataUri;
+            link.download = `melody_${new Date().getTime()}.mid`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            window.showStatus('MIDI file generated and download started!', 'success');
+        }
+
+        /**
          * Generates a MusicXML file from the parsed notes.
          * Note: This is a basic implementation and doesn't handle all MusicXML complexities (e.g., time/key changes mid-score).
          * @param {Array<Object>} notes - Parsed notes array.
@@ -529,45 +577,6 @@
         }
 
         /**
-         * Generates and downloads the MIDI file.
-         * @param {Array<Object>} notes - Parsed notes array.
-         */
-        function generateMIDI(notes) {
-            const track = new MidiWriter.Track();
-            track.setTempo(parseFloat(document.getElementById('bpm').value));
-
-            notes.forEach(note => {
-                // MidiWriter uses its own duration string format
-                let midiDuration = note.rhythm; 
-                midiDuration = midiDuration.replace('n', ''); // Remove 'n'
-                if (note.rhythm.includes('.')) {
-                    midiDuration += '.'; // Add dot back
-                }
-
-                track.addEvent(new MidiWriter.NoteEvent({
-                    pitch: note.pitch ? note.pitch : 0, // 0 for rest (Note: MidiWriter handles 0 as a rest)
-                    duration: midiDuration, 
-                    velocity: 90, 
-                    wait: note.pitch ? '0' : midiDuration // If it's a rest, use its duration as wait
-                }));
-            });
-
-            // The library creates a "writer" object
-            const writer = new MidiWriter.Writer(track);
-            const dataUri = writer.dataUri();
-            
-            // Create a temporary link and trigger download
-            const link = document.createElement('a');
-            link.href = dataUri;
-            link.download = `melody_${new Date().getTime()}.mid`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            window.showStatus('MIDI file generated and download started!', 'success');
-        }
-
-        /**
          * Creates a Blob and initiates a file download.
          * @param {string} content - The file content (XML or other text).
          * @param {string} filename - The name of the file.
@@ -613,7 +622,12 @@
                 stopPlayback();
                 const notes = parseTablature();
                 if (notes && notes.length > 0) {
-                    generateMIDI(notes);
+                    try {
+                        generateMIDI(notes);
+                    } catch (e) {
+                        window.showStatus(`MIDI Generation Error: ${e.message}`, 'error');
+                        console.error("MIDI Generation Failed:", e);
+                    }
                 }
             });
 
