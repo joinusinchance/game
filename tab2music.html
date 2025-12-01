@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tab2Music Converter</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Tone.js for Audio Playback -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <!-- Load MidiWriterJS for MIDI File Generation -->
+    <script src="https://unpkg.com/midi-writer-js@2.1.0/dist/midi-writer-js.min.js"></script>
+    <style>
+        /* Custom scrollbar styling for the tablature area */
+        #tablature-input::-webkit-scrollbar { width: 8px; }
+        #tablature-input::-webkit-scrollbar-thumb {
+            background-color: #a78bfa; 
+            border-radius: 4px;
+        }
+        #tablature-input::-webkit-scrollbar-track {
+            background-color: #f3f4f6;
+            border-radius: 4px;
+        }
+        /* Base font and background */
+        body { font-family: 'Inter', sans-serif; background-color: #f7f7f7; }
+        /* Focus styles for inputs */
+        input:focus, textarea:focus {
+            box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.5);
+            border-color: #a78bfa;
+        }
+        /* Style for the preview bar */
+        .preview-bar {
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen bg-gray-50">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8 p-6 bg-white rounded-xl shadow-lg">
+            <h1 class="text-3xl font-bold text-violet-700 mb-2">🎶 Tab2Music Converter</h1>
+            <p class="text-gray-600">Enter your melody tablature below. The format for each line must be: `Bar | Lyrics | Scale Degree-Octave | Rhythm`</p>
+        </header>
+
+        <!-- Configuration Inputs -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+                <label for="bpm" class="block text-sm font-medium text-gray-700 mb-1">BPM (Tempo)</label>
+                <input type="number" id="bpm" value="120" min="40" max="300" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500">
+            </div>
+            <div class="col-span-2">
+                <label for="key" class="block text-sm font-medium text-gray-700 mb-1">Key Signature (e.g., C major, A minor)</label>
+                <input type="text" id="key" value="C major" placeholder="e.g., C major, G minor" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500">
+            </div>
+            <div>
+                <label for="time-signature" class="block text-sm font-medium text-gray-700 mb-1">Time Signature</label>
+                <input type="text" id="time-signature" value="4/4" placeholder="e.g., 4/4, 3/4" class="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-violet-500 focus:border-violet-500">
+            </div>
+        </div>
+
+        <!-- Tablature Input and Preview -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+            <label for="tablature-input" class="block text-lg font-semibold text-gray-800 mb-3">Melody Tablature Input</label>
+            <textarea id="tablature-input" rows="10" class="w-full p-3 border border-gray-300 rounded-lg shadow-inner text-sm focus:ring-violet-500 focus:border-violet-500" placeholder="Example format:
+1 | Hello | 5-4 | Q
+1 | world | 1-5 | H.
+2 | (Rest) | r | E
+2 | Nice | 3-4 | E.
+3 | song | 1-4 | W
+">1 | Mary | 3-4 | Q
+1 | had | 2-4 | Q
+1 | a | 1-4 | Q
+1 | little | 2-4 | Q
+2 | lamb | 3-4 | H.
+2 | (End) | r | Q</textarea>
+            
+            <p class="text-xs text-gray-500 mt-2">Scale Degrees: 1=Tonic, 2=Supertonic, etc. Use `r` for a rest. Octave: e.g., 4=Middle C octave. Rhythm: W (Whole), H (Half), Q (Quarter), E (Eighth), S (Sixteenth). Add `.` for dotted.</p>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="flex flex-wrap gap-4 mb-8">
+            <button id="play-btn" class="flex-1 px-6 py-3 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 transition duration-150 transform hover:scale-[1.02] disabled:opacity-50" disabled>
+                <span id="play-text">Play Preview ▶</span>
+            </button>
+            <button id="stop-btn" class="flex-1 px-6 py-3 bg-red-500 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition duration-150 transform hover:scale-[1.02]" disabled>
+                Stop ⏹
+            </button>
+            <button id="midi-btn" class="flex-1 px-6 py-3 bg-violet-500 text-white font-bold rounded-lg shadow-md hover:bg-violet-600 transition duration-150 transform hover:scale-[1.02]">
+                Download MIDI 🎵
+            </button>
+            <button id="musicxml-btn" class="flex-1 px-6 py-3 bg-indigo-500 text-white font-bold rounded-lg shadow-md hover:bg-indigo-600 transition duration-150 transform hover:scale-[1.02]">
+                Download MusicXML 🎼
+            </button>
+        </div>
+
+        <!-- Status/Error Message Area -->
+        <div id="status-message" class="preview-bar p-4 bg-yellow-100 text-yellow-800 rounded-lg shadow-md hidden" role="alert">
+            <p id="status-text"></p>
+        </div>
+    </div>
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Function to show status messages
+        const statusEl = document.getElementById('status-message');
+        const statusTextEl = document.getElementById('status-text');
+        
+        window.showStatus = (message, type = 'info') => {
+            if (message) {
+                statusTextEl.textContent = message;
+                statusEl.classList.remove('hidden', 'bg-red-100', 'text-red-800', 'bg-yellow-100', 'text-yellow-800', 'bg-green-100', 'text-green-800');
+                if (type === 'error') {
+                    statusEl.classList.add('bg-red-100', 'text-red-800');
+                } else if (type === 'success') {
+                    statusEl.classList.add('bg-green-100', 'text-green-800');
+                } else {
+                    statusEl.classList.add('bg-yellow-100', 'text-yellow-800');
+                }
+                statusEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                statusEl.classList.add('hidden');
+            }
+        };
+
+        // Initialize Firebase and Authentication
+        let auth;
+        let db;
+        
+        try {
+            if (Object.keys(firebaseConfig).length > 0) {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                setLogLevel('error'); // Set log level to reduce console noise
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        // User is signed in.
+                        window.userId = user.uid;
+                        window.showStatus(`Authenticated successfully. User ID: ${user.uid.substring(0, 8)}...`, 'success');
+                        document.getElementById('play-btn').disabled = false; // Enable buttons after auth
+                    } else {
+                        // User is signed out. Sign in anonymously.
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (error) {
+                            window.showStatus(`Authentication failed: ${error.message}`, 'error');
+                        }
+                    }
+                });
+            } else {
+                // Mock authentication for local testing environment if config is missing
+                window.userId = 'mock-user-id';
+                document.getElementById('play-btn').disabled = false;
+                window.showStatus('Firebase configuration not found. Running in local mode.', 'info');
+            }
+        } catch (error) {
+            window.showStatus(`Firebase Initialization Error: ${error.message}`, 'error');
+        }
+    </script>
+    
+    <script>
+        // --- Global Constants and Mappings ---
+
+        const NOTES_PER_OCTAVE = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const KEY_OFFSET = {
+            'c major': 0, 'a minor': 0, 'g major': 7, 'e minor': 7, 'd major': 2, 'b minor': 2,
+            'a major': 9, 'f# minor': 9, 'e major': 4, 'c# minor': 4, 'b major': 11, 'g# minor': 11,
+            'f# major': 6, 'd# minor': 6, 'c# major': 1, 'a# minor': 1, 'f major': 5, 'd minor': 5,
+            'bb major': 10, 'g minor': 10, 'eb major': 3, 'c minor': 3, 'ab major': 8, 'f minor': 8,
+            'db major': 1, 'bb minor': 1, 'gb major': 6, 'eb minor': 6, 'cb major': 11, 'ab minor': 11,
+        };
+        // Maps scale degree (1-7) to half steps from the tonic (C=0, C#=1, etc.)
+        const MAJOR_SCALE_STEPS = [0, 2, 4, 5, 7, 9, 11]; // W W H W W W H
+        const MINOR_SCALE_STEPS = [0, 2, 3, 5, 7, 8, 10]; // W H W W H W W (Natural Minor)
+
+        const RHYTHM_MAP = {
+            'W': '1n',   // Whole note
+            'H': '2n',   // Half note
+            'Q': '4n',   // Quarter note
+            'E': '8n',   // Eighth note
+            'S': '16n',  // Sixteenth note
+            'T': '32n',  // Thirty-second note (Added for completeness)
+        };
+        
+        // --- Core Music Functions ---
+
+        /**
+         * Converts a scale degree (1-7) and key string (e.g., 'C major') into a MIDI note name (e.g., 'C4', 'G#3').
+         * @param {number} degree - The scale degree (1-7).
+         * @param {number} octave - The octave number (e.g., 3, 4, 5).
+         * @param {string} keyString - The key signature (e.g., 'C major').
+         * @returns {string|null} The MIDI note string (e.g., 'C4') or null if invalid.
+         */
+        function convertScaleToPitch(degree, octave, keyString) {
+            // Trim whitespace and lowercase for robust map lookup
+            const keyLower = keyString.toLowerCase().trim(); 
+            const offset = KEY_OFFSET[keyLower];
+            if (offset === undefined) {
+                return null;
+            }
+
+            // Determine the scale type
+            const isMajor = keyLower.includes('major');
+            const scaleSteps = isMajor ? MAJOR_SCALE_STEPS : MINOR_SCALE_STEPS;
+            
+            // Degrees are 1-based, so subtract 1 for 0-based index
+            const degreeIndex = degree - 1; 
+
+            if (degreeIndex < 0 || degreeIndex >= scaleSteps.length) {
+                return null; // Invalid degree
+            }
+
+            // Calculate total half-steps from C0
+            const relativeHalfSteps = scaleSteps[degreeIndex];
+            const totalHalfSteps = relativeHalfSteps + offset;
+
+            // Determine the actual note name (0-11)
+            const noteIndex = totalHalfSteps % 12;
+            const noteName = NOTES_PER_OCTAVE[noteIndex];
+            
+            // Adjust octave based on whether the base note name wrapped past 'B' (index 11)
+            const octaveAdjustment = Math.floor(totalHalfSteps / 12);
+            
+            // Middle C is C4. The base octave is set to 4 in our input, so calculate the final octave.
+            const finalOctave = octave + octaveAdjustment;
+            
+            return noteName + finalOctave;
+        }
+
+        /**
+         * Parses the tablature input into a structured array of note objects.
+         * @returns {Array<Object>|null} Array of notes, or null on error.
+         */
+        function parseTablature() {
+            const input = document.getElementById('tablature-input').value;
+            // Trim whitespace from key input before use
+            const keyString = document.getElementById('key').value.trim(); 
+            const bpm = parseFloat(document.getElementById('bpm').value);
+
+            if (isNaN(bpm) || bpm <= 0) {
+                window.showStatus('Invalid BPM value.', 'error');
+                return null;
+            }
+            Tone.Transport.bpm.value = bpm;
+            
+            const lines = input.split('\n').filter(line => line.trim() !== '');
+            const parsedNotes = [];
+            let errorFound = false;
+
+            lines.forEach((line, lineIndex) => {
+                if (errorFound) return;
+
+                // Split by ' | ' to strictly enforce the format
+                const parts = line.trim().split(/\s*\|\s*/); 
+
+                if (parts.length !== 4) {
+                    window.showStatus(`Line ${lineIndex + 1} is incorrectly formatted. Expected 4 parts separated by '|'.`, 'error');
+                    errorFound = true;
+                    return;
+                }
+
+                const [barStr, lyric, noteStr, rhythmStr] = parts.map(p => p.trim());
+                
+                const noteDuration = RHYTHM_MAP[rhythmStr.replace('.', '')];
+                if (!noteDuration) {
+                    window.showStatus(`Line ${lineIndex + 1}: Invalid rhythm '${rhythmStr}'. Use W, H, Q, E, S, T.`, 'error');
+                    errorFound = true;
+                    return;
+                }
+
+                let pitch = null;
+                if (noteStr.toLowerCase() !== 'r') {
+                    // Note processing (e.g., '3-4')
+                    const [degreeStr, octaveStr] = noteStr.split('-');
+                    const degree = parseInt(degreeStr);
+                    const octave = parseInt(octaveStr);
+
+                    if (isNaN(degree) || isNaN(octave) || degree < 1 || degree > 7) {
+                        window.showStatus(`Line ${lineIndex + 1}: Invalid scale degree-octave '${noteStr}'. Use '1-4' or 'r'.`, 'error');
+                        errorFound = true;
+                        return;
+                    }
+
+                    pitch = convertScaleToPitch(degree, octave, keyString);
+                    if (pitch === null) {
+                        // This error should now be fixed due to .trim() in convertScaleToPitch
+                        window.showStatus(`Line ${lineIndex + 1}: Invalid key signature or scale degree for key '${keyString}'.`, 'error');
+                        errorFound = true;
+                        return;
+                    }
+                }
+
+                // Convert rhythm string for dotted notes (Tone.js handles it naturally)
+                const toneRhythm = rhythmStr.includes('.') ? `${noteDuration}.` : noteDuration;
+                
+                parsedNotes.push({
+                    bar: parseInt(barStr),
+                    lyric: lyric,
+                    pitch: pitch, // e.g., 'C4' or null for rest
+                    rhythm: toneRhythm, // e.g., '4n' or '8n.'
+                });
+            });
+
+            if (errorFound) return null;
+            
+            // Calculate absolute timing (Tone.js time format, e.g., '0:0:0', '1:0:0')
+            let currentTime = 0;
+            const finalNotes = parsedNotes.map(note => {
+                const time = Tone.Time(currentTime).toBarsBeatsSixteenths();
+                currentTime += Tone.Time(note.rhythm).toSeconds();
+                return { ...note, time: time };
+            });
+
+            return finalNotes;
+        }
+
+        // --- Playback (Tone.js) ---
+        let synth = null;
+        let melodyPart = null;
+        let isPlaying = false;
+        
+        /**
+         * Initializes and starts the audio preview.
+         * @param {Array<Object>} notes - Parsed notes array.
+         */
+        async function previewPlayback(notes) {
+            if (isPlaying) return;
+
+            // Wait for user gesture to resume the audio context
+            await Tone.start();
+            
+            const playBtn = document.getElementById('play-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const playTextEl = document.getElementById('play-text');
+
+            try {
+                window.showStatus('Starting audio playback...');
+                
+                // 1. Setup Synth (Monophonic for a simple melody)
+                if (!synth) {
+                    synth = new Tone.Synth({
+                        oscillator: { type: 'triangle' },
+                        envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 }
+                    }).toDestination();
+                }
+
+                // 2. Prepare Tone.js data structure
+                const toneEvents = notes.map(note => ({
+                    time: note.time,
+                    note: note.pitch,
+                    duration: note.rhythm,
+                }));
+                
+                // 3. Clear previous part and create a new one
+                if (melodyPart) melodyPart.dispose();
+
+                melodyPart = new Tone.Part((time, value) => {
+                    if (value.note) {
+                        synth.triggerAttackRelease(value.note, value.duration, time);
+                    }
+                }, toneEvents).start(0); 
+
+                // 4. Set UI state and start transport
+                isPlaying = true;
+                playBtn.disabled = true;
+                stopBtn.disabled = false;
+                playTextEl.textContent = 'Playing... 🔊';
+
+                Tone.Transport.start();
+
+                // 5. Setup stop listener
+                const totalDuration = notes.reduce((sum, note) => sum + Tone.Time(note.rhythm).toSeconds(), 0);
+                
+                Tone.Transport.scheduleOnce(() => {
+                    stopPlayback();
+                    window.showStatus('Playback finished.', 'success');
+                }, `+${totalDuration}`);
+
+            } catch (e) {
+                stopPlayback();
+                window.showStatus(`Playback Error: ${e.message}`, 'error');
+            }
+        }
+
+        /**
+         * Stops the Tone.js transport and resets state.
+         */
+        function stopPlayback() {
+            if (!isPlaying) return;
+            Tone.Transport.stop();
+            Tone.Transport.cancel();
+            isPlaying = false;
+            document.getElementById('play-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+            document.getElementById('play-text').textContent = 'Play Preview ▶';
+        }
+
+
+        // --- File Generation Functions ---
+
+        /**
+         * Generates a MusicXML file from the parsed notes.
+         * Note: This is a basic implementation and doesn't handle all MusicXML complexities (e.g., time/key changes mid-score).
+         * @param {Array<Object>} notes - Parsed notes array.
+         * @returns {string} The MusicXML string.
+         */
+        function generateMusicXML(notes) {
+            // Trim whitespace from key input before use
+            const keyString = document.getElementById('key').value.trim();
+            const timeSignature = document.getElementById('time-signature').value.split('/');
+            const beats = timeSignature[0] || 4;
+            const beatType = timeSignature[1] || 4;
+            const totalDuration = notes.reduce((sum, note) => sum + Tone.Time(note.rhythm).toSeconds(), 0);
+            
+            // Calculate total measures based on duration and time signature (simplistic)
+            const secondsPerMeasure = (60 / Tone.Transport.bpm.value) * beats;
+            const totalMeasures = Math.ceil(totalDuration / secondsPerMeasure);
+            
+            // Determine key/mode for MusicXML
+            const [keyRoot, mode] = keyString.toLowerCase().split(/\s+/).map(s => s.trim());
+            const keyFifth = NOTES_PER_OCTAVE.indexOf(keyRoot.toUpperCase().charAt(0)); 
+            const fifths = keyFifth > 6 ? (keyFifth - 12) : keyFifth; // Convert to flats/sharps for key signature
+            
+            let xml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE score-partwise PUBLIC
+    "-//Recordare//DTD MusicXML 4.0 Partwise//EN"
+    "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Melody</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">`;
+
+            let currentBar = 1;
+            let barNoteCount = 0; // Simple note counter to track measures
+            const totalQuarterDuration = notes.reduce((sum, note) => sum + (Tone.Time(note.rhythm).toQuantums() / 4), 0); // Calculate total duration in quarter notes
+
+            for (let i = 0; i < notes.length; i++) {
+                const note = notes[i];
+                const noteQuantum = Tone.Time(note.rhythm).toQuantums() / 4;
+                
+                if (note.bar > currentBar) {
+                    // Close the previous measure
+                    xml += `\n    </measure>`;
+                    currentBar = note.bar;
+                    barNoteCount = 0;
+                }
+
+                if (barNoteCount === 0) {
+                    // Start of a new measure
+                    xml += `\n    <measure number="${currentBar}">
+      <attributes>
+        ${currentBar === 1 ? `<divisions>4</divisions>
+        <key>
+          <fifths>${fifths}</fifths>
+          <mode>${mode}</mode>
+        </key>
+        <time>
+          <beats>${beats}</beats>
+          <beat-type>${beatType}</beat-type>
+        </time>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>` : ''}
+      </attributes>`;
+                }
+
+                // Add Note XML
+                xml += `\n      <note>`;
+                if (note.pitch) {
+                    const midiNote = Tone.Midi(note.pitch).toNote(); // e.g., 'C4'
+                    const step = midiNote.charAt(0);
+                    const alter = midiNote.length > 2 ? (midiNote.charAt(1) === '#' ? 1 : -1) : 0;
+                    const octave = parseInt(midiNote.slice(-1));
+
+                    xml += `\n        <pitch>
+          <step>${step}</step>
+          ${alter !== 0 ? `<alter>${alter}</alter>` : ''}
+          <octave>${octave}</octave>
+        </pitch>`;
+                } else {
+                    xml += `\n        <rest/>`;
+                }
+
+                // Duration in divisions (divisions=4 means Quarter note=4)
+                xml += `\n        <duration>${Math.round(noteQuantum * 4)}</duration>`; 
+                
+                // Type (W, H, Q, E, S...)
+                const typeMap = {'1n': 'whole', '2n': 'half', '4n': 'quarter', '8n': 'eighth', '16n': '16th', '32n': '32nd'};
+                let durationType = note.rhythm.replace('.', '');
+                
+                xml += `\n        <type>${typeMap[durationType] || 'other'}</type>`;
+                
+                if (note.rhythm.includes('.')) {
+                    xml += `\n        <dot/>`;
+                }
+                
+                if (note.lyric && note.lyric !== '(Rest)') {
+                    xml += `\n        <lyric>
+          <text>${note.lyric}</text>
+        </lyric>`;
+                }
+                
+                xml += `\n      </note>`;
+                barNoteCount += noteQuantum;
+            }
+
+            // Close the final measure and part
+            xml += `\n    </measure>\n  </part>\n</score-partwise>`;
+            return xml;
+        }
+
+        /**
+         * Generates and downloads the MIDI file.
+         * @param {Array<Object>} notes - Parsed notes array.
+         */
+        function generateMIDI(notes) {
+            const track = new MidiWriter.Track();
+            track.setTempo(parseFloat(document.getElementById('bpm').value));
+
+            notes.forEach(note => {
+                // MidiWriter uses its own duration string format
+                let midiDuration = note.rhythm; 
+                midiDuration = midiDuration.replace('n', ''); // Remove 'n'
+                if (note.rhythm.includes('.')) {
+                    midiDuration += '.'; // Add dot back
+                }
+
+                track.addEvent(new MidiWriter.NoteEvent({
+                    pitch: note.pitch ? note.pitch : 0, // 0 for rest (Note: MidiWriter handles 0 as a rest)
+                    duration: midiDuration, 
+                    velocity: 90, 
+                    wait: note.pitch ? '0' : midiDuration // If it's a rest, use its duration as wait
+                }));
+            });
+
+            // The library creates a "writer" object
+            const writer = new MidiWriter.Writer(track);
+            const dataUri = writer.dataUri();
+            
+            // Create a temporary link and trigger download
+            const link = document.createElement('a');
+            link.href = dataUri;
+            link.download = `melody_${new Date().getTime()}.mid`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            window.showStatus('MIDI file generated and download started!', 'success');
+        }
+
+        /**
+         * Creates a Blob and initiates a file download.
+         * @param {string} content - The file content (XML or other text).
+         * @param {string} filename - The name of the file.
+         * @param {string} mimeType - The MIME type of the file.
+         */
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            window.showStatus(`${filename} generated and download started!`, 'success');
+        }
+
+
+        // --- Event Listeners and Main Application Flow ---
+
+        window.onload = () => {
+            const playBtn = document.getElementById('play-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const midiBtn = document.getElementById('midi-btn');
+            const musicXmlBtn = document.getElementById('musicxml-btn');
+
+            // Handle Playback
+            playBtn.addEventListener('click', async () => {
+                stopPlayback(); // Always stop existing playback first
+                const notes = parseTablature();
+                if (notes && notes.length > 0) {
+                    await previewPlayback(notes);
+                }
+            });
+
+            // Handle Stop
+            stopBtn.addEventListener('click', stopPlayback);
+            
+            // Handle MIDI Download
+            midiBtn.addEventListener('click', () => {
+                stopPlayback();
+                const notes = parseTablature();
+                if (notes && notes.length > 0) {
+                    generateMIDI(notes);
+                }
+            });
+
+            // Handle MusicXML Download
+            musicXmlBtn.addEventListener('click', () => {
+                stopPlayback();
+                const notes = parseTablature();
+                if (notes && notes.length > 0) {
+                    const xmlContent = generateMusicXML(notes);
+                    downloadFile(xmlContent, `melody_${new Date().getTime()}.xml`, 'application/vnd.musicxml');
+                }
+            });
+            
+            // Initial UI state setup
+            playBtn.disabled = true; 
+            stopBtn.disabled = true;
+            
+            window.showStatus('Ready. Enter your tablature and click "Play Preview" to test.', 'info');
+        };
+    </script>
+
+</body>
+</html>
