@@ -174,9 +174,7 @@
             transition: all 0.2s ease-out;
             margin: 5px 0;
             text-shadow: 0 0 5px rgba(0,0,0,0.5);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            /* Removed wrapping properties for better mobile experience */
         }
 
         .lyric-active {
@@ -219,19 +217,18 @@
 
         <!-- Start Screen -->
         <div id="start-screen" class="overlay">
-            <div class="subtitle">I-mog-en</div>
             <div class="subtitle">The Mewsical</div>
             <div class="subtitle">Rhythm Action Game</div>
             
             <div style="margin: 20px 0; width: 100%; text-align: center;">
                 <label for="song-select" style="font-size: 1.2rem; color: #4ECDC4;">Select Track:</label><br/>
                 <select id="song-select">
-                    <option value="camptown">Camptown Races</option>
-                    <option value="ode">Ode to Joy</option>
-                    <option value="sevendayslay">Seven Day Slay</option>
-                    <option value="entertainer">The Entertainer</option>
-                    <option value="korobeiniki">Korobeiniki (Tetris)</option>
-                    <option value="mountain">Hall of Mountain King</option>
+                    <option value="camptown">Camptown Races (110 BPM)</option>
+                    <option value="ode">Ode to Joy (120 BPM)</option>
+                    <option value="sevendayslay">Seven Day Slay (130 BPM)</option>
+                    <option value="entertainer">The Entertainer (140 BPM)</option>
+                    <option value="korobeiniki">Korobeiniki (Tetris) (140 BPM)</option>
+                    <option value="mountain">Hall of Mountain King (160 BPM)</option>
                 </select>
             </div>
             
@@ -381,24 +378,24 @@
                 {beat: 0, text: "Camptown ladies sing this song..."}, {beat: 24, text: "Doo-dah! Oh, doo-dah day!"},
                 {beat: 48, text: "We're going to run all night..."}, {beat: 72, text: "Camptown forever!"}
             ]},
-            'korobeiniki': { bpm: 140, notes: repeat(korobeiniki_phrase, 4), lyrics: [
-                {beat: 0, text: "Stacking boxes in a row..."}, {beat: 32, text: "Twisting shapes to make them fit!"},
-                {beat: 64, text: "Cats fit in boxes, don't you know?"}, {beat: 96, text: "If I fits, I sits! Forever!"}
-            ]},
-            'entertainer': { bpm: 140, notes: repeat(entertainer_phrase, 4), lyrics: [
-                {beat: 0, text: "Ragtime Intro... Tap those feet!"}, {beat: 30, text: "The cat is here to entertain!"},
-                {beat: 60, text: "Dancing on the keys, faster now!"}, {beat: 90, text: "A true meow-sical sensation!"}
-            ]},
-            'mountain': { bpm: 160, notes: repeat(mountain_phrase, 4), lyrics: [
-                {beat: 0, text: "Creeping down the mountain hall..."}, {beat: 24, text: "Trolls are watching! Run!"},
-                {beat: 48, text: "Running faster now! Keep going!"}, {beat: 72, text: "Escape is near!"}
-            ]},
             'ode': { bpm: 120, notes: repeat(ode_phrase, 5), lyrics: [
                 {beat: 0, text: "Joy, beautiful spark of Divinity..."}, {beat: 16, text: "Daughter of Elysium..."},
                 {beat: 32, text: "We enter, drunk with fire..."}, {beat: 48, text: "Your magic joins again..."},
                 {beat: 64, text: "All that custom has divided!"}
             ]},
-            'sevendayslay': { bpm: 130, notes: repeat(seven_day_slay_phrase, 2), lyrics: seven_day_slay_lyrics}
+            'sevendayslay': { bpm: 130, notes: repeat(seven_day_slay_phrase, 2), lyrics: seven_day_slay_lyrics},
+            'entertainer': { bpm: 140, notes: repeat(entertainer_phrase, 4), lyrics: [
+                {beat: 0, text: "Ragtime Intro... Tap those feet!"}, {beat: 30, text: "The cat is here to entertain!"},
+                {beat: 60, text: "Dancing on the keys, faster now!"}, {beat: 90, text: "A true meow-sical sensation!"}
+            ]},
+            'korobeiniki': { bpm: 140, notes: repeat(korobeiniki_phrase, 4), lyrics: [
+                {beat: 0, text: "Stacking boxes in a row..."}, {beat: 32, text: "Twisting shapes to make them fit!"},
+                {beat: 64, text: "Cats fit in boxes, don't you know?"}, {beat: 96, text: "If I fits, I sits! Forever!"}
+            ]},
+            'mountain': { bpm: 160, notes: repeat(mountain_phrase, 4), lyrics: [
+                {beat: 0, text: "Creeping down the mountain hall..."}, {beat: 24, text: "Trolls are watching! Run!"},
+                {beat: 48, text: "Running faster now! Keep going!"}, {beat: 72, text: "Escape is near!"}
+            ]}
         };
 
         // --- Global Game State ---
