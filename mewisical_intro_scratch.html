@@ -11,16 +11,16 @@
     <style>
         /* Custom styles for the bubblegum look and animation */
 
-        /* Define the text "breath" animation */
+        /* Define the text "breath" animation (Scale effect) */
         @keyframes textBreath {
             0% { 
                 transform: scale(1.0);
             }
             50% { 
-                transform: scale(1.08); /* FIXED: Making pulse significantly bigger (1.04 -> 1.08) */
+                transform: scale(1.08); /* Making pulse significantly bigger */
                 text-shadow: 
-                    -8px -8px 0 #6d5b9b, /* FIXED: Increased shadow depth for more visual pop */
-                    8px 8px 0 #33ffff, /* FIXED: Increased highlight depth for more visual pop */
+                    -8px -8px 0 #6d5b9b, 
+                    8px 8px 0 #33ffff, 
                     -2px -2px 0 #fff; 
             }
             100% { 
@@ -28,67 +28,151 @@
             }
         }
 
+        /* Define the color flash/vibration animation */
+        @keyframes colorFlash {
+            0%, 100% {
+                color: #ff69b4; /* Hot Pink */
+            }
+            50% {
+                color: #ffff00; /* Electric Yellow */
+            }
+        }
+
         /* Define the bubble font style */
         .bubble-title {
             font-family: 'Luckiest Guy', cursive;
-            color: #ff69b4; /* Hot Pink */
-            text-shadow: 
-                -4px -4px 0 #5f4b8b, /* Deep Purple Shadow */
-                4px 4px 0 #00ffff, /* Cyan Highlight */
-                -2px -2px 0 #fff; /* White outline */
             line-height: 1;
-            /* Apply the breathing animation */
-            animation: textBreath 3s ease-in-out infinite alternate;
+            
+            /* Enhanced Neon Shadow for Title */
+            text-shadow: 
+                -5px -5px 0 #5f4b8b, 
+                5px 5px 0 #00ffff, 
+                0 0 10px #ff00ff, /* Pink Neon Glow */
+                0 0 20px #00ffff, /* Blue Neon Glow */
+                -2px -2px 0 #fff; 
+
+            /* Apply breathing AND fast, annoying color flashing */
+            animation: textBreath 3s ease-in-out infinite alternate,
+                       colorFlash 0.2s linear infinite; /* Fast, annoying color shift */
         }
 
-        /* Define the "jaunty annoying" jump animation */
-        @keyframes annoyingJump {
-            0%, 100% { 
-                transform: translateY(0) rotate(0deg) scale(2.0); /* Base Scale slightly increased for visual impact */
+        /* Subtitle Bounce Animation (Quick, fast-paced rhythm) */
+        @keyframes subtitleBounce {
+            0%, 100% {
+                transform: translateY(0) scale(1.0);
+            }
+            50% {
+                transform: translateY(-2px) scale(1.05); /* Quick little jump and slight scale */
+            }
+        }
+
+        /* Subtitle Garish Style - Used for both the main subtitle and the new dropdown label */
+        .subtitle-garish {
+            font-family: 'Luckiest Guy', cursive;
+            color: #ffff00; /* Electric Yellow as primary color */
+            text-shadow: 
+                -3px -3px 0 #ff69b4, /* Pink shadow */
+                3px 3px 0 #00ffff, /* Cyan highlight */
+                0 0 8px #ff00ff; /* Subtle glow */
+            line-height: 1;
+            /* Applying a quick, rhythmic bounce */
+            animation: subtitleBounce 0.3s ease-in-out infinite alternate;
+        }
+        
+        /* Dropdown Wobble Animation */
+        @keyframes selectWobble {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-0.5deg); } /* Tiny, annoying rotation */
+        }
+        
+        /* Dropdown Garish Style */
+        .song-select-garish {
+            font-family: 'Luckiest Guy', cursive;
+            color: #ffff00; /* Electric Yellow Text */
+            background-color: #00ffff; /* Cyan Background */
+            border: 4px solid #ff69b4; /* Hot Pink Border */
+            padding: 0.5rem 1.5rem;
+            /* Applying a subtle, constant, annoying rotation */
+            animation: selectWobble 0.8s linear infinite alternate; 
+            /* Ensure the text is readable over the bright background */
+            text-shadow: 1px 1px 0 #ff69b4;
+            /* Remove default browser appearance */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            /* Add custom arrow (using a background image for complexity, though not strictly required) */
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23FF69B4" d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.5em;
+        }
+
+        /* Define the RHYTHMIC "jitter" animation (0.5s cycle = 120 BPM) */
+        @keyframes rhythmicJitter {
+            0% { 
+                transform: translateY(0) rotate(0deg) scale(2.0); 
             }
             25% { 
-                transform: translateY(-20px) rotate(-10deg) scale(2.20); /* Increased peak scale */
+                transform: translateY(5px) rotate(2deg) scale(1.95); 
             }
             50% { 
-                transform: translateY(0) rotate(5deg) scale(1.80); 
+                transform: translateY(-15px) rotate(-8deg) scale(2.10); 
             }
             75% { 
-                transform: translateY(-25px) rotate(-3deg) scale(2.20); /* Increased peak scale */
+                transform: translateY(0) rotate(0deg) scale(2.0); 
+            }
+            100% { 
+                transform: translateY(0) rotate(0deg) scale(2.0); 
             }
         }
 
         .cat-animated {
-            animation: annoyingJump 1.4s ease-in-out infinite alternate;
-            cursor: pointer; /* Makes it look clickable even if it's just decorative */
-            opacity: 0.5; /* Fades the cat to 50% opacity */
+            animation: rhythmicJitter 0.5s ease-out infinite;
+            cursor: pointer; 
         }
 
-        /* Bubble background pattern using radial gradients */
+        /* Hyperactive Bubble background pattern (Background Frenzy) */
         .bubble-bg {
-            background: #ffffff; /* Confirmed: Pure white background */
+            background: #ffffff; 
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(255, 20, 147, 0.2) 0%, transparent 70%),
-                radial-gradient(circle at 70% 80%, rgba(0, 255, 255, 0.3) 0%, transparent 70%),
-                radial-gradient(circle at 40% 50%, rgba(255, 165, 0, 0.2) 0%, transparent 70%);
-            background-size: 300px 300px, 400px 400px, 250px 250px;
-            animation: moveBubbles 30s linear infinite;
+                radial-gradient(circle at 5% 15%, rgba(255, 20, 147, 0.4) 0%, transparent 70%), 
+                radial-gradient(circle at 75% 85%, rgba(0, 255, 255, 0.5) 0%, transparent 70%), 
+                radial-gradient(circle at 30% 60%, rgba(255, 165, 0, 0.3) 0%, transparent 70%),
+                radial-gradient(circle at 90% 10%, rgba(128, 0, 128, 0.3) 0%, transparent 60%); 
+            background-size: 200px 200px, 300px 300px, 150px 150px, 350px 350px;
+            animation: moveBubbles 15s linear infinite; /* Accelerated speed */
         }
 
         @keyframes moveBubbles {
-            from { background-position: 0 0, 0 0, 0 0; }
-            to { background-position: 300px 300px, -400px 400px, 250px -250px; }
+            from { background-position: 0 0, 0 0, 0 0, 0 0; }
+            to { background-position: 200px 200px, -300px 300px, 150px -150px, -350px 350px; }
+        }
+        
+        /* Button wobble animation */
+        @keyframes buttonWobble {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            33% { transform: translateY(-1px) rotate(1deg); }
+            66% { transform: translateY(1px) rotate(-1deg); }
         }
 
         /* Custom button styling */
         .start-button {
-            transition: all 0.1s ease-in-out;
-            box-shadow: 0 8px 0 0 #5f4b8b; /* Purple pressed state */
-            transform: translateY(0);
+            transition: none; 
+            
+            /* Updated shadow for wobble/press state AND neon glow */
+            box-shadow: 0 8px 0 0 #5f4b8b, 
+                        0 0 10px #ff00ff, 
+                        0 0 20px #00ffff; 
+            
+            animation: buttonWobble 0.2s linear infinite; 
         }
 
         .start-button:active {
-            box-shadow: 0 2px 0 0 #5f4b8b;
+            box-shadow: 0 2px 0 0 #5f4b8b, 
+                        0 0 10px #ff00ff,
+                        0 0 20px #00ffff;
             transform: translateY(6px);
+            animation: none; 
         }
     </style>
 </head>
@@ -98,15 +182,14 @@
     <div class="w-full max-w-md bg-white/90 backdrop-blur-sm rounded-3xl p-6 md:p-10 text-center border-4 border-pink-500 shadow-2xl">
 
         <!-- Container for Overlapping Text and Image -->
-        <!-- Increased height and reduced margin below to push the button up relative to the cat's resting position -->
         <div class="relative h-96 sm:h-[30rem] mb-8">
             
             <!-- Text Content (Layer Z-20: In Front of Cat) -->
             <div class="relative z-20 pt-5">
-                <h1 class="bubble-title text-7xl sm:text-8xl md:text-9xl select-none">
+                <h1 class="bubble-title text-5xl sm:text-7xl md:text-8xl select-none whitespace-nowrap -ml-3">
                     I MOG EN
                 </h1>
-                <p class="text-xl md:text-2xl text-gray-700 font-bold tracking-wider">
+                <p class="subtitle-garish text-2xl md:text-4xl font-bold tracking-wider">
                     The Mewsical!
                 </p>
             </div>
@@ -121,11 +204,22 @@
                 />
             </div>
         </div>
+        
+        <!-- Song Selection Dropdown -->
+        <div class="mb-4 relative z-20">
+            <!-- UPDATED: Text changed to "Choose Your Tune:" and applied subtitle-garish style -->
+            <label for="song-select" class="block mb-2 subtitle-garish text-xl md:text-2xl">Choose Your Tune:</label>
+            <select id="song-select" class="song-select-garish w-full text-xl rounded-2xl shadow-lg focus:ring-4 focus:ring-pink-500 transition-colors">
+                <option value="pop-meowster">Pop Meowster: Paw-ty Rock Anthem</option>
+                <option value="cat-house">Cat House: Litterbox Drop</option>
+                <option value="purr-fect-harmony">Purr-fect Harmony: Slow Jazz</option>
+            </select>
+        </div>
 
         <!-- Start Game Button (Positioned after the overlapping container, ensuring it stacks on top) -->
         <button 
             id="startButton"
-            class="start-button w-full py-4 text-3xl font-bold rounded-full bg-yellow-400 text-pink-700 border-4 border-pink-500 hover:bg-yellow-300 transition-colors duration-200 uppercase relative z-30"
+            class="start-button w-full py-4 text-3xl font-bold rounded-full bg-pink-500 text-cyan-400 border-4 border-pink-500 hover:bg-pink-400 uppercase relative z-30"
         >
             Play Now!
         </button>
@@ -142,18 +236,25 @@
             const startButton = document.getElementById('startButton');
             const messageBox = document.getElementById('messageBox');
             const catImage = document.querySelector('.cat-animated');
+            const songSelect = document.getElementById('song-select');
 
             // --- Function to handle the "game start" logic ---
             function startGame() {
-                // In a real game, this would navigate to the main game scene
-                console.log("Starting I-mog-en Rhythm Game!");
+                const selectedSong = songSelect.options[songSelect.selectedIndex].text;
                 
                 // Display confirmation message instead of an alert()
                 startButton.disabled = true;
                 startButton.textContent = "Loading...";
+                // Temporarily stop the annoying wobble when pressed
+                startButton.style.animation = 'none'; 
+                
+                // Update message box to show the selected song
+                messageBox.textContent = `Starting ${selectedSong}! Preparing the rhythm tracks...`;
                 messageBox.classList.remove('hidden');
+                
+                console.log(`Starting I-mog-en Rhythm Game with song: ${selectedSong}`);
 
-                // Optionally, stop the annoying animation after a moment
+                // Optionally, stop the annoying cat animation after a moment
                 setTimeout(() => {
                     catImage.style.animation = 'none';
                     catImage.style.transform = 'translateY(0) rotate(0deg)';
@@ -161,8 +262,6 @@
 
                 // Simulate loading time, then reset (or proceed in a real app)
                 setTimeout(() => {
-                    // For this demo, we just log and keep the message visible
-                    // In a real game, you would redirect the user here.
                     console.log("Game loaded!");
                 }, 1500);
             }
