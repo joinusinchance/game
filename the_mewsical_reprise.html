@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>I-mog-en: The Mewsical</title>
+    <title>I-mog-en: The Mewsical - Bubblegum Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Use Fredoka One for a fun, playful look -->
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
     
     <style>
-        /* Embedded CSS adapted from React Component styles */
+        /* Embedded CSS adapted for Bubblegum Theme */
+        
+        /* General Body and Text changes: Dark BG -> Light BG, White Text -> Dark Text */
         body {
             margin: 0;
             padding: 0;
-            background-color: #2b2b2b;
+            background-color: #F8F8FF; /* Ghost White */
             font-family: 'Fredoka One', cursive;
             overflow: hidden;
             touch-action: none;
@@ -21,7 +23,7 @@
             justify-content: center;
             align-items: center;
             min-height: 90vh;
-            color: #fff;
+            color: #5A189A; /* Dark Purple Text for contrast */
             user-select: none;
             -webkit-user-select: none;
         }
@@ -31,8 +33,9 @@
             width: 100%;
             max-width: 600px;
             height: 90vh;
-            background: linear-gradient(180deg, #3a3a3a 0%, #222 100%);
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            /* Light Pink/White Gradient */
+            background: linear-gradient(180deg, #FFE4E1 0%, #FFFFFF 100%); 
+            box-shadow: 0 0 30px rgba(236, 72, 153, 0.4); /* Pink Shadow */
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -51,7 +54,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(43, 43, 43, 0.95);
+            background: rgba(255, 255, 255, 0.95); /* Semi-transparent White */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -60,30 +63,34 @@
             transition: opacity 0.3s;
         }
 
+        /* H1 Title: Hot Pink with Blue Shadow */
         h1 {
             font-size: 3rem;
-            color: #FF6B6B;
-            text-shadow: 3px 3px 0px #4ECDC4;
+            color: #EC4899; /* Bright Fuchsia/Pink */
+            text-shadow: 3px 3px 0px #3B82F6; /* Bright Blue Shadow */
             margin-bottom: 5px;
             text-align: center;
             line-height: 1.1;
         }
 
+        /* Subtitle: Bright Blue */
         .subtitle {
             font-size: 1.2rem;
-            color: #FFE66D;
+            color: #3B82F6; /* Bright Blue */
             margin-bottom: 20px;
         }
 
+        /* General Paragraph Text */
         p {
             font-size: 1.2rem;
             text-align: center;
             margin: 10px 20px;
-            color: #ddd;
+            color: #5A189A; /* Dark Purple Text */
         }
 
+        /* Primary Button: Hot Pink with Darker Purple Shadow */
         .btn {
-            background: #4ecdc4;
+            background: #EC4899; /* Fuchsia */
             color: white;
             border: none;
             padding: 15px 40px;
@@ -92,7 +99,7 @@
             cursor: pointer;
             font-family: 'Fredoka One', cursive;
             margin-top: 15px;
-            box-shadow: 0 6px 0 #2a9d8f;
+            box-shadow: 0 6px 0 #A78BFA; /* Light Purple Shadow */
             transition: transform 0.1s;
             width: 80%;
             max-width: 300px;
@@ -100,88 +107,57 @@
 
         .btn:active {
             transform: translateY(4px);
-            box-shadow: 0 2px 0 #2a9d8f;
+            box-shadow: 0 2px 0 #A78BFA;
         }
         
         .btn:disabled {
-            background: #777;
-            box-shadow: 0 4px 0 #555;
+            background: #ccc;
+            box-shadow: 0 4px 0 #999;
             cursor: default;
         }
 
+        /* Secondary Button: Teal/Cyan with Darker Shadow */
         .btn-secondary {
-            background: #ff6b6b;
-            box-shadow: 0 6px 0 #c44d4d;
+            background: #22D3EE; /* Cyan */
+            box-shadow: 0 6px 0 #0EA5E9; /* Light Blue Shadow */
         }
         
+        /* Share Button: Bright Yellow with Dark Text */
         .btn-share {
-            background: #ffe66d;
-            color: #5e3a58;
-            box-shadow: 0 6px 0 #d4c04d;
+            background: #FCD34D; /* Bright Yellow */
+            color: #5A189A; /* Dark Purple Text */
+            box-shadow: 0 6px 0 #FBBF24; /* Amber Shadow */
         }
         
         #loading-status {
             font-size: 1rem;
-            color: #4ECDC4;
+            color: #3B82F6; /* Bright Blue */
             margin-top: 10px;
         }
 
-        /* HUD */
-        #hud-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
+        /* HUD: Needs dark text for light background */
+        #score-board, #combo-board {
+            color: #5A189A;
+            text-shadow: 1px 1px 0 #fff; /* White outline on dark text for visibility */
         }
 
-        #score-board {
-            position: absolute;
-            top: 10px;
-            left: 15px;
-            font-size: 1.5rem;
-            color: #fff;
-            text-shadow: 2px 2px 0 #000;
-        }
-
+        /* Combo text: Bright Pink */
         #combo-board {
-            position: absolute;
-            top: 45px;
-            left: 15px;
-            font-size: 1.2rem;
-            color: #ffe66d;
-            text-shadow: 1px 1px 0 #000;
+            color: #EC4899;
         }
 
-        /* Lyrics Container */
-        #lyrics-container {
-            position: absolute;
-            top: 80px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            pointer-events: none;
-            z-index: 5;
-            padding: 0 10px;
-            box-sizing: border-box;
-        }
-
+        /* Lyrics Container: Text should be dark and active text bright pink/blue */
         .lyric-line {
             font-size: 1.3rem;
-            color: rgba(255, 255, 255, 0.4);
-            transition: all 0.2s ease-out;
-            margin: 5px 0;
-            text-shadow: 0 0 5px rgba(0,0,0,0.5);
-            /* Removed wrapping properties for better mobile experience */
+            color: rgba(90, 24, 154, 0.4); /* Dark Purple semi-transparent */
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
         }
 
         .lyric-active {
             font-size: 1.6rem;
-            color: #ff6b6b;
+            color: #3B82F6; /* Bright Blue */
             transform: scale(1.05);
-            text-shadow: 2px 2px 0px #fff;
+            text-shadow: 2px 2px 0px #EC4899; /* Pink shadow for pop */
             opacity: 1;
         }
 
@@ -191,16 +167,16 @@
             padding: 12px; 
             border-radius: 15px; 
             margin-top: 5px; 
-            border: 3px solid #ff6b6b; 
+            border: 3px solid #EC4899; /* Pink border */
             background: white; 
             font-family: 'Fredoka One';
             width: 80%;
             max-width: 300px;
             outline: none;
-            color: #000; /* Text color set to black */
+            color: #000; 
         }
         select option {
-            color: #000; /* Ensure options text is black */
+            color: #000;
         }
     </style>
 </head>
@@ -217,11 +193,11 @@
 
         <!-- Start Screen -->
         <div id="start-screen" class="overlay">
-            <div class="subtitle">The Mewsical</div>
-            <div class="subtitle">Rhythm Action Game</div>
+            <h1>I-MOG-EN</h1>
+            <div class="subtitle">The Mewsical Rhythm Action Game</div>
             
             <div style="margin: 20px 0; width: 100%; text-align: center;">
-                <label for="song-select" style="font-size: 1.2rem; color: #4ECDC4;">Select Track (Full Length!):</label><br/>
+                <label for="song-select" style="font-size: 1.2rem; color: #EC4899;">Select Track (Full Length!):</label><br/>
                 <select id="song-select">
                     <option value="camptown">Camptown Races (110 BPM)</option>
                     <option value="ode">Ode to Joy (120 BPM)</option>
@@ -243,9 +219,9 @@
         <!-- Game Over Screen -->
         <div id="game-over-screen" class="overlay hidden" style="display: none;">
             <h1>Finished!</h1>
-            <p>Score: <span id="final-score" style="color:#4ECDC4;">0</span></p>
-            <p>Best Combo: <span id="max-combo" style="color:#ffe66d;">0</span></p>
-            <p id="rank-text" style="font-size: 2rem; color: #ff6b6b; margin: 10px 0"></p>
+            <p>Score: <span id="final-score" style="color:#EC4899;">0</span></p>
+            <p>Best Combo: <span id="max-combo" style="color:#3B82F6;">0</span></p>
+            <p id="rank-text" style="font-size: 2rem; color: #EC4899; margin: 10px 0"></p>
             
             <button class="btn btn-share" id="share-btn">Share Score</button>
             <button class="btn btn-secondary" id="restart-btn">Play Again</button>
@@ -253,8 +229,9 @@
     </div>
 
     <script>
-        // --- Constants ---
-        const LANE_COLORS = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#FF9F43'];
+        // --- Constants (UPDATED LANE COLORS) ---
+        // Bubblegum Pink, Blue, Yellow, Purple
+        const LANE_COLORS = ['#EC4899', '#3B82F6', '#FCD34D', '#A78BFA']; 
         // Icons: Purse, Pill, Squirrel, Croissant
         const LANE_ITEMS = ['👜', '💊', '🐿️', '🥐']; 
         const MEOW_URL = 'https://joinusinchance.github.io/game/mixkit-sweet-kitty-meow-93.wav';
@@ -277,7 +254,7 @@
         const repeat = (arr, times) => Array(times).fill(arr).flat();
 
 
-        // --- FULL-LENGTH SONG DEFINITIONS ---
+        // --- FULL-LENGTH SONG DEFINITIONS (Unchanged) ---
 
         // 1. CAMPTOWN RACES (110 BPM)
         const camptown_verse = [
@@ -526,7 +503,7 @@
             {beat: 96, text: "Silence! You escaped!"}
         ];
         
-        // --- SONGS Object Definition (UPDATED) ---
+        // --- SONGS Object Definition (Unchanged) ---
         const SONGS = {
             'camptown': { bpm: 110, notes: camptown_full, lyrics: camptown_lyrics_full},
             'ode': { bpm: 120, notes: ode_full, lyrics: ode_lyrics_full},
@@ -536,7 +513,7 @@
             'mountain': { bpm: 160, notes: mountain_full, lyrics: mountain_lyrics_full}
         };
 
-        // --- Global Game State ---
+        // --- Global Game State (Unchanged) ---
         let canvas, ctx;
         let gameState = {};
         let audioEngine = null;
@@ -546,7 +523,7 @@
         let pawStamps = []; 
         let pawImage = new Image(); 
 
-        // --- UI Elements ---
+        // --- UI Elements (Unchanged) ---
         const ui = {
             startScreen: null, gameOverScreen: null, startBtn: null, 
             loadingStatus: null, scoreBoard: null, comboBoard: null, 
@@ -554,7 +531,7 @@
             songSelect: null, lyricsContainer: null, shareBtn: null, restartBtn: null
         };
         
-        // --- Game Setup ---
+        // --- Game Setup (Unchanged) ---
 
         const initUI = () => {
             ui.startScreen = document.getElementById('start-screen');
@@ -778,7 +755,7 @@
             }, 1000);
         };
 
-        // --- Game Loop (Updated Icon Drawing) ---
+        // --- Game Loop (Updated Canvas BG) ---
         const gameLoop = () => {
             if (!gameState.isPlaying || !ctx || !canvas || !audioEngine) {
                  // Keep loop alive for effects outside of playing state
@@ -792,8 +769,11 @@
             const laneWidth = canvas.width / gameState.laneCount;
             const hitZoneTop = gameState.hitY;
             
-            // Clear & BG
-            ctx.fillStyle = "#2b2b2b";
+            // Clear & BG (Light Pink/White Gradient for canvas)
+            const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grd.addColorStop(0, "#FFFFFF");
+            grd.addColorStop(1, "#FFE4E1"); 
+            ctx.fillStyle = grd;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Update Lyrics
@@ -806,15 +786,15 @@
 
             // Draw Lanes
             for (let i = 0; i < gameState.laneCount; i++) {
-                // Gradient Lane
-                const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
-                grd.addColorStop(0, "rgba(255,255,255,0)");
-                grd.addColorStop(1, "rgba(255,255,255,0.05)");
-                ctx.fillStyle = grd;
+                // Gradient Lane (Very subtle white)
+                const laneGrd = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                laneGrd.addColorStop(0, "rgba(255,255,255,0)");
+                laneGrd.addColorStop(1, "rgba(255,255,255,0.1)");
+                ctx.fillStyle = laneGrd;
                 ctx.fillRect(i * laneWidth, 0, laneWidth, canvas.height);
                 
-                // Separator
-                ctx.strokeStyle = "rgba(255,255,255,0.1)";
+                // Separator (Darker for visibility)
+                ctx.strokeStyle = "rgba(90, 24, 154, 0.2)"; /* Dark Purple separator */
                 ctx.beginPath(); ctx.moveTo(i*laneWidth, 0); ctx.lineTo(i*laneWidth, canvas.height); ctx.stroke();
 
                 // --- Draw the fixed Hit Target ZONE (The "Cat's Arm") ---
@@ -822,7 +802,7 @@
                 const xCenter = i * laneWidth + laneWidth / 2;
 
                 // 1. Draw the static target zone background
-                ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+                ctx.fillStyle = "rgba(236, 72, 153, 0.15)"; /* Pink tint */
                 ctx.fillRect(i * laneWidth, hitZoneTop, laneWidth, targetHeight);
 
                 // 2. Draw the highlight (the "hit" visual)
@@ -833,17 +813,17 @@
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = LANE_COLORS[i];
                     
-                    // Draw a static, subtle paw inside the hit zone
+                    // Draw a static, subtle paw inside the hit zone (using contrasting color)
                     ctx.save();
                     ctx.translate(xCenter, hitZoneTop + targetHeight / 2);
-                    drawPaw(ctx, 0, 0, 25, 'rgba(255,255,255,0.8)');
+                    drawPaw(ctx, 0, 0, 25, 'rgba(90, 24, 154, 0.8)');
                     ctx.restore();
                 }
                 
                 ctx.shadowBlur = 0;
                 
                 // 3. Draw a strong line/border at the strike position (top of the arm)
-                ctx.strokeStyle = activeLanes[i] ? "#fff" : LANE_COLORS[i];
+                ctx.strokeStyle = activeLanes[i] ? "#000" : LANE_COLORS[i]; /* Black line on hit */
                 ctx.lineWidth = 5;
                 ctx.beginPath();
                 ctx.moveTo(i * laneWidth, hitZoneTop);
@@ -870,7 +850,7 @@
                     note.visible = false;
                     gameState.combo = 0;
                     updateScoreboard();
-                    createFloatingText("Hiss", note.lane * laneWidth + laneWidth/2, hitZoneTop + 50, "#888");
+                    createFloatingText("Hiss", note.lane * laneWidth + laneWidth/2, hitZoneTop + 50, "#5A189A"); /* Dark Hiss text */
                     AE.playHitSound('miss');
                 }
 
@@ -880,14 +860,14 @@
                     const x = note.lane * laneWidth + laneWidth / 2;
                     const item = LANE_ITEMS[note.lane];
 
-                    // --- UPDATED: Increased Size and MAXIMIZED Glow ---
-                    ctx.font = '60px sans-serif'; // Increased size from 55px to 60px
+                    // --- Item Styling: Maximum Glow against light BG ---
+                    ctx.font = '60px sans-serif'; 
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     
                     // Set full brightness and a stronger shadow/glow
-                    ctx.shadowColor = 'rgba(255, 255, 255, 1.0)';
-                    ctx.shadowBlur = 15; // Increased shadow blur for a much stronger glow
+                    ctx.shadowColor = LANE_COLORS[note.lane]; // Color the glow based on the lane color
+                    ctx.shadowBlur = 15; 
                     
                     ctx.globalAlpha = 1.0; 
                     ctx.fillText(item, x, y); 
@@ -937,7 +917,7 @@
                 
                 if (pawImage.complete) {
                     const imgSize = stamp.size;
-                    ctx.filter = `drop-shadow(0 0 5px #fff)`; 
+                    ctx.filter = `drop-shadow(0 0 5px ${stamp.color})`; /* Paw shadow in stamp color */
                     ctx.drawImage(pawImage, -imgSize / 2, -imgSize / 2, imgSize, imgSize);
                 }
 
@@ -1015,16 +995,17 @@
                 let scoreDelta = 0;
                 let comboDelta = 0;
 
+                // Floating text colors adjusted for light background
                 if (diff < 0.1) {
-                    txt = "PURRFECT!"; col = "#FF6B6B"; scoreDelta = 100 + (gameState.combo*5);
+                    txt = "PURRFECT!"; col = "#EC4899"; scoreDelta = 100 + (gameState.combo*5); /* Bright Pink */
                     comboDelta = 1;
                     AE.playHitSound('perfect');
                 } else if (diff < 0.25) {
-                    txt = "Good!"; col = "#4ECDC4"; scoreDelta = 50 + (gameState.combo*2);
+                    txt = "Good!"; col = "#3B82F6"; scoreDelta = 50 + (gameState.combo*2); /* Bright Blue */
                     comboDelta = 1;
                     AE.playHitSound('good');
                 } else {
-                    txt = "Meh"; col = "#F7D794"; scoreDelta = 10;
+                    txt = "Meh"; col = "#5A189A"; scoreDelta = 10; /* Dark Purple */
                     comboDelta = -gameState.combo;
                     AE.playHitSound('meh');
                 }
@@ -1073,7 +1054,7 @@
             }
         };
         
-        // --- Game Flow Functions ---
+        // --- Game Flow Functions (Unchanged) ---
 
         const parseSong = (songId) => {
             const song = SONGS[songId];
@@ -1207,7 +1188,7 @@
         };
 
 
-        // --- Initialization on Load ---
+        // --- Initialization on Load (Unchanged) ---
         window.onload = function () {
             initUI();
             canvas = document.getElementById('gameCanvas');
