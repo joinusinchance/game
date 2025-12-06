@@ -79,7 +79,7 @@
             animation: subtitleBounce 0.3s ease-in-out infinite alternate;
         }
         
-        /* Dropdown Wobble Animation */
+        /* Dropdown Wobble Animation - Keeping the definition, but removing application below */
         @keyframes selectWobble {
             0%, 100% { transform: rotate(0deg); }
             50% { transform: rotate(-0.5deg); } /* Tiny, annoying rotation */
@@ -88,14 +88,18 @@
         /* Dropdown Garish Style */
         .song-select-garish {
             font-family: 'Luckiest Guy', cursive;
-            color: #ffff00; /* Electric Yellow Text */
+            /* UPDATED: High Contrast Black Text for readability */
+            color: #000000; 
             background-color: #00ffff; /* Cyan Background */
             border: 4px solid #ff69b4; /* Hot Pink Border */
             padding: 0.5rem 1.5rem;
-            /* Applying a subtle, constant, annoying rotation */
-            animation: selectWobble 0.8s linear infinite alternate; 
-            /* Ensure the text is readable over the bright background */
-            text-shadow: 1px 1px 0 #ff69b4;
+            
+            /* REMOVED: Jitter/Wobble Animation */
+            /* animation: selectWobble 0.8s linear infinite alternate; */ 
+
+            /* REMOVED: Text shadow for better contrast */
+            /* text-shadow: 1px 1px 0 #ff69b4; */
+            
             /* Remove default browser appearance */
             -webkit-appearance: none;
             -moz-appearance: none;
