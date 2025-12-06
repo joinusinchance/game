@@ -221,7 +221,7 @@
             <div class="subtitle">Rhythm Action Game</div>
             
             <div style="margin: 20px 0; width: 100%; text-align: center;">
-                <label for="song-select" style="font-size: 1.2rem; color: #4ECDC4;">Select Track:</label><br/>
+                <label for="song-select" style="font-size: 1.2rem; color: #4ECDC4;">Select Track (Full Length!):</label><br/>
                 <select id="song-select">
                     <option value="camptown">Camptown Races (110 BPM)</option>
                     <option value="ode">Ode to Joy (120 BPM)</option>
@@ -276,80 +276,118 @@
         // Helper to repeat an array (Unchanged)
         const repeat = (arr, times) => Array(times).fill(arr).flat();
 
-        const camptown_phrase = [
+
+        // --- FULL-LENGTH SONG DEFINITIONS ---
+
+        // 1. CAMPTOWN RACES (110 BPM)
+        const camptown_verse = [
+            // Camptown ladies sing this song, Doo-dah, Doo-dah!
             ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],
+            // Camptown race-track five miles long, Oh, doo-dah day!
             ['E4',1],['D4',1],['C4',2], ['E4',1],['D4',1],['C4',2],
-            ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],
-            ['D4',1],['E4',1],['F4',1],['D4',1], ['C4',4]
         ];
-        const korobeiniki_phrase = [
-            ['E4', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['C4', 0.5], ['B3', 0.5],
-            ['A3', 1], ['A3', 0.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5],
-            ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1],
-            ['C4', 1], ['A3', 1], ['A3', 1],
-            ['D4', 1.5], ['F4', 0.5], ['A4', 1], ['G4', 0.5], ['F4', 0.5],
-            ['E4', 1.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5],
-            ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1],
-            ['C4', 1], ['A3', 1], ['A3', 1]
+        const camptown_chorus = [
+            // Goin' to run all night, Goin' to run all day,
+            ['D4',1],['D4',1],['D4',1],['E4',1], ['F4',1],['E4',1],['D4',2],
+            // I'll bet my money on the bob-tail nag, somebody bet on the bay.
+            ['C4',1],['D4',1],['E4',1],['C4',1], ['G3',4] 
         ];
-        const entertainer_phrase = [
-            ['D5',0.5],['E5',0.5],['C5',0.5],['A4',1],['B4',0.5],['G4',0.5],
-            ['D4',0.5],['E4',0.5],['C4',0.5],['A3',1],['B3',0.5],['G3',0.5],
-            ['D3',0.5],['E3',0.5],['C3',0.5],['A2',1],['B2',0.5],['A2',0.5],['G#2',0.5],['G2',2],
-            ['D4',0.5],['D#4',0.5],['E4',0.5],['C5',1],['E4',0.5],['C5',1],['E4',0.5],['C5',2],
-            ['C5',0.5],['D5',0.5],['D#5',0.5],['E5',0.5],['C5',0.5],['D5',0.5],['E5',2]
+
+        // Full song: Verse, Chorus, Verse, Chorus, Coda
+        const camptown_full = [].concat(
+            camptown_verse, camptown_chorus, 
+            camptown_verse, camptown_chorus,
+            ['G4',1],['G4',1],['E4',1],['G4',1], ['C4',4] // Coda
+        );
+
+        const camptown_lyrics_full = [
+            {beat: 0, text: "Camptown ladies sing this song, Doo-dah, Doo-dah!"}, 
+            {beat: 8, text: "Camptown race-track five miles long, Oh, doo-dah day!"},
+            {beat: 16, text: "Goin' to run all night, Goin' to run all day,"}, 
+            {beat: 24, text: "I'll bet my money on the bob-tail nag, somebody bet on the bay."},
+            
+            {beat: 32, text: "De Camptown ladies am goin' to shine, Doo-dah, Doo-dah!"}, 
+            {beat: 40, text: "De sun am done gone down! Oh, doo-dah day!"},
+            {beat: 48, text: "Goin' to run all night, Goin' to run all day,"}, 
+            {beat: 56, text: "I'll bet my money on the bob-tail nag, somebody bet on the bay."},
+
+            {beat: 64, text: "Final flourish! Doo-dah!"}
         ];
-        const mountain_phrase = [
-            ['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1],
-            ['F#4',0.5],['D4',0.5],['F#4',1], ['F#4',0.5],['D4',0.5],['F#4',1],
-            ['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1],
-            ['A4',0.5],['G4',0.5],['E4',1], ['F#4',0.5],['D4',0.5],['B3',1]
-        ];
-        const ode_phrase = [
+
+        // 2. ODE TO JOY (120 BPM)
+        const ode_a = [
             ['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1],
             ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1],
             ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1],
-            ['E4', 1.5], ['D4', 0.5], ['D4', 2]
+            ['E4', 1.5], ['D4', 0.5], ['D4', 2] 
+        ];
+        const ode_b = [
+            ['D4', 1], ['E4', 1], ['F4', 1], ['F4', 1],
+            ['E4', 1], ['D4', 1], ['C4', 1], ['C4', 1],
+            ['D4', 1], ['E4', 1], ['F4', 1], ['E4', 1],
+            ['D4', 1], ['C4', 1], ['C4', 2] 
         ];
 
-        // --- NEW TRACK: Seven Day Slay ---
-        const seven_day_slay_phrase = [
-            // Bar 1 (Eighths) - It's Monday morning, I'm legit stressed out,
-            ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5], 
-            // Bar 2 (Eighths) - But my outfit's giving, so no need to pout!
-            ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5],
-            // Bar 3 (Eighths) - Gotta get this bread, gotta be a hun,
-            ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['G4', 0.5], 
-            // Bar 4 (Eighths) - Gonna be bossing it 'til the week is done!
-            ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['C4', 0.5], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['C4', 0.5],
-            // Bar 5 (Eighths) - My coffee's cold, but my vibes are hot
+        // Full song: A A B B Coda
+        const ode_full = [].concat(
+            ode_a, ode_a, ode_b, ode_b, 
+            ['C4', 4], ['G3', 4], ['C4', 4] // Coda
+        ); 
+        const ode_lyrics_full = [
+            {beat: 0, text: "Joy, beautiful spark of Divinity, Daughter of Elysium,"}, 
+            {beat: 16, text: "We enter, drunk with fire, O heavenly, thy sanctuary!"},
+            {beat: 32, text: "Your magic joins again, all that custom has divided,"}, 
+            {beat: 48, text: "All men become brothers, wherever thy gentle wings abide."},
+            
+            {beat: 64, text: "Alle Menschen werden Brüder! Alle Menschen!"},
+            {beat: 80, text: "Freude! Schöner Götterfunken!"}
+        ];
+        
+        // 3. SEVEN DAY SLAY (130 BPM)
+        // Part A (Mon-Fri Grind) - 16 bars
+        const seven_day_slay_part_a = [
             ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5],
-            // Bar 6 (Eighths) - Seven whole days, I'll give it all I've got!
             ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5],
-            // Bar 7 (Quarters) - Got my schedule packed, it's a whole mood,
-            ['F4', 1], ['F4', 1], ['G4', 1], ['G4', 1],
-            // Bar 8 (Quarters) - Gotta keep it real, misunderstand? I wish you would!
-            ['A4', 1], ['A4', 1], ['B4', 1], ['B4', 1],
-            // Bar 9 (Quarters) - Counting down the minutes, it's a major key,
-            ['C5', 1], ['C5', 1], ['C5', 1], ['C5', 1],
-            // Bar 10 (Half) - Just one thing I want, the sweet taste of being free!
-            ['B4', 2], ['A4', 2],
-            // Bar 11 (Eighths) - Oh, the Fri-Yays, they're my true love,
+            ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['G4', 0.5],
+            ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['C4', 0.5], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['C4', 0.5],
+            
+            ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5],
+            ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5],
+            ['F4', 1], ['F4', 1], ['G4', 1], ['G4', 1], 
+            ['A4', 1], ['A4', 1], ['B4', 1], ['B4', 1], 
+            
+            ['C5', 1], ['C5', 1], ['C5', 1], ['C5', 1], 
+            ['B4', 2], ['A4', 2], 
             ['C5', 0.5], ['D5', 0.5], ['E5', 0.5], ['D5', 0.5], ['C5', 0.5], ['D5', 0.5], ['E5', 0.5], ['D5', 0.5],
-            // Bar 12 (Eighths) - Sent down from the heavens right up above!
             ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5], ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5],
-            // Bar 13 (Eighths) - Gimme some LOLZ and all the good Bants,
+            
             ['C5', 0.5], ['D5', 0.5], ['E5', 0.5], ['D5', 0.5], ['C5', 0.5], ['D5', 0.5], ['E5', 0.5], ['D5', 0.5],
-            // Bar 14 (Eighths) - I'm just living my best life, taking zero chance!
             ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5], ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5],
-            // Bar 15 (Eighths) - Get the prosecco ready, it's Wine-o-clock time,
             ['C5', 0.5], ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['C5', 0.5], ['C5', 0.5], ['B4', 0.5], ['A4', 0.5],
-            // Bar 16 (Half) - This seven-day slay is absolutely sublime!
-            ['G4', 2], ['C5', 2]
+            ['G4', 2], ['C5', 2] 
         ];
 
-        // Lyrics timing based on 4 beats per bar (Quarter notes = 1.0 duration)
-        const seven_day_slay_lyrics = [
+        // Part B (Weekend Reset) - 8 bars
+        const seven_day_slay_part_b = [
+            ['A4', 1], ['G4', 1], ['F4', 1], ['E4', 1], 
+            ['D4', 2], ['E4', 2], 
+            ['F4', 1], ['F4', 1], ['E4', 1], ['D4', 1], 
+            ['C4', 4], 
+            
+            ['G4', 0.5], ['G4', 0.5], ['A4', 0.5], ['A4', 0.5], ['G4', 1], ['F4', 1], 
+            ['E4', 1], ['D4', 1], ['C4', 2], 
+            ['G4', 0.5], ['G4', 0.5], ['A4', 0.5], ['A4', 0.5], ['G4', 1], ['F4', 1], 
+            ['E4', 1], ['D4', 1], ['C4', 2]
+        ];
+
+        // Full song: A B A B Coda (48 bars total)
+        const seven_day_slay_full = [].concat(
+            seven_day_slay_part_a, seven_day_slay_part_b,
+            seven_day_slay_part_a, seven_day_slay_part_b,
+            ['C5', 4], ['G4', 4], // Coda
+        );
+
+        const seven_day_slay_lyrics_full = [
             {beat: 0, text: "It's Monday morning, I'm legit stressed out,"}, 
             {beat: 4, text: "But my outfit's giving, so no need to pout!"},
             {beat: 8, text: "Gotta get this bread, gotta be a hun,"}, 
@@ -366,36 +404,136 @@
             {beat: 52, text: "I'm just living my best life, taking zero chance!"},
             {beat: 56, text: "Get the prosecco ready, it's Wine-o-clock time,"},
             {beat: 60, text: "This seven-day slay is absolutely sublime!"},
-            // Lyrics for the repeat section
-            {beat: 64, text: "Round Two! Keep up the slay and feel the beat!"},
-            {beat: 96, text: "Still counting down the minutes, living my best life!"},
-            {beat: 120, text: "Slay accomplished! Wait for the final meow..."}
+            
+            {beat: 64, text: "Saturday night, no drama, just a chill zone,"},
+            {beat: 68, text: "Face mask on, gotta restore the glow, all on my own."},
+            {beat: 72, text: "Sunday reset, I'm taking it slow, I gotta be kind to me,"},
+            {beat: 76, text: "Ready to step out again, full energy!"},
+
+            {beat: 80, text: "Counting down the minutes, it's a major key (Again!),"},
+            {beat: 84, text: "The sweet taste of being free (Forever!)"},
+            {beat: 88, text: "Gimme some LOLZ and all the good Bants,"},
+            {beat: 92, text: "I'm just living my best life, taking zero chance!"},
+            
+            {beat: 96, text: "Slay accomplished! Wait for the final meow..."}
         ];
 
 
+        // 4. THE ENTERTAINER (140 BPM)
+        const entertainer_part_a = [
+            ['D5',0.5],['E5',0.5],['C5',0.5],['A4',1],['B4',0.5],['G4',0.5], 
+            ['C5', 0.5], ['A4', 0.5], ['G4', 0.5], ['E4', 0.5], ['C4', 2], 
+            ['D5',0.5],['E5',0.5],['C5',0.5],['A4',1],['B4',0.5],['G4',0.5], 
+            ['C5', 0.5], ['A4', 0.5], ['G4', 0.5], ['E4', 0.5], ['C4', 2], 
+            
+            ['D5',0.5],['E5',0.5],['C5',0.5],['A4',1],['B4',0.5],['G4',0.5], 
+            ['E4',0.5],['F4',0.5],['G4',0.5],['E4',0.5],['C4',2], 
+            ['G4', 0.5], ['F4', 0.5], ['E4', 0.5], ['D4', 0.5], ['C4', 2], 
+            ['C4', 1], ['D4', 1], ['E4', 1], ['F4', 1], 
+        ];
+        const entertainer_part_c = [
+            ['C5', 2], ['G4', 2], 
+            ['C5', 2], ['G4', 2], 
+            ['C5', 1], ['D5', 1], ['E5', 1], ['F5', 1], 
+            ['G5', 4], 
+            
+            ['F5', 1], ['E5', 1], ['D5', 1], ['C5', 1], 
+            ['B4', 1], ['A4', 1], ['G4', 1], ['F4', 1], 
+            ['E4', 2], ['D4', 2], 
+            ['C4', 4] 
+        ];
+
+        // Full song: A C A Coda (30 bars total)
+        const entertainer_full = [].concat(
+            entertainer_part_a, entertainer_part_c, 
+            entertainer_part_a, 
+            ['C4', 4] // Coda
+        ); 
+        const entertainer_lyrics_full = [
+            {beat: 0, text: "Ragtime Intro... The Cat is here to entertain!"}, 
+            {beat: 16, text: "Sliding on the keys, tapping every beat."},
+            {beat: 32, text: "The Trio begins, a change of tone."}, 
+            {beat: 48, text: "Soaring high notes, reaching the musical zenith."},
+            
+            {beat: 64, text: "Back to the main theme, hit the rhythm!"},
+            {beat: 80, text: "This is the sound of pure, happy ragtime."},
+            {beat: 96, text: "Final flourish! Enjoy the show!"}
+        ];
+
+
+        // 5. KOROBEINIKI (TETRIS - 140 BPM)
+        const korobeiniki_part_a = [
+            ['E4', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['C4', 0.5], ['B3', 0.5],
+            ['A3', 1], ['A3', 0.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5],
+            ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1],
+            ['C4', 1], ['A3', 1], ['A3', 1]
+        ];
+
+        const korobeiniki_part_b = [
+            ['D4', 1.5], ['F4', 0.5], ['A4', 1], ['G4', 0.5], ['F4', 0.5],
+            ['E4', 1.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5],
+            ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1],
+            ['C4', 1], ['A3', 1], ['A3', 1]
+        ];
+
+        // Full song: A B A B Coda
+        const korobeiniki_full = [].concat(
+            korobeiniki_part_a, korobeiniki_part_b,
+            korobeiniki_part_a, korobeiniki_part_b,
+            ['E4', 2], ['C4', 2], ['A3', 4] // Coda
+        ); 
+        const korobeiniki_lyrics_full = [
+            {beat: 0, text: "The iconic theme starts now... Get ready to twist and stack!"}, 
+            {beat: 16, text: "Can you keep up with the Russian folk tune?"},
+            {beat: 32, text: "The tempo is high, don't miss a beat!"}, 
+            {beat: 48, text: "Keep pushing, the stack is getting higher..."},
+            
+            {beat: 64, text: "Back to the start! Faster, faster!"},
+            {beat: 80, text: "The boxes are falling, find the perfect fit!"},
+            {beat: 96, text: "Endless mode engaged... Just kidding! Almost done."},
+            {beat: 112, text: "Success! Tetris master!"}
+        ];
+
+        // 6. HALL OF THE MOUNTAIN KING (160 BPM)
+        const mountain_part_a = [
+            ['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1],
+            ['F#4',0.5],['D4',0.5],['F#4',1], ['F#4',0.5],['D4',0.5],['F#4',1],
+            ['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1],
+            ['A4',0.5],['G4',0.5],['E4',1], ['F#4',0.5],['D4',0.5],['B3',1]
+        ];
+
+        const mountain_part_b = [
+            ['B4',0.5],['C#5',0.5],['D5',0.5],['E5',0.5],['F#5',0.5],['D5',0.5],['F#5',1],
+            ['F#5',0.5],['D5',0.5],['F#5',1], ['F#5',0.5],['D5',0.5],['F#5',1],
+            ['B4',0.5],['C#5',0.5],['D5',0.5],['E5',0.5],['F#5',0.5],['D5',0.5],['F#5',1],
+            ['A5',0.5],['G5',0.5],['E5',1], ['F#5',0.5],['D5',0.5],['B4',1]
+        ];
+
+        // Full song: A B A Coda
+        const mountain_full = [].concat(
+            mountain_part_a, mountain_part_b,
+            mountain_part_a,
+            ['B4', 0.5], ['A4', 0.5], ['G4', 0.5], ['F#4', 0.5], ['E4', 4] // Crash/End
+        ); 
+        const mountain_lyrics_full = [
+            {beat: 0, text: "Deep in the mountain, the king is approaching..."}, 
+            {beat: 16, text: "Creeping faster, the melody rises..."},
+            {beat: 32, text: "The tension builds! Higher and louder notes!"}, 
+            {beat: 48, text: "Don't fall! Don't miss the fast beats!"},
+            
+            {beat: 64, text: "Back to the shadows, the chase continues..."},
+            {beat: 80, text: "This is the final surge! Run for your life!"},
+            {beat: 96, text: "Silence! You escaped!"}
+        ];
+        
+        // --- SONGS Object Definition (UPDATED) ---
         const SONGS = {
-            'camptown': { bpm: 110, notes: repeat(camptown_phrase, 4), lyrics: [
-                {beat: 0, text: "Camptown ladies sing this song..."}, {beat: 24, text: "Doo-dah! Oh, doo-dah day!"},
-                {beat: 48, text: "We're going to run all night..."}, {beat: 72, text: "Camptown forever!"}
-            ]},
-            'ode': { bpm: 120, notes: repeat(ode_phrase, 5), lyrics: [
-                {beat: 0, text: "Joy, beautiful spark of Divinity..."}, {beat: 16, text: "Daughter of Elysium..."},
-                {beat: 32, text: "We enter, drunk with fire..."}, {beat: 48, text: "Your magic joins again..."},
-                {beat: 64, text: "All that custom has divided!"}
-            ]},
-            'sevendayslay': { bpm: 130, notes: repeat(seven_day_slay_phrase, 2), lyrics: seven_day_slay_lyrics},
-            'entertainer': { bpm: 140, notes: repeat(entertainer_phrase, 4), lyrics: [
-                {beat: 0, text: "Ragtime Intro... Tap those feet!"}, {beat: 30, text: "The cat is here to entertain!"},
-                {beat: 60, text: "Dancing on the keys, faster now!"}, {beat: 90, text: "A true meow-sical sensation!"}
-            ]},
-            'korobeiniki': { bpm: 140, notes: repeat(korobeiniki_phrase, 4), lyrics: [
-                {beat: 0, text: "Stacking boxes in a row..."}, {beat: 32, text: "Twisting shapes to make them fit!"},
-                {beat: 64, text: "Cats fit in boxes, don't you know?"}, {beat: 96, text: "If I fits, I sits! Forever!"}
-            ]},
-            'mountain': { bpm: 160, notes: repeat(mountain_phrase, 4), lyrics: [
-                {beat: 0, text: "Creeping down the mountain hall..."}, {beat: 24, text: "Trolls are watching! Run!"},
-                {beat: 48, text: "Running faster now! Keep going!"}, {beat: 72, text: "Escape is near!"}
-            ]}
+            'camptown': { bpm: 110, notes: camptown_full, lyrics: camptown_lyrics_full},
+            'ode': { bpm: 120, notes: ode_full, lyrics: ode_lyrics_full},
+            'sevendayslay': { bpm: 130, notes: seven_day_slay_full, lyrics: seven_day_slay_lyrics_full},
+            'entertainer': { bpm: 140, notes: entertainer_full, lyrics: entertainer_lyrics_full},
+            'korobeiniki': { bpm: 140, notes: korobeiniki_full, lyrics: korobeiniki_lyrics_full},
+            'mountain': { bpm: 160, notes: mountain_full, lyrics: mountain_lyrics_full}
         };
 
         // --- Global Game State ---
@@ -406,7 +544,7 @@
         let floatingTexts = [];
         let activeLanes = [false, false, false, false];
         let pawStamps = []; 
-        const pawImage = new Image(); 
+        let pawImage = new Image(); 
 
         // --- UI Elements ---
         const ui = {
@@ -935,7 +1073,7 @@
             }
         };
         
-        // --- Game Flow Functions (Unchanged) ---
+        // --- Game Flow Functions ---
 
         const parseSong = (songId) => {
             const song = SONGS[songId];
@@ -944,29 +1082,36 @@
             const beatTime = 60 / song.bpm;
             let currentNoteTime = 2.0;
 
-            const gameNotes = song.notes.map((n, index) => {
-                const freq = NOTE_FREQS[n[0]];
-                const duration = n[1];
-                let lane = index % 4;
-                
-                // --- Simple Lane Assignment Heuristic ---
-                if (index % 3 === 0) lane = (lane + 1) % 4;
-                // Assign higher notes to the rightmost lane (3) for difficulty
-                if (n[0].indexOf('5') > -1 || n[0].indexOf('6') > -1) lane = 3; 
-                // Assign lower notes to the leftmost lane (0) for contrast
-                if (n[0].indexOf('2') > -1) lane = 0; 
-                // --- End Heuristic ---
+            const gameNotes = song.notes
+                .map((n, index) => {
+                    // Robustness check: Ensure n is a valid note structure (e.g., ['C4', 1])
+                    if (!n || typeof n[0] !== 'string' || typeof n[1] !== 'number' || n[1] <= 0) {
+                        return null; // Skip invalid entries
+                    }
+                    
+                    const freq = NOTE_FREQS[n[0]];
+                    const duration = n[1];
+                    let lane = index % 4;
+                    
+                    // --- Simple Lane Assignment Heuristic ---
+                    if (index % 3 === 0) lane = (lane + 1) % 4;
+                    // Assign higher notes to the rightmost lane (3) for difficulty
+                    if (n[0].indexOf('5') > -1 || n[0].indexOf('6') > -1) lane = 3; 
+                    // Assign lower notes to the leftmost lane (0) for contrast
+                    if (n[0].indexOf('2') > -1) lane = 0; 
+                    // --- End Heuristic ---
 
-                const noteObj = {
-                    time: currentNoteTime,
-                    lane: lane,
-                    freq: freq,
-                    duration: duration * beatTime,
-                    played: false, hit: false, missed: false, visible: true
-                };
-                currentNoteTime += duration * beatTime;
-                return noteObj;
-            });
+                    const noteObj = {
+                        time: currentNoteTime,
+                        lane: lane,
+                        freq: freq,
+                        duration: duration * beatTime,
+                        played: false, hit: false, missed: false, visible: true
+                    };
+                    currentNoteTime += duration * beatTime;
+                    return noteObj;
+                })
+                .filter(n => n !== null); // Filter out any nulls from invalid note entries
 
             const gameLyrics = song.lyrics ? song.lyrics.map(l => ({
                 time: 2.0 + (l.beat * beatTime),
