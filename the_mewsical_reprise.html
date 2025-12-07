@@ -1294,10 +1294,12 @@
         const shareScore = () => {
             audioEngine?.playUISound();
             
+            const song = ui.songSelect
             const originalText = ui.shareBtn.innerText;
-            
             const finalRankText = ui.rankText.innerText || "Stray Cat";
-            const text = `I scored ${gameState.score} points (${finalRankText}) on I-mog-en: The Mewsical! Can you beat my combo of ${gameState.maxCombo}? 🐱🎵`;
+            const text = `I scored ${gameState.score} points (${finalRankText}) for (${song}) on I-mog-en: The Mewsical! Can you beat my combo of ${gameState.maxCombo}? 🐱🎵`;
+            
+
             
             const restoreButton = (newText, duration = 2000) => {
                 ui.shareBtn.innerText = newText;
