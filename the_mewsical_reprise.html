@@ -437,7 +437,7 @@
         <!-- Restart Button: HIGH CONTRAST (Green on Black) -->
         <button 
             id="restart-btn"
-            class="start-button w-full py-3 text-3xl rounded-xl bg-green-500 text-black hover:bg-green-400 uppercase relative z-30"
+            class="start-button w-full py-3 text-3xl rounded-xl bg-pink-500 text-black hover:bg-green-400 uppercase relative z-30"
         >
             Play Again!
         </button>
@@ -993,7 +993,7 @@
                     gameState.combo = 0;
                     updateScoreboard();
                     createFloatingText("Hiss", note.lane * laneWidth + laneWidth/2, hitZoneTop + 50, "#5A189A"); /* Dark Hiss text */
-                    AE.playHitSound('miss');
+                    //AE.playHitSound('miss');
                 }
 
                 // Draw Item (Emoji)
@@ -1294,7 +1294,7 @@
         const shareScore = () => {
             audioEngine?.playUISound();
             
-            const song = ui.songSelect
+            const song = ui.songSelect.innerText;
             const originalText = ui.shareBtn.innerText;
             const finalRankText = ui.rankText.innerText || "Stray Cat";
             const text = `I scored ${gameState.score} points (${finalRankText}) for (${song}) on I-mog-en: The Mewsical! Can you beat my combo of ${gameState.maxCombo}? 🐱🎵`;
