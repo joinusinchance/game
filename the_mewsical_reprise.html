@@ -421,7 +421,6 @@
             <select id="song-select" class="song-select-garish w-full text-xl rounded-2xl shadow-lg focus:ring-4 focus:ring-pink-500 transition-colors">
                     <option value="camptown">Camptown Races</option>
                     <option value="ode">Ode to Joy</option>
-                    <option value="sevendayslay">Seven Day Slay</option>
                     <option value="entertainer">The Entertainer</option>
                     <option value="korobeiniki">Korobeiniki (Tetris)</option>
                     <option value="mountain">Hall of Mountain King </option>
@@ -565,82 +564,6 @@
             {beat: 80, text: "Freude! Schöner Götterfunken!"}
         ];
         
-        // 3. SEVEN DAY SLAY (130 BPM)
-        // Part A (Mon-Fri Grind) - 16 bars
-        const seven_day_slay_part_a = [
-            ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5],
-            ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5],
-            ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['G4', 0.5],
-            ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['C4', 0.5], ['E4', 0.5], ['G4', 0.5], ['E4', 0.5], ['C4', 0.5],
-            
-            ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5],
-            ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5], ['G4', 0.5], ['G4', 0.5], ['E4', 0.5], ['E4', 0.5],
-            ['F4', 1], ['F4', 1], ['G4', 1], ['G4', 1], 
-            ['A4', 1], ['A4', 1], ['B4', 1], ['B4', 1], 
-            
-            ['C5', 1], ['C5', 1], ['C5', 1], ['C5', 1], 
-            ['B4', 2], ['A4', 2], 
-            ['C5', 0.5], ['D5', 0.5], ['E5', 0.5], ['D5', 0.5], ['C5', 0.5], ['D5', 0.5], ['E5', 0.5], ['D5', 0.5],
-            ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5], ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5],
-            
-            ['C5', 0.5], ['D5', 0.5], ['E5', 0.5], ['D5', 0.5], ['C5', 0.5], ['D5', 0.5], ['E5', 0.5], ['D5', 0.5],
-            ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5], ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['G4', 0.5],
-            ['C5', 0.5], ['C5', 0.5], ['B4', 0.5], ['A4', 0.5], ['C5', 0.5], ['C5', 0.5], ['B4', 0.5], ['A4', 0.5],
-            ['G4', 2], ['C5', 2] 
-        ];
-
-        // Part B (Weekend Reset) - 8 bars
-        const seven_day_slay_part_b = [
-            ['A4', 1], ['G4', 1], ['F4', 1], ['E4', 1], 
-            ['D4', 2], ['E4', 2], 
-            ['F4', 1], ['F4', 1], ['E4', 1], ['D4', 1], 
-            ['C4', 4], 
-            
-            ['G4', 0.5], ['G4', 0.5], ['A4', 0.5], ['A4', 0.5], ['G4', 1], ['F4', 1], 
-            ['E4', 1], ['D4', 1], ['C4', 2], 
-            ['G4', 0.5], ['G4', 0.5], ['A4', 0.5], ['A4', 0.5], ['G4', 1], ['F4', 1], 
-            ['E4', 1], ['D4', 1], ['C4', 2]
-        ];
-
-        // Full song: A B A B Coda (48 bars total)
-        const seven_day_slay_full = [].concat(
-            seven_day_slay_part_a, seven_day_slay_part_b,
-            seven_day_slay_part_a, seven_day_slay_part_b,
-            ['C5', 4], ['G4', 4], // Coda
-        );
-
-        const seven_day_slay_lyrics_full = [
-            {beat: 0, text: "It's Monday morning, I'm legit stressed out,"}, 
-            {beat: 4, text: "But my outfit's giving, so no need to pout!"},
-            {beat: 8, text: "Gotta get this bread, gotta be a hun,"}, 
-            {beat: 12, text: "Gonna be bossing it 'til the week is done!"},
-            {beat: 16, text: "My coffee's cold, but my vibes are hot"}, 
-            {beat: 20, text: "Seven whole days, I'll give it all I've got!"},
-            {beat: 24, text: "Got my schedule packed, it's a whole mood,"},
-            {beat: 28, text: "Misunderstand? I wish you would!"},
-            {beat: 32, text: "Counting down the minutes, it's a major key,"},
-            {beat: 36, text: "The sweet taste of being free!"},
-            {beat: 40, text: "Oh, the Fri-Yays, they're my true love,"},
-            {beat: 44, text: "Sent down from the heavens right up above!"},
-            {beat: 48, text: "Gimme some LOLZ and all the good Bants,"},
-            {beat: 52, text: "I'm just living my best life, taking zero chance!"},
-            {beat: 56, text: "Get the prosecco ready, it's Wine-o-clock time,"},
-            {beat: 60, text: "This seven-day slay is absolutely sublime!"},
-            
-            {beat: 64, text: "Saturday night, no drama, just a chill zone,"},
-            {beat: 68, text: "Face mask on, gotta restore the glow, all on my own."},
-            {beat: 72, text: "Sunday reset, I'm taking it slow, I gotta be kind to me,"},
-            {beat: 76, text: "Ready to step out again, full energy!"},
-
-            {beat: 80, text: "Counting down the minutes, it's a major key (Again!),"},
-            {beat: 84, text: "The sweet taste of being free (Forever!)"},
-            {beat: 88, text: "Gimme some LOLZ and all the good Bants,"},
-            {beat: 92, text: "I'm just living my best life, taking zero chance!"},
-            
-            {beat: 96, text: "Slay accomplished! Wait for the final meow..."}
-        ];
-
-
         // 4. THE ENTERTAINER (140 BPM)
         const entertainer_part_a = [
             ['D5',0.5],['E5',0.5],['C5',0.5],['A4',1],['B4',0.5],['G4',0.5], 
@@ -752,7 +675,6 @@
         const SONGS = {
             'camptown': { bpm: 110, notes: camptown_full, lyrics: camptown_lyrics_full},
             'ode': { bpm: 120, notes: ode_full, lyrics: ode_lyrics_full},
-            'sevendayslay': { bpm: 130, notes: seven_day_slay_full, lyrics: seven_day_slay_lyrics_full},
             'entertainer': { bpm: 140, notes: entertainer_full, lyrics: entertainer_lyrics_full},
             'korobeiniki': { bpm: 140, notes: korobeiniki_full, lyrics: korobeiniki_lyrics_full},
             'mountain': { bpm: 160, notes: mountain_full, lyrics: mountain_lyrics_full}
