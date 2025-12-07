@@ -167,15 +167,22 @@
             border-color: #000;
             
             /* Updated shadow for wobble/press state */
-            box-shadow: 4px 6px 0 0 #000; 
+            //box-shadow: 4px 6px 0 0 #000; 
             
-            animation: buttonWobble 2s linear infinite; 
+            box-shadow: 0 8px 0 0 #5f4b8b, 
+                        0 0 10px #ff00ff, 
+                        0 0 20px #00ffff;
+
+
+            animation: buttonWobble 0.2s linear infinite; 
             /* Slower wobble for better readability on high contrast */
         }
 
         .start-button:active {
-            box-shadow: 1px 2px 0 0 #000;
-            transform: translateY(4px);
+            box-shadow: 0 2px 0 0 #5f4b8b, 
+                        0 0 10px #ff00ff,
+                        0 0 20px #00ffff;
+            transform: translateY(6px);
             animation: none; 
         }
     
@@ -406,7 +413,7 @@
         <!-- Start Game Button: HIGH CONTRAST (Yellow on Black) -->
         <button 
             id="start-btn"
-            class="start-button w-full py-4 text-4xl rounded-xl bg-pink-400 text-black hover:bg-pink-300 uppercase relative z-30"
+            class="start-button w-full py-4 text-3xl font-bold rounded-full bg-pink-500 text-black-400 border-4 border-pink-500 hover:bg-pink-400 uppercase relative z-30"
         >
             Play Now!
         </button>
@@ -429,15 +436,16 @@
         <!-- Share Button: HIGH CONTRAST (Cyan on Black) -->
         <button 
             id="share-btn"
-            class="start-button w-full py-3 text-3xl rounded-xl bg-cyan-400 text-black hover:bg-cyan-300 uppercase relative z-30 mb-4"
+            class="start-button w-full py-4 text-3xl font-bold rounded-full bg-cyan-500 text-black-400 border-4 border-pink-500 hover:bg-pink-400 uppercase relative z-30"
         >
             Share Score
         </button>
-        
+        </p>
+        </p>
         <!-- Restart Button: HIGH CONTRAST (Green on Black) -->
         <button 
             id="restart-btn"
-            class="start-button w-full py-3 text-3xl rounded-xl bg-pink-500 text-black hover:bg-green-400 uppercase relative z-30"
+            class="start-button w-full py-4 text-3xl font-bold rounded-full bg-pink-500 text-black-400 border-4 border-pink-500 hover:bg-pink-400 uppercase relative z-30"
         >
             Play Again!
         </button>
@@ -488,6 +496,8 @@
             // I'll bet my money on the bob-tail nag, somebody bet on the bay.
             ['C4',1],['D4',1],['E4',1],['C4',1], ['G3',4] 
         ];
+
+
 
         // Full song: Verse, Chorus, Verse, Chorus, Coda
         const camptown_full = [].concat(
@@ -1293,6 +1303,7 @@
 
         const shareScore = () => {
             audioEngine?.playUISound();
+
             const song = ui.songSelect.value;
             const originalText = ui.shareBtn.innerText;
             const finalRankText = ui.rankText.innerText || "Stray Cat";
