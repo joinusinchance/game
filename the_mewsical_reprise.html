@@ -1009,10 +1009,18 @@
                     
                     // Set full brightness and a stronger shadow/glow
                     ctx.shadowColor = LANE_COLORS[note.lane]; // Color the glow based on the lane color
-                    ctx.shadowBlur = 15; 
-                    
+                    //ctx.shadowBlur = 15; 
+                    // hack t get the items color to show bright
                     ctx.globalAlpha = 1.0; 
-                    ctx.fillText(item, x, y); 
+                    ctx.fillText(item, x, y);
+                    ctx.fillText(item, x, y);
+                    ctx.fillText(item, x, y);
+                    ctx.fillText(item, x, y);
+                    ctx.fillText(item, x, y);
+                    ctx.fillText(item, x, y);
+                    ctx.fillText(item, x, y);
+                    ctx.fillText(item, x, y);
+                    ctx.fillText(item, x, y);
                     ctx.globalAlpha = 1.0; 
 
                     ctx.shadowBlur = 0; 
