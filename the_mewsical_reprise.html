@@ -345,9 +345,10 @@
         }
     </style>
 </head>
-<body>
+<body class="bubble-bg min-h-screen flex items-center justify-center p-4">
 
-    <div id="game-container">
+
+    <div id="game-container" class="w-full max-w-md bg-white/90 backdrop-blur-sm rounded-3xl p-6 md:p-10 text-center border-4 border-pink-500 shadow-2xl">
         <canvas id="gameCanvas"></canvas>
 
         <div id="hud-layer">
@@ -363,7 +364,7 @@
         <div class="relative h-96 sm:h-[30rem] mb-8">
             
             <!-- Text Content (Layer Z-20: In Front of Cat) -->
-            <div class="relative z-20 pt-5">
+            <div class="relative z-20 pt-7">
                 <h1 class="bubble-title text-5xl sm:text-7xl md:text-8xl select-none whitespace-nowrap -ml-3">
                     I MOG EN
                 </h1>
@@ -407,19 +408,16 @@
         </button>
 
 
-<!--
-            <button class="btn" id="start-btn" disabled>
-                Start Purring
-            </button>
-            <div id="loading-status">Loading Assets...</div>
-            <p style="font-size: 0.9rem; opacity: 0.7; margin-top: 20px;">Use D, F, J, K or Touch the Lanes</p>
-            -->
+
         </div>
 
 
         <!-- Game Over Screen -->
         <div id="game-over-screen" class="overlay hidden" style="display: none;">
-            <h1>Finished!</h1>
+            <p class="subtitle-garish text-2xl md:text-4xl font-bold tracking-wider">
+                    Finished!
+                </p>
+
             <p>Score: <span id="final-score" style="color:#EC4899;">0</span></p>
             <p>Best Combo: <span id="max-combo" style="color:#3B82F6;">0</span></p>
             <p id="rank-text" style="font-size: 2rem; color: #EC4899; margin: 10px 0"></p>
