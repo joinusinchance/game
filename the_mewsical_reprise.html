@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>I-mog-en: The Mewsical - Bubblegum Edition</title>
+    <title>I-mog-en: The Mewsical</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
     <!-- Added 'Bangers' for that jaunty, garish comic book look -->
@@ -436,7 +436,8 @@
         <!-- Share Button: HIGH CONTRAST (Cyan on Black) -->
         <button 
             id="share-btn"
-            class="start-button w-full py-4 text-3xl font-bold rounded-full bg-cyan-500 text-black-400 border-4 border-pink-500 hover:bg-pink-400 uppercase relative z-30"
+            class="start-button w-full py-4 text-3xl font-bold rounded-full bg-cyan-500 
+            text-black-400 border-4 border-pink-500 hover:bg-pink-400 uppercase relative z-30"
         >
             Share Score
         </button>
@@ -486,9 +487,10 @@
         // 1. CAMPTOWN RACES (110 BPM)
         const camptown_verse = [
             // Camptown ladies sing this song, Doo-dah, Doo-dah!
-            ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],
-            // Camptown race-track five miles long, Oh, doo-dah day!
-            ['E4',1],['D4',1],['C4',2], ['E4',1],['D4',1],['C4',2],
+
+            ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],['E4',1],['D4',3], ['E4',1],['D4',3],
+            // Camptown race-track five miles long, All the doo-dah day!
+            ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],['D4',1], ['F4',1],['E4',1],['D4',1],['C4',2],
         ];
         const camptown_chorus = [
             // Goin' to run all night, Goin' to run all day,
@@ -502,8 +504,8 @@
         // Full song: Verse, Chorus, Verse, Chorus, Coda
         const camptown_full = [].concat(
             camptown_verse, camptown_chorus, 
-            camptown_verse, camptown_chorus,
-            ['G4',1],['G4',1],['E4',1],['G4',1], ['C4',4] // Coda
+            camptown_verse
+           // ['G4',1],['G4',1],['E4',1],['G4',1], ['C4',4] // Coda
         );
 
         const camptown_lyrics_full = [
@@ -527,17 +529,25 @@
             ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1],
             ['E4', 1.5], ['D4', 0.5], ['D4', 2] 
         ];
+
         const ode_b = [
-            ['D4', 1], ['E4', 1], ['F4', 1], ['F4', 1],
-            ['E4', 1], ['D4', 1], ['C4', 1], ['C4', 1],
-            ['D4', 1], ['E4', 1], ['F4', 1], ['E4', 1],
-            ['D4', 1], ['C4', 1], ['C4', 2] 
+            ['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1],
+            ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1],
+            ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1],
+            ['D4', 1.5], ['C4', 0.5], ['C4', 2] 
+        ];
+
+        const ode_c = [
+            ['D4', 1], ['D4', 1], ['E4', 1], ['C4', 1],
+            ['D4', 1], ['E4', 0.5],['F4', 0.5], ['E4', 1], ['C4', 1],
+            ['D4', 1], ['E4', 0.5],['F4', 0.5], ['E4', 1], ['D4', 1],
+            ['C4', 1], ['D4', 1], ['G3', 2] 
         ];
 
         // Full song: A A B B Coda
         const ode_full = [].concat(
-            ode_a, ode_a, ode_b, ode_b, 
-            ['C4', 4], ['G3', 4], ['C4', 4] // Coda
+            ode_a, ode_b, ode_c, ode_b
+         //   ['C4', 4], ['G3', 4], ['C4', 4] // Coda
         ); 
         const ode_lyrics_full = [
             {beat: 0, text: "Joy, beautiful spark of Divinity, Daughter of Elysium,"}, 
@@ -1307,7 +1317,7 @@
             const song = ui.songSelect.value;
             const originalText = ui.shareBtn.innerText;
             const finalRankText = ui.rankText.innerText || "Stray Cat";
-            const text = `I scored ${gameState.score} points (${finalRankText}) for ${song} on I-mog-en: The Mewsical! Can you beat my combo of ${gameState.maxCombo}? 🐱🎵`;
+            const text = `I scored ${gameState.score} points (${finalRankText}) for (${song}) on I-mog-en: The Mewsical! Can you beat my combo of ${gameState.maxCombo}? 🐱🎵`;
             
 
             
