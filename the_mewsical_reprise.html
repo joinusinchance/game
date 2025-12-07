@@ -5,10 +5,175 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>I-mog-en: The Mewsical - Bubblegum Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Use Fredoka One for a fun, playful look -->
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
+
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet"> -->
     <style>
+        /* Custom styles for the bubblegum look and animation */
+
+        /* Define the text "breath" animation (Scale effect) */
+        @keyframes textBreath {
+            0% { 
+                transform: scale(1.0);
+            }
+            50% { 
+                transform: scale(1.08); /* Making pulse significantly bigger */
+                text-shadow: 
+                    -8px -8px 0 #6d5b9b, 
+                    8px 8px 0 #33ffff, 
+                    -2px -2px 0 #fff; 
+            }
+            100% { 
+                transform: scale(1.0);
+            }
+        }
+
+        /* Define the color flash/vibration animation */
+        @keyframes colorFlash {
+            0%, 100% {
+                color: #ff69b4; /* Hot Pink */
+            }
+            50% {
+                color: #ffff00; /* Electric Yellow */
+            }
+        }
+
+        /* Define the bubble font style */
+        .bubble-title {
+            font-family: 'Luckiest Guy', cursive;
+            line-height: 1;
+            
+            /* Enhanced Neon Shadow for Title */
+            text-shadow: 
+                -5px -5px 0 #5f4b8b, 
+                5px 5px 0 #00ffff, 
+                0 0 10px #ff00ff, /* Pink Neon Glow */
+                0 0 20px #00ffff, /* Blue Neon Glow */
+                -2px -2px 0 #fff; 
+
+            /* Apply breathing AND fast, annoying color flashing */
+            animation: textBreath 3s ease-in-out infinite alternate,
+                       colorFlash 0.2s linear infinite; /* Fast, annoying color shift */
+        }
+
+        /* Subtitle Bounce Animation (Quick, fast-paced rhythm) */
+        @keyframes subtitleBounce {
+            0%, 100% {
+                transform: translateY(0) scale(1.0);
+            }
+            50% {
+                transform: translateY(-2px) scale(1.05); /* Quick little jump and slight scale */
+            }
+        }
+
+        /* Subtitle Garish Style - Used for both the main subtitle and the new dropdown label */
+        .subtitle-garish {
+            font-family: 'Luckiest Guy', cursive;
+            color: #ffff00; /* Electric Yellow as primary color */
+            text-shadow: 
+                -3px -3px 0 #ff69b4, /* Pink shadow */
+                3px 3px 0 #00ffff, /* Cyan highlight */
+                0 0 8px #ff00ff; /* Subtle glow */
+            line-height: 1;
+            /* Applying a quick, rhythmic bounce */
+            animation: subtitleBounce 0.3s ease-in-out infinite alternate;
+        }
+        
+        /* Dropdown Wobble Animation - Keeping the definition, but removing application below */
+        @keyframes selectWobble {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-0.5deg); } /* Tiny, annoying rotation */
+        }
+        
+        /* Dropdown Garish Style */
+        .song-select-garish {
+            font-family: 'Luckiest Guy', cursive;
+            /* UPDATED: High Contrast Black Text for readability */
+            color: #000000; 
+            background-color: #00ffff; /* Cyan Background */
+            border: 4px solid #ff69b4; /* Hot Pink Border */
+            padding: 0.5rem 1.5rem;
+            
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            /* Add custom arrow (using a background image for complexity, though not strictly required) */
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23FF69B4" d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.5em;
+        }
+
+        /* Define the RHYTHMIC "jitter" animation (0.5s cycle = 120 BPM) */
+        @keyframes rhythmicJitter {
+            0% { 
+                transform: translateY(0) rotate(0deg) scale(2.0); 
+            }
+            25% { 
+                transform: translateY(5px) rotate(2deg) scale(1.95); 
+            }
+            50% { 
+                transform: translateY(-15px) rotate(-8deg) scale(2.10); 
+            }
+            75% { 
+                transform: translateY(0) rotate(0deg) scale(2.0); 
+            }
+            100% { 
+                transform: translateY(0) rotate(0deg) scale(2.0); 
+            }
+        }
+
+        .cat-animated {
+            animation: rhythmicJitter 0.5s ease-out infinite;
+            cursor: pointer; 
+        }
+
+        /* Hyperactive Bubble background pattern (Background Frenzy) */
+        .bubble-bg {
+            background: #ffffff; 
+            background-image: 
+                radial-gradient(circle at 5% 15%, rgba(255, 20, 147, 0.4) 0%, transparent 70%), 
+                radial-gradient(circle at 75% 85%, rgba(0, 255, 255, 0.5) 0%, transparent 70%), 
+                radial-gradient(circle at 30% 60%, rgba(255, 165, 0, 0.3) 0%, transparent 70%),
+                radial-gradient(circle at 90% 10%, rgba(128, 0, 128, 0.3) 0%, transparent 60%); 
+            background-size: 200px 200px, 300px 300px, 150px 150px, 350px 350px;
+            animation: moveBubbles 15s linear infinite; /* Accelerated speed */
+        }
+
+        @keyframes moveBubbles {
+            from { background-position: 0 0, 0 0, 0 0, 0 0; }
+            to { background-position: 200px 200px, -300px 300px, 150px -150px, -350px 350px; }
+        }
+        
+        /* Button wobble animation */
+        @keyframes buttonWobble {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            33% { transform: translateY(-1px) rotate(1deg); }
+            66% { transform: translateY(1px) rotate(-1deg); }
+        }
+
+        /* Custom button styling */
+        .start-button {
+            transition: none; 
+            
+            /* Updated shadow for wobble/press state AND neon glow */
+            box-shadow: 0 8px 0 0 #5f4b8b, 
+                        0 0 10px #ff00ff, 
+                        0 0 20px #00ffff; 
+            
+            animation: buttonWobble 0.2s linear infinite; 
+        }
+
+        .start-button:active {
+            box-shadow: 0 2px 0 0 #5f4b8b, 
+                        0 0 10px #ff00ff,
+                        0 0 20px #00ffff;
+            transform: translateY(6px);
+            animation: none; 
+        }
+    
+
+
         /* Embedded CSS adapted for Bubblegum Theme */
         
         /* General Body and Text changes: Dark BG -> Light BG, White Text -> Dark Text */
@@ -193,18 +358,24 @@
 
         <!-- Start Screen -->
         <div id="start-screen" class="overlay">
-            <h1>I-MOG-EN</h1>
-            <div class="subtitle">The Mewsical Rhythm Action Game</div>
+            <div class="relative z-20 pt-5">
+                <h1 class="bubble-title text-5xl sm:text-7xl md:text-8xl select-none whitespace-nowrap -ml-3">
+                    I MOG EN
+                </h1>
+                <p class="subtitle-garish text-2xl md:text-4xl font-bold tracking-wider">
+                    The Mewsical!
+                </p>
+            </div>
             
             <div style="margin: 20px 0; width: 100%; text-align: center;">
-                <label for="song-select" style="font-size: 1.2rem; color: #EC4899;">Select Track (Full Length!):</label><br/>
+                <label for="song-select" style="font-size: 1.2rem; color: #EC4899;">Select Track:</label><br/>
                 <select id="song-select">
-                    <option value="camptown">Camptown Races (110 BPM)</option>
-                    <option value="ode">Ode to Joy (120 BPM)</option>
-                    <option value="sevendayslay">Seven Day Slay (130 BPM)</option>
-                    <option value="entertainer">The Entertainer (140 BPM)</option>
-                    <option value="korobeiniki">Korobeiniki (Tetris) (140 BPM)</option>
-                    <option value="mountain">Hall of Mountain King (160 BPM)</option>
+                    <option value="camptown">Camptown Races</option>
+                    <option value="ode">Ode to Joy</option>
+                    <option value="sevendayslay">Seven Day Slay</option>
+                    <option value="entertainer">The Entertainer</option>
+                    <option value="korobeiniki">Korobeiniki (Tetris)</option>
+                    <option value="mountain">Hall of Mountain King </option>
                 </select>
             </div>
             
