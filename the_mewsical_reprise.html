@@ -6,6 +6,8 @@
     <title>I-mog-en: The Mewsical - Bubblegum Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
+    <!-- Added 'Bangers' for that jaunty, garish comic book look -->
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
 
     <!-- <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet"> -->
     <style>
@@ -154,21 +156,26 @@
 
         /* Custom button styling */
         .start-button {
-            transition: none; 
+            transition: none;
+            /* Use the new jaunty font */
+            font-family: 'Bangers', cursive; 
+            letter-spacing: 2px;
             
-            /* Updated shadow for wobble/press state AND neon glow */
-            box-shadow: 0 8px 0 0 #5f4b8b, 
-                        0 0 10px #ff00ff, 
-                        0 0 20px #00ffff; 
+            /* High contrast thick border */
+            border-width: 4px;
+            border-style: solid;
+            border-color: #000;
             
-            animation: buttonWobble 0.2s linear infinite; 
+            /* Updated shadow for wobble/press state */
+            box-shadow: 4px 6px 0 0 #000; 
+            
+            animation: buttonWobble 2s linear infinite; 
+            /* Slower wobble for better readability on high contrast */
         }
 
         .start-button:active {
-            box-shadow: 0 2px 0 0 #5f4b8b, 
-                        0 0 10px #ff00ff,
-                        0 0 20px #00ffff;
-            transform: translateY(6px);
+            box-shadow: 1px 2px 0 0 #000;
+            transform: translateY(4px);
             animation: none; 
         }
     
@@ -252,47 +259,6 @@
             margin: 10px 20px;
             color: #5A189A; /* Dark Purple Text */
         }
-
-        /* Primary Button: Hot Pink with Darker Purple Shadow */
-        .btn {
-            background: #EC4899; /* Fuchsia */
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.5rem;
-            border-radius: 50px;
-            cursor: pointer;
-            font-family: 'Fredoka One', cursive;
-            margin-top: 15px;
-            box-shadow: 0 6px 0 #A78BFA; /* Light Purple Shadow */
-            transition: transform 0.1s;
-            width: 80%;
-            max-width: 300px;
-        }
-
-        .btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #A78BFA;
-        }
-        
-        .btn:disabled {
-            background: #ccc;
-            box-shadow: 0 4px 0 #999;
-            cursor: default;
-        }
-
-        /* Secondary Button: Teal/Cyan with Darker Shadow */
-        .btn-secondary {
-            background: #22D3EE; /* Cyan */
-            box-shadow: 0 6px 0 #0EA5E9; /* Light Blue Shadow */
-        }
-        
-        /* Share Button: Bright Yellow with Dark Text */
-        .btn-share {
-            background: #FCD34D; /* Bright Yellow */
-            color: #5A189A; /* Dark Purple Text */
-            box-shadow: 0 6px 0 #FBBF24; /* Amber Shadow */
-        }
         
         #loading-status {
             font-size: 1rem;
@@ -348,12 +314,21 @@
             transition: all 0.2s;
         }
 
+        /* JAUNTY AND GARISH LYRICS STYLE */
         .lyric-active {
-            font-size: 1.6rem;
-            color: #3B82F6; /* Bright Blue */
-            transform: scale(1.05);
-            text-shadow: 2px 2px 0px #EC4899; /* Pink shadow for pop */
+            font-family: 'Bangers', cursive; /* Jaunty font */
+            font-size: 2.2rem; /* Big */
+            color: #FFF000; /* Bright Yellow Fill */
+            
+            /* Garish thick stroke using text-stroke (webkit) and shadow fallback */
+            -webkit-text-stroke: 1.5px black;
+            text-shadow: 
+                3px 3px 0 #000, /* Hard black shadow */
+                5px 5px 0 #FF00FF; /* Second pink shadow */
+                
+            transform: scale(1.05) rotate(-2deg); /* Jaunty tilt */
             opacity: 1;
+            letter-spacing: 1px;
         }
 
         /* Updated select styles for black text and better contrast */
@@ -428,10 +403,10 @@
             </select>
         </div>
 
-        <!-- Start Game Button (Positioned after the overlapping container, ensuring it stacks on top) -->
+        <!-- Start Game Button: HIGH CONTRAST (Yellow on Black) -->
         <button 
             id="start-btn"
-            class="start-button w-full py-4 text-3xl font-bold rounded-full bg-pink-500 text-cyan-400 border-4 border-pink-500 hover:bg-pink-400 uppercase relative z-30"
+            class="start-button w-full py-4 text-4xl rounded-xl bg-pink-400 text-black hover:bg-pink-300 uppercase relative z-30"
         >
             Play Now!
         </button>
@@ -450,20 +425,19 @@
             <p>Score: <span id="final-score" style="color:#EC4899;">0</span></p>
             <p>Best Combo: <span id="max-combo" style="color:#3B82F6;">0</span></p>
             <p id="rank-text" style="font-size: 2rem; color: #EC4899; margin: 10px 0"></p>
-            <!--
-            <button class="btn btn-share" id="share-btn">Share Score</button>
-            <button class="btn btn-secondary" id="restart-btn">Play Again</button> -->
 
+        <!-- Share Button: HIGH CONTRAST (Cyan on Black) -->
         <button 
             id="share-btn"
-            class="start-button w-full py-4 text-3xl font-bold rounded-full bg-cyan-500 text-pink-400 border-4 border-pink-500 hover:bg-pink-400 uppercase relative z-30"
+            class="start-button w-full py-3 text-3xl rounded-xl bg-cyan-400 text-black hover:bg-cyan-300 uppercase relative z-30 mb-4"
         >
             Share Score
         </button>
-        <p>
+        
+        <!-- Restart Button: HIGH CONTRAST (Green on Black) -->
         <button 
             id="restart-btn"
-            class="start-button w-full py-4 text-3xl font-bold rounded-full bg-pink-500 text-cyan-400 border-4 border-pink-500 hover:bg-pink-400 uppercase relative z-30"
+            class="start-button w-full py-3 text-3xl rounded-xl bg-green-500 text-black hover:bg-green-400 uppercase relative z-30"
         >
             Play Again!
         </button>
