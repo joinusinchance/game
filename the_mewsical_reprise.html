@@ -1293,8 +1293,7 @@
 
         const shareScore = () => {
             audioEngine?.playUISound();
-            
-            const song = ui.songSelect.innerText;
+            const song = ui.songSelect.value;
             const originalText = ui.shareBtn.innerText;
             const finalRankText = ui.rankText.innerText || "Stray Cat";
             const text = `I scored ${gameState.score} points (${finalRankText}) for (${song}) on I-mog-en: The Mewsical! Can you beat my combo of ${gameState.maxCombo}? 🐱🎵`;
