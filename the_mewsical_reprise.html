@@ -822,12 +822,12 @@
                     comboDelta = 1;
                     AE.playHitSound('perfect');
                 } else if (diff < 0.25) {
-                    txt = "Good!"; col = "#33FFFF"; /* Cyan */
+                    txt = "Grrreat!"; col = "#33FFFF"; /* Cyan */
                     scoreDelta = 50 + (gameState.combo*2);
                     comboDelta = 1;
                     AE.playHitSound('good');
                 } else {
-                    txt = "Meh"; col = "#FFFF00"; /* Yellow */
+                    txt = "Mew"; col = "#FFFF00"; /* Yellow */
                     scoreDelta = 10;
                     comboDelta = -gameState.combo;
                     AE.playHitSound('meh');
