@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Speed Test</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the game area */
+        #game-area {
+            min-height: 50vh;
+            cursor: pointer;
+            transition: background-color 0.5s ease-in-out;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* Initial state */
+        .state-start {
+            background-color: #3b82f6; /* Blue */
+        }
+
+        /* Waiting state */
+        .state-wait {
+            background-color: #dc2626; /* Red */
+        }
+
+        /* Ready/Reaction state */
+        .state-reaction {
+            background-color: #22c55e; /* Green */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans flex flex-col p-4">
+
+    <!-- Header -->
+    <header class="text-center mb-8">
+        <h1 class="text-4xl font-extrabold text-gray-800">🚀 Speed Runner</h1>
+        <p class="text-gray-500 mt-1">Test your reflexes. Click as soon as the screen turns green!</p>
+    </header>
+
+    <!-- Game Container -->
+    <main class="flex-grow flex flex-col md:flex-row gap-6 max-w-6xl mx-auto w-full">
+
+        <!-- Game Area -->
+        <div id="game-area" class="state-start rounded-xl shadow-2xl transition-all duration-300 transform hover:scale-[1.005] md:w-3/5 w-full">
+            <div id="game-content" class="p-8 text-white">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">Click to Start</h2>
+                <p class="text-lg">Get ready to wait for the color change.</p>
+            </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="md:w-2/5 w-full bg-white p-6 rounded-xl shadow-lg">
+            <h3 class="text-2xl font-semibold text-gray-700 mb-4 flex items-center">
+                Top Scores (ms)
+                <svg class="w-5 h-5 ml-2 text-yellow-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9a1 1 0 000 2h2a1 1 0 100-2h-2zm-2.828 2.828a1 1 0 011.414 0L10 12.586l1.414-1.414a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+            </h3>
+            <ul id="leaderboard-list" class="space-y-2 text-gray-600">
+                <li class="flex justify-between items-center text-sm">Loading scores...</li>
+            </ul>
+        </div>
+    </main>
+
+    <!-- Score Submission Modal (Hidden by default) -->
+    <div id="modal-container" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
+            <h4 class="text-xl font-bold mb-4 text-gray-800">New High Score!</h4>
+            <p id="final-score" class="text-2xl font-mono text-center mb-4 text-green-600"></p>
+            <label for="username-input" class="block text-sm font-medium text-gray-700 mb-1">Enter your name:</label>
+            <input type="text" id="username-input" maxlength="15" placeholder="Player Name" class="w-full p-2 border border-gray-300 rounded-lg mb-4 focus:ring-blue-500 focus:border-blue-500">
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">Maybe Later</button>
+                <button onclick="submitScore()" class="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition">Submit Score</button>
+            </div>
+            <p id="submission-message" class="mt-3 text-sm text-center text-red-500"></p>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Dreamlo Configuration ---
+        // IMPORTANT: Replace these placeholders with your actual Dreamlo codes!
+        
+        // This public code is used ONLY for retrieving (reading) the leaderboard data.
+        const DREAMLO_PUBLIC_CODE = 'YOUR_DREAMLO_PUBLIC_CODE'; 
+        // This private code is required for submitting (writing) scores.
+        const DREAMLO_PRIVATE_CODE = 'YOUR_DREAMLO_PRIVATE_CODE'; 
+
+        // API Endpoint 1 (Retrieval): Uses public code and requests JSON format.
+        //const LEADERBOARD_URL = `http://dreamlo.com/lb/${DREAMLO_PUBLIC_CODE}/json`;
+        const LEADERBOARD_URL = `http://dreamlo.com/lb/$mewsical/json`;
+      
+        // API Endpoint 2 (Submission): Uses private code and the /add/ command.
+        // Final URL format: http://dreamlo.com/lb/{private_code}/add/{name}/{score}
+        //const SUBMIT_URL_BASE = `http://dreamlo.com/lb/${DREAMLO_PRIVATE_CODE}/add/`;
+        const SUBMIT_URL_BASE = `http://dreamlo.com/lb/$mewiscal_post/add/`;
+      
+        // --- Game Variables ---
+        let gameState = 'start'; // 'start', 'waiting', 'reaction', 'result'
+        let timeoutId = null;
+        let startTime = 0;
+        let finalReactionTime = 0;
+
+        // --- DOM Elements ---
+        const gameArea = document.getElementById('game-area');
+        const gameContent = document.getElementById('game-content');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const modalContainer = document.getElementById('modal-container');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const usernameInput = document.getElementById('username-input');
+        const submissionMessage = document.getElementById('submission-message');
+
+        /**
+         * Clears all state classes and sets the new state class on the game area.
+         * @param {string} newState - The new state ('start', 'wait', 'reaction', 'result').
+         */
+        function updateGameState(newState) {
+            gameArea.classList.remove('state-start', 'state-wait', 'state-reaction');
+            // Note: 'result' state doesn't have a specific background, it relies on content
+            if (newState !== 'result') {
+                gameArea.classList.add(`state-${newState}`);
+            } else {
+                 gameArea.classList.add('state-start'); // Default color for result screen
+            }
+            gameState = newState;
+        }
+
+        /**
+         * The main game logic handler when the game area is clicked.
+         */
+        gameArea.addEventListener('click', handleGameClick);
+
+        function handleGameClick() {
+            switch (gameState) {
+                case 'start':
+                case 'result':
+                    // Start the waiting phase (Red screen)
+                    startWaiting();
+                    break;
+
+                case 'waiting':
+                    // Clicked too early (Red screen)
+                    handleTooEarly();
+                    break;
+
+                case 'reaction':
+                    // Clicked in time (Green screen)
+                    handleReaction();
+                    break;
+            }
+        }
+
+        /**
+         * Phase 1: Start Waiting (Red Screen)
+         */
+        function startWaiting() {
+            updateGameState('wait');
+            gameContent.innerHTML = '<h2 class="text-3xl sm:text-4xl font-bold">Wait for Green...</h2><p class="text-lg">Do not click yet.</p>';
+
+            // Calculate a random delay between 1000ms (1s) and 5000ms (5s)
+            const randomDelay = Math.random() * 4000 + 1000;
+
+            // Set a timeout to switch to the reaction phase
+            timeoutId = setTimeout(startReaction, randomDelay);
+        }
+
+        /**
+         * Phase 2: Reaction (Green Screen)
+         */
+        function startReaction() {
+            updateGameState('reaction');
+            gameContent.innerHTML = '<h2 class="text-3xl sm:text-4xl font-bold">CLICK NOW!</h2><p class="text-lg">Your timer has started.</p>';
+            // Record the exact time the screen turned green
+            startTime = performance.now();
+        }
+
+        /**
+         * Handle: Clicked Too Early
+         */
+        function handleTooEarly() {
+            // Clear the scheduled green switch
+            clearTimeout(timeoutId);
+            timeoutId = null;
+
+            updateGameState('result');
+            gameContent.innerHTML = `
+                <div class="bg-white text-red-600 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-4xl font-bold mb-2">Too Early!</h2>
+                    <p class="text-xl">You clicked while the screen was red. You must wait for the green signal.</p>
+                    <button onclick="startWaiting()" class="mt-4 px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition">Try Again</button>
+                </div>
+            `;
+        }
+
+        /**
+         * Handle: Successful Reaction
+         */
+        function handleReaction() {
+            // Calculate reaction time
+            finalReactionTime = Math.round(performance.now() - startTime);
+
+            updateGameState('result');
+            gameContent.innerHTML = `
+                <div class="bg-white text-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-4xl font-bold mb-2">Your Reaction Time:</h2>
+                    <p class="text-6xl font-extrabold text-green-600">${finalReactionTime} <span class="text-3xl">ms</span></p>
+                    <div class="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-3 mt-4">
+                        <button onclick="showSubmissionModal()" class="px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition">Submit Score</button>
+                        <button onclick="startWaiting()" class="px-6 py-3 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition">Play Again</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Dreamlo Leaderboard Functions ---
+
+        /**
+         * Loads and displays the top 10 scores from Dreamlo using the public code and JSON format.
+         */
+        async function loadLeaderboard() {
+            leaderboardList.innerHTML = '<li class="flex justify-between items-center text-sm">Loading scores...</li>';
+
+            if (DREAMLO_PUBLIC_CODE.includes('YOUR_DREAMLO_PUBLIC_CODE')) {
+                leaderboardList.innerHTML = `<li class="text-red-500 text-center col-span-2">
+                    <strong class="font-bold">Error:</strong> Please update <code class="font-mono">DREAMLO_PUBLIC_CODE</code> in the script.
+                </li>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(LEADERBOARD_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                // Dreamlo data structure contains a 'dreamlo' object with a 'leaderboard' array
+                const scores = data.dreamlo.leaderboard.entry;
+
+                leaderboardList.innerHTML = ''; // Clear loading message
+
+                if (!scores || scores.length === 0) {
+                    leaderboardList.innerHTML = '<li class="text-center italic text-gray-500">No scores posted yet.</li>';
+                    return;
+                }
+
+                // Ensure scores is an array, even if there's only one entry
+                const scoreArray = Array.isArray(scores) ? scores : [scores];
+
+                scoreArray.slice(0, 10).forEach((score, index) => {
+                    // Dreamlo stores reaction time as the score, which should be lower = better
+                    const listItem = document.createElement('li');
+                    listItem.className = `flex justify-between items-center p-2 rounded-lg ${index < 3 ? 'bg-yellow-100 font-bold' : 'hover:bg-gray-50'}`;
+                    listItem.innerHTML = `
+                        <span class="w-8 text-center text-sm">${index + 1}.</span>
+                        <span class="flex-1 truncate">${decodeURIComponent(score.name)}</span>
+                        <span class="font-mono text-lg">${score.score} <small>ms</small></span>
+                    `;
+                    leaderboardList.appendChild(listItem);
+                });
+
+            } catch (error) {
+                console.error("Failed to load leaderboard:", error);
+                leaderboardList.innerHTML = `<li class="text-red-500 text-sm text-center">Failed to load scores. Check console for details.</li>`;
+            }
+        }
+
+        /**
+         * Shows the modal to submit the score.
+         */
+        function showSubmissionModal() {
+            if (finalReactionTime > 0) {
+                finalScoreDisplay.textContent = `${finalReactionTime} ms`;
+                modalContainer.classList.remove('hidden');
+                modalContainer.classList.add('flex');
+            }
+        }
+
+        /**
+         * Closes the score submission modal.
+         */
+        function closeModal() {
+            modalContainer.classList.add('hidden');
+            modalContainer.classList.remove('flex');
+            submissionMessage.textContent = '';
+            usernameInput.value = '';
+        }
+
+        /**
+         * Submits the score to the Dreamlo leaderboard using the private code and /add/{name}/{score} format.
+         */
+        async function submitScore() {
+            const username = usernameInput.value.trim();
+
+            if (!username) {
+                submissionMessage.textContent = "Please enter a name.";
+                return;
+            }
+            if (DREAMLO_PRIVATE_CODE.includes('YOUR_DREAMLO_PRIVATE_CODE')) {
+                 submissionMessage.textContent = "Error: Please update DREAMLO_PRIVATE_CODE in the script to submit.";
+                 return;
+            }
+
+            submissionMessage.textContent = 'Submitting...';
+            submissionMessage.className = 'mt-3 text-sm text-center text-gray-500';
+
+            // 1. URL encoding the name is necessary for special characters/spaces (part of Dreamlo spec)
+            const encodedName = encodeURIComponent(username);
+            // 2. The score is the reaction time in ms. Dreamlo automatically handles lower scores being better.
+            const score = finalReactionTime; 
+
+            // Construct the final submission URL
+            const submitUrl = `${SUBMIT_URL_BASE}${encodedName}/${score}`;
+
+            try {
+                // Dreamlo uses a simple GET request for score submission
+                const response = await fetch(submitUrl, { method: 'GET' });
+                
+                // Dreamlo response for success is usually a simple "OK" text
+                const resultText = await response.text();
+
+                if (resultText.trim() === 'OK') {
+                    submissionMessage.textContent = 'Score submitted successfully!';
+                    submissionMessage.className = 'mt-3 text-sm text-center text-green-600';
+                    // Wait a moment then close modal and refresh leaderboard
+                    setTimeout(() => {
+                        closeModal();
+                        loadLeaderboard();
+                    }, 1500);
+                } else {
+                    submissionMessage.textContent = `Submission failed: ${resultText}.`;
+                    submissionMessage.className = 'mt-3 text-sm text-center text-red-500';
+                }
+
+            } catch (error) {
+                console.error("Score submission error:", error);
+                submissionMessage.textContent = 'An error occurred during submission.';
+                submissionMessage.className = 'mt-3 text-sm text-center text-red-500';
+            }
+        }
+
+        // Initial load of the leaderboard when the page is ready
+        window.onload = loadLeaderboard;
+    </script>
+</body>
+</html>
