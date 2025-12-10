@@ -92,13 +92,13 @@
         const DREAMLO_PRIVATE_CODE = 'mewiscal_priv'; 
 
         // API Endpoint 1 (Retrieval): Uses public code and requests JSON format.
-        const LEADERBOARD_URL = `http://dreamlo.com/lb/${DREAMLO_PUBLIC_CODE}/json`;
-        //const LEADERBOARD_URL = `http://dreamlo.com/lb/$mewsical/json`;
+        const LEADERBOARD_URL = `https://dreamlo.com/lb/${DREAMLO_PUBLIC_CODE}/json`;
+        //const LEADERBOARD_URL = `https://dreamlo.com/lb/$mewsical/json`;
       
         // API Endpoint 2 (Submission): Uses private code and the /add/ command.
-        // Final URL format: http://dreamlo.com/lb/{private_code}/add/{name}/{score}
-        const SUBMIT_URL_BASE = `http://dreamlo.com/lb/${DREAMLO_PRIVATE_CODE}/add/`;
-        //const SUBMIT_URL_BASE = `http://dreamlo.com/lb/$mewiscal_post/add/`;
+        // Final URL format: https://dreamlo.com/lb/{private_code}/add/{name}/{score}
+        const SUBMIT_URL_BASE = `https://dreamlo.com/lb/${DREAMLO_PRIVATE_CODE}/add/`;
+        //const SUBMIT_URL_BASE = `https://dreamlo.com/lb/$mewiscal_post/add/`;
       
         // --- Game Variables ---
         let gameState = 'start'; // 'start', 'waiting', 'reaction', 'result'
