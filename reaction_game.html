@@ -87,18 +87,18 @@
         // IMPORTANT: Replace these placeholders with your actual Dreamlo codes!
         
         // This public code is used ONLY for retrieving (reading) the leaderboard data.
-        const DREAMLO_PUBLIC_CODE = 'YOUR_DREAMLO_PUBLIC_CODE'; 
+        const DREAMLO_PUBLIC_CODE = 'mewsical_pub'; 
         // This private code is required for submitting (writing) scores.
-        const DREAMLO_PRIVATE_CODE = 'YOUR_DREAMLO_PRIVATE_CODE'; 
+        const DREAMLO_PRIVATE_CODE = 'mewiscal_priv'; 
 
         // API Endpoint 1 (Retrieval): Uses public code and requests JSON format.
-        //const LEADERBOARD_URL = `http://dreamlo.com/lb/${DREAMLO_PUBLIC_CODE}/json`;
-        const LEADERBOARD_URL = `http://dreamlo.com/lb/$mewsical/json`;
+        const LEADERBOARD_URL = `http://dreamlo.com/lb/${DREAMLO_PUBLIC_CODE}/json`;
+        //const LEADERBOARD_URL = `http://dreamlo.com/lb/$mewsical/json`;
       
         // API Endpoint 2 (Submission): Uses private code and the /add/ command.
         // Final URL format: http://dreamlo.com/lb/{private_code}/add/{name}/{score}
-        //const SUBMIT_URL_BASE = `http://dreamlo.com/lb/${DREAMLO_PRIVATE_CODE}/add/`;
-        const SUBMIT_URL_BASE = `http://dreamlo.com/lb/$mewiscal_post/add/`;
+        const SUBMIT_URL_BASE = `http://dreamlo.com/lb/${DREAMLO_PRIVATE_CODE}/add/`;
+        //const SUBMIT_URL_BASE = `http://dreamlo.com/lb/$mewiscal_post/add/`;
       
         // --- Game Variables ---
         let gameState = 'start'; // 'start', 'waiting', 'reaction', 'result'
