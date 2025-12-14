@@ -28,8 +28,8 @@
 
         // --- CONFIGURATION ---
         const API_BASE_URL = 'https://lb.yogurtthehor.se/api/v1';
-        const LEADERBOARD_ID_KEY = 'highscores_lb_id';
-        const LEADERBOARD_SECRET_KEY = 'highscores_lb_secret';
+        const LEADERBOARD_ID_KEY =  'ed26e5e211b8442fa21c05df772c37cf';// 'highscores_lb_id';
+        const LEADERBOARD_SECRET_KEY = '08f665e58b2947b4a7c62834014279bc' ;//'highscores_lb_secret';
 
         // Game states
         const GAME_STATE = {
@@ -136,7 +136,7 @@
                 setIsSubmitting(true);
                 // API format: /LB_ID/SECRET/add/NAME/SCORE/TIME
                 const url = `${API_BASE_URL}/scores/${leaderboardId}/${leaderboardSecret}/add/${encodeURIComponent(name)}/${score}/0`;
-                
+                console.log (url);
                 try {
                     // The API specifies a POST request
                     const response = await fetch(url, { method: 'POST' });
