@@ -598,7 +598,7 @@
                     ui.rankText.className = "garish-text";
                     const maxPossibleScore = gameState.notes.length * 100;
                     const pct = maxPossibleScore > 0 ? gameState.score / maxPossibleScore : 0;
-                    let rank = "Stray Cat";
+                    let rank = "Drowned Alley-Scamp";
                     if (pct == 1) rank = "Pop Star Purrfection!";
                     else if (pct > 0.9) rank = "Nine-Life Legend";
                     else if (pct > 0.8) rank = "The Gilded Aristocat";
@@ -609,7 +609,7 @@
                     else if (pct > 0.3) rank = "Barnyard Mouser";
                     else if (pct > 0.2) rank = "Flea-Bitten Stray";
                     else if (pct > 0.1) rank = "Sewer-Sodden Scruff";
-                    else rank = "Drowned Alley-Scamp" 
+                     
                     
                     ui.rankText.innerText = rank;
                 }
@@ -925,7 +925,7 @@
             audioEngine?.playUISound();
             const song = ui.songSelect.value;
             const originalText = ui.shareBtn.innerText;
-            const finalRankText = ui.rankText.innerText || "Stray Cat";
+            const finalRankText = ui.rankText.innerText || "Drowned Alley-Scamp";
             const text = `I scored ${gameState.score} points (${finalRankText}) for ${song} on I-mog-en: The Mewsical! Can you beat my combo of ${gameState.maxCombo}? 🐱🎵`;
             
             const restoreButton = (newText, duration = 2000) => {
