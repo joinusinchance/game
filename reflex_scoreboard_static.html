@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nano-Reaction Tester</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for in-browser JSX transformation (for simple demos) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* Custom font import for better aesthetics */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Destructuring React hooks
+        const { useState, useEffect, useCallback, useRef } = React;
+
+        // --- CONFIGURATION ---
+        const API_BASE_URL = 'https://lb.yogurtthehor.se/api/v1';
+        
+        // Explicitly set as requested
+        const LEADERBOARD_ID_KEY = '110';
+        const LEADERBOARD_SECRET_KEY = 'cbc93a61277d48e7acd7487d65b46ec8';
+
+        // Game states
+        const GAME_STATE = {
+            IDLE: 'idle',           
+            WAITING: 'waiting',     
+            READY: 'ready',         
+            RESULT: 'result',       
+            FALSE_START: 'false_start', 
+            SETUP: 'setup',         
+            ERROR: 'error'          
+        };
+
+        // Main App Component
+        const App = () => {
+            // Game State
+            const [gameState, setGameState] = useState(GAME_STATE.IDLE);
+            const [reactionTime, setReactionTime] = useState(null); // Score in milliseconds
+            const [message, setMessage] = useState('');
+            
+            // API State (Initialized with fixed keys)
+            const [leaderboardId] = useState(LEADERBOARD_ID_KEY);
+            const [leaderboardSecret] = useState(LEADERBOARD_SECRET_KEY);
+            const [highScores, setHighScores] = useState([]);
+            const [name, setName] = useState('Player');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [apiError, setApiError] = useState(null);
+
+            // Timers and Refs
+            const startTimeRef = useRef(null);
+            const timeoutRef = useRef(null);
+
+            // Function to handle API errors
+            const handleApiError = (msg) => {
+                setApiError(msg);
+                setGameState(GAME_STATE.ERROR);
+                console.error("API Error:", msg);
+            };
+
+            // --- API LOGIC ---
+
+            // 1. Fetch High Scores
+            const fetchHighScores = useCallback(async (id) => {
+                if (!id) return;
+                
+                try {
+                    // Fetch top 10 scores
+                    const response = await fetch(`${API_BASE_URL}/scores/${id}/10`);
+                    if (!response.ok) throw new Error('Failed to fetch high scores.');
+                    
+                    const data = await response.json();
+                    
+                    if (data && Array.isArray(data.scores)) {
+                        // The API stores score as 'value', which represents the reaction time (ms).
+                        // Lower is better, so we sort ascending.
+                        const sortedScores = data.scores.sort((a, b) => a.value - b.value);
+                        setHighScores(sortedScores);
+                    }
+                } catch (error) {
+                    console.error('Fetch high scores error:', error);
+                }
+            }, []);
+
+            // 2. Submit High Score
+            const submitHighScore = useCallback(async (name, score) => {
+                if (!leaderboardId || !leaderboardSecret || !name || score === null) return;
+
+                setIsSubmitting(true);
+                // API format: /LB_ID/SECRET/add/NAME/SCORE/TIME
+                const url = `${API_BASE_URL}/scores/${leaderboardId}/${leaderboardSecret}/add/${encodeURIComponent(name)}/${score}/0`;
+                
+                try {
+                    const response = await fetch(url, { method: 'POST' });
+                    if (!response.ok) throw new Error(`Server returned status ${response.status}`);
+                    
+                    setMessage('Score submitted successfully!');
+                    await fetchHighScores(leaderboardId); // Refresh scores
+                } catch (error) {
+                    setMessage(`Failed to submit score: ${error.message}.`);
+                } finally {
+                    setIsSubmitting(false);
+                }
+            }, [leaderboardId, leaderboardSecret, fetchHighScores]);
+
+            // Initial load effect: Fetch scores
+            useEffect(() => {
+                if (leaderboardId) {
+                    fetchHighScores(leaderboardId);
+                }
+            }, [leaderboardId, fetchHighScores]);
+
+
+            // --- GAME LOGIC ---
+
+            const startGame = () => {
+                clearTimeout(timeoutRef.current);
+
+                setGameState(GAME_STATE.WAITING);
+                setReactionTime(null);
+                setMessage('Wait for the green screen...');
+
+                const delay = Math.random() * 3000 + 1000;
+
+                timeoutRef.current = setTimeout(() => {
+                    setGameState(GAME_STATE.READY);
+                    setMessage('CLICK NOW!');
+                    startTimeRef.current = performance.now();
+                }, delay);
+            };
+
+            const handleScreenClick = () => {
+                if (gameState === GAME_STATE.WAITING) {
+                    clearTimeout(timeoutRef.current);
+                    setGameState(GAME_STATE.FALSE_START);
+                    setMessage('False Start! You clicked too early.');
+                    startTimeRef.current = null;
+                } else if (gameState === GAME_STATE.READY) {
+                    const endTime = performance.now();
+                    const timeElapsed = Math.round(endTime - startTimeRef.current);
+                    
+                    setReactionTime(timeElapsed);
+                    setGameState(GAME_STATE.RESULT);
+                    setMessage(`Your time: ${timeElapsed} ms`);
+                    startTimeRef.current = null;
+                } else if (gameState === GAME_STATE.IDLE || gameState === GAME_STATE.RESULT || gameState === GAME_STATE.FALSE_START) {
+                    startGame();
+                }
+            };
+
+            // --- RENDER HELPERS ---
+
+            const getBackgroundColor = () => {
+                switch (gameState) {
+                    case GAME_STATE.WAITING:
+                        return 'bg-blue-600 cursor-pointer'; 
+                    case GAME_STATE.READY:
+                        return 'bg-green-500 cursor-pointer'; 
+                    case GAME_STATE.FALSE_START:
+                        return 'bg-red-500 cursor-pointer'; 
+                    case GAME_STATE.RESULT:
+                        return 'bg-purple-600 cursor-pointer'; 
+                    default:
+                        return 'bg-gray-800 cursor-pointer'; 
+                }
+            };
+
+            const isGamePlayable = gameState === GAME_STATE.WAITING || gameState === GAME_STATE.READY;
+            const isGameFinished = gameState === GAME_STATE.RESULT || gameState === GAME_STATE.FALSE_START;
+            const showScoreSubmission = gameState === GAME_STATE.RESULT && reactionTime !== null;
+            const showStartMessage = gameState === GAME_STATE.IDLE || isGameFinished;
+
+
+            // --- MAIN RENDER ---
+
+            return (
+                <div className="min-h-screen bg-gray-900 text-white font-sans flex flex-col p-4 md:p-8">
+                    <header className="text-center mb-6">
+                        <h1 className="text-4xl font-extrabold text-indigo-400">Nano-Reaction Tester</h1>
+                        <p className="text-gray-400 mt-1">Click the screen as soon as it turns green. Lowest time wins!</p>
+                        <div className="text-sm mt-2 text-gray-500">
+                            Leaderboard ID: <span className="font-mono text-xs">{leaderboardId}</span>
+                        </div>
+                    </header>
+
+                    {/* Game Area */}
+                    <div 
+                        className={`flex-grow h-96 rounded-xl shadow-2xl transition-colors duration-300 flex items-center justify-center p-4 mb-8 ${getBackgroundColor()} ${isGamePlayable ? 'active:scale-[0.99] border-4 border-white' : ''}`}
+                        onClick={handleScreenClick}
+                    >
+                        {gameState === GAME_STATE.ERROR && (
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-red-300">API Error</p>
+                                <p className="mt-2 text-red-200 w-full max-w-sm">{apiError}</p>
+                                <button 
+                                    onClick={() => setGameState(GAME_STATE.IDLE)} 
+                                    className="mt-4 bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition duration-150"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        )}
+
+                        {showStartMessage && (
+                            <div className="text-center">
+                                <p className="text-4xl font-extrabold mb-4">
+                                    {gameState === GAME_STATE.IDLE ? 'Click to Start!' : (isGameFinished ? message : 'Click to Start!')}
+                                </p>
+                                <p className="text-xl text-gray-200">
+                                    {gameState === GAME_STATE.IDLE ? 'The screen will turn green.' : (isGameFinished ? 'Click anywhere to play again.' : '')}
+                                </p>
+                            </div>
+                        )}
+
+                        {gameState === GAME_STATE.WAITING && (
+                            <p className="text-4xl font-extrabold animate-pulse">Wait...</p>
+                        )}
+                        
+                        {gameState === GAME_STATE.READY && (
+                            <p className="text-4xl font-extrabold text-gray-900 animate-pulse">CLICK!</p>
+                        )}
+                    </div>
+
+                    {/* Score Submission and Leaderboard */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        {/* Score Submission */}
+                        <div className="lg:col-span-1 bg-gray-800 p-6 rounded-xl shadow-xl">
+                            <h2 className="text-2xl font-bold mb-4 border-b border-indigo-500 pb-2">Your Results</h2>
+                            
+                            <p className="text-lg mb-4 text-indigo-300 h-10">{message}</p>
+
+                            {showScoreSubmission && (
+                                <div className="flex flex-col space-y-3">
+                                    <label htmlFor="name" className="text-sm font-medium text-gray-400">Enter your name:</label>
+                                    <input
+                                        id="name"
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value.substring(0, 10))}
+                                        maxLength="10"
+                                        className="p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white"
+                                        placeholder="Max 10 characters"
+                                        disabled={isSubmitting}
+                                    />
+                                    <button
+                                        onClick={() => submitHighScore(name || 'Anonymous', reactionTime)}
+                                        disabled={isSubmitting || !name || !reactionTime}
+                                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-150 transform hover:scale-[1.01] disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                    >
+                                        {isSubmitting ? 'Submitting...' : `Submit Score: ${reactionTime} ms`}
+                                    </button>
+                                    <button 
+                                        onClick={startGame} 
+                                        className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-150"
+                                    >
+                                        Play Again
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Leaderboard */}
+                        <div className="lg:col-span-2 bg-gray-800 p-6 rounded-xl shadow-xl">
+                            <h2 className="text-2xl font-bold mb-4 border-b border-indigo-500 pb-2 flex justify-between items-center">
+                                Top 10 High Scores
+                                <button 
+                                    onClick={() => fetchHighScores(leaderboardId)}
+                                    className="text-sm text-indigo-400 hover:text-indigo-300 transition duration-150"
+                                >
+                                    Refresh
+                                </button>
+                            </h2>
+                            
+                            {highScores.length === 0 ? (
+                                <p className="text-gray-400">No scores recorded yet. Be the first!</p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-700">
+                                        <thead>
+                                            <tr>
+                                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Rank</th>
+                                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Name</th>
+                                                <th className="px-4 py-2 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Time (ms)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-700">
+                                            {highScores.map((score, index) => (
+                                                <tr key={index} className={index < 3 ? 'bg-gray-700/50' : 'hover:bg-gray-700/30'}>
+                                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-400">{index + 1}</td>
+                                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{score.name}</td>
+                                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-bold text-teal-400">{score.value}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                            <p className="mt-4 text-xs text-gray-500">
+                                *Scores hosted by the external Highscores API: <a href="https://github.com/YogurtTheHorse/highscores" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">YogurtTheHorse/highscores</a>
+                            </p>
+                        </div>
+                    </div>
+                    
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
