@@ -599,9 +599,18 @@
                     const maxPossibleScore = gameState.notes.length * 100;
                     const pct = maxPossibleScore > 0 ? gameState.score / maxPossibleScore : 0;
                     let rank = "Stray Cat";
-                    if (pct > 0.9) rank = "Pop Star Purrfection!";
-                    else if (pct > 0.7) rank = "Cool Cat";
-                    else if (pct > 0.5) rank = "House Cat";
+                    if (pct == 1) rank = "Pop Star Purrfection!";
+                    else if (pct > 0.9) rank = "Nine-Life Legend";
+                    else if (pct > 0.8) rank = "The Gilded Aristocat";
+                    else if (pct > 0.7) rank = "Grand Claw-mander";
+                    else if (pct > 0.6) rank = "Premier Purr-former";
+                    else if (pct > 0.5) rank = "Silver-Whiskered Specialist";
+                    else if (pct > 0.4) rank = "Sofa-Sultan";
+                    else if (pct > 0.3) rank = "Barnyard Mouser";
+                    else if (pct > 0.2) rank = "Flea-Bitten Stray";
+                    else if (pct > 0.1) rank = "Sewer-Sodden Scruff";
+                    else rank = "Drowned Alley-Scamp" 
+                    
                     ui.rankText.innerText = rank;
                 }
             }, 500);
