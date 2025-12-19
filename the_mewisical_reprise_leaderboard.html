@@ -570,7 +570,7 @@
                     const pct = maxPossibleScore > 0 ? gameState.score / maxPossibleScore : 0;
                     let rank = "Drowned Alley-Scamp";
                     console.log ("percent complete:");
-                    console.log (pct);
+                    console.log (pct*100);
                     if (pct >= 0.999) rank = "Pop Star Purrfection!";
                     else if (pct > 0.9) rank = "Nine-Life Legend";
                     else if (pct > 0.8) rank = "The Gilded Aristocat";
