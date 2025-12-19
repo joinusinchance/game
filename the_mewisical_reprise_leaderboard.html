@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>I-mog-en: The Mewsical (Leaderboard Edition)</title>
+    <title>I-mog-en: The Mewsical (Fixed)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
@@ -12,29 +12,22 @@
         /* --- Animation Definitions --- */
         @keyframes textBreath {
             0% { transform: scale(1.0); }
-            50% { 
-                transform: scale(1.08); 
-                text-shadow: -8px -8px 0 #6d5b9b, 8px 8px 0 #33ffff, -2px -2px 0 #fff; 
-            }
+            50% { transform: scale(1.08); text-shadow: -8px -8px 0 #6d5b9b, 8px 8px 0 #33ffff, -2px -2px 0 #fff; }
             100% { transform: scale(1.0); }
         }
-
         @keyframes colorFlash {
             0%, 100% { color: #ff69b4; }
             50% { color: #ffff00; }
         }
-
         @keyframes subtitleBounce {
             0%, 100% { transform: translateY(0) scale(1.0); }
             50% { transform: translateY(-2px) scale(1.05); }
         }
-        
         @keyframes buttonWobble {
             0%, 100% { transform: translateY(0) rotate(0deg); }
             33% { transform: translateY(-1px) rotate(1deg); }
             66% { transform: translateY(1px) rotate(-1deg); }
         }
-
         @keyframes rhythmicJitter {
             0% { transform: translateY(0) rotate(0deg) scale(2.0); }
             25% { transform: translateY(5px) rotate(2deg) scale(1.95); }
@@ -42,7 +35,6 @@
             75% { transform: translateY(0) rotate(0deg) scale(2.0); }
             100% { transform: translateY(0) rotate(0deg) scale(2.0); }
         }
-
         @keyframes moveBubbles {
             from { background-position: 0 0, 0 0, 0 0, 0 0; }
             to { background-position: 200px 200px, -300px 300px, 150px -150px, -350px 350px; }
@@ -50,22 +42,12 @@
 
         /* --- Global Styles --- */
         body {
-            margin: 0;
-            padding: 0;
-            background-color: #F8F8FF;
-            font-family: 'Fredoka One', cursive; /* Fallback */
-            overflow: hidden;
-            touch-action: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 90vh;
-            color: #5A189A;
-            user-select: none;
-            -webkit-user-select: none;
+            margin: 0; padding: 0; background-color: #F8F8FF;
+            font-family: 'Fredoka One', cursive; overflow: hidden;
+            touch-action: none; display: flex; justify-content: center;
+            align-items: center; min-height: 90vh; color: #5A189A;
+            user-select: none; -webkit-user-select: none;
         }
-
-        /* --- Bubble Background --- */
         .bubble-bg {
             background: #ffffff; 
             background-image: 
@@ -76,208 +58,93 @@
             background-size: 200px 200px, 300px 300px, 150px 150px, 350px 350px;
             animation: moveBubbles 15s linear infinite;
         }
-
         #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            height: 90vh;
+            position: relative; width: 100%; max-width: 600px; height: 90vh;
             background: linear-gradient(180deg, #FFE4E1 0%, #FFFFFF 100%); 
             box-shadow: 0 0 30px rgba(236, 72, 153, 0.4); 
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            display: flex; flex-direction: column; overflow: hidden;
         }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.98); 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
-            transition: opacity 0.3s;
-            overflow-y: auto; /* Enable scrolling for leaderboard */
-            padding-top: 20px;
-        }
-
-        /* --- Typography Classes --- */
+        canvas { display: block; width: 100%; height: 100%; }
         
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.98); 
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 20; transition: opacity 0.3s; overflow-y: auto; padding-top: 20px;
+        }
+
+        /* Typography */
         .bubble-title {
-            font-family: 'Luckiest Guy', cursive;
-            line-height: 1;
-            text-shadow: 
-                -5px -5px 0 #5f4b8b, 
-                5px 5px 0 #00ffff, 
-                0 0 10px #ff00ff, 
-                0 0 20px #00ffff, 
-                -2px -2px 0 #fff; 
-            animation: textBreath 3s ease-in-out infinite alternate,
-                       colorFlash 0.2s linear infinite;
+            font-family: 'Luckiest Guy', cursive; line-height: 1;
+            text-shadow: -5px -5px 0 #5f4b8b, 5px 5px 0 #00ffff, 0 0 10px #ff00ff, 0 0 20px #00ffff, -2px -2px 0 #fff; 
+            animation: textBreath 3s ease-in-out infinite alternate, colorFlash 0.2s linear infinite;
         }
-
         .subtitle-garish {
-            font-family: 'Luckiest Guy', cursive;
-            color: #ffff00;
+            font-family: 'Luckiest Guy', cursive; color: #ffff00;
             text-shadow: -3px -3px 0 #ff69b4, 3px 3px 0 #00ffff, 0 0 8px #ff00ff;
-            line-height: 1;
-            animation: subtitleBounce 0.3s ease-in-out infinite alternate;
+            line-height: 1; animation: subtitleBounce 0.3s ease-in-out infinite alternate;
         }
-
-        /* NEW: Class for "Annoying Garish" font used in Score, Combo, etc. */
         .garish-text {
-            font-family: 'Bangers', cursive;
-            letter-spacing: 2px;
-            color: #FF00FF; /* Magenta Fill */
-            -webkit-text-stroke: 1.5px black; /* Thick black outline */
-            text-shadow: 3px 3px 0 #00FFFF; /* Cyan Shadow */
+            font-family: 'Bangers', cursive; letter-spacing: 2px; color: #FF00FF; 
+            -webkit-text-stroke: 1.5px black; text-shadow: 3px 3px 0 #00FFFF;
         }
-
-        /* Features Section Text Style */
         .feature-text {
-            font-family: 'Bangers', cursive;
-            color: #33ffff;
-            -webkit-text-stroke: 1px #6d5b9b;
-            text-shadow: 2px 2px 0 #ff69b4;
-            transform: rotate(-2deg);
+            font-family: 'Bangers', cursive; color: #33ffff;
+            -webkit-text-stroke: 1px #6d5b9b; text-shadow: 2px 2px 0 #ff69b4; transform: rotate(-2deg);
         }
 
-        /* --- UI Elements --- */
-
+        /* UI Elements */
         .song-select-garish {
-            font-family: 'Luckiest Guy', cursive;
-            color: #000000; 
-            background-color: #00ffff; 
-            border: 4px solid #ff69b4; 
-            padding: 0.5rem 1.5rem;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
+            font-family: 'Luckiest Guy', cursive; color: #000000; background-color: #00ffff; 
+            border: 4px solid #ff69b4; padding: 0.5rem 1.5rem;
+            -webkit-appearance: none; appearance: none;
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%23FF69B4" d="M7 10l5 5 5-5z"/></svg>');
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1.5em;
+            background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.5em;
         }
-
-        .cat-animated {
-            animation: rhythmicJitter 0.5s ease-out infinite;
-            cursor: pointer; 
-        }
-
+        .cat-animated { animation: rhythmicJitter 0.5s ease-out infinite; cursor: pointer; }
         .start-button {
-            transition: none;
-            font-family: 'Bangers', cursive; 
-            letter-spacing: 2px;
-            border-width: 4px;
-            border-style: solid;
-            border-color: #000;
+            transition: none; font-family: 'Bangers', cursive; letter-spacing: 2px;
+            border-width: 4px; border-style: solid; border-color: #000;
             box-shadow: 0 8px 0 0 #5f4b8b, 0 0 10px #ff00ff, 0 0 20px #00ffff;
-            animation: buttonWobble 0.2s linear infinite; 
+            animation: buttonWobble 0.2s linear infinite; cursor: pointer;
         }
-
         .start-button:active {
             box-shadow: 0 2px 0 0 #5f4b8b, 0 0 10px #ff00ff, 0 0 20px #00ffff;
-            transform: translateY(6px);
-            animation: none; 
+            transform: translateY(6px); animation: none; 
         }
-
         .start-button:disabled {
-            background-color: #ccc;
-            box-shadow: none;
-            animation: none;
-            transform: none;
-            cursor: not-allowed;
-            border-color: #666;
+            background-color: #ccc; box-shadow: none; animation: none; transform: none; cursor: not-allowed; border-color: #666;
         }
 
-        /* HUD Positioning */
         #hud-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 5;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;
         }
-
         #score-board, #combo-board {
-            position: absolute;
-            top: 20px;
-            /* Updated to use new garish class */
-            font-size: 2rem; 
+            position: absolute; top: 20px; font-size: 2rem; 
         }
-
         #score-board { left: 20px; }
         #combo-board { right: 20px; }
-
         #lyrics-container {
-            position: absolute;
-            width: 100%;
-            top: 100px; 
-            text-align: center;
-            pointer-events: none;
+            position: absolute; width: 100%; top: 100px; text-align: center; pointer-events: none;
         }
-
         .lyric-active {
-            font-family: 'Bangers', cursive; 
-            font-size: 2.2rem; 
-            color: #FFF000; 
-            -webkit-text-stroke: 1.5px black;
-            text-shadow: 3px 3px 0 #000, 5px 5px 0 #FF00FF; 
-            transform: scale(1.05) rotate(-2deg); 
-            opacity: 1;
-            letter-spacing: 1px;
+            font-family: 'Bangers', cursive; font-size: 2.2rem; color: #FFF000; 
+            -webkit-text-stroke: 1.5px black; text-shadow: 3px 3px 0 #000, 5px 5px 0 #FF00FF; 
+            transform: scale(1.05) rotate(-2deg); opacity: 1; letter-spacing: 1px;
         }
-
-        /* General Inputs */
         select, input {
-            font-size: 1.2rem; 
-            padding: 12px; 
-            border-radius: 15px; 
-            margin-top: 5px; 
-            border: 3px solid #EC4899; 
-            background: white; 
-            font-family: 'Fredoka One';
-            width: 80%;
-            max-width: 300px;
-            outline: none;
-            color: #000; 
+            font-size: 1.2rem; padding: 12px; border-radius: 15px; margin-top: 5px; 
+            border: 3px solid #EC4899; background: white; font-family: 'Fredoka One'; width: 80%; max-width: 300px; outline: none; color: #000; 
         }
         
-        /* Leaderboard Specific Styles */
         .leaderboard-table {
-            width: 100%;
-            max-width: 400px;
-            border-collapse: separate;
-            border-spacing: 0 5px;
-            margin-top: 10px;
+            width: 100%; max-width: 400px; border-collapse: separate; border-spacing: 0 5px; margin-top: 10px;
         }
         .leaderboard-table th {
-            font-family: 'Bangers', cursive;
-            color: #ff69b4;
-            font-size: 1.5rem;
-            text-align: left;
-            padding: 5px;
-            -webkit-text-stroke: 1px black;
+            font-family: 'Bangers', cursive; color: #ff69b4; font-size: 1.5rem; text-align: left; padding: 5px; -webkit-text-stroke: 1px black;
         }
         .leaderboard-table td {
-            font-family: 'Fredoka One', cursive;
-            background: #fff;
-            border: 2px solid #5f4b8b;
-            padding: 8px;
-            color: #5f4b8b;
+            font-family: 'Fredoka One', cursive; background: #fff; border: 2px solid #5f4b8b; padding: 8px; color: #5f4b8b;
         }
         .leaderboard-row:nth-child(1) td { background-color: #ffff00; border-color: #ff00ff; }
         .leaderboard-row:nth-child(2) td { background-color: #e0f7fa; }
@@ -295,10 +162,9 @@
             <div id="lyrics-container"></div>
         </div>
 
+        <!-- Start Screen -->
         <div id="start-screen" class="overlay">
- 
             <div class="relative h-96 sm:h-[30rem] mb-2">
-                
                 <div class="relative z-20 pt-7">
                     <h1 class="bubble-title text-7xl sm:text-8xl md:text-9xl select-none whitespace-nowrap -ml-3">
                         I MOG EN
@@ -307,11 +173,10 @@
                         The Mewsical!
                     </p>
                 </div>
-
                 <div class="absolute inset-x-0 -bottom-24 z-10 flex justify-center">
                     <img 
                         src="https://joinusinchance.github.io/game/I_mog_en_front.png" 
-                        alt="Imogen the cat ready to play a rhythm game" 
+                        alt="Imogen the cat" 
                         class="cat-animated w-full max-w-xs h-auto block transform origin-bottom"
                         onerror="this.onerror=null;this.src='https://placehold.co/200x200/ff69b4/ffffff?text=CAT+IMAGE'"
                     />
@@ -320,7 +185,7 @@
 
             <div class="mb-6 relative z-20 text-center space-y-1">
                 <p class="feature-text text-2xl md:text-3xl">RHYTHM ACTION GAME!</p>
-                <p class="feature-text text-xl md:text-2xl" style="color: #ffff00; text-shadow: 2px 2px 0 #000;">PLAY ALONG BY TOUCH, MOUSE OR D F J K!</p>
+                <p class="feature-text text-xl md:text-2xl" style="color: #ffff00; text-shadow: 2px 2px 0 #000;">TOUCH OR KEYS D-F-J-K!</p>
                 <p class="feature-text text-2xl md:text-3xl" style="color: #ff69b4; transform: rotate(2deg);">5 ANNOYING SONGS!</p>
             </div>
 
@@ -335,24 +200,17 @@
                 </select>
             </div>
 
-            <button 
-                id="start-btn"
-                class="start-button w-full py-4 text-4xl font-bold rounded-xl bg-pink-400 text-black hover:bg-pink-300 uppercase relative z-30"
-            >
+            <button id="start-btn" class="start-button w-full py-4 text-4xl font-bold rounded-xl bg-pink-400 text-black hover:bg-pink-300 uppercase relative z-30">
                 Play Now!
             </button>
-            
-            <button 
-                id="view-leaderboard-btn"
-                class="mt-4 text-xl font-bold text-pink-600 hover:text-pink-800 underline relative z-30"
-            >
+            <button id="view-leaderboard-btn" class="mt-4 text-xl font-bold text-pink-600 hover:text-pink-800 underline relative z-30">
                 View High Scores
             </button>
-
         </div>
 
-
-        <div id="game-over-screen" class="overlay hidden" style="display: none;">
+        <!-- Game Over / Leaderboard Screen -->
+        <!-- Removed "hidden" class and rely on inline style to avoid Tailwind conflicts -->
+        <div id="game-over-screen" class="overlay" style="display: none;">
             <p class="subtitle-garish text-4xl md:text-6xl font-bold tracking-wider mb-2">
                 Finished!
             </p>
@@ -364,13 +222,15 @@
             </div>
 
             <div class="w-full max-w-xs bg-white/50 rounded-xl p-4 mb-4 border-2 border-pink-400">
-                <h3 class="subtitle-garish text-2xl text-center mb-2">Submit Score</h3>
-                <div id="submit-section" class="flex flex-col gap-2">
-                    <input type="text" id="player-name" placeholder="Your Name (Max 10)" maxlength="10" class="w-full text-center">
-                    <button id="submit-score-btn" class="start-button py-2 text-xl bg-green-400 text-black hover:bg-green-300 uppercase">
-                        Save to Leaderboard!
-                    </button>
-                    <p id="submit-msg" class="text-sm font-bold text-pink-600 hidden"></p>
+                <div id="submit-section">
+                    <h3 class="subtitle-garish text-2xl text-center mb-2">Submit Score</h3>
+                    <div class="flex flex-col gap-2">
+                        <input type="text" id="player-name" placeholder="Your Name (Max 10)" maxlength="10" class="w-full text-center">
+                        <button id="submit-score-btn" class="start-button py-2 text-xl bg-green-400 text-black hover:bg-green-300 uppercase">
+                            Save to Leaderboard!
+                        </button>
+                        <p id="submit-msg" class="text-sm font-bold text-pink-600 hidden"></p>
+                    </div>
                 </div>
 
                 <div class="mt-4">
@@ -384,41 +244,37 @@
                                 <th class="text-right">Score</th>
                             </tr>
                         </thead>
-                        <tbody id="leaderboard-body">
-                            </tbody>
+                        <tbody id="leaderboard-body"></tbody>
                     </table>
                 </div>
             </div>
 
             <div class="w-full flex flex-col gap-4 relative z-30 pb-10">
-                <button 
-                    id="restart-btn"
-                    class="start-button w-full py-3 text-2xl font-bold rounded-full bg-pink-500 text-black border-4 border-cyan-500 hover:bg-pink-400 uppercase"
-                >
+                <button id="restart-btn" class="start-button w-full py-3 text-2xl font-bold rounded-full bg-pink-500 text-black border-4 border-cyan-500 hover:bg-pink-400 uppercase">
                     Play Again!
                 </button>
             </div>
-
         </div>
     </div>
 
     <script>
-        // --- API CONFIGURATION (From Source 1) ---
+        // --- API CONFIGURATION ---
         const API_BASE_URL = 'https://lb.yogurtthehor.se/api/v1';
         const LEADERBOARD_ID = '110';
         const LEADERBOARD_SECRET = 'cbc93a61277d48e7acd7487d65b46ec8';
 
-        // --- Constants (UPDATED LANE COLORS) ---
+        // --- Constants ---
         const LANE_COLORS = ['#EC4899', '#3B82F6', '#FCD34D', '#A78BFA']; 
-        const LANE_ITEMS = ['像', '抽', '請ｸ, '･]; 
+        // FIXED SYNTAX ERROR HERE (Replaced broken chars with valid strings)
+        const LANE_ITEMS = ['🎧', '🐱', '🎵', '🎹']; 
+        
         const MEOW_URL = 'https://joinusinchance.github.io/game/mixkit-sweet-kitty-meow-93.wav';
         const FX_URL = 'https://joinusinchance.github.io/game/mixkit-little-cat-pain-meow-87.wav';
         const PAW_IMAGE_URL = 'https://joinusinchance.github.io/game/paw.png'; 
-        const BASE_FREQUENCY = 261.63; // C4
+        const BASE_FREQUENCY = 261.63; 
         const OCTAVE_OFFSET = 0.65; 
         const keyMap = { 'KeyD': 0, 'KeyF': 1, 'KeyJ': 2, 'KeyK': 3 };
 
-        // Standard Note Frequencies
         const NOTE_FREQS = {
             'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'D#2': 77.78, 'E2': 82.41, 'F2': 87.31, 'F#2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'A2': 110.00, 'A#2': 116.54, 'B2': 123.47,
             'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81, 'F3': 174.61, 'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'B3': 246.94,
@@ -429,47 +285,40 @@
 
         const repeat = (arr, times) => Array(times).fill(arr).flat();
 
-        // --- FULL-LENGTH SONG DEFINITIONS ---
-
         // 1. CAMPTOWN RACES (110 BPM)
         const camptown_verse = [
             ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],['E4',1],['D4',3], ['E4',1],['D4',3],
             ['G4',1],['G4',1],['E4',1],['G4',1], ['A4',1],['G4',1],['E4',2],['D4',1], ['F4',1],['E4',1],['D4',1],['C4',2],
         ];
-        const camptown_chorus = [
-            ['D4',1],['D4',1],['D4',1],['E4',1], ['F4',1],['E4',1],['D4',2],
-            ['C4',1],['D4',1],['E4',1],['C4',1], ['G3',4] 
-        ];
+        const camptown_chorus = [['D4',1],['D4',1],['D4',1],['E4',1], ['F4',1],['E4',1],['D4',2], ['C4',1],['D4',1],['E4',1],['C4',1], ['G3',4]];
         const camptown_full = [].concat(camptown_verse, camptown_chorus, camptown_verse);
         const camptown_lyrics_full = [
             {beat: 0, text: "Camptown ladies sing this song, Doo-dah, Doo-dah!"}, 
             {beat: 8, text: "Camptown race-track five miles long, Oh, doo-dah day!"},
             {beat: 16, text: "Goin' to run all night, Goin' to run all day,"}, 
-            {beat: 24, text: "I'll bet my money on the bob-tail nag, somebody bet on the bay."},
-            {beat: 32, text: "De Camptown ladies am goin' to shine, Doo-dah, Doo-dah!"}, 
-            {beat: 64, text: "Final flourish! Doo-dah!"}
+            {beat: 24, text: "I'll bet my money on the bob-tail nag, somebody bet on the bay."}
         ];
 
-        // 2. ODE TO JOY (120 BPM)
+        // 2. ODE TO JOY
         const ode_a = [['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1], ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1], ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1], ['E4', 1.5], ['D4', 0.5], ['D4', 2]];
         const ode_b = [['E4', 1], ['E4', 1], ['F4', 1], ['G4', 1], ['G4', 1], ['F4', 1], ['E4', 1], ['D4', 1], ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1], ['D4', 1.5], ['C4', 0.5], ['C4', 2]];
         const ode_c = [['D4', 1], ['D4', 1], ['E4', 1], ['C4', 1], ['D4', 1], ['E4', 0.5],['F4', 0.5], ['E4', 1], ['C4', 1], ['D4', 1], ['E4', 0.5],['F4', 0.5], ['E4', 1], ['D4', 1], ['C4', 1], ['D4', 1], ['G3', 2]];
         const ode_full = [].concat(ode_a, ode_b, ode_c, ode_b); 
         const ode_lyrics_full = [ {beat: 0, text: "Joy, beautiful spark of Divinity"}, {beat: 16, text: "We enter, drunk with fire"}, {beat: 32, text: "Your magic joins again"}, {beat: 48, text: "All men become brothers"} ];
         
-        // 4. THE ENTERTAINER (140 BPM)
+        // 3. THE ENTERTAINER
         const entertainer_part_a = [['D5',0.5],['E5',0.5],['C5',0.5],['A4',1],['B4',0.5],['G4',0.5], ['C5', 0.5], ['A4', 0.5], ['G4', 0.5], ['E4', 0.5], ['C4', 2], ['D5',0.5],['E5',0.5],['C5',0.5],['A4',1],['B4',0.5],['G4',0.5], ['C5', 0.5], ['A4', 0.5], ['G4', 0.5], ['E4', 0.5], ['C4', 2], ['D5',0.5],['E5',0.5],['C5',0.5],['A4',1],['B4',0.5],['G4',0.5], ['E4',0.5],['F4',0.5],['G4',0.5],['E4',0.5],['C4',2], ['G4', 0.5], ['F4', 0.5], ['E4', 0.5], ['D4', 0.5], ['C4', 2], ['C4', 1], ['D4', 1], ['E4', 1], ['F4', 1]];
         const entertainer_part_c = [['C5', 2], ['G4', 2], ['C5', 2], ['G4', 2], ['C5', 1], ['D5', 1], ['E5', 1], ['F5', 1], ['G5', 4], ['F5', 1], ['E5', 1], ['D5', 1], ['C5', 1], ['B4', 1], ['A4', 1], ['G4', 1], ['F4', 1], ['E4', 2], ['D4', 2], ['C4', 4]];
         const entertainer_full = [].concat(entertainer_part_a, entertainer_part_c, entertainer_part_a, ['C4', 4]); 
         const entertainer_lyrics_full = [{beat: 0, text: "Ragtime Intro..."}, {beat: 16, text: "Sliding on the keys"}, {beat: 32, text: "The Trio begins"}, {beat: 64, text: "Back to the main theme"}];
 
-        // 5. KOROBEINIKI (TETRIS - 140 BPM)
+        // 4. KOROBEINIKI
         const korobeiniki_part_a = [['E4', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['C4', 0.5], ['B3', 0.5], ['A3', 1], ['A3', 0.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5], ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1], ['C4', 1], ['A3', 1], ['A3', 1]];
         const korobeiniki_part_b = [['D4', 1.5], ['F4', 0.5], ['A4', 1], ['G4', 0.5], ['F4', 0.5], ['E4', 1.5], ['C4', 0.5], ['E4', 1], ['D4', 0.5], ['C4', 0.5], ['B3', 1], ['B3', 0.5], ['C4', 0.5], ['D4', 1], ['E4', 1], ['C4', 1], ['A3', 1], ['A3', 1]];
         const korobeiniki_full = [].concat(korobeiniki_part_a, korobeiniki_part_b, korobeiniki_part_a, korobeiniki_part_b, ['E4', 2], ['C4', 2], ['A3', 4]); 
         const korobeiniki_lyrics_full = [{beat: 0, text: "Tetris time!"}, {beat: 16, text: "Keep up!"}, {beat: 32, text: "Faster!"}, {beat: 48, text: "Stack 'em high!"}];
 
-        // 6. HALL OF THE MOUNTAIN KING (160 BPM)
+        // 5. HALL OF THE MOUNTAIN KING
         const mountain_part_a = [['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1], ['F#4',0.5],['D4',0.5],['F#4',1], ['F#4',0.5],['D4',0.5],['F#4',1], ['B3',0.5],['C#4',0.5],['D4',0.5],['E4',0.5],['F#4',0.5],['D4',0.5],['F#4',1], ['A4',0.5],['G4',0.5],['E4',1], ['F#4',0.5],['D4',0.5],['B3',1]];
         const mountain_part_b = [['B4',0.5],['C#5',0.5],['D5',0.5],['E5',0.5],['F#5',0.5],['D5',0.5],['F#5',1], ['F#5',0.5],['D5',0.5],['F#5',1], ['F#5',0.5],['D5',0.5],['F#5',1], ['B4',0.5],['C#5',0.5],['D5',0.5],['E5',0.5],['F#5',0.5],['D5',0.5],['F#5',1], ['A5',0.5],['G5',0.5],['E5',1], ['F#5',0.5],['D5',0.5],['B4',1]];
         const mountain_full = [].concat(mountain_part_a, mountain_part_b, mountain_part_a, ['B4', 0.5], ['A4', 0.5], ['G4', 0.5], ['F#4', 0.5], ['E4', 4]); 
@@ -493,17 +342,8 @@
         let pawStamps = []; 
         let pawImage = new Image(); 
 
-        const ui = {
-            startScreen: null, gameOverScreen: null, startBtn: null, 
-            scoreBoard: null, comboBoard: null, 
-            finalScore: null, maxCombo: null, rankText: null, 
-            songSelect: null, lyricsContainer: null, restartBtn: null,
-            viewLeaderboardBtn: null,
-            // Leaderboard elements
-            playerNameInput: null, submitScoreBtn: null, submitMsg: null,
-            leaderboardTable: null, leaderboardBody: null, leaderboardLoading: null
-        };
-        
+        const ui = {};
+
         const initUI = () => {
             ui.startScreen = document.getElementById('start-screen');
             ui.gameOverScreen = document.getElementById('game-over-screen');
@@ -517,6 +357,7 @@
             ui.lyricsContainer = document.getElementById('lyrics-container');
             ui.restartBtn = document.getElementById('restart-btn');
             ui.viewLeaderboardBtn = document.getElementById('view-leaderboard-btn');
+            ui.submitSection = document.getElementById('submit-section');
             
             // API UI
             ui.playerNameInput = document.getElementById('player-name');
@@ -551,10 +392,9 @@
                     const buffer = await audioCtx.decodeAudioData(arrayBuffer);
                     if (bufferName === 'meowBuffer') meowBuffer = buffer;
                     if (bufferName === 'fxBuffer') fxBuffer = buffer;
-                } catch (e) { console.log("Audio load error (expected if offline):", e); }
+                } catch (e) { console.log("Audio load error:", e); }
             };
 
-            // Start loading in background
             loadAudioFile(MEOW_URL, 'meowBuffer');
             loadAudioFile(FX_URL, 'fxBuffer');
             
@@ -605,8 +445,7 @@
                     osc.start();
                     osc.stop(now + 0.2);
                 },
-                getCurrentTime: () => audioCtx.currentTime,
-                isLoaded: () => true 
+                getCurrentTime: () => audioCtx.currentTime
             };
         };
 
@@ -640,15 +479,7 @@
             });
         };
 
-        const drawPaw = (ctx, x, y, size, color) => {
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
-            ctx.fill();
-        };
-
         // --- API FUNCTIONS ---
-        
         const fetchHighScores = async () => {
             ui.leaderboardLoading.classList.remove('hidden');
             ui.leaderboardTable.classList.add('hidden');
@@ -660,7 +491,7 @@
                 const data = await response.json();
                 
                 if (data && Array.isArray(data.scores)) {
-                    // SORT DESCENDING (Highest Score First) for Rhythm Game
+                    // SORT DESCENDING (Highest Score First)
                     const sortedScores = data.scores.sort((a, b) => b.value - a.value);
                     
                     sortedScores.forEach((score, index) => {
@@ -686,24 +517,18 @@
         const submitHighScore = async () => {
             const name = ui.playerNameInput.value.trim() || 'Stray Cat';
             const score = gameState.score;
-            
             if (ui.submitScoreBtn.disabled) return;
-
             ui.submitScoreBtn.disabled = true;
             ui.submitScoreBtn.innerText = "Saving...";
             
             try {
-                // API format: /LB_ID/SECRET/add/NAME/SCORE/EXTRA
                 const url = `${API_BASE_URL}/scores/${LEADERBOARD_ID}/${LEADERBOARD_SECRET}/add/${encodeURIComponent(name)}/${score}/0`;
                 const response = await fetch(url, { method: 'POST' });
-                
                 if (!response.ok) throw new Error('Net Error');
                 
                 ui.submitMsg.innerText = "Score Saved!";
                 ui.submitMsg.classList.remove('hidden');
                 ui.playerNameInput.disabled = true;
-                
-                // Refresh Leaderboard
                 await fetchHighScores();
                 
             } catch (error) {
@@ -720,18 +545,16 @@
             setTimeout(() => {
                 ui.startScreen.style.display = 'none';
                 ui.gameOverScreen.style.display = 'flex';
+                ui.submitSection.style.display = 'block';
                 
-                // Reset Submit UI
                 ui.submitScoreBtn.disabled = false;
                 ui.submitScoreBtn.innerText = "Save to Leaderboard!";
                 ui.playerNameInput.disabled = false;
                 ui.submitMsg.classList.add('hidden');
 
-                // Safe access check
                 if (ui.finalScore) ui.finalScore.innerText = gameState.score;
                 if (ui.maxCombo) ui.maxCombo.innerText = gameState.maxCombo;
                 
-                // Add garish font to rank text too
                 if (ui.rankText) {
                     ui.rankText.className = "garish-text";
                     const maxPossibleScore = gameState.notes.length * 100;
@@ -747,25 +570,17 @@
                     else if (pct > 0.3) rank = "Barnyard Mouser";
                     else if (pct > 0.2) rank = "Flea-Bitten Stray";
                     else if (pct > 0.1) rank = "Sewer-Sodden Scruff";
-                    
                     ui.rankText.innerText = rank;
                 }
                 
-                // Fetch Leaderboard automatically on Game Over
                 fetchHighScores();
-
             }, 500);
         };
 
         const viewLeaderboardOnly = () => {
-            // Used for the "View Leaderboard" button on start screen
-            // We'll mimic game over but hide current score UI or just show 0
             ui.startScreen.style.display = 'none';
             ui.gameOverScreen.style.display = 'flex';
-            
-            // Hide "Submit" section since there is no new score
-            document.getElementById('submit-section').style.display = 'none';
-            
+            ui.submitSection.style.display = 'none';
             fetchHighScores();
         };
 
@@ -781,14 +596,12 @@
             const laneWidth = canvas.width / gameState.laneCount;
             const hitZoneTop = gameState.hitY;
             
-            // BG
             const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
             grd.addColorStop(0, "#FFFFFF");
             grd.addColorStop(1, "#FFE4E1"); 
             ctx.fillStyle = grd;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Lyrics
             gameState.lyrics.forEach(lyric => {
                 if (!lyric.shown && gameTime >= lyric.time) {
                     lyric.shown = true;
@@ -796,7 +609,6 @@
                 }
             });
 
-            // Lanes & Hit Zone
             for (let i = 0; i < gameState.laneCount; i++) {
                 const laneGrd = ctx.createLinearGradient(0, 0, 0, canvas.height);
                 laneGrd.addColorStop(0, "rgba(255,255,255,0)");
@@ -808,26 +620,19 @@
                 ctx.beginPath(); ctx.moveTo(i*laneWidth, 0); ctx.lineTo(i*laneWidth, canvas.height); ctx.stroke();
 
                 const targetHeight = canvas.height - hitZoneTop;
-                
-                // Static Target
                 ctx.fillStyle = "rgba(236, 72, 153, 0.15)";
                 ctx.fillRect(i * laneWidth, hitZoneTop, laneWidth, targetHeight);
 
-                // Highlight
                 if (activeLanes[i]) {
                     ctx.fillStyle = LANE_COLORS[i];
                     ctx.fillRect(i * laneWidth, hitZoneTop, laneWidth, targetHeight);
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = LANE_COLORS[i];
+                    ctx.shadowBlur = 10; ctx.shadowColor = LANE_COLORS[i];
                 }
                 ctx.shadowBlur = 0;
                 
                 ctx.strokeStyle = activeLanes[i] ? "#000" : LANE_COLORS[i];
                 ctx.lineWidth = 5;
-                ctx.beginPath();
-                ctx.moveTo(i * laneWidth, hitZoneTop);
-                ctx.lineTo((i + 1) * laneWidth, hitZoneTop);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(i * laneWidth, hitZoneTop); ctx.lineTo((i + 1) * laneWidth, hitZoneTop); ctx.stroke();
             }
 
             let allNotesFinished = true;
@@ -842,10 +647,8 @@
                 }
 
                 if (y > canvas.height + 50 && !note.hit && !note.missed) {
-                    note.missed = true;
-                    note.visible = false;
-                    gameState.combo = 0;
-                    updateScoreboard();
+                    note.missed = true; note.visible = false;
+                    gameState.combo = 0; updateScoreboard();
                     createFloatingText("Hiss", note.lane * laneWidth + laneWidth/2, hitZoneTop + 50, "#5A189A");
                     AE.playHitSound('miss');
                 }
@@ -855,28 +658,16 @@
                     const x = note.lane * laneWidth + laneWidth / 2;
                     const item = LANE_ITEMS[note.lane];
 
-                    // Set font for Item
-                    ctx.font = '60px sans-serif'; 
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    
-                    // --- Draw Item with Glow Hack ---
-                    // Draw multiple times to fake intensity if needed or just ensure alpha=1
-                    ctx.globalAlpha = 1.0; 
-                    // Draw a subtle shadow to lift it
-                    ctx.shadowColor = LANE_COLORS[note.lane];
-                    ctx.shadowBlur = 10;
-                    ctx.fillStyle = "#000"; // fallback
-                    
+                    ctx.font = '60px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.globalAlpha = 1.0; ctx.shadowColor = LANE_COLORS[note.lane]; ctx.shadowBlur = 10;
+                    ctx.fillStyle = "#000"; 
                     ctx.fillText(item, x, y); 
-                    
                     ctx.shadowBlur = 0;
                 } else if (!note.missed && !note.hit && note.time > gameTime) {
                     allNotesFinished = false;
                 }
             });
 
-            // Particles
             for (let i = gameState.particles.length - 1; i >= 0; i--) {
                 const p = gameState.particles[i];
                 p.x += p.vx; p.y += p.vy; p.vy += 0.8; p.life -= 0.04;
@@ -887,7 +678,6 @@
                 if (p.life <= 0) gameState.particles.splice(i, 1);
             }
 
-            // Paw Stamps
             for (let i = pawStamps.length - 1; i >= 0; i--) {
                 const stamp = pawStamps[i];
                 stamp.life -= 0.03;
@@ -912,34 +702,19 @@
                 ctx.globalAlpha = 1;
             }
 
-            // Floating Text (Using the Garish Font Style manually via canvas if feasible, or just bold sans)
-            // Note: Canvas font support for custom fonts requires them to be loaded. 'Bangers' should be ready.
             for (let i = floatingTexts.length - 1; i >= 0; i--) {
                 const ft = floatingTexts[i];
                 ft.y -= 2; ft.life -= 0.03;
                 if (ft.life <= 0) { floatingTexts.splice(i, 1); continue; }
 
                 ctx.globalAlpha = Math.max(0, ft.life);
-                ctx.save();
-                ctx.translate(ft.x, ft.y);
+                ctx.save(); ctx.translate(ft.x, ft.y);
                 const scale = 1 + (1-ft.life)*0.5;
                 ctx.scale(scale, scale);
-                
-                // Use Garish Font properties
-                ctx.font = "40px 'Bangers'";
-                ctx.textAlign = "center";
-                
-                // Stroke
-                ctx.strokeStyle = "black";
-                ctx.lineWidth = 4;
-                ctx.strokeText(ft.text, 0, 0);
-                
-                // Fill
-                ctx.fillStyle = ft.color;
-                ctx.fillText(ft.text, 0, 0);
-                
-                ctx.restore();
-                ctx.globalAlpha = 1;
+                ctx.font = "40px 'Bangers'"; ctx.textAlign = "center";
+                ctx.strokeStyle = "black"; ctx.lineWidth = 4; ctx.strokeText(ft.text, 0, 0);
+                ctx.fillStyle = ft.color; ctx.fillText(ft.text, 0, 0);
+                ctx.restore(); ctx.globalAlpha = 1;
             }
 
             if (allNotesFinished && gameState.notes.length > 0) {
@@ -971,8 +746,7 @@
             if (candidates.length > 0) {
                 const note = candidates[0];
                 const diff = Math.abs(note.time - gameTime);
-                note.hit = true;
-                note.visible = false;
+                note.hit = true; note.visible = false;
                 
                 let txt = "", col = "";
                 let scoreDelta = 0;
@@ -998,7 +772,6 @@
                 gameState.combo = Math.max(0, gameState.combo + comboDelta);
                 gameState.score += scoreDelta;
                 if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
-                
                 updateScoreboard();
                 createFloatingText(txt, x, gameState.hitY - 30, col);
                 spawnParticles(x, gameState.hitY + 50, LANE_COLORS[lane]);
@@ -1072,7 +845,6 @@
             audioEngine?.playUISound();
             ui.gameOverScreen.style.display = 'none';
             ui.startScreen.style.display = 'flex';
-            document.getElementById('submit-section').style.display = 'flex'; // Reset visibility for next run
         };
 
         window.onload = function () {
