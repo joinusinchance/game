@@ -8,8 +8,8 @@
         {
             "type": "pwa-chrome",
             "request": "launch",
-            "name": "Open Wordga.html",
-            "file": "c:\\Users\\c\\Documents\\GitHub\\game\\Index.html"
+            "name": "Open index.html",
+            "file": "${workspaceFolder}/index.html"
         }
     ]
 }
