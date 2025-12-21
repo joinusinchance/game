@@ -154,10 +154,34 @@
             font-family: 'Bangers', cursive; color: #5A189A; font-size: 1.15rem; text-align: left; padding: 6px 8px;
         }
         .leaderboard-table td {
-            padding: 8px; border-bottom: 1px solid rgba(0,0,0,0.06); color: #5f4b8b; font-size: 1rem;
+            padding: 6px 8px; color: #5f4b8b; font-size: 1rem; background: transparent; border: none;
         }
         .leaderboard-table td.text-right { text-align: right; }
         .leaderboard-row.highlight td { background: linear-gradient(90deg,#fffdf0,#fff); font-weight:700; }
+        .leaderboard-row.you td { background: linear-gradient(90deg,#ffebf7,#fff); color:#ff2fa6; font-weight:800; }
+
+        /* Apply bubblegum fonts to leaderboard content and input */
+        #player-name, .leaderboard-table td { font-family: 'Luckiest Guy', 'Bangers', cursive; }
+
+        /* Hide top-final score and rank on game-over screen per request */
+        #final-score, #rank-text { display: none !important; }
+
+        /* Remove overall overlay scrolling and optimize spacing for mobile */
+        .overlay { padding-top: 10px; }
+        #game-container { max-width: 540px; }
+
+        @media (max-width: 480px) {
+            .bubble-title { font-size: 3.2rem !important; }
+            .subtitle-garish { font-size: 1.1rem !important; }
+            .feature-text { font-size: 1rem !important; }
+            #game-container { max-width: 380px; height: 100vh; padding: 12px; }
+            .overlay { padding-top: 6px; }
+            #start-screen .relative.h-96 { height: 220px; }
+            .leaderboard-table { max-width: 320px; font-size: 0.95rem; }
+            .start-button { font-size: 1rem; padding-top: 10px; padding-bottom: 10px; }
+            select, input { font-size: 1rem; padding: 8px; border-radius: 10px; }
+            .garish-text { font-size: 1.1rem; }
+        }
     </style>
 </head>
 <body class="bubble-bg min-h-screen flex items-center justify-center p-4">
@@ -494,7 +518,7 @@
         };
 
         // --- API FUNCTIONS ---
-        const fetchHighScores = async (limit = 5) => {
+        const fetchHighScores = async (limit = 5, highlight = null) => {
             ui.leaderboardLoading.classList.remove('hidden');
             ui.leaderboardTable.classList.add('hidden');
             ui.leaderboardBody.innerHTML = '';
@@ -514,7 +538,15 @@
                     } else {
                         sortedScores.forEach((score, index) => {
                             const row = document.createElement('tr');
-                            row.className = 'leaderboard-row' + (index === 0 ? ' highlight' : '');
+                            let classes = 'leaderboard-row';
+                            if (index === 0) classes += ' highlight';
+                            // mark 'you' if highlight matches
+                            if (highlight && (highlight.score !== undefined)) {
+                                if (Number(score.value) === Number(highlight.score) && (!highlight.name || String(score.name).toLowerCase() === String(highlight.name).toLowerCase())) {
+                                    classes += ' you';
+                                }
+                            }
+                            row.className = classes;
                             row.innerHTML = `
                                 <td class="text-center font-bold">${index + 1}</td>
                                 <td class="font-bold">${(score.name||'Stray').substring(0,10)}</td>
@@ -566,7 +598,7 @@
                 ui.submitMsg.classList.remove('hidden');
                 ui.playerNameInput.disabled = true;
                 // after successful save, show leaderboard screen
-                await fetchHighScores(5);
+                await fetchHighScores(5, { score: score, name: name });
                 ui.submitSection.style.display = 'none';
                 ui.leaderboardScreen.style.display = 'block';
             } catch (error) {
@@ -642,6 +674,7 @@
             ui.startScreen.style.display = 'none';
             ui.gameOverScreen.style.display = 'flex';
             ui.submitSection.style.display = 'none';
+            ui.leaderboardScreen.style.display = 'block';
             fetchHighScores(5);
         };
 
