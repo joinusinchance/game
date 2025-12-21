@@ -146,18 +146,18 @@
             border: 3px solid #EC4899; background: white; font-family: 'Fredoka One'; width: 80%; max-width: 300px; outline: none; color: #000; 
         }
         
+        /* Cleaned leaderboard styling: compact, readable */
         .leaderboard-table {
-            width: 100%; max-width: 400px; border-collapse: separate; border-spacing: 0 5px; margin-top: 10px;
+            width: 100%; max-width: 420px; margin: 8px auto 0; border-collapse: collapse; font-family: 'Fredoka One', cursive;
         }
-        .leaderboard-table th {
-            font-family: 'Bangers', cursive; color: #ff69b4; font-size: 1.5rem; text-align: left; padding: 5px; -webkit-text-stroke: 1px black;
+        .leaderboard-table thead th {
+            font-family: 'Bangers', cursive; color: #5A189A; font-size: 1.15rem; text-align: left; padding: 6px 8px;
         }
         .leaderboard-table td {
-            font-family: 'Fredoka One', cursive; background: #fff; border: 2px solid #5f4b8b; padding: 8px; color: #5f4b8b;
+            padding: 8px; border-bottom: 1px solid rgba(0,0,0,0.06); color: #5f4b8b; font-size: 1rem;
         }
-        .leaderboard-row:nth-child(1) td { background-color: #ffff00; border-color: #ff00ff; }
-        .leaderboard-row:nth-child(2) td { background-color: #e0f7fa; }
-        .leaderboard-row:nth-child(3) td { background-color: #ffebee; }
+        .leaderboard-table td.text-right { text-align: right; }
+        .leaderboard-row.highlight td { background: linear-gradient(90deg,#fffdf0,#fff); font-weight:700; }
     </style>
 </head>
 <body class="bubble-bg min-h-screen flex items-center justify-center p-4">
@@ -231,19 +231,22 @@
             </div>
 
             <div class="w-full max-w-xs bg-white/50 rounded-xl p-4 mb-4 border-2 border-pink-400">
-                <div id="submit-section">
-                    <h3 class="subtitle-garish text-2xl text-center mb-2">Submit Score</h3>
+                <!-- Submit Screen (shown first when eligible) -->
+                <div id="submit-screen" style="display: none;">
+                    <h3 class="subtitle-garish text-2xl text-center mb-2" style="color:#ff69b4;">Submit Score</h3>
                     <div class="flex flex-col gap-2">
-                        <input type="text" id="player-name" placeholder="Your Name (Max 10)" maxlength="10" class="w-full text-center">
+                        <input type="text" id="player-name" placeholder="Your Name (Max 10)" maxlength="10" class="w-full text-center" style="border-color:#ff69b4;">
                         <button id="submit-score-btn" class="start-button py-2 text-xl bg-green-400 text-black hover:bg-green-300 uppercase">
                             Save to Leaderboard!
                         </button>
+                        <button id="submit-skip-btn" class="mt-2 text-sm text-pink-600 hover:text-pink-800 underline">Skip &amp; View Leaderboard</button>
                         <p id="submit-msg" class="text-sm font-bold text-pink-600 hidden"></p>
                     </div>
                 </div>
 
-                <div class="mt-4">
-                    <h3 class="subtitle-garish text-2xl text-center">High Scores</h3>
+                <!-- Leaderboard Screen (shown after submit or when not eligible) -->
+                <div id="leaderboard-screen" style="display: none;">
+                    <h3 class="subtitle-garish text-2xl text-center mb-2" style="color:#33ffff;">High Scores</h3>
                     <div id="leaderboard-loading" class="text-center font-bold text-purple-600">Loading...</div>
                     <table class="leaderboard-table hidden" id="leaderboard-table">
                         <thead>
@@ -366,12 +369,14 @@
             ui.lyricsContainer = document.getElementById('lyrics-container');
             ui.restartBtn = document.getElementById('restart-btn');
             ui.viewLeaderboardBtn = document.getElementById('view-leaderboard-btn');
-            ui.submitSection = document.getElementById('submit-section');
-            
-            // API UI
+            ui.submitSection = document.getElementById('submit-screen');
+            ui.leaderboardScreen = document.getElementById('leaderboard-screen');
             ui.playerNameInput = document.getElementById('player-name');
             ui.submitScoreBtn = document.getElementById('submit-score-btn');
+            ui.submitSkipBtn = document.getElementById('submit-skip-btn');
             ui.submitMsg = document.getElementById('submit-msg');
+            
+            // API UI
             ui.leaderboardTable = document.getElementById('leaderboard-table');
             ui.leaderboardBody = document.getElementById('leaderboard-body');
             ui.leaderboardLoading = document.getElementById('leaderboard-loading');
@@ -489,57 +494,81 @@
         };
 
         // --- API FUNCTIONS ---
-        const fetchHighScores = async () => {
+        const fetchHighScores = async (limit = 5) => {
             ui.leaderboardLoading.classList.remove('hidden');
             ui.leaderboardTable.classList.add('hidden');
             ui.leaderboardBody.innerHTML = '';
-            
+            ui.lastScores = ui.lastScores || [];
             try {
-                const response = await fetch(`${API_BASE_URL}/scores/${LEADERBOARD_ID}/10`);
+                const response = await fetch(`${API_BASE_URL}/scores/${LEADERBOARD_ID}/${limit}`);
                 if (!response.ok) throw new Error('Failed to fetch.');
                 const data = await response.json();
-                
+
                 if (data && Array.isArray(data.scores)) {
-                    // SORT DESCENDING (Highest Score First)
-                    const sortedScores = data.scores.sort((a, b) => b.value - a.value);
-                    
-                    sortedScores.forEach((score, index) => {
-                        const row = document.createElement('tr');
-                        row.className = 'leaderboard-row';
-                        row.innerHTML = `
-                            <td class="text-center font-bold">${index + 1}</td>
-                            <td class="font-bold">${score.name.substring(0,10)}</td>
-                            <td class="text-right font-bold">${score.value}</td>
-                        `;
-                        ui.leaderboardBody.appendChild(row);
-                    });
+                    // SORT DESCENDING (Highest Score First) and limit
+                    const sortedScores = data.scores.sort((a, b) => b.value - a.value).slice(0, limit);
+                    ui.lastScores = sortedScores;
+
+                    if (sortedScores.length === 0) {
+                        ui.leaderboardBody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-500">No scores yet</td></tr>';
+                    } else {
+                        sortedScores.forEach((score, index) => {
+                            const row = document.createElement('tr');
+                            row.className = 'leaderboard-row' + (index === 0 ? ' highlight' : '');
+                            row.innerHTML = `
+                                <td class="text-center font-bold">${index + 1}</td>
+                                <td class="font-bold">${(score.name||'Stray').substring(0,10)}</td>
+                                <td class="text-right font-bold">${score.value}</td>
+                            `;
+                            ui.leaderboardBody.appendChild(row);
+                        });
+                    }
+                } else {
+                    ui.leaderboardBody.innerHTML = '<tr><td colspan="3" class="text-center text-gray-500">No scores yet</td></tr>';
+                    ui.lastScores = [];
                 }
             } catch (error) {
                 console.error('Leaderboard error:', error);
                 ui.leaderboardBody.innerHTML = '<tr><td colspan="3" class="text-center text-red-500">Failed to load scores</td></tr>';
+                ui.lastScores = ui.lastScores || [];
             } finally {
                 ui.leaderboardLoading.classList.add('hidden');
                 ui.leaderboardTable.classList.remove('hidden');
             }
+            return ui.lastScores;
         };
 
         const submitHighScore = async () => {
             const name = ui.playerNameInput.value.trim() || 'Stray Cat';
-            const score = gameState.score;
+            const score = gameState.score || 0;
             if (ui.submitScoreBtn.disabled) return;
+
+            // Ensure we have latest top-5 to validate eligibility
+            if (!ui.lastScores) await fetchHighScores(5);
+            const limit = 5;
+            const scores = ui.lastScores || [];
+            const lowest = scores.length < limit ? 0 : (scores[scores.length - 1]?.value || 0);
+            const eligible = (scores.length < limit) || (score >= lowest);
+            if (!eligible) {
+                ui.submitMsg.innerText = "Not in Top 5 — cannot submit.";
+                ui.submitMsg.classList.remove('hidden');
+                return;
+            }
+
             ui.submitScoreBtn.disabled = true;
             ui.submitScoreBtn.innerText = "Saving...";
-            
             try {
                 const url = `${API_BASE_URL}/scores/${LEADERBOARD_ID}/${LEADERBOARD_SECRET}/add/${encodeURIComponent(name)}/${score}/0`;
                 const response = await fetch(url, { method: 'POST' });
                 if (!response.ok) throw new Error('Net Error');
-                
+
                 ui.submitMsg.innerText = "Score Saved!";
                 ui.submitMsg.classList.remove('hidden');
                 ui.playerNameInput.disabled = true;
-                await fetchHighScores();
-                
+                // after successful save, show leaderboard screen
+                await fetchHighScores(5);
+                ui.submitSection.style.display = 'none';
+                ui.leaderboardScreen.style.display = 'block';
             } catch (error) {
                 ui.submitMsg.innerText = "Error Saving!";
                 ui.submitMsg.classList.remove('hidden');
@@ -584,7 +613,28 @@
                     ui.rankText.innerText = rank;
                 }
                 
-                fetchHighScores();
+                    // Fetch only top 5 and decide whether this score can be submitted
+                    fetchHighScores(5).then((scores) => {
+                        const limit = 5;
+                        const list = scores || [];
+                        const lowest = list.length < limit ? 0 : (list[list.length - 1]?.value || 0);
+                        const eligible = (list.length < limit) || (gameState.score >= lowest);
+                        if (eligible) {
+                            // show submit screen first
+                            ui.submitSection.style.display = 'block';
+                            ui.leaderboardScreen.style.display = 'none';
+                            ui.submitScoreBtn.disabled = false;
+                            ui.playerNameInput.disabled = false;
+                            ui.submitMsg.classList.add('hidden');
+                        } else {
+                            // directly show leaderboard
+                            ui.submitSection.style.display = 'none';
+                            ui.leaderboardScreen.style.display = 'block';
+                            ui.submitMsg.classList.remove('hidden');
+                            ui.submitMsg.innerText = 'Not a Top 5 score — cannot save.';
+                        }
+                        fetchHighScores(5);
+                    });
             }, 500);
         };
 
@@ -592,7 +642,7 @@
             ui.startScreen.style.display = 'none';
             ui.gameOverScreen.style.display = 'flex';
             ui.submitSection.style.display = 'none';
-            fetchHighScores();
+            fetchHighScores(5);
         };
 
         const gameLoop = () => {
@@ -877,6 +927,13 @@
             ui.restartBtn.addEventListener('click', restartGame);
             ui.viewLeaderboardBtn.addEventListener('click', viewLeaderboardOnly);
             ui.submitScoreBtn.addEventListener('click', submitHighScore);
+            ui.submitSkipBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                // hide submit, show leaderboard
+                ui.submitSection.style.display = 'none';
+                ui.leaderboardScreen.style.display = 'block';
+                fetchHighScores(5);
+            });
             
             animationFrameId = requestAnimationFrame(gameLoop);
         }
