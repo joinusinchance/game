@@ -88,6 +88,15 @@
             text-shadow: -5px -5px 0 #5f4b8b, 5px 5px 0 #00ffff, 0 0 10px #ff00ff, 0 0 20px #00ffff, -2px -2px 0 #fff; 
             animation: textBreath 3s ease-in-out infinite alternate, colorFlash 0.2s linear infinite;
         }
+        /* Make the heading very large but slightly reduced for better mobile fit */
+        .bubble-title {
+            font-size: 7.2rem !important; /* scaled down a bit */
+            line-height: 0.88 !important;
+            margin-left: -10px; 
+            transform: translateX(-4px);
+            text-overflow: visible;
+            white-space: nowrap;
+        }
         .subtitle-garish {
             font-family: 'Luckiest Guy', cursive; color: #ffff00;
             text-shadow: -3px -3px 0 #ff69b4, 3px 3px 0 #00ffff, 0 0 8px #ff00ff;
@@ -100,6 +109,13 @@
         .feature-text {
             font-family: 'Bangers', cursive; color: #33ffff;
             -webkit-text-stroke: 1px #6d5b9b; text-shadow: 2px 2px 0 #ff69b4; transform: rotate(-2deg);
+        }
+
+        /* Make feature text larger and more prominent (slightly reduced for mobile fit) */
+        .feature-text {
+            font-size: 2.2rem !important;
+            line-height: 1 !important;
+            margin-bottom: 6px;
         }
 
         /* UI Elements */
@@ -171,16 +187,19 @@
         #game-container { max-width: 540px; }
 
         @media (max-width: 480px) {
-            .bubble-title { font-size: 3.2rem !important; }
+            .bubble-title { font-size: 3.2rem !important; margin-left: -4px; }
             .subtitle-garish { font-size: 1.1rem !important; }
-            .feature-text { font-size: 1rem !important; }
-            #game-container { max-width: 380px; height: 100vh; padding: 12px; }
+            .feature-text { font-size: 1.25rem !important; }
+            #game-container { max-width: 380px; height: 100vh; padding: 10px; }
             .overlay { padding-top: 6px; }
-            #start-screen .relative.h-96 { height: 220px; }
+            #start-screen .relative.h-96 { height: 200px; }
             .leaderboard-table { max-width: 320px; font-size: 0.95rem; }
             .start-button { font-size: 1rem; padding-top: 10px; padding-bottom: 10px; }
             select, input { font-size: 1rem; padding: 8px; border-radius: 10px; }
-            .garish-text { font-size: 1.1rem; }
+            .garish-text { font-size: 1.05rem; }
+            /* Reduce vertical spacing to avoid scrolling */
+            .relative.z-20.pt-7 { padding-top: 6px; }
+            .relative.z-20.mb-6 { margin-bottom: 6px; }
         }
     </style>
 </head>
@@ -236,7 +255,7 @@
             <button id="start-btn" class="start-button w-full py-4 text-4xl font-bold rounded-xl bg-pink-400 text-black hover:bg-pink-300 uppercase relative z-30">
                 Play Now!
             </button>
-            <button id="view-leaderboard-btn" class="mt-4 text-xl font-bold text-pink-600 hover:text-pink-800 underline relative z-30">
+            <button id="view-leaderboard-btn" class="start-button w-full py-3 text-2xl font-bold rounded-xl bg-cyan-400 text-black hover:bg-cyan-300 uppercase relative z-30 mt-4">
                 View High Scores
             </button>
         </div>
