@@ -127,6 +127,26 @@
         let synth = window.speechSynthesis;
         let voices = [];
 
+        // UK Household & Office Decoys
+        const DECOY_ITEMS = [
+            "A Henry Hoover",
+            "A packet of chocolate digestives",
+            "A slightly dried out Pritt Stick",
+            "A letter from the council",
+            "A chipped Sports Direct mug",
+            "A plastic bag full of other plastic bags",
+            "A half-eaten sausage roll",
+            "A tin of baked beans",
+            "A universal remote control",
+            "A squeaky office chair",
+            "A blue biro that doesn't work",
+            "A box of Yorkshire Tea",
+            "A yellow highlighter",
+            "A stack of post-it notes",
+            "A damp tea towel",
+            "A meter reading card"
+        ];
+
         // --- Init ---
         window.onload = () => {
             // Load voices
@@ -221,9 +241,21 @@
 
             if (players.length === 0) return;
 
-            // Extract secrets and shuffle them
-            const secrets = players.map(p => p.secret);
-            const shuffled = shuffleArray([...secrets]);
+            // Extract real secrets
+            let secretsList = players.map(p => p.secret);
+
+            // Add 2 random decoys
+            const availableDecoys = [...DECOY_ITEMS];
+            for (let i = 0; i < 2; i++) {
+                if (availableDecoys.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * availableDecoys.length);
+                    secretsList.push(availableDecoys[randomIndex]);
+                    availableDecoys.splice(randomIndex, 1); // Remove selected to avoid duplicates
+                }
+            }
+
+            // Shuffle everything together
+            const shuffled = shuffleArray([...secretsList]);
 
             setStatus("Reading secrets...");
             
@@ -332,5 +364,3 @@
     </script>
 </body>
 </html>
-
-
