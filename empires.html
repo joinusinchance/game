@@ -85,8 +85,9 @@
                 </div>
 
                 <!-- Status Display -->
-                <div id="reading-status" class="h-32 w-full flex items-center justify-center text-center p-4">
-                    <p class="text-slate-500 italic text-lg" id="status-text">Ready to reveal secrets...</p>
+                <div id="reading-status" class="h-48 w-full flex flex-col items-center justify-center text-center p-4">
+                    <p class="text-slate-500 italic text-lg mb-4" id="status-text">Ready to reveal secrets...</p>
+                    <p class="text-2xl font-bold text-yellow-400 fade-in hidden" id="secret-display"></p>
                 </div>
 
                 <div class="w-full space-y-4 mt-auto mb-8">
@@ -126,25 +127,27 @@
         let players = [];
         let synth = window.speechSynthesis;
         let voices = [];
+        const STORAGE_KEY = 'empires_secret_archive';
 
         // UK Household & Office Decoys
         const DECOY_ITEMS = [
-            "A Henry Hoover",
-            "A packet of chocolate digestives",
+            "Henry Hoover",
+            "Chocolate digestives",
             "A slightly dried out Pritt Stick",
             "A letter from the council",
-            "A chipped Sports Direct mug",
+            "Sports Direct mug",
             "A plastic bag full of other plastic bags",
-            "A half-eaten sausage roll",
-            "A tin of baked beans",
+            "Sausage roll",
+            "baked beans",
             "A universal remote control",
             "A squeaky office chair",
             "A blue biro that doesn't work",
             "A box of Yorkshire Tea",
             "A yellow highlighter",
-            "A stack of post-it notes",
+            "post-it notes",
             "A damp tea towel",
-            "A meter reading card"
+            "A meter reading card",
+            "Tea towel", "Wooden spoon", "Frying pan", "Sieve", "Toaster", "Kettle", "Microwave", "Oven glove", "Bread bin", "Fruit bowl", "Kitchen scales", "Rolling pin", "Grater", "Vegetable peeler", "Whisk", "Spatula", "Tin opener", "Corkscrew", "Bottle opener", "Mug", "Teacup", "Saucer", "Dinner plate", "Side plate", "Pasta bowl", "Cereal bowl", "Teaspoon", "Tablespoon", "Butter knife", "Steak knife", "Chopsticks", "Egg cup", "Wine glass", "Pint glass", "Water tumbler", "Champagne flute", "Plastic jug", "Tupperware lid", "Lunch box", "Cooling rack", "Roasting tray", "Baking sheet", "Casserole dish", "Colander", "Mixing bowl", "Spice jar", "Salt shaker", "Pepper mill", "Sugar bowl", "Honey dipper", "Cling film", "Aluminium foil", "Baking paper", "Kitchen roll", "Washing up liquid", "Dishwasher tablet", "Scouring pad", "Dish brush", "Sink plug", "Tea bag", "Instant coffee", "Sugar cubes", "Loaf of bread", "Block of cheese", "Pint of milk", "Butter dish", "Garlic press", "Pizza cutter", "Ice cube tray", "Bottle rack", "Wine rack", "Apron", "Kitchen timer", "Bin liner", "Recycling bag", "Compost bin", "Step ladder", "Dustpan and brush", "Mop and bucket", "Vacuum cleaner", "Broom", "Laundry basket", "Washing machine", "Tumble dryer", "Ironing board", "Steam iron", "Clothes horse", "Laundry detergent", "Fabric softener", "Peg bag", "Clothes pegs", "Hanging rail", "Shoe rack", "Coat hanger", "Door mat", "Sofa", "Armchair", "Coffee table", "Sideboard", "Bookshelf", "Television", "Remote control", "Sound bar", "Game console", "Floor lamp", "Table lamp", "Light switch", "Cushion", "Throw blanket", "Rug", "Curtains", "Window blind", "Picture frame", "Wall clock", "Mirror", "Candle holder", "Scented candle", "Reed diffuser", "Vase", "Artificial flowers", "Indoor plant", "Plant pot", "Coaster", "Ash tray", "Fireplace", "Log basket", "Coal bucket", "Radiator", "Thermostat", "Extension lead", "Plug adapter", "Charging cable", "Wi-Fi router", "Landline phone", "Address book", "Notepad", "Ballpoint pen", "Pencil", "Eraser", "Sharpener", "Ruler", "Sticky tape", "Scissors", "Paperclips", "Stapler", "Hole punch", "Envelopes", "Postage stamps", "Magazine", "Newspaper", "Dictionary", "Novel", "Bookmark", "Board game", "Jigsaw puzzle", "Playing cards", "Dice", "Double bed", "Single bed", "Mattress", "Duvet", "Pillow", "Pillowcase", "Duvet cover", "Bed sheet", "Bedspread", "Nightstand", "Alarm clock", "Wardrobe", "Chest of drawers", "Dressing table", "Hand mirror", "Jewellery box", "Hairbrush", "Comb", "Hairdryer", "Hair straighteners", "Hair ties", "Bobby pins", "Perfume bottle", "Aftershave", "Make-up brush", "Mascara", "Lipstick", "Eye liner", "Face cream", "Hand cream", "Sunscreen", "Nail clippers", "Nail file", "Tweezers", "Cotton wool", "Cotton buds", "Tissues", "Toilet roll", "Bath towel", "Hand towel", "Face cloth", "Bath mat", "Shower curtain", "Soap dispenser", "Bar of soap", "Shower gel", "Shampoo", "Conditioner", "Toothbrush", "Toothpaste", "Mouthwash", "Dental floss", "Razor", "Shaving foam", "Bath plug", "Loofah", "Bath bomb", "Toilet brush", "Bathroom scales", "First aid kit", "Plasters", "Antiseptic cream", "Painkillers", "Thermometer", "Cough syrup", "Vitamins", "Surgical tape", "Safety pins", "Sewing needle", "Thread spool", "Thimble", "Tape measure", "Knitting needles", "Ball of wool", "Hammer", "Screwdriver", "Pliers", "Wrench", "Spirit level", "Tape measure", "Utility knife", "Sandpaper", "Paint brush", "Paint roller", "Paint tin", "WD-40", "Super glue", "Torch", "Batteries", "Light bulb", "Padlock", "Door key", "Car key", "Wallet", "Purse", "Handbag", "Backpack", "Umbrella", "Sunglasses", "Reading glasses", "Wristwatch", "Jewellery", "Wedding ring", "Necklace", "Bracelet", "Earrings", "Scarf", "Gloves", "Woolly hat", "Sun hat", "Belt", "Socks", "Underwear", "Pyjamas", "Dressing gown", "Slippers", "Trainers", "Boots", "Sandals", "High heels", "Shoe polish", "Suitcase", "Gym bag", "Yoga mat", "Dumbbells", "Tennis racket", "Football", "Bicycle", "Bicycle pump", "Cycle helmet", "Garden spade", "Garden fork", "Rake", "Hoe", "Trowel", "Watering can", "Garden hose", "Lawnmower", "Hedge trimmers", "Shears", "Garden gloves", "Plant food", "Seeds", "Bird feeder", "Bird seed", "Barbecue", "Charcoal", "Patio chair", "Garden table", "Parasol", "Deckchair", "Hammock", "Flower pot", "Wheelbarrow", "Dog bowl", "Cat bowl", "Pet bed", "Dog lead", "Cat litter tray", "Pet carrier", "Dog toy", "Catnip mouse", "Fish tank", "Fish food", "Bird cage", "Hamster wheel", "Baby cot", "High chair", "Stroller", "Nappy", "Baby wipes", "Dummy", "Baby bottle", "Teddy bear", "Doll", "Toy car", "Building blocks", "Crayons", "Colouring book", "Puzzles", "Laptop", "Desktop computer", "Computer mouse", "Keyboard", "Monitor", "Printer", "Ink cartridge", "Paper ream", "Tablet", "E-reader", "Headphones", "Earbuds", "Power bank", "USB stick", "External hard drive", "Webcam", "Microphone", "Calculator", "Battery charger", "Envelopes", "Staple remover", "Blu-tack", "Paperweight", "Letter opener", "Filing cabinet", "Folder", "Notebook", "Diary", "Calendar", "World globe", "Wall map", "Binoculars", "Camera", "Lens cap", "Tripod", "Memory card", "Video camera", "Projector", "Guitar", "Piano", "Keyboard", "Music stand", "Metronome", "Vinyl record", "Record player", "CD", "DVD", "VHS tape", "Remote control", "Batteries", "Torches", "Candles", "Matches", "Lighter", "Cigarettes", "Pipe", "Tobacco", "Incense sticks", "Oil burner", "Essential oils", "Potpourri", "Artificial plants", "Photo album", "Scrapbook", "Shoebox", "Plastic crate", "Cardboard box", "Bubble wrap", "Packing tape", "Gift wrap", "Ribbon", "Gift tag", "Greeting card", "Invitation", "Thank you note", "Passport", "Birth certificate", "Insurance papers", "Bank statements", "Utility bills", "Spare change", "Coin jar", "Piggy bank", "Safe", "Fire extinguisher", "Smoke alarm", "Carbon monoxide detector", "Doorbell", "Security camera", "Smart speaker", "Smart bulb", "Smart plug", "Vacuum bag", "Ironing board cover", "Laundry bag", "Fabric shaver", "Lint roller", "Shoe horn", "Boot jack", "Umbrella stand", "Coat rack", "Hat stand", "Key hook", "Door stop", "Draft excluder", "Fly swatter", "Moth balls", "Air freshener", "Dehumidifier", "Humidifier", "Electric fan", "Electric heater", "Hot water bottle", "Electric blanket", "Sleeping bag", "Camping stove", "Cool box", "Picnic blanket", "Picnic basket", "Flask", "Water bottle", "Travel mug", "Lunch bag", "Backpack", "Duffel bag", "Tote bag", "Shopping trolley", "Walking stick", "Crutches", "Wheelchair", "Hearing aid", "Inhaler", "Glasses case", "Contact lenses", "Lens solution", "Eye drops", "Face mask", "Hand sanitiser", "Wet wipes", "Kitchen sponge", "Steel wool", "Microfibre cloth", "Chamois leather", "Squeegee", "Bucket", "Plunger", "Drain unblocker", "Oven cleaner", "Glass cleaner", "Furniture polish", "Floor wax", "Carpet cleaner", "Bleach", "Disinfectant", "Antibacterial spray", "Laundry pods", "Stain remover", "Starch spray", "Fabric freshener", "Iron water", "Kettle descaler", "Dishwasher salt", "Rinse aid", "Silver polish", "Brass polish", "Shoe protector", "Leather conditioner", "Wood glue", "PVA glue", "Glue stick", "Hot glue gun", "Masking tape", "Electrical tape", "Duct tape", "Double sided tape", "String", "Twine", "Rope", "Bungee cord", "Cable ties", "Velcro strips", "Picture hooks", "Wall plugs", "Screws", "Nails", "Bolts", "Nuts", "Washers", "Allen keys", "Spanner", "Socket set", "Chisel", "Saw", "Hacksaw", "File", "Clamp", "Vice", "Workbench", "Toolbox", "Oil can", "Grease gun", "Funnel", "Jerry can", "Bucket", "Sack truck", "Dust sheet", "Step stool", "Loft ladder", "Attic fan", "Insulation", "Water tank", "Boiler", "Fuse box", "Electricity meter", "Gas meter", "Stopcock", "Pipes", "Radiator valve", "Ventilation grill", "Extractor fan", "Ceiling rose", "Light fitting", "Lamp shade", "Chandelier", "Curtain pole", "Curtain rings", "Blind cord", "Window latch", "Door handle", "Door hinge", "Door bolt", "Letter box", "Knocker", "Spy hole", "Keyhole", "Escutcheon", "Door chain", "Night latch", "Mortice lock", "Deadbolt", "Finger plate", "Kick plate", "Skirting board", "Architrave", "Dado rail", "Picture rail", "Coving", "Ceiling tile", "Floor tile", "Wall tile", "Grout", "Sealant", "Caulk", "Wallpaper", "Paste", "Paint", "Primer", "Undercoat", "Gloss", "Emulsion", "Varnish", "Stain", "Wax", "Oil", "Thinners", "Turpentine", "White spirit", "Methylated spirit", "Sugar soap", "Filler", "Plaster", "Cement", "Sand", "Gravel", "Brick", "Paver", "Fence panel", "Garden gate", "Trellis", "Bird bath", "Garden gnome", "Wind chime", "Sun dial", "Weather vane", "Flag pole", "Hammock", "Swing seat", "Trampoline", "Paddling pool", "Garden slide", "Sand pit", "Garden shed", "Greenhouse", "Cold frame", "Compost heap", "Water butt", "Hose reel", "Sprinkler", "Pressure washer", "Leaf blower", "Edge trimmer", "Chainsaw", "Log splitter", "Axe", "Sledgehammer", "Pickaxe", "Shovel", "Spade", "Fork", "Rake", "Hoe", "Trowel", "Dibber", "Secateurs", "Loppers", "Pruning saw", "Garden wire", "Plant ties", "Labels", "Potting shed", "Work bench", "Potting soil", "Compost", "Fertilizer", "Mulch", "Bark", "Pebbles", "Rocks", "Pond", "Pump", "Filter", "Fountain", "Fish net", "Algae killer", "Chlorine tablets", "Pool tester", "Pool cover", "Skipping rope", "Hula hoop", "Frisbee", "Kite", "Boules set", "Croquet set", "Badminton set", "Swingball", "Tennis ball", "Cricket bat", "Cricket ball", "Golf club", "Golf ball", "Golf tee", "Yoga block", "Resistance band", "Exercise ball", "Punch bag", "Boxing gloves", "Skateboard", "Roller skates", "Scooter", "Tricycle", "Push bike", "Balance bike", "Bike lock", "Bike light", "Roof rack", "Tow bar", "Car jack", "Spare tyre", "Wheel brace", "Jump leads", "Tow rope", "Ice scraper", "De-icer", "Screen wash", "Car wax", "Car sponge", "Chamois", "Car vacuum", "Air freshener", "Tax disc holder", "Sat nav", "Dash cam", "Child seat", "Booster seat", "Roof box", "Bike rack", "Trailer", "Caravan", "Motorhome", "Tent", "Groundsheet", "Tent pegs", "Mallet", "Guy ropes", "Sleeping mat", "Camp bed", "Lantern", "Head torch", "Gas canister", "Camping kettle", "Folding chair", "Folding table", "Cool bag", "Ice pack", "Picnic set", "Plastic plates", "Plastic cups", "Flask", "Water carrier", "Portable toilet", "Chemical fluid", "Awning", "Windbreak", "Beach ball", "Bucket and spade", "Bodyboard", "Surfboard", "Wetsuit", "Flippers", "Snorkel", "Mask", "Beach towel", "Beach mat", "Cooler", "Sun umbrella", "Beach chair", "Windbreaker", "Life jacket", "Inflatable boat", "Paddle", "Oar", "Fishing rod", "Fishing reel", "Fishing line", "Hook", "Lure", "Bait", "Tackle box", "Landing net", "Fishing stool", "Waders", "Keep net", "Rod pod", "Bite alarm", "Shot", "Float", "Weight", "Swivel", "Wire trace", "Disgorger", "Priest", "Scale", "Creel", "Fly box", "Wading staff", "Binoculars", "Bird book", "Nature guide", "Star chart", "Telescope", "Microscope", "Magnifying glass", "Compass", "Map case", "Whistle", "Survival kit", "Emergency blanket", "Flare", "First aid manual", "Medical records", "Prescription", "Pill organiser", "Nebuliser", "Blood pressure monitor", "Glucose meter", "Hearing aid battery", "Walking frame", "Bath seat", "Raised toilet seat", "Bed lever", "Grab rail", "Stair lift", "Wheelchair ramp", "Commode", "Urinal", "Bed pan", "Incontinence pad", "Pressure cushion", "Heat pad", "Ice pack", "Knee brace", "Ankle support", "Wrist splint", "Neck brace", "Back support", "Crutch pads", "Ferrules", "Walking stick strap", "Oxygen tank", "Ventilator", "Dialysis machine", "Stethoscope", "Otoscope", "Reflex hammer", "Pen torch", "Tongue depressor", "Gloves", "Apron", "Face shield", "Goggles", "Mask", "Antiseptic wipes", "Hand gel", "Soap", "Paper towels", "Waste bag", "Sharps bin", "Medicine cabinet", "Lotion", "Ointment", "Cream", "Gel", "Spray", "Powder", "Drops", "Syrup", "Tablet", "Capsule", "Pill", "Lozenge", "Inhaler", "Patch", "Injection", "Syringe", "Needle", "Cannula", "Bandage", "Dressing", "Gauze", "Swab", "Tape", "Sling", "Splint", "Cast", "Cotton wool", "Safety pin", "Scissors", "Tweezers", "Thermometer", "Scale", "Stretcher", "Blanket", "Pillow", "Sheet", "Towel", "Washcloth", "Soap", "Shampoo", "Toothbrush", "Toothpaste", "Comb", "Brush", "Razor", "Shaving cream", "Deodorant", "Perfume", "Aftershave", "Lip balm", "Moisturiser", "Sunscreen", "Insect repellent", "Nail clippers", "Nail file", "Mirror", "Glass", "Cup", "Plate", "Bowl", "Spoon", "Fork", "Knife", "Straw", "Napkin", "Tray", "Pitcher", "Bottle", "Can", "Opener", "Corkscrew", "Lighter", "Matches", "Candle", "Flashlight", "Battery", "Radio", "Television", "Phone", "Computer", "Tablet", "Reader", "Charger", "Cable", "Adapter", "Plug", "Socket", "Switch", "Light", "Bulb", "Lamp", "Fan", "Heater", "Cooler", "Purifier", "Humidifier", "Dehumidifier", "Clock", "Watch", "Timer", "Alarm", "Camera", "Video", "Audio", "Speaker", "Headphones", "Earbuds", "Microphone", "Remote", "Console", "Game", "Controller", "Disc", "Tape", "Record", "Player", "Book", "Magazine", "Paper", "Pen", "Pencil", "Marker", "Crayon", "Paint", "Brush", "Canvas", "Easel", "Clay", "Tool", "Needle", "Thread", "Yarn", "Fabric", "Pattern", "Sewing machine", "Iron", "Board", "Laundry", "Basket", "Detergent", "Softener", "Bleach", "Stain remover", "Dryer sheet", "Pegs", "Line", "Hanger", "Rack", "Iron", "Steamer", "Vacuum", "Mop", "Broom", "Dustpan", "Brush", "Bucket", "Sponge", "Cloth", "Cleaner", "Polish", "Wax", "Dust", "Dirt", "Trash", "Bin", "Bag", "Liner", "Recycle", "Compost", "Pot", "Pan", "Dish", "Glass", "Mug", "Cup", "Plate", "Bowl", "Silverware", "Cutlery", "Utensil", "Tool", "Gadget", "Appliance", "Fridge", "Freezer", "Stove", "Oven", "Grill", "Toaster", "Kettle", "Coffee maker", "Blender", "Mixer", "Processor", "Slicer", "Grater", "Peeler", "Whisk", "Spatula", "Turner", "Ladle", "Tongs", "Scissors", "Knife", "Sharpener", "Board", "Scale", "Timer", "Thermometer", "Mitt", "Apron", "Towel", "Rack", "Shelf", "Drawer", "Cabinet", "Pantry", "Food", "Drink", "Spice", "Herb", "Oil", "Vinegar", "Sauce", "Condiment", "Salt", "Pepper", "Sugar", "Flour", "Grain", "Pasta", "Rice", "Cereal", "Bread", "Cracker", "Chip", "Nut", "Seed", "Fruit", "Vegetable", "Meat", "Fish", "Dairy", "Egg", "Cheese", "Milk", "Butter", "Yogurt", "Ice cream", "Frozen food", "Can", "Jar", "Box", "Bag", "Wrap", "Foil", "Paper", "Container", "Lid", "Straw", "Napkin", "Plate", "Cup", "Cutlery", "Table", "Chair", "Stool", "Bench", "Desk", "Bed", "Sofa", "Couch", "Armchair", "Recliner", "Ottoman", "Cabinet", "Shelf", "Bookcase", "Wardrobe", "Chest", "Drawer", "Nightstand", "Sideboard", "Console", "Stand", "Rack", "Hook", "Mirror", "Picture", "Frame", "Art", "Poster", "Clock", "Lamp", "Light", "Bulb", "Shade", "Candle", "Holder", "Vase", "Bowl", "Plant", "Pot", "Rug", "Mat", "Carpet", "Curtain", "Blind", "Shutter", "Screen", "Window", "Door", "Handle", "Lock", "Key", "Bell", "Knocker", "Mat", "Wall", "Ceiling", "Floor", "Vent", "Radiator", "Heater", "Fan", "Air conditioner", "Outlet", "Switch", "Cord", "Plug", "Adapter", "Battery", "Charger", "Phone", "Computer", "Tablet", "Laptop", "Monitor", "Keyboard", "Mouse", "Printer", "Scanner", "Speaker", "Headset", "Camera", "Mic", "Router", "Modem", "Cable", "Box", "Remote", "TV", "Screen", "Player", "Game", "Console", "Controller", "Disc", "Movie", "Music", "Book", "E-reader", "Paper", "Notebook", "Pad", "Pen", "Pencil", "Eraser", "Sharpener", "Marker", "Highlighter", "Stapler", "Clips", "Tape", "Glue", "Scissors", "Ruler", "Folder", "Binder", "File", "Envelope", "Stamp", "Card", "Letter", "Mail", "Key", "Wallet", "Purse", "Bag", "Backpack", "Briefcase", "Suitcase", "Umbrella", "Coat", "Hat", "Gloves", "Scarf", "Belt", "Shoes", "Boots", "Slippers", "Socks", "Underwear", "Shirt", "Pants", "Dress", "Skirt", "Jacket", "Sweater", "Pyjamas", "Robe", "Towel", "Washcloth", "Soap", "Shampoo", "Conditioner", "Lotion", "Cream", "Oil", "Powder", "Brush", "Comb", "Mirror", "Razor", "Blade", "Cream", "Paste", "Brush", "Floss", "Mouthwash", "Deodorant", "Perfume", "Makeup", "Nail polish", "Remover", "Clipper", "File", "Tweezers", "Cotton", "Buds", "Balls", "Tissues", "Roll", "Plasters", "Bandage", "Medicine", "Pill", "Vitamin", "First aid", "Thermometer", "Scale", "Towel", "Mat", "Curtain", "Hook", "Sink", "Faucet", "Drain", "Toilet", "Seat", "Lid", "Flush", "Brush", "Plunger", "Bin", "Sponge", "Scrubber", "Cleaner", "Soap", "Detergent", "Bleach", "Softener", "Sheet", "Iron", "Board", "Rack", "Hanger", "Peg", "Basket", "Hamper", "Washer", "Dryer", "Mop", "Bucket", "Broom", "Dustpan", "Vacuum", "Cloth", "Rag", "Polish", "Wax", "Tool", "Hammer", "Driver", "Wrench", "Pliers", "Saw", "Drill", "Nail", "Screw", "Bolt", "Nut", "Tape", "Glue", "Oil", "Paint", "Brush", "Ladder", "Step", "Stool", "Torch", "Battery", "Bulb", "Cord", "Wire", "Plug", "Fuse", "Meter", "Box", "Key", "Lock", "Hinge", "Handle", "Knob", "Latch", "Chain", "Hook", "Shelf", "Bracket", "Nail", "Screw", "Pin", "Clip", "Tie", "Rope", "String", "Twine", "Wire", "Tape", "Glue", "Sealant", "Caulk", "Filler", "Sandpaper", "Steel wool", "Sponge", "Brush", "Bucket", "Tray", "Roller", "Cloth", "Sheet", "Cover", "Mask", "Gloves", "Goggles", "Boots", "Apron", "Helmet", "Vest", "Belt", "Bag", "Box", "Case", "Rack", "Stand", "Cabinet", "Shelf", "Workbench", "Table", "Chair", "Stool", "Light", "Fan", "Heater", "Radio", "Clock", "Phone", "Charger", "Cable", "Battery", "Spare part", "Manual", "Warranty", "Receipt", "Paper", "Pen", "Pencil", "Trash", "Bin", "Bag", "Liner", "Recycle", "Scrap", "Junk", "Clutter", "Dust", "Web", "Dirt", "Mud", "Stain", "Odour", "Air", "Water", "Heat", "Cold", "Light", "Dark", "Space"
         ];
 
         // --- Init ---
@@ -158,6 +161,30 @@
 
         function populateVoices() {
             voices = synth.getVoices();
+        }
+
+        // --- Archive Management ---
+        function getArchivedSecrets() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function addToArchive(newSecrets) {
+            let archive = getArchivedSecrets();
+            
+            // Add new unique secrets
+            newSecrets.forEach(s => {
+                if (!archive.includes(s) && !DECOY_ITEMS.includes(s)) {
+                    archive.push(s);
+                }
+            });
+
+            // Optional: Cap archive size to prevent infinite growth (e.g., last 500)
+            if (archive.length > 500) {
+                archive = archive.slice(archive.length - 500);
+            }
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(archive));
         }
 
         // --- Navigation Logic ---
@@ -202,6 +229,11 @@
                 return;
             }
 
+            // Save secrets to archive for NEXT time (so the device learns)
+            // We do this now so they are available for the future, 
+            // but we won't use them as decoys in this specific round to avoid duplication.
+            addToArchive(players.map(p => p.secret));
+
             document.getElementById('final-count').innerText = players.length;
             goToScreen('control');
         }
@@ -236,6 +268,7 @@
             if (synth.speaking) {
                 synth.cancel(); // Stop if already talking
                 setStatus("Reading stopped.");
+                hideSecretDisplay();
                 return;
             }
 
@@ -244,13 +277,20 @@
             // Extract real secrets
             let secretsList = players.map(p => p.secret);
 
+            // Mix pools: Default Decoys + Archived Secrets (excluding current game secrets)
+            const archived = getArchivedSecrets();
+            // Filter archive: remove items that are currently in play to avoid duplicates
+            const safeArchive = archived.filter(s => !secretsList.includes(s));
+            
+            const combinedDecoyPool = [...DECOY_ITEMS, ...safeArchive];
+
             // Add 2 random decoys
-            const availableDecoys = [...DECOY_ITEMS];
+            const availableDecoys = [...combinedDecoyPool];
             for (let i = 0; i < 2; i++) {
                 if (availableDecoys.length > 0) {
                     const randomIndex = Math.floor(Math.random() * availableDecoys.length);
                     secretsList.push(availableDecoys[randomIndex]);
-                    availableDecoys.splice(randomIndex, 1); // Remove selected to avoid duplicates
+                    availableDecoys.splice(randomIndex, 1); // Remove selected
                 }
             }
 
@@ -264,53 +304,68 @@
             
             // Initial announcement
             speakText("Attention everyone. Here are the secrets.", 0);
-            delay += 2500; // Wait a bit after intro
+            delay += 2500; 
 
             shuffled.forEach((secret, index) => {
                 setTimeout(() => {
+                    hideSecretDisplay();
                     setStatus(`Reading Secret #${index + 1}...`);
-                    speakText(`Secret number ${index + 1}.`, 0, 1.1); // Slightly faster for numbers
+                    speakText(`Secret number ${index + 1}.`, 0, 1.1); 
                     
-                    // Small pause between number and secret is handled by queue, 
-                    // but we add a specific timeout for visual feedback
                     setTimeout(() => {
-                        speakText(secret, 500); // 500ms pause after saying secret
+                        showSecretDisplay(secret);
+                        speakText(secret, 500); 
                     }, 1500);
 
                 }, delay);
                 
-                // Estimate duration increment for next loop (rough estimate: 4s per secret)
-                delay += 5000; 
+                // Estimate duration increment 
+                delay += 6000; 
             });
 
             setTimeout(() => {
+                hideSecretDisplay();
                 setStatus("All secrets revealed.");
                 speakText("That is all the secrets. Good luck.", 0);
             }, delay);
         }
 
+        function showSecretDisplay(text) {
+            const el = document.getElementById('secret-display');
+            el.innerText = text;
+            el.classList.remove('hidden');
+            el.classList.add('fade-in');
+        }
+
+        function hideSecretDisplay() {
+            const el = document.getElementById('secret-display');
+            el.classList.add('hidden');
+            el.innerText = '';
+        }
+
         function speakText(text, pauseAfter = 0, rate = 1.0) {
             const utterance = new SpeechSynthesisUtterance(text);
             
-            // Try to find a good English voice
-            const preferredVoice = voices.find(v => v.name.includes("Google US English")) || 
-                                   voices.find(v => v.name.includes("Samantha")) ||
-                                   voices.find(v => v.lang.startsWith("en"));
+            // Try to find a UK Female voice
+            // Priority: 1. Google UK Female, 2. Any UK Female, 3. Any UK, 4. Any Female, 5. Default
+            const preferredVoice = 
+                voices.find(v => v.name === "Google UK English Female") ||
+                voices.find(v => v.lang === "en-GB" && (v.name.includes("Female") || v.name.includes("Martha"))) ||
+                voices.find(v => v.lang === "en-GB") ||
+                voices.find(v => v.name.includes("Female")) ||
+                voices.find(v => v.lang.startsWith("en"));
             
             if (preferredVoice) utterance.voice = preferredVoice;
             
-            utterance.rate = 0.9 * rate; // Slightly slower for dramatic effect
+            utterance.rate = 0.9 * rate; 
             utterance.pitch = 1;
             
             synth.speak(utterance);
             
             if (pauseAfter > 0) {
-                // Add a silent pause
-                // Note: creating an empty utterance sometimes works better for queues than timeouts
                 const pause = new SpeechSynthesisUtterance('');
                 pause.pause = pauseAfter; 
-                // Actual pause logic in WebSpeech is tricky, usually handled by just queueing text.
-                // We rely on natural queue.
+                synth.speak(pause);
             }
         }
 
