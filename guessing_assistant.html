@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Game Helper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-image: url('https://joinusinchance.github.io/game/background_20_questions.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #1e293b;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .screen {
+            display: none;
+            min-height: 100vh;
+            padding: 2rem;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background-color: rgba(248, 250, 252, 0.85); /* Overlay to ensure text readability */
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 400px;
+            transition: transform 0.2s ease;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary { background: #6366f1; color: white; }
+        .btn-primary:active { transform: scale(0.98); background: #4f46e5; }
+
+        .btn-secondary { background: #ec4899; color: white; }
+        .btn-secondary:active { transform: scale(0.98); background: #db2777; }
+
+        .btn-outline { 
+            background: white; 
+            border: 2px solid #e2e8f0; 
+            color: #64748b;
+            margin-top: 1.5rem;
+        }
+
+        .difficulty-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 2px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .difficulty-btn.selected {
+            border-color: #6366f1;
+            background: #eef2ff;
+            color: #6366f1;
+        }
+
+        .fact-box {
+            background: #f1f5f9;
+            border-left: 4px solid #6366f1;
+            padding: 1rem;
+            margin-top: 1rem;
+            text-align: left;
+            font-size: 0.9rem;
+            border-radius: 0.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Screen -->
+    <div id="screen-main" class="screen active">
+        <div class="mb-8">
+            <h1 class="text-4xl font-extrabold tracking-tight mb-2">Game Night</h1>
+            <p class="text-slate-700 font-medium">Choose your game and difficulty!</p>
+        </div>
+
+        <div class="w-full max-w-xs mb-8">
+            <p class="text-sm font-bold text-slate-500 mb-3 text-left uppercase tracking-wider">Select Difficulty</p>
+            <div class="flex gap-2">
+                <button class="difficulty-btn selected" onclick="setDifficulty('easy', this)">Easy</button>
+                <button class="difficulty-btn" onclick="setDifficulty('medium', this)">Med</button>
+                <button class="difficulty-btn" onclick="setDifficulty('hard', this)">Hard</button>
+            </div>
+        </div>
+        
+        <div class="w-full max-w-xs">
+            <button class="btn btn-primary text-lg" onclick="showScreen('charades')">
+                🎭 Charades
+            </button>
+            <button class="btn btn-secondary text-lg" onclick="showScreen('twenty')">
+                🤔 20 Questions
+            </button>
+        </div>
+    </div>
+
+    <!-- Charades Screen -->
+    <div id="screen-charades" class="screen">
+        <div class="card">
+            <span id="charade-diff-badge" class="badge bg-indigo-100 text-indigo-700">Easy Charades</span>
+            <h2 id="charade-item" class="text-3xl font-bold mb-4">...</h2>
+            
+            <div class="text-left">
+                <p class="font-semibold text-sm text-slate-400 mb-2">SUGGESTED ACTIONS:</p>
+                <ul id="charade-tips" class="text-slate-600 text-sm list-disc pl-5 space-y-1">
+                    <!-- Tips injected here -->
+                </ul>
+            </div>
+
+            <button class="btn btn-primary mt-6" onclick="generateCharade()">New Idea</button>
+            <button class="btn btn-outline" onclick="showScreen('main')">← Back Home</button>
+        </div>
+    </div>
+
+    <!-- 20 Questions Screen -->
+    <div id="screen-twenty" class="screen">
+        <div class="card">
+            <span id="twenty-diff-badge" class="badge bg-pink-100 text-pink-700">Easy Secret Item</span>
+            <h2 id="twenty-item" class="text-3xl font-bold mb-4">...</h2>
+            
+            <div class="text-left">
+                <p class="font-semibold text-sm text-slate-400 mb-2">FACTS (TRUE/FALSE):</p>
+                <div id="twenty-facts" class="space-y-2">
+                    <!-- Facts injected here -->
+                </div>
+            </div>
+
+            <button class="btn btn-secondary mt-6" onclick="generateTwenty()">New Idea</button>
+            <button class="btn btn-outline" onclick="showScreen('main')">← Back Home</button>
+        </div>
+    </div>
+
+    <script>
+        let currentDifficulty = 'easy';
+
+        const charadeIdeas = {
+            easy: [
+                { item: "Elephant", tips: ["Swing your arm like a trunk", "Stomp your feet heavily", "Use hands as big floppy ears"] },
+                { item: "Spider-Man", tips: ["Mime shooting webs from wrists", "Pretend to climb a wall", "Crouch in a hero pose"] },
+                { item: "Popcorn", tips: ["Start small and crouched", "Suddenly jump up and 'pop'", "Make small jerky movements"] }
+            ],
+            medium: [
+                { item: "Washing Machine", tips: ["Spin your body in a circle", "Shake your body like a spin cycle", "Mime throwing clothes inside"] },
+                { item: "Astronaut", tips: ["Move in very slow motion", "Mime wearing a heavy helmet", "Pretend to float weightlessly"] },
+                { item: "Conducting an Orchestra", tips: ["Wave your hands rhythmically", "Mime pointing to different sections", "Look very intense and expressive"] }
+            ],
+            hard: [
+                { item: "Internet Router", tips: ["Stand still and blink your eyes like LEDs", "Mime invisible waves coming from your head", "Pretend to plug in cables behind you"] },
+                { item: "Solar Eclipse", tips: ["Mime one hand slowly covering the other", "Pretend it's getting dark and look surprised", "Mime putting on special glasses"] },
+                { item: "The Great Wall of China", tips: ["Extend arms wide to show length", "Walk in a zigzag pattern", "Mime stacking heavy bricks"] }
+            ]
+        };
+
+        const twentyIdeas = {
+            easy: [
+                { item: "The Moon", facts: ["True: It affects the ocean tides.", "False: It has its own light source.", "True: Humans have walked on its surface."] },
+                { item: "A Penguin", facts: ["True: It is a bird that cannot fly.", "False: It lives at the North Pole.", "True: It is an excellent swimmer."] }
+            ],
+            medium: [
+                { item: "Mount Everest", facts: ["True: It is part of a mountain range.", "True: It is located in Asia.", "False: It is easy to walk to the top."] },
+                { item: "A Pineapple", facts: ["True: It grows on the ground, not a tree.", "True: It has a 'crown' of leaves.", "False: It is a type of citrus fruit."] },
+                { item: "Electric Guitar", facts: ["True: It usually has 6 strings.", "True: It needs an amplifier to be loud.", "False: It was invented in the 1700s."] }
+            ],
+            hard: [
+                { item: "Quantum Physics", facts: ["True: It deals with things smaller than atoms.", "False: It only applies to massive stars.", "True: It allows for objects to be in two states at once."] },
+                { item: "The Mona Lisa", facts: ["True: It was painted on wood, not canvas.", "False: The subject is wearing a lot of jewelry.", "True: It is kept behind bulletproof glass."] }
+            ]
+        };
+
+        function setDifficulty(diff, el) {
+            currentDifficulty = diff;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + screenId).classList.add('active');
+            
+            if(screenId === 'charades') {
+                document.getElementById('charade-diff-badge').innerText = `${currentDifficulty} Charades`;
+                generateCharade();
+            }
+            if(screenId === 'twenty') {
+                document.getElementById('twenty-diff-badge').innerText = `${currentDifficulty} Secret Item`;
+                generateTwenty();
+            }
+        }
+
+        function generateCharade() {
+            const pool = charadeIdeas[currentDifficulty];
+            const idea = pool[Math.floor(Math.random() * pool.length)];
+            document.getElementById('charade-item').innerText = idea.item;
+            const tipsList = document.getElementById('charade-tips');
+            tipsList.innerHTML = '';
+            idea.tips.forEach(tip => {
+                const li = document.createElement('li');
+                li.innerText = tip;
+                tipsList.appendChild(li);
+            });
+        }
+
+        function generateTwenty() {
+            const pool = twentyIdeas[currentDifficulty];
+            const idea = pool[Math.floor(Math.random() * pool.length)];
+            document.getElementById('twenty-item').innerText = idea.item;
+            const factBox = document.getElementById('twenty-facts');
+            factBox.innerHTML = '';
+            idea.facts.forEach(fact => {
+                const div = document.createElement('div');
+                div.className = 'fact-box';
+                div.innerText = fact;
+                factBox.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
