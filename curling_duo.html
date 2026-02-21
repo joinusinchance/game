@@ -64,6 +64,10 @@
             from { transform: translateX(-10px); }
             to { transform: translateX(10px); }
         }
+        .hammer-icon {
+            font-size: 1.2rem;
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+        }
     </style>
 </head>
 <body>
@@ -113,8 +117,12 @@
 
     <div class="ui-overlay">
         <div class="stats-bar">
-            <div class="bg-red-600 text-white px-3 py-1 rounded-xl shadow-lg text-sm flex flex-col min-w-[100px]">
-                <span id="display-name-red" class="font-bold truncate">RED</span>
+            <!-- Red Score Card -->
+            <div class="bg-red-600 text-white px-3 py-1 rounded-xl shadow-lg text-sm flex flex-col min-w-[120px] transition-all duration-300" id="card-red">
+                <div class="flex items-center gap-1">
+                    <span id="hammer-red" class="hammer-icon opacity-0">🔨</span>
+                    <span id="display-name-red" class="font-bold truncate">RED</span>
+                </div>
                 <div class="flex justify-between text-xs opacity-90">
                     <span>Score: <span id="score-red" class="font-bold">0</span></span>
                 </div>
@@ -122,12 +130,19 @@
                     Stones: <span id="left-red">4</span>
                 </div>
             </div>
+
+            <!-- Round Counter -->
             <div id="end-counter" class="bg-gray-800 text-white px-4 py-1 rounded-xl shadow-lg font-bold flex flex-col items-center justify-center">
                 <span class="text-[10px] uppercase opacity-70 text-blue-300">Round</span>
                 <span id="current-end" class="text-sm">1 / 3</span>
             </div>
-            <div class="bg-yellow-500 text-white px-3 py-1 rounded-xl shadow-lg text-sm flex flex-col min-w-[100px]">
-                <span id="display-name-yellow" class="font-bold truncate text-right">YELLOW</span>
+
+            <!-- Yellow Score Card -->
+            <div class="bg-yellow-500 text-white px-3 py-1 rounded-xl shadow-lg text-sm flex flex-col min-w-[120px] transition-all duration-300" id="card-yellow">
+                <div class="flex items-center justify-end gap-1">
+                    <span id="display-name-yellow" class="font-bold truncate text-right">YELLOW</span>
+                    <span id="hammer-yellow" class="hammer-icon opacity-0">🔨</span>
+                </div>
                 <div class="flex justify-between text-xs opacity-90">
                     <span></span>
                     <span>Score: <span id="score-yellow" class="font-bold">0</span></span>
@@ -136,9 +151,6 @@
                     <span id="left-yellow">4</span> :Stones
                 </div>
             </div>
-        </div>
-        <div id="turn-indicator" class="bg-white/95 px-6 py-1 rounded-full shadow-lg font-bold text-gray-800 border-b-4 border-red-600 pointer-events-none text-sm transition-all duration-300">
-            RED'S TURN
         </div>
     </div>
 
@@ -164,10 +176,15 @@
     const leftRedEl = document.getElementById('left-red');
     const leftYellowEl = document.getElementById('left-yellow');
     const currentEndEl = document.getElementById('current-end');
-    const turnIndicator = document.getElementById('turn-indicator');
     const messageBox = document.getElementById('message-box');
     const setupModal = document.getElementById('setup-modal');
     const winModal = document.getElementById('win-modal');
+    
+    // Hammer UI elements
+    const hammerRed = document.getElementById('hammer-red');
+    const hammerYellow = document.getElementById('hammer-yellow');
+    const cardRed = document.getElementById('card-red');
+    const cardYellow = document.getElementById('card-yellow');
 
     // Game Config
     const FRICTION = 0.988;
@@ -180,6 +197,7 @@
     let width, height;
     let stones = [];
     let currentPlayer = 'red';
+    let roundStartingPlayer = 'red'; // Track who starts the current end
     let gameState = 'waiting'; 
     let dragStart = null;
     let dragCurrent = null;
@@ -219,6 +237,15 @@
         stones = [];
         stonesThrown = { red: 0, yellow: 0 };
         currentEndEl.innerText = `${currentEnd} / ${totalEnds}`;
+        
+        // Alternate who starts each round
+        if (currentEnd > 1) {
+            roundStartingPlayer = roundStartingPlayer === 'red' ? 'yellow' : 'red';
+        } else {
+            roundStartingPlayer = 'red';
+        }
+        
+        currentPlayer = roundStartingPlayer;
         initTurn();
     }
 
@@ -234,13 +261,11 @@
         }
 
         draw() {
-            // Shadow
             ctx.beginPath();
             ctx.arc(this.x + 3, this.y + 3, this.radius, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(0,0,0,0.15)';
             ctx.fill();
 
-            // Stone Body
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
             ctx.fillStyle = this.color === 'red' ? '#dc2626' : '#eab308';
@@ -249,14 +274,12 @@
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // Inner Ring
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius * 0.7, 0, Math.PI * 2);
             ctx.strokeStyle = 'rgba(255,255,255,0.4)';
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // Handle
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius * 0.3, 0, Math.PI * 2);
             ctx.fillStyle = '#333';
@@ -271,7 +294,6 @@
             this.vx *= currentFriction;
             this.vy *= currentFriction;
 
-            // Side bounce
             if (this.x - this.radius < 0 || this.x + this.radius > width) {
                 this.vx *= -0.8;
                 this.x = this.x - this.radius < 0 ? this.radius : width - this.radius;
@@ -299,8 +321,19 @@
     function updateUI() {
         leftRedEl.innerText = STONES_PER_PLAYER - stonesThrown.red;
         leftYellowEl.innerText = STONES_PER_PLAYER - stonesThrown.yellow;
-        turnIndicator.innerText = `${teamNames[currentPlayer].toUpperCase()}'S TURN`;
-        turnIndicator.style.borderColor = currentPlayer === 'red' ? '#dc2626' : '#eab308';
+        
+        // Update Hammer Icon
+        if (currentPlayer === 'red') {
+            hammerRed.classList.remove('opacity-0');
+            hammerYellow.classList.add('opacity-0');
+            cardRed.classList.add('scale-110');
+            cardYellow.classList.remove('scale-110');
+        } else {
+            hammerRed.classList.add('opacity-0');
+            hammerYellow.classList.remove('opacity-0');
+            cardRed.classList.remove('scale-110');
+            cardYellow.classList.add('scale-110');
+        }
     }
 
     function endFinished() {
@@ -350,7 +383,6 @@
         const gameUrl = window.location.href;
         const text = `🥌 Just played Curling Duo! ${teamNames.red} vs ${teamNames.yellow}. Final Score: ${scores.red}-${scores.yellow}. Play here: ${gameUrl}`;
         
-        // Priority: Web Share API
         if (navigator.share) {
             navigator.share({
                 title: 'Curling Duo Results',
@@ -359,12 +391,9 @@
             })
             .then(() => console.log('Share successful'))
             .catch((err) => {
-                if (err.name !== 'AbortError') {
-                    copyToClipboard(text);
-                }
+                if (err.name !== 'AbortError') copyToClipboard(text);
             });
         } else {
-            // Fallback: Clipboard
             copyToClipboard(text);
         }
     }
@@ -378,20 +407,15 @@
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        
         try {
-            const successful = document.execCommand('copy');
-            if (successful) {
+            if (document.execCommand('copy')) {
                 const toast = document.createElement('div');
                 toast.className = "fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full text-sm z-[100] animate-bounce shadow-xl";
                 toast.innerText = "Results & link copied to clipboard! 📋";
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 3000);
             }
-        } catch (err) {
-            console.error('Fallback copy failed', err);
-        }
-        
+        } catch (err) {}
         document.body.removeChild(textArea);
     }
 
@@ -399,31 +423,26 @@
         const houseX = width / 2;
         const houseY = 150;
         
-        // Outer Blue
         ctx.beginPath();
         ctx.arc(houseX, houseY, HOUSE_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = '#3b82f6';
         ctx.fill();
         
-        // White Ring
         ctx.beginPath();
         ctx.arc(houseX, houseY, HOUSE_RADIUS * 0.66, 0, Math.PI * 2);
         ctx.fillStyle = '#fff';
         ctx.fill();
         
-        // Inner Red
         ctx.beginPath();
         ctx.arc(houseX, houseY, HOUSE_RADIUS * 0.33, 0, Math.PI * 2);
         ctx.fillStyle = '#ef4444';
         ctx.fill();
         
-        // Center Pin
         ctx.beginPath();
         ctx.arc(houseX, houseY, 8, 0, Math.PI * 2);
         ctx.fillStyle = '#fff';
         ctx.fill();
 
-        // Lines
         ctx.strokeStyle = 'rgba(0,0,0,0.05)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -444,17 +463,14 @@
                 if (dist < STONE_RADIUS * 2) {
                     const angle = Math.atan2(dy, dx);
                     const sin = Math.sin(angle), cos = Math.cos(angle);
-                    
                     const vx1 = s1.vx * cos + s1.vy * sin;
                     const vy1 = s1.vy * cos - s1.vx * sin;
                     const vx2 = s2.vx * cos + s2.vy * sin;
                     const vy2 = s2.vy * cos - s2.vx * sin;
-                    
                     s1.vx = vx2 * cos - vy1 * sin;
                     s1.vy = vx2 * sin + vy1 * cos;
                     s2.vx = vx1 * cos - vy2 * sin;
                     s2.vy = vx1 * sin + vy2 * cos;
-
                     const overlap = STONE_RADIUS * 2 - dist;
                     s1.x -= (overlap/2) * cos; s1.y -= (overlap/2) * sin;
                     s2.x += (overlap/2) * cos; s2.y += (overlap/2) * sin;
@@ -529,6 +545,9 @@
                 stones.push(activeStone);
                 stonesThrown[currentPlayer]++;
                 gameState = 'moving';
+                // Hide hammer during movement to avoid distraction
+                hammerRed.classList.add('opacity-0');
+                hammerYellow.classList.add('opacity-0');
             }
         }
         dragStart = dragCurrent = null;
@@ -538,11 +557,9 @@
     canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInputStart(e); });
     canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleInputMove(e); });
     canvas.addEventListener('touchend', (e) => { e.preventDefault(); handleInputEnd(e); });
-
     canvas.addEventListener('mousedown', handleInputStart);
     window.addEventListener('mousemove', handleInputMove);
     window.addEventListener('mouseup', handleInputEnd);
-
 </script>
 </body>
 </html>
