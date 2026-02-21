@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Curling Duo - Pro Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a202c;
+            font-family: system-ui, -apple-system, sans-serif;
+            touch-action: none;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas {
+            background-color: #f0f9ff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            touch-action: none;
+        }
+        .ui-overlay {
+            position: absolute;
+            top: 10px;
+            pointer-events: none;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 0 10px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 500px;
+            pointer-events: none;
+        }
+        .modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 20px;
+        }
+        .sweeping-animation {
+            animation: sweep 0.2s infinite alternate;
+        }
+        @keyframes sweep {
+            from { transform: translateX(-10px); }
+            to { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Setup Modal -->
+    <div id="setup-modal" class="modal">
+        <div class="bg-white p-8 rounded-2xl w-full max-w-sm shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Team Setup</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-red-600">Red Team Name</label>
+                    <input type="text" id="name-red" value="Team Red" class="w-full border-2 border-red-200 rounded-lg p-2 focus:border-red-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-yellow-600">Yellow Team Name</label>
+                    <input type="text" id="name-yellow" value="Team Yellow" class="w-full border-2 border-yellow-200 rounded-lg p-2 focus:border-yellow-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600">Total Ends (Rounds)</label>
+                    <select id="total-ends" class="w-full border-2 border-gray-200 rounded-lg p-2">
+                        <option value="1">1 End</option>
+                        <option value="3" selected>3 Ends</option>
+                        <option value="5">5 Ends</option>
+                    </select>
+                </div>
+                <button onclick="startGame()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">Start Match</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Win Modal -->
+    <div id="win-modal" class="modal hidden">
+        <div class="bg-white p-8 rounded-2xl w-full max-w-sm shadow-2xl text-center">
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 id="winner-text" class="text-3xl font-bold mb-2 text-gray-800">Team Red Wins!</h2>
+            <p id="final-score-text" class="text-xl text-gray-600 mb-8">Final Score: 4 - 2</p>
+            <div class="flex flex-col gap-3">
+                <button onclick="shareGame()" class="w-full bg-blue-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg active:scale-95 transition">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+                    Share Results
+                </button>
+                <button onclick="location.reload()" class="w-full bg-gray-200 text-gray-800 font-bold py-3 rounded-lg active:scale-95 transition">New Game</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui-overlay">
+        <div class="stats-bar">
+            <div class="bg-red-600 text-white px-3 py-1 rounded-xl shadow-lg text-sm flex flex-col min-w-[100px]">
+                <span id="display-name-red" class="font-bold truncate">RED</span>
+                <div class="flex justify-between text-xs opacity-90">
+                    <span>Score: <span id="score-red" class="font-bold">0</span></span>
+                </div>
+                <div class="text-[10px] uppercase font-bold tracking-tighter">
+                    Stones: <span id="left-red">4</span>
+                </div>
+            </div>
+            <div id="end-counter" class="bg-gray-800 text-white px-4 py-1 rounded-xl shadow-lg font-bold flex flex-col items-center justify-center">
+                <span class="text-[10px] uppercase opacity-70 text-blue-300">Round</span>
+                <span id="current-end" class="text-sm">1 / 3</span>
+            </div>
+            <div class="bg-yellow-500 text-white px-3 py-1 rounded-xl shadow-lg text-sm flex flex-col min-w-[100px]">
+                <span id="display-name-yellow" class="font-bold truncate text-right">YELLOW</span>
+                <div class="flex justify-between text-xs opacity-90">
+                    <span></span>
+                    <span>Score: <span id="score-yellow" class="font-bold">0</span></span>
+                </div>
+                <div class="text-[10px] uppercase font-bold tracking-tighter text-right">
+                    <span id="left-yellow">4</span> :Stones
+                </div>
+            </div>
+        </div>
+        <div id="turn-indicator" class="bg-white/95 px-6 py-1 rounded-full shadow-lg font-bold text-gray-800 border-b-4 border-red-600 pointer-events-none text-sm transition-all duration-300">
+            RED'S TURN
+        </div>
+    </div>
+
+    <canvas id="curlingCanvas"></canvas>
+
+    <div id="message-box" class="absolute bottom-24 bg-blue-600/90 text-white px-6 py-3 rounded-full hidden pointer-events-none flex items-center gap-2 shadow-xl">
+        <div class="sweeping-animation text-xl">🧹</div>
+        <span class="font-bold uppercase tracking-widest text-sm">Sweeping!</span>
+    </div>
+    
+    <div id="guide" class="absolute bottom-5 text-gray-400 text-[10px] text-center w-full uppercase tracking-widest px-4 font-bold opacity-60">
+        Drag back to throw • Hold screen to sweep
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('curlingCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // UI Elements
+    const scoreRedEl = document.getElementById('score-red');
+    const scoreYellowEl = document.getElementById('score-yellow');
+    const leftRedEl = document.getElementById('left-red');
+    const leftYellowEl = document.getElementById('left-yellow');
+    const currentEndEl = document.getElementById('current-end');
+    const turnIndicator = document.getElementById('turn-indicator');
+    const messageBox = document.getElementById('message-box');
+    const setupModal = document.getElementById('setup-modal');
+    const winModal = document.getElementById('win-modal');
+
+    // Game Config
+    const FRICTION = 0.988;
+    const SWEEP_FRICTION = 0.996;
+    const STONE_RADIUS = 18;
+    const HOUSE_RADIUS = 120;
+    const MAX_POWER = 16;
+    const STONES_PER_PLAYER = 4;
+
+    let width, height;
+    let stones = [];
+    let currentPlayer = 'red';
+    let gameState = 'waiting'; 
+    let dragStart = null;
+    let dragCurrent = null;
+    let stonesThrown = { red: 0, yellow: 0 };
+    let scores = { red: 0, yellow: 0 };
+    let activeStone = null;
+    let isSweeping = false;
+    
+    let currentEnd = 1;
+    let totalEnds = 3;
+    let teamNames = { red: "Team Red", yellow: "Team Yellow" };
+
+    function resize() {
+        width = Math.min(window.innerWidth, 500);
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    function startGame() {
+        teamNames.red = document.getElementById('name-red').value || "Red";
+        teamNames.yellow = document.getElementById('name-yellow').value || "Yellow";
+        totalEnds = parseInt(document.getElementById('total-ends').value);
+        
+        document.getElementById('display-name-red').innerText = teamNames.red.toUpperCase();
+        document.getElementById('display-name-yellow').innerText = teamNames.yellow.toUpperCase();
+        
+        setupModal.classList.add('hidden');
+        resetEnd();
+        loop();
+    }
+
+    function resetEnd() {
+        stones = [];
+        stonesThrown = { red: 0, yellow: 0 };
+        currentEndEl.innerText = `${currentEnd} / ${totalEnds}`;
+        initTurn();
+    }
+
+    class Stone {
+        constructor(x, y, color) {
+            this.x = x;
+            this.y = y;
+            this.vx = 0;
+            this.vy = 0;
+            this.color = color;
+            this.radius = STONE_RADIUS;
+            this.stopped = false;
+        }
+
+        draw() {
+            // Shadow
+            ctx.beginPath();
+            ctx.arc(this.x + 3, this.y + 3, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            ctx.fill();
+
+            // Stone Body
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color === 'red' ? '#dc2626' : '#eab308';
+            ctx.fill();
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Inner Ring
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius * 0.7, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Handle
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius * 0.3, 0, Math.PI * 2);
+            ctx.fillStyle = '#333';
+            ctx.fill();
+        }
+
+        update() {
+            if (this.stopped) return;
+            const currentFriction = (isSweeping && this.vy < 0) ? SWEEP_FRICTION : FRICTION;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vx *= currentFriction;
+            this.vy *= currentFriction;
+
+            // Side bounce
+            if (this.x - this.radius < 0 || this.x + this.radius > width) {
+                this.vx *= -0.8;
+                this.x = this.x - this.radius < 0 ? this.radius : width - this.radius;
+            }
+
+            if (Math.abs(this.vx) < 0.1 && Math.abs(this.vy) < 0.1) {
+                this.vx = 0;
+                this.vy = 0;
+                if (gameState === 'moving') this.stopped = true;
+            }
+        }
+    }
+
+    function initTurn() {
+        if (stonesThrown.red + stonesThrown.yellow >= STONES_PER_PLAYER * 2) {
+            endFinished();
+            return;
+        }
+        gameState = 'aiming';
+        activeStone = new Stone(width / 2, height - 100, currentPlayer);
+        messageBox.classList.add('hidden');
+        updateUI();
+    }
+
+    function updateUI() {
+        leftRedEl.innerText = STONES_PER_PLAYER - stonesThrown.red;
+        leftYellowEl.innerText = STONES_PER_PLAYER - stonesThrown.yellow;
+        turnIndicator.innerText = `${teamNames[currentPlayer].toUpperCase()}'S TURN`;
+        turnIndicator.style.borderColor = currentPlayer === 'red' ? '#dc2626' : '#eab308';
+    }
+
+    function endFinished() {
+        const houseX = width / 2;
+        const houseY = 150;
+        let distances = stones.map(s => {
+            const d = Math.sqrt((s.x - houseX)**2 + (s.y - houseY)**2);
+            return { color: s.color, dist: d };
+        }).sort((a, b) => a.dist - b.dist);
+
+        if (distances.length > 0 && distances[0].dist < HOUSE_RADIUS + STONE_RADIUS) {
+            const winner = distances[0].color;
+            let points = 0;
+            const opponent = winner === 'red' ? 'yellow' : 'red';
+            const firstOpponentDist = distances.find(d => d.color === opponent)?.dist || HOUSE_RADIUS + STONE_RADIUS;
+            
+            for (let d of distances) {
+                if (d.color === winner && d.dist < firstOpponentDist && d.dist < HOUSE_RADIUS + STONE_RADIUS) {
+                    points++;
+                } else if (d.dist >= firstOpponentDist) break;
+            }
+            scores[winner] += points;
+            scoreRedEl.innerText = scores.red;
+            scoreYellowEl.innerText = scores.yellow;
+        }
+
+        if (currentEnd < totalEnds) {
+            currentEnd++;
+            setTimeout(resetEnd, 1500);
+        } else {
+            showWinner();
+        }
+    }
+
+    function showWinner() {
+        gameState = 'finished';
+        let winText = "It's a Draw!";
+        if (scores.red > scores.yellow) winText = `${teamNames.red} Wins!`;
+        else if (scores.yellow > scores.red) winText = `${teamNames.yellow} Wins!`;
+        
+        document.getElementById('winner-text').innerText = winText;
+        document.getElementById('final-score-text').innerText = `Final Score: ${scores.red} - ${scores.yellow}`;
+        winModal.classList.remove('hidden');
+    }
+
+    function shareGame() {
+        const gameUrl = window.location.href;
+        const text = `🥌 Just played Curling Duo! ${teamNames.red} vs ${teamNames.yellow}. Final Score: ${scores.red}-${scores.yellow}. Play here: ${gameUrl}`;
+        
+        // Priority: Web Share API
+        if (navigator.share) {
+            navigator.share({
+                title: 'Curling Duo Results',
+                text: text,
+                url: gameUrl
+            })
+            .then(() => console.log('Share successful'))
+            .catch((err) => {
+                if (err.name !== 'AbortError') {
+                    copyToClipboard(text);
+                }
+            });
+        } else {
+            // Fallback: Clipboard
+            copyToClipboard(text);
+        }
+    }
+
+    function copyToClipboard(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                const toast = document.createElement('div');
+                toast.className = "fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-full text-sm z-[100] animate-bounce shadow-xl";
+                toast.innerText = "Results & link copied to clipboard! 📋";
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+        } catch (err) {
+            console.error('Fallback copy failed', err);
+        }
+        
+        document.body.removeChild(textArea);
+    }
+
+    function drawHouse() {
+        const houseX = width / 2;
+        const houseY = 150;
+        
+        // Outer Blue
+        ctx.beginPath();
+        ctx.arc(houseX, houseY, HOUSE_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fill();
+        
+        // White Ring
+        ctx.beginPath();
+        ctx.arc(houseX, houseY, HOUSE_RADIUS * 0.66, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        
+        // Inner Red
+        ctx.beginPath();
+        ctx.arc(houseX, houseY, HOUSE_RADIUS * 0.33, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444';
+        ctx.fill();
+        
+        // Center Pin
+        ctx.beginPath();
+        ctx.arc(houseX, houseY, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+
+        // Lines
+        ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, houseY); ctx.lineTo(width, houseY);
+        ctx.moveTo(houseX, 0); ctx.lineTo(houseX, 400);
+        ctx.stroke();
+    }
+
+    function checkCollisions() {
+        for (let i = 0; i < stones.length; i++) {
+            for (let j = i + 1; j < stones.length; j++) {
+                const s1 = stones[i];
+                const s2 = stones[j];
+                const dx = s2.x - s1.x;
+                const dy = s2.y - s1.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < STONE_RADIUS * 2) {
+                    const angle = Math.atan2(dy, dx);
+                    const sin = Math.sin(angle), cos = Math.cos(angle);
+                    
+                    const vx1 = s1.vx * cos + s1.vy * sin;
+                    const vy1 = s1.vy * cos - s1.vx * sin;
+                    const vx2 = s2.vx * cos + s2.vy * sin;
+                    const vy2 = s2.vy * cos - s2.vx * sin;
+                    
+                    s1.vx = vx2 * cos - vy1 * sin;
+                    s1.vy = vx2 * sin + vy1 * cos;
+                    s2.vx = vx1 * cos - vy2 * sin;
+                    s2.vy = vx1 * sin + vy2 * cos;
+
+                    const overlap = STONE_RADIUS * 2 - dist;
+                    s1.x -= (overlap/2) * cos; s1.y -= (overlap/2) * sin;
+                    s2.x += (overlap/2) * cos; s2.y += (overlap/2) * sin;
+                    s1.stopped = s2.stopped = false;
+                }
+            }
+        }
+    }
+
+    function loop() {
+        if (gameState === 'waiting') return;
+        ctx.clearRect(0, 0, width, height);
+        drawHouse();
+
+        if (gameState === 'aiming' && activeStone) {
+            activeStone.draw();
+            if (dragStart && dragCurrent) {
+                ctx.beginPath();
+                ctx.moveTo(dragStart.x, dragStart.y);
+                ctx.lineTo(dragCurrent.x, dragCurrent.y);
+                ctx.strokeStyle = currentPlayer === 'red' ? '#dc2626' : '#eab308';
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        let anyMoving = false;
+        stones.forEach(s => { 
+            s.update(); 
+            s.draw(); 
+            if (!s.stopped) anyMoving = true; 
+        });
+
+        if (gameState === 'moving') {
+            checkCollisions();
+            messageBox.classList.toggle('hidden', !isSweeping);
+            if (!anyMoving) {
+                gameState = 'aiming';
+                currentPlayer = currentPlayer === 'red' ? 'yellow' : 'red';
+                initTurn();
+            }
+        }
+        requestAnimationFrame(loop);
+    }
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    const handleInputStart = (e) => {
+        if (gameState === 'waiting' || gameState === 'finished') return;
+        const pos = getPos(e);
+        if (gameState === 'aiming') dragStart = pos;
+        else if (gameState === 'moving') isSweeping = true;
+    };
+
+    const handleInputMove = (e) => {
+        if (gameState === 'aiming' && dragStart) dragCurrent = getPos(e);
+    };
+
+    const handleInputEnd = (e) => {
+        if (gameState === 'aiming' && dragStart && dragCurrent) {
+            const dx = dragStart.x - dragCurrent.x;
+            const dy = dragStart.y - dragCurrent.y;
+            activeStone.vx = Math.max(Math.min(dx * 0.13, MAX_POWER), -MAX_POWER);
+            activeStone.vy = Math.max(Math.min(dy * 0.13, MAX_POWER), -MAX_POWER);
+            if (Math.abs(activeStone.vy) > 0.5) {
+                stones.push(activeStone);
+                stonesThrown[currentPlayer]++;
+                gameState = 'moving';
+            }
+        }
+        dragStart = dragCurrent = null;
+        isSweeping = false;
+    };
+
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInputStart(e); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleInputMove(e); });
+    canvas.addEventListener('touchend', (e) => { e.preventDefault(); handleInputEnd(e); });
+
+    canvas.addEventListener('mousedown', handleInputStart);
+    window.addEventListener('mousemove', handleInputMove);
+    window.addEventListener('mouseup', handleInputEnd);
+
+</script>
+</body>
+</html>
