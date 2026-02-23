@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Burning Front</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f0f0f;
+            color: #e5e5e5;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        canvas {
+            image-rendering: pixelated;
+            cursor: crosshair;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            background-color: #050505;
+            border: 1px solid #333;
+        }
+        .ui-panel {
+            background: #18181b;
+            border-bottom: 1px solid #27272a;
+            z-index: 20;
+        }
+        .tool-btn {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #3f3f46;
+        }
+        .tool-btn:hover:not(.active) {
+            background: #27272a;
+            border-color: #52525b;
+        }
+        .tool-btn.active {
+            border-color: #3b82f6;
+            background-color: #1e3a8a;
+            color: #eff6ff;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+        }
+        .stat-card {
+            background: #27272a;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #3f3f46;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Compact UI Bar -->
+    <div class="ui-panel px-4 py-2 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div>
+                <h1 class="text-sm font-black text-orange-500 leading-none">WILDFIRE</h1>
+                <p id="levelDisplay" class="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">LVL 01</p>
+            </div>
+            
+            <div class="h-8 w-[1px] bg-zinc-700 mx-2"></div>
+
+            <div class="flex gap-2">
+                <div class="stat-card flex flex-col items-center">
+                    <span class="text-[9px] text-gray-400 font-bold uppercase">Storm</span>
+                    <span id="timer" class="text-sm font-mono font-bold text-blue-400">60s</span>
+                </div>
+                <div class="stat-card flex flex-col items-center">
+                    <span class="text-[9px] text-gray-400 font-bold uppercase">Goal</span>
+                    <span id="forestGoal" class="text-sm font-mono font-bold text-emerald-400">0%</span>
+                </div>
+                <div class="stat-card flex flex-col items-center">
+                    <span class="text-[9px] text-gray-400 font-bold uppercase">Houses</span>
+                    <span id="houseCount" class="text-sm font-mono font-bold text-green-400">0</span>
+                </div>
+                <div class="stat-card flex flex-col items-center border-red-900/30">
+                    <span class="text-[9px] text-gray-400 font-bold uppercase">Lives</span>
+                    <span id="livesCount" class="text-sm font-mono font-bold text-red-500">3</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-1 bg-black/40 p-1 rounded-md">
+            <button onclick="setTool('water')" id="btn-water" class="tool-btn active px-3 py-1 rounded flex items-center gap-2">
+                <span class="text-sm">💧</span>
+                <span class="text-[10px] uppercase font-bold">Water</span>
+                <span id="stock-water" class="text-[10px] font-mono opacity-60">∞</span>
+            </button>
+            <button onclick="setTool('bomb')" id="btn-bomb" class="tool-btn px-3 py-1 rounded flex items-center gap-2">
+                <span class="text-sm">💣</span>
+                <span class="text-[10px] uppercase font-bold">Bomb</span>
+                <span id="stock-bomb" class="text-[10px] font-mono">5</span>
+            </button>
+            <button onclick="setTool('break')" id="btn-break" class="tool-btn px-3 py-1 rounded flex items-center gap-2">
+                <span class="text-sm">🚜</span>
+                <span class="text-[10px] uppercase font-bold">Break</span>
+                <span id="stock-break" class="text-[10px] font-mono">20</span>
+            </button>
+        </div>
+
+        <button onclick="resetGame()" class="text-[10px] font-bold text-zinc-500 hover:text-white transition-colors uppercase tracking-widest">Restart</button>
+    </div>
+
+    <!-- Main Game Area -->
+    <div class="flex-grow flex items-center justify-center bg-zinc-950 p-4 relative overflow-hidden">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Mission Status Overlay -->
+        <div id="overlay" class="hidden absolute inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="text-center p-8 bg-zinc-900 rounded-2xl border border-white/10 shadow-2xl max-w-sm w-full">
+                <h2 id="endTitle" class="text-3xl font-black mb-2 tracking-tight">MISSION COMPLETE</h2>
+                <p id="endDesc" class="mb-6 text-sm text-gray-400 px-4"></p>
+                
+                <div class="grid grid-cols-2 gap-2 mb-8 text-left font-mono text-xs uppercase">
+                    <div class="bg-black/40 p-3 rounded-lg border border-white/5">
+                        <div class="text-gray-500 mb-1">Houses Saved</div>
+                        <div id="stat-houses" class="text-green-400 font-bold text-lg">100%</div>
+                    </div>
+                    <div class="bg-black/40 p-3 rounded-lg border border-white/5">
+                        <div class="text-gray-500 mb-1">Forest Saved</div>
+                        <div id="stat-forest" class="text-emerald-400 font-bold text-lg">0%</div>
+                    </div>
+                    <div class="bg-black/40 p-3 rounded-lg border border-white/5">
+                        <div class="text-gray-500 mb-1">Bombs Left</div>
+                        <div id="stat-bombs" class="text-blue-400 font-bold text-lg">0</div>
+                    </div>
+                    <div class="bg-black/40 p-3 rounded-lg border border-white/5">
+                        <div class="text-gray-500 mb-1">Breaks Left</div>
+                        <div id="stat-breaks" class="text-orange-400 font-bold text-lg">0</div>
+                    </div>
+                </div>
+
+                <button id="actionBtn" onclick="nextLevel()" class="w-full bg-white text-black hover:bg-zinc-200 transition-colors py-3 rounded-lg font-black text-sm uppercase tracking-widest">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const UI = {
+            timer: document.getElementById('timer'),
+            houses: document.getElementById('houseCount'),
+            water: document.getElementById('stock-water'),
+            bomb: document.getElementById('stock-bomb'),
+            break: document.getElementById('stock-break'),
+            overlay: document.getElementById('overlay'),
+            endTitle: document.getElementById('endTitle'),
+            endDesc: document.getElementById('endDesc'),
+            actionBtn: document.getElementById('actionBtn'),
+            level: document.getElementById('levelDisplay'),
+            forestGoal: document.getElementById('forestGoal'),
+            lives: document.getElementById('livesCount'),
+            statHouses: document.getElementById('stat-houses'),
+            statForest: document.getElementById('stat-forest'),
+            statBombs: document.getElementById('stat-bombs'),
+            statBreaks: document.getElementById('stat-breaks')
+        };
+
+        // Configuration
+        const CELL_SIZE = 8;
+        const GRID_W = 80;
+        const GRID_H = 60;
+        
+        // States
+        const EMPTY = 0;
+        const TREE = 1;
+        const HOUSE = 2;
+        const FIRE = 3;
+        const BURNT = 4;
+        const WATER_CELL = 5;
+        const BREAK = 6;
+        const LAKE = 7;
+
+        const COLORS = {
+            [EMPTY]: '#0a0a0a',
+            [TREE]: '#166534',
+            [HOUSE]: '#a1a1aa',
+            [FIRE]: '#ef4444',
+            [BURNT]: '#18181b',
+            [WATER_CELL]: '#3b82f6',
+            [BREAK]: '#78350f',
+            [LAKE]: '#1d4ed8'
+        };
+
+        let grid = [];
+        let tool = 'water';
+        let stocks = { bomb: 5, break: 50 };
+        let timeLeft = 60;
+        let gameActive = false;
+        let lastUpdate = 0;
+        let tickRate = 100;
+        let currentLevel = 1;
+        let initialForestCount = 0;
+        let initialHouseCount = 0;
+        let playerLives = 3;
+
+        function getLevelConfig(lvl) {
+            return {
+                time: Math.max(30, 70 - lvl * 5),
+                forestRequirement: Math.min(60, 10 + lvl * 5),
+                bombs: Math.max(1, 6 - lvl),
+                breaks: Math.max(10, 60 - lvl * 5)
+            };
+        }
+
+        function initGrid() {
+            const config = getLevelConfig(currentLevel);
+            grid = Array(GRID_H).fill().map(() => Array(GRID_W).fill(EMPTY));
+            stocks.bomb = config.bombs;
+            stocks.break = config.breaks;
+            timeLeft = config.time;
+            initialForestCount = 0;
+            initialHouseCount = 0;
+            
+            // Generate Forest
+            for(let y=0; y<GRID_H; y++) {
+                for(let x=0; x<GRID_W; x++) {
+                    if(Math.random() > 0.3) {
+                        grid[y][x] = TREE;
+                        initialForestCount++;
+                    }
+                }
+            }
+
+            // Generate Natural Barriers (Lakes)
+            const numLakes = Math.min(5, currentLevel);
+            for(let i=0; i < numLakes; i++) {
+                let lx = Math.floor(Math.random() * GRID_W);
+                let ly = Math.floor(Math.random() * GRID_H);
+                let size = 3 + Math.floor(Math.random() * 5);
+                for(let sy = -size; sy <= size; sy++) {
+                    for(let sx = -size; sx <= size; sx++) {
+                        if(sx*sx + sy*sy < size*size) {
+                            let ny = ly + sy, nx = lx + sx;
+                            if(ny >= 0 && ny < GRID_H && nx >= 0 && nx < GRID_W) {
+                                if(grid[ny][nx] === TREE) initialForestCount--;
+                                grid[ny][nx] = LAKE;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Generate Houses
+            for(let i=0; i<3; i++) {
+                let startX = 20 + Math.floor(Math.random() * 40);
+                let startY = 20 + Math.floor(Math.random() * 20);
+                for(let h=0; h<8; h++) {
+                    let hX = startX + Math.floor(Math.random()*10 - 5);
+                    let hY = startY + Math.floor(Math.random()*10 - 5);
+                    if(hX >= 0 && hX < GRID_W && hY >= 0 && hY < GRID_H) {
+                        if(grid[hY][hX] === TREE) initialForestCount--;
+                        if(grid[hY][hX] !== LAKE) {
+                            grid[hY][hX] = HOUSE;
+                            initialHouseCount++;
+                        }
+                    }
+                }
+            }
+
+            // Start Fire
+            const numStartFires = 1 + Math.floor(currentLevel/2);
+            for(let i=0; i < numStartFires; i++) {
+                let fireY = Math.floor(Math.random()*GRID_H);
+                grid[fireY][0] = FIRE;
+            }
+            
+            initialForestCount = Math.max(1, initialForestCount);
+            initialHouseCount = Math.max(1, initialHouseCount);
+        }
+
+        function setTool(t) {
+            tool = t;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById('btn-' + t);
+            if(activeBtn) activeBtn.classList.add('active');
+        }
+
+        function resetGame() {
+            currentLevel = 1;
+            playerLives = 3;
+            startLevel();
+        }
+
+        function startLevel() {
+            initGrid();
+            gameActive = true;
+            UI.overlay.classList.add('hidden');
+            updateUI();
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            startLevel();
+        }
+
+        function updateUI() {
+            const config = getLevelConfig(currentLevel);
+            UI.timer.innerText = Math.ceil(Math.max(0, timeLeft)) + 's';
+            UI.bomb.innerText = stocks.bomb;
+            UI.break.innerText = stocks.break;
+            UI.level.innerText = `LVL ${String(currentLevel).padStart(2, '0')}`;
+            UI.lives.innerText = playerLives;
+            UI.forestGoal.innerText = config.forestRequirement + '%';
+            
+            let houses = 0;
+            let currentForest = 0;
+            let fireCount = 0;
+            grid.forEach(row => row.forEach(cell => { 
+                if(cell === HOUSE) houses++; 
+                if(cell === TREE) currentForest++;
+                if(cell === FIRE) fireCount++;
+            }));
+            UI.houses.innerText = houses;
+
+            if(gameActive) {
+                const forestSavedPct = Math.round((currentForest / initialForestCount) * 100);
+                const housesSavedPct = Math.round((houses / initialHouseCount) * 100);
+                
+                // Lose condition: Houses gone
+                if(houses === 0) {
+                    playerLives--;
+                    if(playerLives <= 0) {
+                        endGame(false, "The settlement was destroyed. Humanity has abandoned this sector.", housesSavedPct, forestSavedPct);
+                    } else {
+                        endGame(false, "The evacuation failed. You've lost a deployment life.", housesSavedPct, forestSavedPct, true);
+                    }
+                } 
+                // Win/Finish condition
+                else if(fireCount === 0 || timeLeft <= 0) {
+                    if(forestSavedPct >= config.forestRequirement) {
+                        endGame(true, `Threat neutralized. Environmental targets achieved.`, housesSavedPct, forestSavedPct);
+                    } else {
+                        playerLives--;
+                        const retryMsg = playerLives > 0 ? "Insufficient forest cover remaining. Lost a life." : "Ecological collapse. The region is uninhabitable.";
+                        endGame(false, retryMsg, housesSavedPct, forestSavedPct, playerLives > 0);
+                    }
+                }
+            }
+        }
+
+        function endGame(success, desc, housePct, forestPct, canRetry = false) {
+            gameActive = false;
+            UI.overlay.classList.remove('hidden');
+            UI.endTitle.innerText = success ? "MISSION SUCCESS" : "MISSION FAILURE";
+            UI.endTitle.className = success ? "text-3xl font-black mb-2 text-green-500" : "text-3xl font-black mb-2 text-red-500";
+            UI.endDesc.innerText = desc;
+            
+            UI.statHouses.innerText = housePct + "%";
+            UI.statForest.innerText = forestPct + "%";
+            UI.statBombs.innerText = stocks.bomb;
+            UI.statBreaks.innerText = stocks.break;
+
+            if(success) {
+                UI.actionBtn.innerText = "PROCEED TO NEXT LEVEL";
+                UI.actionBtn.className = "w-full bg-green-600 text-white hover:bg-green-700 transition-colors py-3 rounded-lg font-black text-sm uppercase tracking-widest";
+                UI.actionBtn.onclick = nextLevel;
+            } else if(canRetry || playerLives > 0) {
+                UI.actionBtn.innerText = "RETRY MISSION";
+                UI.actionBtn.className = "w-full bg-red-600 text-white hover:bg-red-700 transition-colors py-3 rounded-lg font-black text-sm uppercase tracking-widest";
+                UI.actionBtn.onclick = startLevel;
+            } else {
+                UI.actionBtn.innerText = "RESTART CAMPAIGN";
+                UI.actionBtn.className = "w-full bg-zinc-700 text-white hover:bg-zinc-600 transition-colors py-3 rounded-lg font-black text-sm uppercase tracking-widest";
+                UI.actionBtn.onclick = resetGame;
+            }
+        }
+
+        function step() {
+            if(!gameActive) return;
+
+            let nextGrid = grid.map(row => [...row]);
+
+            for(let y=0; y<GRID_H; y++) {
+                for(let x=0; x<GRID_W; x++) {
+                    const current = grid[y][x];
+
+                    if(current === FIRE) {
+                        const neighbors = [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
+                        neighbors.forEach(([dy, dx]) => {
+                            let ny = y + dy, nx = x + dx;
+                            if(ny >= 0 && ny < GRID_H && nx >= 0 && nx < GRID_W) {
+                                let target = grid[ny][nx];
+                                if(target === LAKE || target === WATER_CELL || target === BREAK) return;
+                                
+                                let spreadChance = (target === TREE) ? 0.12 : (target === HOUSE) ? 0.04 : 0;
+                                if(Math.random() < spreadChance) {
+                                    nextGrid[ny][nx] = FIRE;
+                                }
+                            }
+                        });
+                        if(Math.random() < 0.08) nextGrid[y][x] = BURNT;
+                    } 
+                    else if (current === WATER_CELL) {
+                        if(Math.random() < 0.12) nextGrid[y][x] = EMPTY;
+                    }
+                }
+            }
+            grid = nextGrid;
+        }
+
+        function draw() {
+            if (!canvas.getContext) return;
+            canvas.width = GRID_W * CELL_SIZE;
+            canvas.height = GRID_H * CELL_SIZE;
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            
+            for(let y=0; y<GRID_H; y++) {
+                for(let x=0; x<GRID_W; x++) {
+                    const type = grid[y][x];
+                    if(type === EMPTY) continue;
+                    
+                    ctx.fillStyle = COLORS[type];
+                    
+                    if(type === FIRE) {
+                        ctx.fillStyle = `rgb(239, ${Math.floor(Math.random()*100 + 50)}, 68)`;
+                    } else if (type === WATER_CELL) {
+                        ctx.fillStyle = `rgba(59, 130, 246, ${0.5 + Math.random() * 0.4})`;
+                    }
+
+                    ctx.fillRect(x*CELL_SIZE, y*CELL_SIZE, CELL_SIZE-1, CELL_SIZE-1);
+                    
+                    if(type === HOUSE) {
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 0.5;
+                        ctx.strokeRect(x*CELL_SIZE+1.5, y*CELL_SIZE+1.5, CELL_SIZE-4, CELL_SIZE-4);
+                    }
+                }
+            }
+        }
+
+        function handleInput(e) {
+            if(!gameActive) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = Math.floor(((e.clientX - rect.left) * scaleX) / CELL_SIZE);
+            const y = Math.floor(((e.clientY - rect.top) * scaleY) / CELL_SIZE);
+
+            if(x < 0 || x >= GRID_W || y < 0 || y >= GRID_H) return;
+
+            if(tool === 'water') {
+                for(let dy=-1; dy<=1; dy++) {
+                    for(let dx=-1; dx<=1; dx++) {
+                        let ny = y+dy, nx = x+dx;
+                        if(ny>=0 && ny<GRID_H && nx>=0 && nx<GRID_W) {
+                            // Water should only extinguish fire, NOT destroy trees or houses
+                            if (grid[ny][nx] === FIRE) {
+                                grid[ny][nx] = WATER_CELL;
+                            } else if (grid[ny][nx] === EMPTY || grid[ny][nx] === BURNT) {
+                                grid[ny][nx] = WATER_CELL;
+                            }
+                        }
+                    }
+                }
+            } else if(tool === 'bomb' && stocks.bomb > 0) {
+                for(let dy=-3; dy<=3; dy++) {
+                    for(let dx=-3; dx<=3; dx++) {
+                        let ny = y+dy, nx = x+dx;
+                        if(ny>=0 && ny<GRID_H && nx>=0 && nx<GRID_W) {
+                            if(grid[ny][nx] !== LAKE && grid[ny][nx] !== HOUSE) grid[ny][nx] = EMPTY;
+                        }
+                    }
+                }
+                stocks.bomb--;
+            } else if(tool === 'break' && stocks.break > 0) {
+                if(grid[y][x] === TREE || grid[y][x] === EMPTY) {
+                    grid[y][x] = BREAK;
+                    stocks.break--;
+                }
+            }
+            updateUI();
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            handleInput(e);
+            canvas.addEventListener('mousemove', handleInput);
+        });
+
+        window.addEventListener('mouseup', () => {
+            canvas.removeEventListener('mousemove', handleInput);
+        });
+
+        function loop(time) {
+            if(time - lastUpdate > tickRate) {
+                step();
+                if(gameActive) {
+                    timeLeft -= tickRate/1000;
+                }
+                updateUI();
+                lastUpdate = time;
+            }
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        window.onload = function() {
+            resetGame();
+            requestAnimationFrame(loop);
+        };
+    </script>
+</body>
+</html>
