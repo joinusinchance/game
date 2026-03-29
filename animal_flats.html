@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Animal Flats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            touch-action: manipulation;
+            background-color: #fff7ed;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            background: #fed7aa;
+            padding: 8px;
+            border-radius: 16px;
+            position: relative;
+        }
+        .cell {
+            aspect-ratio: 1 / 1;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            transition: background 0.15s ease;
+        }
+        .cell.preview-valid { background: rgba(34, 197, 94, 0.5); }
+        .cell.preview-invalid { background: rgba(239, 68, 68, 0.5); }
+        
+        .tile-filled {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            animation: appear 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes appear {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .match-anim {
+            animation: vanish 0.4s forwards;
+            z-index: 10;
+        }
+        @keyframes vanish {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.5; filter: brightness(1.5); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        #next-piece-display {
+            transition: all 0.2s ease;
+        }
+
+        /* Toast Notification */
+        #toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #334155;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <!-- Header -->
+    <div class="w-full max-w-md flex justify-between items-center mb-4 bg-white p-4 rounded-2xl shadow-sm border border-orange-100">
+        <div>
+            <p class="text-[10px] uppercase tracking-widest text-orange-400 font-bold">Score</p>
+            <p id="score" class="text-3xl font-black text-orange-600 leading-tight">0</p>
+        </div>
+        <div class="flex flex-col items-center">
+            <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1">Next Pair</p>
+            <div id="next-piece-display" class="flex gap-1 p-2 bg-orange-50 rounded-lg border-2 border-orange-200 min-w-[64px] min-h-[44px] justify-center items-center">
+                <!-- Preview injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Board -->
+    <div id="game-board" class="grid-container">
+        <!-- 36 cells injected by JS -->
+    </div>
+
+    <div class="mt-6 text-center">
+        <p class="text-slate-500 text-sm font-medium">Place the pair on empty cells!</p>
+        <button onclick="resetGame()" class="mt-4 px-8 py-2 text-orange-600 font-bold border-2 border-orange-200 rounded-full active:bg-orange-50 transition-colors">
+            Restart Game
+        </button>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-6 z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl scale-up">
+            <div class="text-5xl mb-4">🦒</div>
+            <h2 class="text-2xl font-black mb-1 text-slate-800">All flats occupied!</h2>
+            <p id="rank-display" class="text-orange-500 font-bold italic mb-4 uppercase text-sm tracking-tight"></p>
+            <p class="text-slate-500 mb-8">Final Score: <span id="final-score" class="text-2xl font-black text-slate-800">0</span></p>
+            
+            <div class="flex flex-col gap-3">
+                <button id="share-btn" class="w-full py-4 bg-orange-500 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>
+                    Share My Rank
+                </button>
+                <button onclick="resetGame()" class="w-full py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-transform">
+                    New Game
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">Score copied to clipboard!</div>
+
+    <script>
+        const GRID_SIZE = 6;
+        const ANIMALS = ['🦙', '🐐', '🐃', '🐈'];
+        const RANKS = [
+            { threshold: 0, title: "Apathetic Amoeba" },
+            { threshold: 150, title: "Bumbling Beetle" },
+            { threshold: 400, title: "Clumsy Cat" },
+            { threshold: 750, title: "Dashing Dolphin" },
+            { threshold: 1200, title: "Elongated Eel" },
+            { threshold: 1800, title: "Fancy Flamingo" },
+            { threshold: 2500, title: "Gilded Gorilla" },
+            { threshold: 3500, title: "Heroic Hippo" }
+        ];
+
+        let board = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+        let currentPiece = null;
+        let score = 0;
+        let isProcessing = false;
+
+        const boardEl = document.getElementById('game-board');
+        const scoreEl = document.getElementById('score');
+        const nextEl = document.getElementById('next-piece-display');
+        const modal = document.getElementById('modal');
+        const shareBtn = document.getElementById('share-btn');
+
+        function initBoard() {
+            boardEl.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    
+                    // Mouse events
+                    cell.onmouseenter = () => highlightPreview(r, c, true);
+                    cell.onmouseleave = () => highlightPreview(r, c, false);
+                    
+                    // Touch/Click
+                    cell.onclick = (e) => {
+                        e.preventDefault();
+                        placePiece(r, c);
+                    };
+
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        function generateNextPiece() {
+            const isHorizontal = Math.random() > 0.5;
+            currentPiece = {
+                animals: [
+                    ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
+                    ANIMALS[Math.floor(Math.random() * ANIMALS.length)]
+                ],
+                horizontal: isHorizontal
+            };
+            
+            nextEl.style.flexDirection = isHorizontal ? 'row' : 'column';
+            nextEl.innerHTML = currentPiece.animals.map(a => `<span class="text-xl">${a}</span>`).join('');
+
+            if (!canPlaceAnywhere()) {
+                endGame();
+            }
+        }
+
+        function canPlaceAnywhere() {
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (isValidPlacement(r, c)) return true;
+                }
+            }
+            return false;
+        }
+
+        function isValidPlacement(r, c) {
+            if (currentPiece.horizontal) {
+                return c < GRID_SIZE - 1 && board[r][c] === null && board[r][c+1] === null;
+            } else {
+                return r < GRID_SIZE - 1 && board[r][c] === null && board[r+1][c] === null;
+            }
+        }
+
+        function highlightPreview(r, c, active) {
+            if (isProcessing) return;
+            const coords = getAffectedCells(r, c);
+            const valid = isValidPlacement(r, c);
+            
+            coords.forEach(coord => {
+                const el = getCellEl(coord.r, coord.c);
+                if (el) {
+                    if (active) {
+                        el.classList.add(valid ? 'preview-valid' : 'preview-invalid');
+                    } else {
+                        el.classList.remove('preview-valid', 'preview-invalid');
+                    }
+                }
+            });
+        }
+
+        function getAffectedCells(r, c) {
+            if (currentPiece.horizontal) return [{r, c}, {r, c: c+1}];
+            return [{r, c}, {r: r+1, c}];
+        }
+
+        async function placePiece(r, c) {
+            if (isProcessing || !isValidPlacement(r, c)) return;
+            isProcessing = true;
+
+            const coords = getAffectedCells(r, c);
+            coords.forEach((coord, i) => {
+                board[coord.r][coord.c] = currentPiece.animals[i];
+                const el = getCellEl(coord.r, coord.c);
+                el.innerText = currentPiece.animals[i];
+                el.classList.add('tile-filled');
+                el.classList.remove('preview-valid', 'preview-invalid');
+            });
+
+            await processMatches();
+            generateNextPiece();
+            isProcessing = false;
+        }
+
+        async function processMatches() {
+            let matchesFound = true;
+            while (matchesFound) {
+                let toClear = new Set();
+
+                // Rows
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    for (let c = 0; c < GRID_SIZE - 2; c++) {
+                        let val = board[r][c];
+                        if (val && board[r][c+1] === val && board[r][c+2] === val) {
+                            toClear.add(`${r},${c}`); toClear.add(`${r},${c+1}`); toClear.add(`${r},${c+2}`);
+                        }
+                    }
+                }
+
+                // Columns
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    for (let r = 0; r < GRID_SIZE - 2; r++) {
+                        let val = board[r][c];
+                        if (val && board[r+1][c] === val && board[r+2][c] === val) {
+                            toClear.add(`${r},${c}`); toClear.add(`${r+1},${c}`); toClear.add(`${r+2},${c}`);
+                        }
+                    }
+                }
+
+                if (toClear.size > 0) {
+                    score += toClear.size * 10;
+                    scoreEl.innerText = score;
+
+                    toClear.forEach(id => {
+                        const [r, c] = id.split(',').map(Number);
+                        const el = getCellEl(r, c);
+                        if (el) el.classList.add('match-anim');
+                    });
+
+                    await new Promise(res => setTimeout(res, 400));
+
+                    toClear.forEach(id => {
+                        const [r, c] = id.split(',').map(Number);
+                        board[r][c] = null;
+                        const el = getCellEl(r, c);
+                        if (el) {
+                            el.innerText = '';
+                            el.classList.remove('tile-filled', 'match-anim');
+                        }
+                    });
+                } else {
+                    matchesFound = false;
+                }
+            }
+        }
+
+        function getCellEl(r, c) {
+            if (r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE) return null;
+            return boardEl.children[r * GRID_SIZE + c];
+        }
+
+        function getRank(s) {
+            let r = RANKS[0].title;
+            for (let i = 0; i < RANKS.length; i++) {
+                if (s >= RANKS[i].threshold) r = RANKS[i].title;
+            }
+            return r;
+        }
+
+        function endGame() {
+            const rank = getRank(score);
+            document.getElementById('rank-display').innerText = rank;
+            document.getElementById('final-score').innerText = score;
+            modal.classList.remove('hidden');
+        }
+
+        function resetGame() {
+            board = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+            score = 0;
+            scoreEl.innerText = '0';
+            modal.classList.add('hidden');
+            initBoard();
+            generateNextPiece();
+            isProcessing = false;
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        async function shareResult() {
+            const rank = getRank(score);
+            const shareData = {
+                title: 'Animal Flats',
+                text: `🐾 I achieved ${score} points and reached the rank of "${rank}". Can you rank higher?`,
+                url: window.location.href
+            };
+
+            // Double check availability
+            const canShareNative = navigator.share && 
+                                   (navigator.canShare ? navigator.canShare(shareData) : true);
+
+            if (canShareNative) {
+                try {
+                    await navigator.share(shareData);
+                } catch (err) {
+                    // Fail silently or handle cancellation
+                    if (err.name !== 'AbortError') copyToClipboard(shareData.text);
+                }
+            } else {
+                copyToClipboard(shareData.text);
+            }
+        }
+
+        function copyToClipboard(text) {
+            const el = document.createElement('textarea');
+            el.value = text;
+            el.setAttribute('readonly', '');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+            document.body.appendChild(el);
+            
+            const selected = document.getSelection().rangeCount > 0 ? document.getSelection().getRangeAt(0) : false;
+            el.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast("Rank copied to clipboard!");
+            } catch (err) {
+                console.error('Unable to copy', err);
+            }
+            
+            document.body.removeChild(el);
+            if (selected) {
+                document.getSelection().removeAllRanges();
+                document.getSelection().addRange(selected);
+            }
+        }
+
+        // Add event listener to share button
+        shareBtn.addEventListener('click', shareResult);
+
+        window.onload = resetGame;
+    </script>
+</body>
+</html>
+
