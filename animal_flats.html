@@ -70,11 +70,28 @@
 
         #next-piece-display {
             transition: all 0.2s ease;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
         }
         
         #next-piece-display span {
             font-size: 2rem;
             line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.4rem;
+            height: 2.4rem;
+        }
+
+        .vertical-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            text-align: center;
         }
 
         #toast {
@@ -98,7 +115,8 @@
     <div class="w-full max-w-md flex flex-col h-full">
         
         <!-- Header -->
-        <div class="w-full flex justify-between items-center mb-4 bg-white p-4 rounded-2xl shadow-sm border border-orange-100">
+        <div class="w-full h-28 flex justify-between items-center mb-4 bg-white p-4 rounded-2xl shadow-sm border border-orange-100 flex-shrink-0">
+            <!-- Left: Score Area -->
             <div class="flex items-center gap-4">
                 <button onclick="resetGame()" class="p-2 text-orange-400 hover:text-orange-600 active:scale-90 transition-all bg-orange-50 rounded-xl border border-orange-100" title="Restart Game">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
@@ -108,21 +126,23 @@
                     <p id="score" class="text-3xl font-black text-orange-600 leading-tight">0</p>
                 </div>
             </div>
-            <div class="flex flex-col items-center">
-                <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1">Next Pair</p>
-                <div id="next-piece-display" class="flex gap-1 p-2 bg-orange-50 rounded-lg border-2 border-orange-200 min-w-[70px] min-h-[50px] justify-center items-center">
+
+            <!-- Right: Next Piece Area -->
+            <div class="flex items-center gap-2">
+                <p class="vertical-text text-[10px] uppercase tracking-widest text-slate-400 font-black">Next:</p>
+                <div id="next-piece-display" class="bg-orange-50 rounded-lg border-2 border-orange-200">
                 </div>
             </div>
         </div>
 
         <!-- Main Game Area -->
-        <div class="flex-grow flex items-center justify-center py-2">
+        <div class="flex-grow flex items-center justify-center py-2 overflow-hidden">
             <div id="game-board" class="grid-container">
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="mt-4 mb-2 text-center pb-safe">
+        <div class="mt-4 mb-2 text-center pb-safe flex-shrink-0">
             <p id="instruction-text" class="text-slate-500 text-sm font-medium">Select a spot to place the pair!</p>
         </div>
 
@@ -263,7 +283,6 @@
         }
 
         function generateNextPiece() {
-            // Smart orientation check
             let canFitHorizontal = false;
             let canFitVertical = false;
 
@@ -285,7 +304,6 @@
             if (canFitHorizontal && canFitVertical) {
                 isHorizontal = Math.random() > 0.5;
             } else {
-                // If only one orientation is possible, force it
                 isHorizontal = canFitHorizontal;
             }
 
