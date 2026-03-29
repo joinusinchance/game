@@ -108,6 +108,11 @@
             z-index: 100;
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="flex flex-col items-center h-[100dvh] p-4">
@@ -141,11 +146,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
-        <div class="mt-4 mb-2 text-center pb-safe flex-shrink-0">
-            <p id="instruction-text" class="text-slate-500 text-sm font-medium">Select a spot to place the pair!</p>
-        </div>
-
     </div>
 
     <!-- Game Over Modal -->
@@ -157,12 +157,12 @@
             <p class="text-slate-500 mb-6">Final Score: <span id="final-score" class="text-2xl font-black text-slate-800">0</span></p>
             
             <!-- Name Input for Leaderboard -->
-            <div class="mb-6">
+            <div id="player-name-container" class="mb-6" style="display: none;">
                 <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl focus:outline-none focus:border-orange-500" />
             </div>
             
             <div class="flex flex-col gap-3">
-                <button id="submit-score-btn" onclick="submitScoreToLeaderboard()" class="w-full py-3 bg-green-500 text-white font-bold rounded-2xl shadow-lg shadow-green-200 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-green-600">
+                <button id="submit-score-btn" onclick="submitScoreToLeaderboard()" class="w-full py-3 bg-green-500 text-white font-bold rounded-2xl shadow-lg shadow-green-200 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-green-600" style="display: none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg>
                     Submit to Leaderboard
                 </button>
@@ -172,10 +172,10 @@
                 </button>
                 <button onclick="showLeaderboard()" class="w-full py-3 bg-purple-500 text-white font-bold rounded-2xl shadow-lg shadow-purple-200 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-purple-600">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>
-                    View Leaderboard
+                    See Leaderboard
                 </button>
-                <button onclick="resetGame()" class="w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-transform hover:bg-slate-200">
-                    New Game
+                <button onclick="playAgain()" class="w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-transform hover:bg-slate-200">
+                    Play Again
                 </button>
             </div>
         </div>
@@ -192,6 +192,28 @@
             <div id="leaderboard-content" class="space-y-2">
                 <div class="text-center text-slate-500 py-8">Loading scores...</div>
             </div>
+        </div>
+    </div>
+
+    <!-- Start Screen Modal -->
+    <div id="start-screen" class="fixed inset-0 bg-gradient-to-b from-orange-100 to-orange-50 flex flex-col items-center justify-center p-6 z-50">
+        <div class="w-full max-w-sm flex flex-col items-center">
+            <!-- Title -->
+            <h1 class="text-6xl font-black text-orange-600 mb-2">Animal Flats</h1>
+            <p class="text-slate-600 font-semibold mb-8">Match three to clear!</p>
+            
+            <!-- Top 5 Leaderboard -->
+            <div class="w-full bg-white rounded-2xl shadow-lg p-6 mb-8 border-2 border-orange-200">
+                <h2 class="text-2xl font-black text-slate-800 mb-4 text-center">🏆 Top Scores</h2>
+                <div id="start-leaderboard" class="space-y-2">
+                    <div class="text-center text-slate-500 py-4">Loading scores...</div>
+                </div>
+            </div>
+            
+            <!-- Start Button -->
+            <button onclick="startGame()" class="w-full py-4 px-6 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-green-300 active:scale-95 transition-transform hover:from-green-600 hover:to-emerald-600">
+                Let's Play!
+            </button>
         </div>
     </div>
 
@@ -240,14 +262,14 @@
         let currentPiece = null;
         let score = 0;
         let isProcessing = false;
-        let lastSelectedCell = null; 
+        let lastSelectedCell = null;
+        let top5Scores = []; 
 
         const boardEl = document.getElementById('game-board');
         const scoreEl = document.getElementById('score');
         const nextEl = document.getElementById('next-piece-display');
         const modal = document.getElementById('modal');
         const shareBtn = document.getElementById('share-btn');
-        const instructionText = document.getElementById('instruction-text');
         const rankEmojiEl = document.getElementById('rank-emoji-display');
 
         function initBoard() {
@@ -291,19 +313,13 @@
                     clearAllHighlights();
                     highlightPreview(r, c, true);
                     lastSelectedCell = currentCoord;
-                    instructionText.innerText = isValidPlacement(r, c) ? "Tap again to confirm!" : "Can't place here!";
-                    instructionText.className = isValidPlacement(r, c) ? "text-green-600 text-sm font-bold" : "text-red-500 text-sm font-bold";
                 } else {
                     if (isValidPlacement(r, c)) {
                         placePiece(r, c);
                         lastSelectedCell = null;
-                        instructionText.innerText = "Select a spot to place the pair!";
-                        instructionText.className = "text-slate-500 text-sm font-medium";
                     } else {
                         clearAllHighlights();
                         lastSelectedCell = null;
-                        instructionText.innerText = "Select a spot to place the pair!";
-                        instructionText.className = "text-slate-500 text-sm font-medium";
                     }
                 }
             } else {
@@ -465,6 +481,14 @@
             document.getElementById('rank-display').innerText = rankObj.title;
             rankEmojiEl.innerText = rankObj.emoji;
             document.getElementById('final-score').innerText = score;
+            
+            // Check if score beats top 5
+            const beatTop5 = score > 0 && top5Scores.length > 0 && score >= top5Scores[top5Scores.length - 1]?.value;
+            
+            // Show/hide name input and submit button based on if they beat top 5
+            document.getElementById('player-name-container').style.display = beatTop5 ? 'block' : 'none';
+            document.getElementById('submit-score-btn').style.display = beatTop5 ? 'block' : 'none';
+            
             modal.classList.remove('hidden');
         }
 
@@ -473,12 +497,22 @@
             score = 0;
             scoreEl.innerText = '0';
             modal.classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
             lastSelectedCell = null;
-            instructionText.innerText = "Select a spot to place the pair!";
-            instructionText.className = "text-slate-500 text-sm font-medium";
+            isProcessing = false;
+        }
+
+        async function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('player-name').value = '';
+            document.getElementById('submit-score-btn').disabled = false;
+            document.getElementById('submit-score-btn').innerHTML = 
+//                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg>' +
+                ' Submit to Leaderboard';
+            document.getElementById('submit-score-btn').classList.remove('bg-slate-400');
+            document.getElementById('submit-score-btn').classList.add('bg-green-500', 'hover:bg-green-600');
             initBoard();
             generateNextPiece();
-            isProcessing = false;
         }
 
         function showToast(msg) {
@@ -525,7 +559,57 @@
         }
 
         shareBtn.addEventListener('click', shareResult);
-        window.onload = resetGame;
+        
+        // Load top 5 scores on start
+        async function loadTop5Scores() {
+            try {
+                const response = await fetch(`${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}`);
+                const data = await response.json();
+                
+                if (data.scores && data.scores.length > 0) {
+                    top5Scores = data.scores.slice(0, 5);
+                    
+                    const leaderboardHtml = top5Scores
+                        .map((entry, index) => {
+                            const rankObj = getRankObj(entry.value);
+                            return `
+                                <div class="flex items-center justify-between p-3 bg-gradient-to-r ${
+                                    index === 0 ? 'from-yellow-100 to-yellow-50 border-2 border-yellow-400' :
+                                    index === 1 ? 'from-gray-100 to-gray-50 border-2 border-gray-400' :
+                                    index === 2 ? 'from-amber-100 to-amber-50 border-2 border-amber-600' :
+                                    'from-slate-50 to-white border border-slate-200'
+                                } rounded-lg">
+                                    <div class="flex items-center gap-3 flex-grow">
+                                        <span class="text-2xl font-black w-8 text-center">
+                                            ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1)}
+                                        </span>
+                                        <div class="flex-1">
+                                            <span class="font-bold text-slate-800">${entry.name}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm">${rankObj.emoji}</span>
+                                        <span class="font-black text-lg text-orange-600">${entry.value}</span>
+                                    </div>
+                                </div>
+                            `;
+                        })
+                        .join('');
+                    
+                    document.getElementById('start-leaderboard').innerHTML = leaderboardHtml;
+                } else {
+                    document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-500 py-8">No scores yet. Be first!</div>';
+                }
+            } catch (error) {
+                console.error('Error loading top 5 scores:', error);
+                document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-400 py-8">Click Start to Play</div>';
+            }
+        }
+        
+        window.addEventListener('load', () => {
+            document.getElementById('start-screen').classList.remove('hidden');
+            loadTop5Scores();
+        });
 
         // Leaderboard Functions
         async function submitScoreToLeaderboard() {
@@ -539,7 +623,7 @@
 
             // Disable button and show loading state
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="animate-spin"><circle cx="12" cy="12" r="1"/><path d="M12 2v4m7.07 7.07h-4m-5.66 5.66v-4m-5.66-5.66h4"/></svg> Submitting...';
+            submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="1"/><path d="M12 2v4m7.07 7.07h-4m-5.66 5.66v-4m-5.66-5.66h4"/></svg><span>Submitting...</span>';
 
             try {
                 const url = `${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}/${LEADERBOARD_CONFIG.secret}/add/${encodeURIComponent(playerName)}/${score}/0`;
@@ -557,7 +641,7 @@
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = 
                         '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' +
-                        ' Submitted!';
+                        '<span>Submitted!</span>';
                     submitBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
                     submitBtn.classList.add('bg-slate-400');
                 } else {
@@ -565,7 +649,7 @@
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = 
                         '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>' +
-                        ' Submit to Leaderboard';
+                        '<span>Submit to Leaderboard</span>';
                 }
             } catch (error) {
                 console.error('Error submitting score:', error);
@@ -573,7 +657,7 @@
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = 
                     '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>' +
-                    ' Submit to Leaderboard';
+                    '<span>Submit to Leaderboard</span>';
             }
         }
 
@@ -590,7 +674,9 @@
 
                 if (data.scores && data.scores.length > 0) {
                     leaderboardContent.innerHTML = data.scores
-                        .map((entry, index) => `
+                        .map((entry, index) => {
+                            const rankObj = getRankObj(entry.value);
+                            return `
                             <div class="flex items-center justify-between p-3 bg-gradient-to-r ${
                                 index === 0 ? 'from-yellow-100 to-yellow-50 border-2 border-yellow-400' :
                                 index === 1 ? 'from-gray-100 to-gray-50 border-2 border-gray-400' :
@@ -599,13 +685,16 @@
                             } rounded-lg">
                                 <div class="flex items-center gap-3 flex-grow">
                                     <span class="text-2xl font-black w-8 text-center">
-                                        ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1)}
+                                        ${index === 0 ? '1' : index === 1 ? '2' : index === 2 ? '3' : (index + 1)}
                                     </span>
                                     <span class="font-bold text-slate-800">${entry.name}</span>
                                 </div>
-                                <span class="font-black text-lg text-orange-600">${entry.value}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-black text-lg text-orange-600">${entry.value}</span>
+                                    <span class="text-sm">${rankObj.emoji}</span>
+                                </div>
                             </div>
-                        `)
+                        `})
                         .join('');
                 } else {
                     leaderboardContent.innerHTML = '<div class="text-center text-slate-500 py-8">No scores yet. Be the first!</div>';
@@ -619,6 +708,61 @@
         function closeLeaderboard() {
             document.getElementById('leaderboard-modal').classList.add('hidden');
         }
+
+        function playAgain() {
+            resetGame();
+        }
+
+        // Load top 5 scores on start
+        async function loadTop5Scores() {
+            try {
+                const response = await fetch(`${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}`);
+                const data = await response.json();
+                
+                if (data.scores && data.scores.length > 0) {
+                    top5Scores = data.scores.slice(0, 5);
+                    
+                    const leaderboardHtml = top5Scores
+                        .map((entry, index) => {
+                            const rankObj = getRankObj(entry.value);
+                            return `
+                                <div class="flex items-center justify-between p-3 bg-gradient-to-r ${
+                                    index === 0 ? 'from-yellow-100 to-yellow-50 border-2 border-yellow-400' :
+                                    index === 1 ? 'from-gray-100 to-gray-50 border-2 border-gray-400' :
+                                    index === 2 ? 'from-amber-100 to-amber-50 border-2 border-amber-600' :
+                                    'from-slate-50 to-white border border-slate-200'
+                                } rounded-lg">
+                                    <div class="flex items-center gap-3 flex-grow">
+                                        <span class="text-2xl font-black w-8 text-center">
+                                            ${index === 0 ? '1' : index === 1 ? '2' : index === 2 ? '3' : (index + 1)}
+                                        </span>
+                                        <div class="flex-1">
+                                            <span class="font-bold text-slate-800">${entry.name}</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-black text-lg text-orange-600">${entry.value}</span>
+                                        <span class="text-sm">${rankObj.emoji}</span>
+                                    </div>
+                                </div>
+                            `;
+                        })
+                        .join('');
+                    
+                    document.getElementById('start-leaderboard').innerHTML = leaderboardHtml;
+                } else {
+                    document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-500 py-8">No scores yet. Be first!</div>';
+                }
+            } catch (error) {
+                console.error('Error loading top 5 scores:', error);
+                document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-400 py-8">Click Start to Play</div>';
+            }
+        }
+        
+        window.addEventListener('load', () => {
+            document.getElementById('start-screen').classList.remove('hidden');
+            loadTop5Scores();
+        });
     </script>
 </body>
 </html>
