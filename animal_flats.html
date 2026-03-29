@@ -150,20 +150,47 @@
 
     <!-- Game Over Modal -->
     <div id="modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-6 z-50 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl">
+        <div class="bg-white rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl max-h-[90vh] overflow-y-auto">
             <div id="rank-emoji-display" class="text-6xl mb-4">🦒</div>
             <h2 class="text-2xl font-black mb-1 text-slate-800">All flats occupied!</h2>
             <p id="rank-display" class="text-orange-500 font-bold italic mb-4 uppercase text-sm tracking-tight"></p>
-            <p class="text-slate-500 mb-8">Final Score: <span id="final-score" class="text-2xl font-black text-slate-800">0</span></p>
+            <p class="text-slate-500 mb-6">Final Score: <span id="final-score" class="text-2xl font-black text-slate-800">0</span></p>
+            
+            <!-- Name Input for Leaderboard -->
+            <div class="mb-6">
+                <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl focus:outline-none focus:border-orange-500" />
+            </div>
             
             <div class="flex flex-col gap-3">
-                <button id="share-btn" class="w-full py-4 bg-orange-500 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                <button id="submit-score-btn" onclick="submitScoreToLeaderboard()" class="w-full py-3 bg-green-500 text-white font-bold rounded-2xl shadow-lg shadow-green-200 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-green-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg>
+                    Submit to Leaderboard
+                </button>
+                <button id="share-btn" class="w-full py-3 bg-orange-500 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-orange-600">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>
                     Share My Rank
                 </button>
-                <button onclick="resetGame()" class="w-full py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-transform">
+                <button onclick="showLeaderboard()" class="w-full py-3 bg-purple-500 text-white font-bold rounded-2xl shadow-lg shadow-purple-200 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-purple-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>
+                    View Leaderboard
+                </button>
+                <button onclick="resetGame()" class="w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-transform hover:bg-slate-200">
                     New Game
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboard-modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-6 z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-black text-slate-800">🏆 Leaderboard</h2>
+                <button onclick="closeLeaderboard()" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+            </div>
+            
+            <div id="leaderboard-content" class="space-y-2">
+                <div class="text-center text-slate-500 py-8">Loading scores...</div>
             </div>
         </div>
     </div>
@@ -171,6 +198,13 @@
     <div id="toast">Score copied to clipboard!</div>
 
     <script>
+        // Leaderboard Configuration
+        const LEADERBOARD_CONFIG = {
+            id: 121,
+            secret: "146237b143514297870eef8d22040c23",
+            apiUrl: "https://lb.yogurtthehor.se/api/v1/scores"
+        };
+
         const GRID_SIZE = 6;
         const ANIMALS = ['🐊', '🐟', '🦋', '🦜'];
         const RANKS = [
@@ -492,6 +526,99 @@
 
         shareBtn.addEventListener('click', shareResult);
         window.onload = resetGame;
+
+        // Leaderboard Functions
+        async function submitScoreToLeaderboard() {
+            const playerName = document.getElementById('player-name').value.trim();
+            const submitBtn = document.getElementById('submit-score-btn');
+            
+            if (!playerName) {
+                showToast("Please enter your name!");
+                return;
+            }
+
+            // Disable button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="animate-spin"><circle cx="12" cy="12" r="1"/><path d="M12 2v4m7.07 7.07h-4m-5.66 5.66v-4m-5.66-5.66h4"/></svg> Submitting...';
+
+            try {
+                const url = `${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}/${LEADERBOARD_CONFIG.secret}/add/${encodeURIComponent(playerName)}/${score}/0`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    showToast(`🎉 Score submitted! Great job, ${playerName}!`);
+                    // Disable submit button after successful submission
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = 
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' +
+                        ' Submitted!';
+                    submitBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    submitBtn.classList.add('bg-slate-400');
+                } else {
+                    showToast("Failed to submit score. Try again!");
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>' +
+                        ' Submit to Leaderboard';
+                }
+            } catch (error) {
+                console.error('Error submitting score:', error);
+                showToast("Network error. Please try again!");
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>' +
+                    ' Submit to Leaderboard';
+            }
+        }
+
+        async function showLeaderboard() {
+            const leaderboardModal = document.getElementById('leaderboard-modal');
+            const leaderboardContent = document.getElementById('leaderboard-content');
+            
+            leaderboardModal.classList.remove('hidden');
+            leaderboardContent.innerHTML = '<div class="text-center text-slate-500 py-8">Loading scores...</div>';
+
+            try {
+                const response = await fetch(`${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}`);
+                const data = await response.json();
+
+                if (data.scores && data.scores.length > 0) {
+                    leaderboardContent.innerHTML = data.scores
+                        .map((entry, index) => `
+                            <div class="flex items-center justify-between p-3 bg-gradient-to-r ${
+                                index === 0 ? 'from-yellow-100 to-yellow-50 border-2 border-yellow-400' :
+                                index === 1 ? 'from-gray-100 to-gray-50 border-2 border-gray-400' :
+                                index === 2 ? 'from-amber-100 to-amber-50 border-2 border-amber-600' :
+                                'from-slate-50 to-white border border-slate-200'
+                            } rounded-lg">
+                                <div class="flex items-center gap-3 flex-grow">
+                                    <span class="text-2xl font-black w-8 text-center">
+                                        ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1)}
+                                    </span>
+                                    <span class="font-bold text-slate-800">${entry.name}</span>
+                                </div>
+                                <span class="font-black text-lg text-orange-600">${entry.value}</span>
+                            </div>
+                        `)
+                        .join('');
+                } else {
+                    leaderboardContent.innerHTML = '<div class="text-center text-slate-500 py-8">No scores yet. Be the first!</div>';
+                }
+            } catch (error) {
+                console.error('Error fetching leaderboard:', error);
+                leaderboardContent.innerHTML = '<div class="text-center text-red-500 py-8">Failed to load leaderboard</div>';
+            }
+        }
+
+        function closeLeaderboard() {
+            document.getElementById('leaderboard-modal').classList.add('hidden');
+        }
     </script>
 </body>
 </html>
