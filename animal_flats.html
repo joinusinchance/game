@@ -3,17 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <title>Animal Flats</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+
+
+        :root {
+            --bg-primary: #fff7ed;
+            --bg-secondary: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #64748b;
+            --border-color: #fed7aa;
+            --header-border: #fed7aa;
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #cbd5e1;
+            --border-color: #404040;
+            --header-border: #404040;
+        }
+
         body {
             touch-action: manipulation;
-            background-color: #fff7ed;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            /* Noto is prioritized for emojis; system fonts handle the rest */
+            font-family: "Noto Color Emoji", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
             -webkit-user-select: none;
             user-select: none;
             padding-bottom: env(safe-area-inset-bottom);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .grid-container {
             display: grid;
@@ -23,10 +49,14 @@
             width: 100%;
             max-width: 400px;
             margin: 0 auto;
-            background: #fed7aa;
+            background:#deba91;  /* #fed7aa;  */ /*#6f5d48;*/
             padding: 8px;
             border-radius: 16px;
             position: relative;
+            transition: background 0.3s ease;
+        }
+        body.dark-mode .grid-container {
+            background: #3d3d3d;
         }
         .cell {
             aspect-ratio: 1 / 1;
@@ -38,6 +68,9 @@
             font-size: 2.4rem; 
             line-height: 1;
             transition: background 0.15s ease, transform 0.1s ease;
+        }
+        body.dark-mode .cell {
+            background: rgba(100, 100, 100, 0.4);
         }
         
         @media (max-width: 380px) {
@@ -51,6 +84,11 @@
             background: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             animation: appear 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: background 0.3s ease;
+        }
+        body.dark-mode .tile-filled {
+            background: #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
         @keyframes appear {
@@ -70,22 +108,21 @@
 
         #next-piece-display {
             transition: all 0.2s ease;
-            width: 80px;
-            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 2px;
+            gap: 4px;
+            flex-direction: row;
         }
         
         #next-piece-display span {
-            font-size: 2rem;
+            font-size: 2.4rem;
             line-height: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 2.4rem;
-            height: 2.4rem;
+            width: auto;
+            height: auto;
         }
 
         .vertical-text {
@@ -104,8 +141,12 @@
             padding: 0.75rem 1.5rem;
             border-radius: 9999px;
             font-weight: 600;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s ease;
             z-index: 100;
+        }
+        body.dark-mode #toast {
+            background: #1a1a1a;
+            color: #e0e0e0;
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
@@ -119,62 +160,71 @@
 
     <div class="w-full max-w-md flex flex-col h-full">
         
-        <!-- Header -->
-        <div class="w-full h-28 flex justify-between items-center mb-4 bg-white p-4 rounded-2xl shadow-sm border border-orange-100 flex-shrink-0">
-            <!-- Left: Score Area -->
-            <div class="flex items-center gap-4">
-                <button onclick="resetGame()" class="p-2 text-orange-400 hover:text-orange-600 active:scale-90 transition-all bg-orange-50 rounded-xl border border-orange-100" title="Restart Game">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+
+<!--previous  Place Section (Top Center)-->
+        <!-- Place Section (Top Center) -->
+
+            <!-- Header with Score and Next Piece (Top) -->
+            <div class="w-full h-24 flex justify-between items-center mb-1 bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-orange-200 dark:border-slate-700 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <button onclick="resetGame()" class="p-2 text-orange-400 hover:text-orange-600 dark:text-orange-500 dark:hover:text-orange-400 active:scale-90 transition-all bg-orange-50 dark:bg-slate-700 rounded-xl border border-orange-100 dark:border-slate-600" title="Restart Game">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                    </button>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-orange-400 dark:text-orange-500 font-bold">Score</p>
+                        <p id="score" class="text-3xl font-black text-orange-600 dark:text-orange-400 leading-tight">0</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="inline-block">
+                        <div id="next-piece-display" class="inline-flex">
+                            </div>
+                    </div>
+                </div>
+
+                <button onclick="toggleDarkMode()" class="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 active:scale-90 transition-all bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600" title="Toggle Dark Mode">
+                    <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
                 </button>
-                <div>
-                    <p class="text-[10px] uppercase tracking-widest text-orange-400 font-bold">Score</p>
-                    <p id="score" class="text-3xl font-black text-orange-600 leading-tight">0</p>
-                </div>
+            </div>
+            <!-- Game Board (Center) -->
+            <div class="flex-grow flex flex-col items-center justify-start pt-1 overflow-visible">
+                <div id="game-board" class="grid-container mx-auto">
+                    </div>
             </div>
 
-            <!-- Right: Next Piece Area -->
-            <div class="flex items-center gap-2">
-                <p class="vertical-text text-[10px] uppercase tracking-widest text-slate-400 font-black">Next:</p>
-                <div id="next-piece-display" class="bg-orange-50 rounded-lg border-2 border-orange-200">
-                </div>
-            </div>
         </div>
-
-        <!-- Main Game Area -->
-        <div class="flex-grow flex items-center justify-center py-2 overflow-hidden">
-            <div id="game-board" class="grid-container">
-            </div>
-        </div>
-
+    
     </div>
 
     <!-- Game Over Modal -->
     <div id="modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-6 z-50 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl max-h-[90vh] overflow-y-auto border dark:border-slate-700">
             <div id="rank-emoji-display" class="text-6xl mb-4">🦒</div>
-            <h2 class="text-2xl font-black mb-1 text-slate-800">All flats occupied!</h2>
-            <p id="rank-display" class="text-orange-500 font-bold italic mb-4 uppercase text-sm tracking-tight"></p>
-            <p class="text-slate-500 mb-6">Final Score: <span id="final-score" class="text-2xl font-black text-slate-800">0</span></p>
+            <h2 class="text-2xl font-black mb-1 text-slate-800 dark:text-white">All flats occupied!</h2>
+            <p id="rank-display" class="text-orange-500 dark:text-orange-400 font-bold italic mb-4 uppercase text-sm tracking-tight"></p>
+            <p class="text-slate-500 dark:text-slate-300 mb-6">Final Score: <span id="final-score" class="text-2xl font-black text-slate-800 dark:text-white">0</span></p>
             
             <!-- Name Input for Leaderboard -->
             <div id="player-name-container" class="mb-6" style="display: none;">
-                <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" class="w-full px-4 py-3 border-2 border-orange-200 rounded-xl focus:outline-none focus:border-orange-500" />
+                <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" class="w-full px-4 py-3 border-2 border-orange-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-orange-500 dark:focus:border-orange-400 bg-white dark:bg-slate-700 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" />
             </div>
             
             <div class="flex flex-col gap-3">
-                <button id="submit-score-btn" onclick="submitScoreToLeaderboard()" class="w-full py-3 bg-green-500 text-white font-bold rounded-2xl shadow-lg shadow-green-200 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-green-600" style="display: none;">
+                <button id="submit-score-btn" onclick="submitScoreToLeaderboard()" class="w-full py-3 bg-green-500 dark:bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-200 dark:shadow-green-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-green-600 dark:hover:bg-green-700" style="display: none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg>
                     Submit to Leaderboard
                 </button>
-                <button id="share-btn" class="w-full py-3 bg-orange-500 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-orange-600">
+                <button id="share-btn" class="w-full py-3 bg-orange-500 dark:bg-orange-600 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 dark:shadow-orange-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-orange-600 dark:hover:bg-orange-700">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>
                     Share My Rank
                 </button>
-                <button onclick="showLeaderboard()" class="w-full py-3 bg-purple-500 text-white font-bold rounded-2xl shadow-lg shadow-purple-200 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-purple-600">
+                <button onclick="showLeaderboard()" class="w-full py-3 bg-purple-500 dark:bg-purple-600 text-white font-bold rounded-2xl shadow-lg shadow-purple-200 dark:shadow-purple-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-purple-600 dark:hover:bg-purple-700">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>
                     See Leaderboard
                 </button>
-                <button onclick="playAgain()" class="w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-transform hover:bg-slate-200">
+                <button onclick="playAgain()" class="w-full py-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 font-bold rounded-2xl active:scale-95 transition-transform hover:bg-slate-200 dark:hover:bg-slate-600">
                     Play Again
                 </button>
             </div>
@@ -183,35 +233,35 @@
 
     <!-- Leaderboard Modal -->
     <div id="leaderboard-modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-6 z-50 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl max-h-[80vh] overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 w-full max-w-md shadow-2xl max-h-[80vh] overflow-y-auto border dark:border-slate-700">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-black text-slate-800">🏆 Leaderboard</h2>
-                <button onclick="closeLeaderboard()" class="text-slate-400 hover:text-slate-600 text-2xl">&times;</button>
+                <h2 class="text-2xl font-black text-slate-800 dark:text-white">🏆 Leaderboard</h2>
+                <button onclick="closeLeaderboard()" class="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-2xl">&times;</button>
             </div>
             
             <div id="leaderboard-content" class="space-y-2">
-                <div class="text-center text-slate-500 py-8">Loading scores...</div>
+                <div class="text-center text-slate-500 dark:text-slate-400 py-8">Loading scores...</div>
             </div>
         </div>
     </div>
 
     <!-- Start Screen Modal -->
-    <div id="start-screen" class="fixed inset-0 bg-gradient-to-b from-orange-100 to-orange-50 flex flex-col items-center justify-center p-6 z-50">
+    <div id="start-screen" class="fixed inset-0 bg-gradient-to-b from-orange-100 dark:from-slate-900 to-orange-50 dark:to-slate-800 flex flex-col items-center justify-center p-6 z-50">
         <div class="w-full max-w-sm flex flex-col items-center">
             <!-- Title -->
-            <h1 class="text-6xl font-black text-orange-600 mb-2">Animal Flats</h1>
-            <p class="text-slate-600 font-semibold mb-8">Match three to clear!</p>
+            <h1 class="text-6xl font-black text-orange-600 dark:text-orange-400 mb-2">Animal Flats</h1>
+            <p class="text-slate-600 dark:text-slate-300 font-semibold mb-8">Match three to clear!</p>
             
             <!-- Top 5 Leaderboard -->
-            <div class="w-full bg-white rounded-2xl shadow-lg p-6 mb-8 border-2 border-orange-200">
-                <h2 class="text-2xl font-black text-slate-800 mb-4 text-center">🏆 Top Scores</h2>
+            <div class="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 mb-8 border-2 border-orange-200 dark:border-slate-700">
+                <h2 class="text-2xl font-black text-slate-800 dark:text-white mb-4 text-center">🏆 Top Scores</h2>
                 <div id="start-leaderboard" class="space-y-2">
-                    <div class="text-center text-slate-500 py-4">Loading scores...</div>
+                    <div class="text-center text-slate-500 dark:text-slate-400 py-4">Loading scores...</div>
                 </div>
             </div>
             
             <!-- Start Button -->
-            <button onclick="startGame()" class="w-full py-4 px-6 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-green-300 active:scale-95 transition-transform hover:from-green-600 hover:to-emerald-600">
+            <button onclick="startGame()" class="w-full py-4 px-6 bg-gradient-to-r from-green-500 to-emerald-500 dark:from-green-600 dark:to-emerald-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-green-300 dark:shadow-green-900 active:scale-95 transition-transform hover:from-green-600 hover:to-emerald-600 dark:hover:from-green-700 dark:hover:to-emerald-700">
                 Let's Play!
             </button>
         </div>
@@ -271,6 +321,43 @@
         const modal = document.getElementById('modal');
         const shareBtn = document.getElementById('share-btn');
         const rankEmojiEl = document.getElementById('rank-emoji-display');
+
+        // Dark Mode
+        function initDarkMode() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark-mode');
+                document.body.classList.add('dark-mode');
+                updateDarkModeIcon();
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.documentElement.classList.remove('dark-mode');
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('darkMode', 'false');
+            } else {
+                document.documentElement.classList.add('dark-mode');
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', 'true');
+            }
+            updateDarkModeIcon();
+        }
+
+        function updateDarkModeIcon() {
+            const sunIcon = document.getElementById('sun-icon');
+            const moonIcon = document.getElementById('moon-icon');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            if (isDarkMode) {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            } else {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            }
+        }
 
         function initBoard() {
             boardEl.innerHTML = '';
@@ -574,22 +661,22 @@
                             const rankObj = getRankObj(entry.value);
                             return `
                                 <div class="flex items-center justify-between p-3 bg-gradient-to-r ${
-                                    index === 0 ? 'from-yellow-100 to-yellow-50 border-2 border-yellow-400' :
-                                    index === 1 ? 'from-gray-100 to-gray-50 border-2 border-gray-400' :
-                                    index === 2 ? 'from-amber-100 to-amber-50 border-2 border-amber-600' :
-                                    'from-slate-50 to-white border border-slate-200'
+                                    index === 0 ? 'from-yellow-100 to-yellow-50 dark:from-yellow-900/30 dark:to-yellow-800/20 border-2 border-yellow-400 dark:border-yellow-600' :
+                                    index === 1 ? 'from-gray-100 to-gray-50 dark:from-gray-700/30 dark:to-gray-600/20 border-2 border-gray-400 dark:border-gray-600' :
+                                    index === 2 ? 'from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-800/20 border-2 border-amber-600 dark:border-amber-700' :
+                                    'from-slate-50 to-white dark:from-slate-700/30 dark:to-slate-600/20 border border-slate-200 dark:border-slate-600'
                                 } rounded-lg">
                                     <div class="flex items-center gap-3 flex-grow">
                                         <span class="text-2xl font-black w-8 text-center">
                                             ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1)}
                                         </span>
                                         <div class="flex-1">
-                                            <span class="font-bold text-slate-800">${entry.name}</span>
+                                            <span class="font-bold text-slate-800 dark:text-slate-200">${entry.name}</span>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <span class="text-sm">${rankObj.emoji}</span>
-                                        <span class="font-black text-lg text-orange-600">${entry.value}</span>
+                                        <span class="font-black text-lg text-orange-600 dark:text-orange-400">${entry.value}</span>
                                     </div>
                                 </div>
                             `;
@@ -598,15 +685,16 @@
                     
                     document.getElementById('start-leaderboard').innerHTML = leaderboardHtml;
                 } else {
-                    document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-500 py-8">No scores yet. Be first!</div>';
+                    document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-500 dark:text-slate-400 py-8">No scores yet. Be first!</div>';
                 }
             } catch (error) {
                 console.error('Error loading top 5 scores:', error);
-                document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-400 py-8">Click Start to Play</div>';
+                document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-400 dark:text-slate-500 py-8">Click Start to Play</div>';
             }
         }
         
         window.addEventListener('load', () => {
+            initDarkMode();
             document.getElementById('start-screen').classList.remove('hidden');
             loadTop5Scores();
         });
@@ -666,7 +754,7 @@
             const leaderboardContent = document.getElementById('leaderboard-content');
             
             leaderboardModal.classList.remove('hidden');
-            leaderboardContent.innerHTML = '<div class="text-center text-slate-500 py-8">Loading scores...</div>';
+            leaderboardContent.innerHTML = '<div class="text-center text-slate-500 dark:text-slate-400 py-8">Loading scores...</div>';
 
             try {
                 const response = await fetch(`${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}`);
@@ -678,30 +766,30 @@
                             const rankObj = getRankObj(entry.value);
                             return `
                             <div class="flex items-center justify-between p-3 bg-gradient-to-r ${
-                                index === 0 ? 'from-yellow-100 to-yellow-50 border-2 border-yellow-400' :
-                                index === 1 ? 'from-gray-100 to-gray-50 border-2 border-gray-400' :
-                                index === 2 ? 'from-amber-100 to-amber-50 border-2 border-amber-600' :
-                                'from-slate-50 to-white border border-slate-200'
+                                index === 0 ? 'from-yellow-100 to-yellow-50 dark:from-yellow-900/30 dark:to-yellow-800/20 border-2 border-yellow-400 dark:border-yellow-600' :
+                                index === 1 ? 'from-gray-100 to-gray-50 dark:from-gray-700/30 dark:to-gray-600/20 border-2 border-gray-400 dark:border-gray-600' :
+                                index === 2 ? 'from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-800/20 border-2 border-amber-600 dark:border-amber-700' :
+                                'from-slate-50 to-white dark:from-slate-700/30 dark:to-slate-600/20 border border-slate-200 dark:border-slate-600'
                             } rounded-lg">
                                 <div class="flex items-center gap-3 flex-grow">
                                     <span class="text-2xl font-black w-8 text-center">
                                         ${index === 0 ? '1' : index === 1 ? '2' : index === 2 ? '3' : (index + 1)}
                                     </span>
-                                    <span class="font-bold text-slate-800">${entry.name}</span>
+                                    <span class="font-bold text-slate-800 dark:text-slate-200">${entry.name}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-black text-lg text-orange-600">${entry.value}</span>
+                                    <span class="font-black text-lg text-orange-600 dark:text-orange-400">${entry.value}</span>
                                     <span class="text-sm">${rankObj.emoji}</span>
                                 </div>
                             </div>
                         `})
                         .join('');
                 } else {
-                    leaderboardContent.innerHTML = '<div class="text-center text-slate-500 py-8">No scores yet. Be the first!</div>';
+                    leaderboardContent.innerHTML = '<div class="text-center text-slate-500 dark:text-slate-400 py-8">No scores yet. Be the first!</div>';
                 }
             } catch (error) {
                 console.error('Error fetching leaderboard:', error);
-                leaderboardContent.innerHTML = '<div class="text-center text-red-500 py-8">Failed to load leaderboard</div>';
+                leaderboardContent.innerHTML = '<div class="text-center text-red-500 dark:text-red-400 py-8">Failed to load leaderboard</div>';
             }
         }
 
