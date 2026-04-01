@@ -154,6 +154,14 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+
+        #achievement-overlay .bg-gradient-to-br {
+            transform: scale(0);
+        }
+
+        #achievement-overlay.show .bg-gradient-to-br {
+            transform: scale(1);
+        }
     </style>
 </head>
 <body class="flex flex-col items-center h-[100dvh] p-4">
@@ -173,6 +181,7 @@
                     <div>
                         <p class="text-[10px] uppercase tracking-widest text-orange-400 dark:text-orange-500 font-bold">Score</p>
                         <p id="score" class="text-3xl font-black text-orange-600 dark:text-orange-400 leading-tight">0</p>
+                        <div id="rank-countdown" class="text-[8px] text-slate-500 dark:text-slate-400 mt-1 opacity-75">Next: 🦠 150</div>
                     </div>
                 </div>
 
@@ -282,6 +291,16 @@
 
     <div id="toast">Score copied to clipboard!</div>
 
+    <!-- Achievement Overlay -->
+    <div id="achievement-overlay" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-6 z-60 backdrop-blur-sm">
+        <div class="bg-gradient-to-br from-yellow-400 to-orange-500 dark:from-yellow-600 dark:to-orange-700 rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl transition-transform duration-500">
+            <div id="achievement-emoji" class="text-8xl mb-4 animate-bounce">🎉</div>
+            <h2 class="text-3xl font-black text-white mb-2">Achievement Unlocked!</h2>
+            <p id="achievement-title" class="text-xl font-bold text-white mb-1">New Rank!</p>
+            <p id="achievement-description" class="text-white/90">You've reached a new level!</p>
+        </div>
+    </div>
+
     <script>
         // Leaderboard Configuration
         const LEADERBOARD_CONFIG = {
@@ -293,32 +312,33 @@
         const GRID_SIZE = 6;
         const ANIMALS = ['🐊', '🐟', '🦋', '🦜'];
         const RANKS = [
-            { threshold: 0, title: "Apathetic Amoeba", emoji: "🦠" },
-            { threshold: 150, title: "Bumbling Beetle", emoji: "🪲" },
-            { threshold: 400, title: "Clumsy Cat", emoji: "🐱" },
-            { threshold: 750, title: "Dashing Dolphin", emoji: "🐬" },
-            { threshold: 1200, title: "Elongated Eel", emoji: "🪱" },
-            { threshold: 1800, title: "Fancy Flamingo", emoji: "🦩" },
-            { threshold: 2500, title: "Gilded Gorilla", emoji: "🦍" },
-            { threshold: 3500, title: "Heroic Hippo", emoji: "🦛" },
-            { threshold: 4600, title: "Intelligent Iguana", emoji: "🦎" },
-            { threshold: 5800, title: "Jovial Jaguar", emoji: "🐆" },
-            { threshold: 7100, title: "King Koala", emoji: "🐨" },
-            { threshold: 8500, title: "Legendary Lion", emoji: "🦁" },
-            { threshold: 10000, title: "Majestic Mammoth", emoji: "🦣" },
-            { threshold: 11600, title: "Noble Nightingale", emoji: "🐦" },
-            { threshold: 13300, title: "Observant Otter", emoji: "🦦" },
-            { threshold: 15100, title: "Powerful Panther", emoji: "🐈‍⬛" },
-            { threshold: 17000, title: "Quizzical Quokka", emoji: "🐹" },
-            { threshold: 19000, title: "Radiant Rhino", emoji: "🦏" },
-            { threshold: 21100, title: "Stellar Shark", emoji: "🦈" },
-            { threshold: 23300, title: "Triumphant Tiger", emoji: "🐯" },
-            { threshold: 25600, title: "Unstoppable Unicorn", emoji: "🦄" },
-            { threshold: 28000, title: "Valiant Viper", emoji: "🐍" },
-            { threshold: 30500, title: "Wise Wolf", emoji: "🐺" },
-            { threshold: 33100, title: "Xenon X-ray Fish", emoji: "🦴" },
-            { threshold: 35800, title: "Yearning Yak", emoji: "🐃" },
-            { threshold: 38600, title: "Zazzy Zebra", emoji: "🦓" }
+    { threshold: 30, title: "Apathetic Amoeba", emoji: "🦠", achieved: "I appreciate you overfilling the Aqueous Abyss, but there are more puddles to overcharge for." },
+    { threshold: 150, title: "Bumbling Beetle", emoji: "🪲", achieved: "Cheers for cluttering up the Broken Barn, but those dung heaps won't rent themselves." },
+    { threshold: 400, title: "Clumsy Cat", emoji: "🐱", achieved: "Nice job squeezing souls into the Cramped Condo; now go find some more kittens to exploit." },
+    { threshold: 750, title: "Dashing Dolphin", emoji: "🐬", achieved: "Delightful work drowning them in the Damp Depot; it’s time to inflate the tide-water taxes." },
+    { threshold: 1200, title: "Elongated Eel", emoji: "🪱", achieved: "Excellent effort exhausting the Empty Estuary; keep squeezing the tenants for every volt." },
+    { threshold: 1800, title: "Fancy Flamingo", emoji: "🦩", achieved: "Fabulous job fattening the profits at the Fragile Flat; it’s time to paint over the damp and raise the rent." },
+    { threshold: 2500, title: "Gilded Gorilla", emoji: "🦍", achieved: "Grand work glutting the Grimy Garage; there’s still more concrete jungle to monetize." },
+    { threshold: 3500, title: "Heroic Hippo", emoji: "🦛", achieved: "Hats off for hoarding life in the Humid Habitat; now go ignore a plumbing repair request." },
+    { threshold: 4600, title: "Intelligent Iguana", emoji: "🦎", achieved: "I’m impressed with how you’ve infested the Isolated Island; your empire of heat-lamp surcharges awaits." },
+    { threshold: 5800, title: "Jovial Jaguar", emoji: "🐆", achieved: "Just love how you jammed the Jagged Jungle-hut; keep prowling for those security deposits." },
+    { threshold: 7100, title: "King Koala", emoji: "🐨", achieved: "Kudos for keeping the Knotted Kerbside crowded; don't let the residents sleep on the job." },
+    { threshold: 8500, title: "Legendary Lion", emoji: "🦁", achieved: "Lovely work levying fees at the Loathsome Loft; it's time for some predatory leasing." },
+    { threshold: 10000, title: "Majestic Mammoth", emoji: "🦣", achieved: "Many thanks for mass-renting the Mouldy Mansion; keep those prehistoric floorboards creaking." },
+    { threshold: 11600, title: "Noble Nightingale", emoji: "🐦", achieved: "Nothing beats the noise in the Narrow Nest; now go whistle for some late fees." },
+    { threshold: 13300, title: "Observant Otter", emoji: "🦦", achieved: "Oh, the opulence of the Overcrowded Outpost! There's more riverfront to ruin." },
+    { threshold: 15100, title: "Powerful Panther", emoji: "🐈‍⬛", achieved: "Perfectly packed, that Pitiful Penthouse; continue your shadowy sub-letting." },
+    { threshold: 17000, title: "Quizzical Quokka", emoji: "🐹", achieved: "Quite the quota you reached at the Quaint Quarters; don't let the smiles distract from the lack of heating." },
+    { threshold: 19000, title: "Radiant Rhino", emoji: "🦏", achieved: "Rarely have I seen such revenue from the Rusty Residence; keep charging extra for the 'industrial' aesthetic." },
+    { threshold: 21100, title: "Stellar Shark", emoji: "🦈", achieved: "Splendid job stocking the Submerged Shanty; there are more small fish to fry in the market." },
+    { threshold: 23300, title: "Triumphant Tiger", emoji: "🐯", achieved: "Truly terrifying turnover at the Tiny Tenement; your stripes as a ruthless manager are showing." },
+    { threshold: 25600, title: "Unstoppable Unicorn", emoji: "🦄", achieved: "Utterly amazed at the usury in the Underwhelming Unit; even magical properties need a high-interest mortgage." },
+    { threshold: 28000, title: "Valiant Viper", emoji: "🐍", achieved: "Very vigorous void-filling at the Vacant Villa; slither over to the next plot and demand a premium." },
+    { threshold: 30500, title: "Wise Wolf", emoji: "🐺", achieved: "Wicked work warehousing souls in the Wretched Warehouse; keep the pack hungry for more real estate." },
+    { threshold: 33100, title: "Xenon X-ray Fish", emoji: "🦴", achieved: "X-tremely good job exploiting the Xeric Xylophone-factory; let's keep the profit margins transparent." },
+    { threshold: 35800, title: "Yearning Yak", emoji: "🐃", achieved: "You’ve yielded great results at the Yellowing Yard; there are more pastures to overpopulate." },
+    { threshold: 38600, title: "Zazzy Zebra", emoji: "🦓", achieved: "Zealously zipping up the Zig-zagged Zone; the world is your black-and-white balance sheet! Unfortunately, the rent is due next month..." }
+
         ];
 
         let board = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
@@ -356,6 +376,10 @@
                 document.body.classList.add('dark-mode');
                 localStorage.setItem('darkMode', 'true');
             }
+            // Force repaint to ensure immediate visual change
+            document.body.style.display = 'none';
+            document.body.offsetHeight; // Trigger reflow
+            document.body.style.display = '';
             updateDarkModeIcon();
         }
 
@@ -370,6 +394,47 @@
                 sunIcon.classList.remove('hidden');
                 moonIcon.classList.add('hidden');
             }
+        }
+
+        function updateRankCountdown() {
+            const currentRank = getRankObj(score);
+            const currentRankIndex = RANKS.findIndex(rank => rank.title === currentRank.title);
+            const nextRank = RANKS[currentRankIndex + 1];
+            
+            if (nextRank) {
+                const remaining = nextRank.threshold - score;
+                document.getElementById('rank-countdown').innerText = `Next: ${nextRank.emoji} ${remaining}`;
+            } else {
+                document.getElementById('rank-countdown').innerText = `Max Rank! ${currentRank.emoji}`;
+            }
+        }
+
+        function checkRankAchievement(oldScore, newScore) {
+            const oldRank = getRankObj(oldScore);
+            const newRank = getRankObj(newScore);
+            
+            if (oldRank.title !== newRank.title) {
+                showAchievement(newRank);
+            }
+        }
+
+        function showAchievement(rankObj) {
+            const overlay = document.getElementById('achievement-overlay');
+            const emojiEl = document.getElementById('achievement-emoji');
+            const titleEl = document.getElementById('achievement-title');
+            const descEl = document.getElementById('achievement-description');
+            
+            emojiEl.innerText = rankObj.emoji;
+            titleEl.innerText = rankObj.title;
+            descEl.innerText = `${rankObj.title} says: ${rankObj.achieved}`;
+            
+            overlay.classList.remove('hidden');
+            overlay.classList.add('show');
+            
+            setTimeout(() => {
+                overlay.classList.remove('show');
+                setTimeout(() => overlay.classList.add('hidden'), 500);
+            }, 3000);
         }
 
         function initBoard() {
@@ -540,8 +605,15 @@
                 }
 
                 if (toClear.size > 0) {
+                    const oldScore = score;
                     score += toClear.size * 10;
                     scoreEl.innerText = score;
+                    
+                    // Check for rank achievement
+                    checkRankAchievement(oldScore, score);
+                    
+                    // Update countdown display
+                    updateRankCountdown();
                     toClear.forEach(id => {
                         const [r, c] = id.split(',').map(Number);
                         const el = getCellEl(r, c);
@@ -596,6 +668,7 @@
             board = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
             score = 0;
             scoreEl.innerText = '0';
+            updateRankCountdown();
             modal.classList.add('hidden');
             document.getElementById('start-screen').classList.remove('hidden');
             lastSelectedCell = null;
@@ -611,6 +684,7 @@
                 ' Submit to Leaderboard';
             document.getElementById('submit-score-btn').classList.remove('bg-slate-400');
             document.getElementById('submit-score-btn').classList.add('bg-green-500', 'hover:bg-green-600');
+            updateRankCountdown();
             initBoard();
             generateNextPiece();
         }
@@ -860,10 +934,6 @@
             }
         }
         
-        window.addEventListener('load', () => {
-            document.getElementById('start-screen').classList.remove('hidden');
-            loadTop5Scores();
-        });
     </script>
 </body>
 </html>
