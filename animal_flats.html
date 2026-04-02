@@ -301,16 +301,31 @@
 
     <div id="toast">Score copied to clipboard!</div>
 
-    <!-- Achievement Overlay -->
-    <div id="achievement-overlay" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-6 z-60 backdrop-blur-sm">
-        <div class="bg-gradient-to-br from-yellow-400 to-orange-500 dark:from-yellow-600 dark:to-orange-700 rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl transition-transform duration-500">
-            <div id="achievement-emoji" class="text-8xl mb-4 animate-bounce">🎉</div>
-            <h2 class="text-3xl font-black text-white mb-2">Achievement Unlocked!</h2>
-            <p id="achievement-title" class="text-xl font-bold text-white mb-1">New Rank!</p>
-            <p id="achievement-description" class="text-white/90">You've reached a new level!</p>
+
+    <div id="achievement-overlay" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-6 z-60 backdrop-blur-md">
+        <div class="flex flex-col items-center w-full max-w-sm transition-all duration-500 transform scale-110">
+        
+            <div class="relative bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-2xl mb-6 border-4 border-yellow-400 dark:border-yellow-600">
+         <!--   <h2 class="text-sm font-black uppercase tracking-widest text-yellow-500 mb-1">Level Up!</h2>-->
+                <h3 id="achievement-title" class="text-2xl font-black text-slate-900 dark:text-white leading-tight mb-2">New Rank!</h3>
+                <p id="achievement-description" class="text-slate-600 dark:text-slate-300 font-medium italic">
+                "You've reached a new level!"
+            </p>
+
+            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-white dark:bg-slate-800 border-r-4 border-b-4 border-yellow-400 dark:border-yellow-600 rotate-45"></div>
         </div>
+
+        <div id="achievement-emoji" class="text-8xl filter drop-shadow-lg animate-bounce" style="animation-duration: 2s;">
+            🎉
+        </div>
+
+        <p class="mt-8 text-white/50 text-sm font-bold animate-pulse">TAP ANYWHERE TO CONTINUE</p>
     </div>
 
+
+
+
+    
     <script>
         // Leaderboard Configuration
         const LEADERBOARD_CONFIG = {
