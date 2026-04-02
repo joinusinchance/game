@@ -264,8 +264,8 @@
         </div>
     </div>
 
-    <!-- Start Screen Modal -->
-    <div id="start-screen" class="fixed inset-0 min-h-dvh bg-gradient-to-b from-orange-100 dark:from-slate-900 to-orange-50 dark:to-slate-800 flex flex-col items-center justify-center p-6 z-50 overflow-y-auto">
+    <!-- Intro Modal -->
+    <div id="intro-modal" class="fixed inset-0 bg-gradient-to-b from-orange-100 dark:from-slate-900 to-orange-50 dark:to-slate-800 hidden flex items-center justify-center p-6 z-50 overflow-y-auto">
         <div class="w-full max-w-sm flex flex-col items-center my-auto">
             
             <div class="text-center mb-6">
@@ -274,6 +274,38 @@
                 </h1>
                 <p class="text-slate-600 dark:text-slate-300 font-semibold">
                     Match three to clear!
+                </p>
+            </div>
+
+            <div class="relative bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-2xl mb-6 border-4 border-yellow-400 dark:border-yellow-600">
+                <h3 class="text-2xl font-black text-slate-900 dark:text-white leading-tight mb-2">Apathetic Amoeba</h3>
+                <p class="text-slate-600 dark:text-slate-300 font-medium italic">
+                    "Pair up three of the same faces to fill the flats and score points. The more you fill, the more profit for me and my 25 Slum Landlord buddies! (And procrastination for you)"
+                </p>
+
+                <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-white dark:bg-slate-800 border-r-4 border-b-4 border-yellow-400 dark:border-yellow-600 rotate-45"></div>
+            </div>
+
+            <div class="text-8xl filter drop-shadow-lg animate-bounce" style="animation-duration: 2s;">
+                🦠
+            </div>
+
+            <button onclick="hideIntro()" class="mt-8 w-full py-4 px-6 bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-blue-200 dark:shadow-none active:scale-95 transition-all hover:brightness-110">
+                Next
+            </button>
+        </div>
+    </div>
+
+    <!-- Start Screen Modal -->
+    <div id="start-screen" class="fixed inset-0 min-h-dvh bg-gradient-to-b from-orange-100 dark:from-slate-900 to-orange-50 dark:to-slate-800 flex flex-col items-center justify-center p-6 z-50 overflow-y-auto hidden">
+        <div class="w-full max-w-sm flex flex-col items-center my-auto">
+            
+            <div class="text-center mb-6">
+                <h1 class="text-5xl sm:text-6xl font-black text-orange-600 dark:text-orange-400 mb-2 leading-tight">
+                    Animal Flats
+                </h1>
+                <p class="text-slate-600 dark:text-slate-300 font-semibold">
+                    3 to clear & Waste time!
                 </p>
             </div>
             
@@ -301,7 +333,7 @@
 
     <div id="toast">Score copied to clipboard!</div>
 
-
+  <!-- Achievement Overlay -->
     <div id="achievement-overlay" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-6 z-60 backdrop-blur-md">
         <div class="flex flex-col items-center w-full max-w-sm transition-all duration-500 transform scale-110">
         
@@ -419,6 +451,11 @@
                 sunIcon.classList.remove('hidden');
                 moonIcon.classList.add('hidden');
             }
+        }
+
+        function hideIntro() {
+            document.getElementById('intro-modal').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
         }
 
         function updateRankCountdown() {
@@ -810,7 +847,7 @@
         
         window.addEventListener('load', () => {
             initDarkMode();
-            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('intro-modal').classList.remove('hidden');
             loadTop5Scores();
         });
 
