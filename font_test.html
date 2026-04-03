@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+    
+    <title>Animal Flats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* 2. Force Noto Color Emoji globally */
+        :root {
+            --bg-primary: #fff7ed;
+            --bg-secondary: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #64748b;
+            --border-color: #fed7aa;
+            --header-border: #fed7aa;
+            
+            /* Define the font stack here */
+            --font-emoji: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Android Emoji", EmojiSymbols;
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #cbd5e1;
+            --border-color: #404040;
+            --header-border: #404040;
+        }
+
+        /* 3. The "iPhone Override" */
+        body {
+            font-family: ui-sans-serif, system-ui, sans-serif, var(--font-emoji);
+        }
+
+        /* Specifically target elements containing emojis to ensure Noto is used */
+        .emoji {
+            font-family: var(--font-emoji) !important;
+            /* This helps prevent iOS from scaling emojis differently than text */
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+</head>
+<body class="bg-[var(--bg-primary)] text-[var(--bg-primary)]">
+
+    <div class="p-10 text-center">
+        <h1 class="text-4xl mb-4 text-[var(--text-primary)]">
+            Animal Flats <span class="emoji">🦁</span>
+        </h1>
+        <p class="text-[var(--text-secondary)]">
+            This emoji <span class="emoji">🐘</span> should now look like the Google/Noto version even on iPhone.
+        </p>
+    </div>
+
+</body>
+</html>
