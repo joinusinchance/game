@@ -14,45 +14,25 @@
     <style>
 
         :root {
-            --bg-primary: #fff7ed;
-            --bg-secondary: #ffffff;
-            --text-primary: #000000;
-            --text-secondary: #64748b;
-            --border-color: #fed7aa;
-            --header-border: #fed7aa;
-            /* Define the font stack here */
-            --font-emoji: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Android Emoji", EmojiSymbols;
-        }
-
-        body.dark-mode {
             --bg-primary: #1a1a1a;
             --bg-secondary: #2d2d2d;
             --text-primary: #ffffff;
             --text-secondary: #cbd5e1;
             --border-color: #404040;
             --header-border: #404040;
+            --font-emoji: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Android Emoji", EmojiSymbols;
         }
-
 
         body {
             touch-action: manipulation;
             background-color: var(--bg-primary);
             color: var(--text-primary);
-            /* Noto is prioritized for emojis; system fonts handle the rest */
-            /* font-family: "Noto Color Emoji", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; */
-
             font-family: ui-sans-serif, system-ui, sans-serif, var(--font-emoji);
-
-
             overflow: hidden;
             -webkit-user-select: none;
             user-select: none;
             padding-bottom: env(safe-area-inset-bottom);
-            transition: background-color 0.3s ease, color 0.3s ease;
         }
-
-
-
 
         .grid-container {
             display: grid;
@@ -62,18 +42,14 @@
             width: 100%;
             max-width: 400px;
             margin: 0 auto;
-            background:#deba91;  /* #fed7aa;  */ /*#6f5d48;*/
+            background: #3d3d3d;
             padding: 8px;
             border-radius: 16px;
             position: relative;
-            transition: background 0.3s ease;
-        }
-        body.dark-mode .grid-container {
-            background: #3d3d3d;
         }
         .cell {
             aspect-ratio: 1 / 1;
-            background: rgba(255, 255, 255, 0.4);
+            background: rgba(100, 100, 100, 0.4);
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -82,36 +58,18 @@
             line-height: 1;
             transition: background 0.15s ease, transform 0.1s ease;
         }
-        body.dark-mode .cell {
-            background: rgba(100, 100, 100, 0.4);
-        }
         
         @media (max-width: 380px) {
             .cell { font-size: 1.8rem; }
         }
 
-        .cell.preview-valid { background: rgba(34, 197, 94, 0.5); }
-        .cell.preview-invalid { background: rgba(239, 68, 68, 0.5); }
+        .cell.preview-valid { background: rgba(27, 170, 27, 0.4); }
+        .cell.preview-invalid { background: rgba(170, 27, 27, 0.4); }
 
-        /* Dark Theme Overrides */
-        .dark-mode .cell.preview-valid { 
-        background: rgba(22, 101, 52, 0.4); /* Deeper Emerald/800 */
-        }
-        .dark-mode .cell.preview-invalid { 
-        background: rgba(153, 27, 27, 0.4); /* Deeper Red/800 */
-        }
-
-
-        
         .tile-filled {
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            animation: appear 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            transition: background 0.3s ease;
-        }
-        body.dark-mode .tile-filled {
             background: #e0e0e0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            animation: appear 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         @keyframes appear {
@@ -159,17 +117,13 @@
             bottom: calc(2rem + env(safe-area-inset-bottom));
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: #334155;
-            color: white;
+            background: #1a1a1a;
+            color: #e0e0e0;
             padding: 0.75rem 1.5rem;
             border-radius: 9999px;
             font-weight: 600;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 100;
-        }
-        body.dark-mode #toast {
-            background: #1a1a1a;
-            color: #e0e0e0;
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
@@ -179,81 +133,69 @@
         }
 
         .emoji {
-
-            /* 1. Font Stack: Preserving your Noto priority and !important requirement */
             font-family: var(--font-emoji) !important;
-            
-            /* 2. Layout & Alignment: Using flex for better vertical centering with text */
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            
-            /* 3. Sizing & Spacing: Standardizing the footprint */
             width: 1.2em;
             line-height: 1;
             text-align: center;
-            
-            /* 4. Rendering Fixes: Prevents iOS scaling jumps and ensures consistent spacing */
             font-variant-numeric: tabular-nums;
             text-rendering: optimizeLegibility;
             -webkit-font-smoothing: antialiased;
         }
 
-        body.dark-mode .header-bg {
-            background-color: #1e293b !important; /* slate-800 */
-            border-color: #334155 !important; /* slate-700 */
+        .header-bg {
+            background-color: #1e293b;
+            border-color: #334155;
         }
     </style>
 </head>
 <body class="flex flex-col items-center h-[100dvh] p-4">
 
     <div class="w-full max-w-md flex flex-col h-full">
+        <!-- Header with Score and Next Piece (Top) -->
+        <div
+            class="w-full h-24 flex justify-between items-center mb-1 p-3 rounded-2xl shadow-sm border border-slate-700 flex-shrink-0 bg-slate-800 header-bg">
+            <div class="flex items-center gap-3">
+                <button onclick="resetGame()"
+                    class="p-2 text-orange-500 hover:text-orange-400 active:scale-90 transition-all bg-slate-700 rounded-xl border border-slate-600"
+                    title="Restart Game">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                        <path d="M21 3v5h-5" />
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                        <path d="M8 16H3v5" />
+                    </svg>
+                </button>
         
-
-<!--previous  Place Section (Top Center)-->
-        <!-- Place Section (Top Center) -->
-
-            <!-- Header with Score and Next Piece (Top) -->
-            <div class="w-full h-24 flex justify-between items-center mb-1 bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-orange-200 dark:border-slate-700 flex-shrink-0 header-bg">
-                <div class="flex items-center gap-3">
-                    <button onclick="resetGame()" class="p-2 text-orange-400 hover:text-orange-600 dark:text-orange-500 dark:hover:text-orange-400 active:scale-90 transition-all bg-orange-50 dark:bg-slate-700 rounded-xl border border-orange-100 dark:border-slate-600" title="Restart Game">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-                    </button>
-                    
-    <div class="flex flex-col">
-    <div class="flex items-baseline gap-2">
-        <p class="text-s uppercase tracking-widest text-orange-400 dark:text-orange-500 font-bold">
-            Score
-        </p>
-        <p id="score" class="text-s uppercase tracking-widest text-orange-400 dark:text-orange-500 font-bold">
-            0
-        </p>
-    </div>
-    
-    <div id="rank-countdown" class="text-s font-bold text-slate-500 dark:text-slate-400 opacity-90 flex items-center gap-1 mt-1">
-        <span class="uppercase tracking-tighter text-[10px]">Boss:</span>
-        <span class="emoji">🦠</span>
-        <span>150</span>
-    </div>
-    </div>
-                    
-                    
-
-
+                <div class="flex flex-col">
+                    <div class="flex items-baseline gap-2">
+                        <p class="text-s uppercase tracking-widest text-orange-500 font-bold">
+                            Score
+                        </p>
+                        <p id="score" class="text-s uppercase tracking-widest text-orange-500 font-bold">
+                            0
+                        </p>
+                    </div>
+        
+                    <div id="rank-countdown" class="text-s font-bold text-slate-400 opacity-90 flex items-center gap-1 mt-1">
+                        <span class="uppercase tracking-tighter text-[10px]">Boss:</span>
+                        <span class="emoji">🦠</span>
+                        <span>150</span>
+                    </div>
                 </div>
-
+        
                 <div class="flex items-center gap-3">
                     <div class="inline-block">
                         <div id="next-piece-display" class="inline-flex">
-                            </div>
+                        </div>
                     </div>
                 </div>
-
-                <button onclick="toggleDarkMode()" class="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 active:scale-90 transition-all bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600" title="Toggle Dark Mode">
-                    <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                    <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="hidden"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                </button>
             </div>
+        
+        </div>
             <!-- Game Board (Center) -->
             <div class="flex-grow flex flex-col items-center justify-start pt-1 overflow-visible">
                 <div id="game-board" class="grid-container mx-auto">
@@ -264,110 +206,106 @@
     
     </div>
 
-    <!-- Game Over Modal -->
+    <!-- Game Over Modal - Shows final score, rank, and leaderboard submission options -->
     <div id="modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-6 z-50 backdrop-blur-sm">
-        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl max-h-[90vh] overflow-y-auto border dark:border-slate-700">
+        <div class="bg-slate-800 rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-700">
             <div id="rank-emoji-display" class="text-6xl mb-4"><span class="emoji">🦒</span></div>
-            <h2 class="text-2xl font-black mb-1 text-slate-800 dark:text-white">All flats occupied!</h2>
-            <p id="rank-display" class="text-orange-500 dark:text-orange-400 font-bold italic mb-4 uppercase text-sm tracking-tight"></p>
-            <p class="text-slate-500 dark:text-slate-300 mb-6">Final Score: <span id="final-score" class="text-2xl font-black text-slate-800 dark:text-white">0</span></p>
+            <h2 class="text-2xl font-black mb-1 text-white">All flats occupied!</h2>
+            <p id="rank-display" class="text-orange-400 font-bold italic mb-4 uppercase text-sm tracking-tight"></p>
+            <p class="text-slate-300 mb-6">Final Score: <span id="final-score" class="text-2xl font-black text-white">0</span></p>
             
             <!-- Name Input for Leaderboard -->
             <div id="player-name-container" class="mb-6" style="display: none;">
-                <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" class="w-full px-4 py-3 border-2 border-orange-200 dark:border-slate-600 rounded-xl focus:outline-none focus:border-orange-500 dark:focus:border-orange-400 bg-white dark:bg-slate-700 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" />
+                <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" class="w-full px-4 py-3 border-2 border-slate-600 rounded-xl focus:outline-none focus:border-orange-400 bg-slate-700 text-white placeholder-slate-500" />
             </div>
             
             <div class="flex flex-col gap-3">
-                <button id="submit-score-btn" onclick="submitScoreToLeaderboard()" class="w-full py-3 bg-green-500 dark:bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-200 dark:shadow-green-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-green-600 dark:hover:bg-green-700" style="display: none;">
-                <!--    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg> -->
+                <button id="submit-score-btn" onclick="submitScoreToLeaderboard()" class="w-full py-3 bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-green-700" style="display: none;">
                     Submit to Leaderboard
                 </button>
-                <button id="share-btn" class="w-full py-3 bg-orange-500 dark:bg-orange-600 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 dark:shadow-orange-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-orange-600 dark:hover:bg-orange-700">
-                <!--    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg> -->
+                <button id="share-btn" class="w-full py-3 bg-orange-600 text-white font-bold rounded-2xl shadow-lg shadow-orange-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-orange-700">
                     Share My Rank
                 </button>
-                <button onclick="showLeaderboard()" class="w-full py-3 bg-purple-500 dark:bg-purple-600 text-white font-bold rounded-2xl shadow-lg shadow-purple-200 dark:shadow-purple-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-purple-600 dark:hover:bg-purple-700">
+                <button onclick="showLeaderboard()" class="w-full py-3 bg-purple-600 text-white font-bold rounded-2xl shadow-lg shadow-purple-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-purple-700">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>
                     See Leaderboard
                 </button>
-                <button onclick="playAgain()" class="w-full py-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 font-bold rounded-2xl active:scale-95 transition-transform hover:bg-slate-200 dark:hover:bg-slate-600">
+                <button onclick="playAgain()" class="w-full py-3 bg-slate-700 text-slate-200 font-bold rounded-2xl active:scale-95 transition-transform hover:bg-slate-600">
                     Play Again
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Leaderboard Modal -->
+    <!-- Leaderboard Modal - Displays full leaderboard with all player scores -->
     <div id="leaderboard-modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-6 z-50 backdrop-blur-sm">
-        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 w-full max-w-md shadow-2xl max-h-[80vh] overflow-y-auto border dark:border-slate-700">
+        <div class="bg-slate-800 rounded-3xl p-8 w-full max-w-md shadow-2xl max-h-[80vh] overflow-y-auto border border-slate-700">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-black text-slate-800 dark:text-white">🏆 Leaderboard</h2>
-                <button onclick="closeLeaderboard()" class="text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-2xl">&times;</button>
+                <h2 class="text-2xl font-black text-white">🏆 Leaderboard</h2>
+                <button onclick="closeLeaderboard()" class="text-slate-400 hover:text-slate-300 text-2xl">&times;</button>
             </div>
             
             <div id="leaderboard-content" class="space-y-2">
-                <div class="text-center text-slate-500 dark:text-slate-400 py-8">Loading scores...</div>
+                <div class="text-center text-slate-400 py-8">Loading scores...</div>
             </div>
         </div>
     </div>
 
-    <!-- Intro Modal -->
-    <div id="intro-modal" class="fixed inset-0 bg-gradient-to-b from-orange-100 dark:from-slate-900 to-orange-50 dark:to-slate-800 hidden flex items-center justify-center p-6 z-50 overflow-y-auto">
+    <!-- Intro Modal - Welcome screen with game instructions and story -->
+    <div id="intro-modal" class="fixed inset-0 bg-gradient-to-b from-slate-900 to-slate-800 hidden flex items-center justify-center p-6 z-50 overflow-y-auto">
         <div class="w-full max-w-sm flex flex-col items-center my-auto">
-            
             <div class="text-center mb-6">
-                <h1 class="text-5xl sm:text-6xl font-black text-orange-600 dark:text-orange-400 mb-2 leading-tight">
+                <h1 class="text-5xl sm:text-6xl font-black text-orange-400 mb-2 leading-tight">
                     Animal Flats
                 </h1>
-                <p class="text-slate-600 dark:text-slate-300 font-semibold">
+                <p class="text-slate-300 font-semibold">
                      Earn for Others
                 </p>
             </div>
 
-            <div class="relative bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-2xl mb-6 border-4 border-yellow-400 dark:border-yellow-600">
+            <div class="relative bg-slate-800 rounded-3xl p-6 shadow-2xl mb-6 border-4 border-yellow-600">
                 
-                <p class="text-slate-600 dark:text-slate-300 font-medium italic">
+                <p class="text-slate-300 font-medium italic">
                     "Pair up three of the same faces to fill the flats and score points. The more you fill, the more profit for me and my 25 Slum Landlord buddies! ..and procrastination for you"
                 </p>
-                <h3 class="text-2xl font-black text-slate-900 dark:text-white leading-tight mb-2">-Apathetic Amoeba</h3>
-                <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-white dark:bg-slate-800 border-r-4 border-b-4 border-yellow-400 dark:border-yellow-600 rotate-45"></div>
+                <h3 class="text-2xl font-black text-white leading-tight mb-2">-Apathetic Amoeba</h3>
+                <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-slate-800 border-r-4 border-b-4 border-yellow-600 rotate-45"></div>
             </div>
 
             <div class="text-8xl filter drop-shadow-lg animate-bounce" style="animation-duration: 2s;">
                 🦠
             </div>
 
-            <button onclick="hideIntro()" class="mt-8 w-full py-4 px-6 bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-600 dark:to-indigo-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-blue-200 dark:shadow-none active:scale-95 transition-all hover:brightness-110">
+            <button onclick="hideIntro()" class="mt-8 w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-none active:scale-95 transition-all hover:brightness-110">
                 Next
             </button>
         </div>
     </div>
 
-    <!-- Start Screen Modal -->
-    <div id="start-screen" class="fixed inset-0 min-h-dvh bg-gradient-to-b from-orange-100 dark:from-slate-900 to-orange-50 dark:to-slate-800 flex flex-col items-center justify-center p-6 z-50 overflow-y-auto hidden">
+    <!-- Start Screen Modal - Main menu with top 5 leaderboard and play button -->
+    <div id="start-screen" class="fixed inset-0 min-h-dvh bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-6 z-50 overflow-y-auto hidden">
         <div class="w-full max-w-sm flex flex-col items-center my-auto">
-            
             <div class="text-center mb-6">
-                <h1 class="text-5xl sm:text-6xl font-black text-orange-600 dark:text-orange-400 mb-2 leading-tight">
+                <h1 class="text-5xl sm:text-6xl font-black text-orange-400 mb-2 leading-tight">
                     Animal Flats
                 </h1>
-                <p class="text-slate-600 dark:text-slate-300 font-semibold">
+                <p class="text-slate-300 font-semibold">
                     <span class="emoji">💰</span> 3 to clear & waste your potential
                 </p>
             </div>
             
-            <div class="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-5 mb-6 border-2 border-orange-200 dark:border-slate-700">
-                <h2 class="text-xl font-black text-slate-800 dark:text-white mb-3 text-center flex items-center justify-center gap-2">
+            <div class="w-full bg-slate-800 rounded-2xl shadow-lg p-5 mb-6 border-2 border-slate-700">
+                <h2 class="text-xl font-black text-white mb-3 text-center flex items-center justify-center gap-2">
                     <span class="emoji">💰</span> Top Earners
                 </h2>
                 <div id="start-leaderboard" class="space-y-2">
-                    <div class="text-center text-slate-500 dark:text-slate-400 py-4 italic text-sm">
+                    <div class="text-center text-slate-400 py-4 italic text-sm">
                         Loading scores...
                     </div>
                 </div>
             </div>
             
-            <button onclick="startGame()" class="w-full py-4 px-6 bg-gradient-to-r from-green-500 to-emerald-500 dark:from-green-600 dark:to-emerald-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-green-200 dark:shadow-none active:scale-95 transition-all hover:brightness-110">
+            <button onclick="startGame()" class="w-full py-4 px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-none active:scale-95 transition-all hover:brightness-110">
                 Let's Play!
             </button>
 
@@ -380,18 +318,16 @@
 
     <div id="toast">Score copied to clipboard!</div>
 
-  <!-- Achievement Overlay -->
+    <!-- Achievement Overlay - Shows rank advancement notifications -->
     <div id="achievement-overlay" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-6 z-60 backdrop-blur-md">
         <div class="flex flex-col items-center w-full max-w-sm transition-all duration-500 transform scale-110">
-        
-            <div class="relative bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-2xl mb-6 border-4 border-yellow-400 dark:border-yellow-600">
-         <!--   <h2 class="text-sm font-black uppercase tracking-widest text-yellow-500 mb-1">Level Up!</h2>-->
-                <p id="achievement-description" class="text-slate-600 dark:text-slate-300 font-medium italic">
-                <h3 id="achievement-title" class="text-2xl font-black text-slate-900 dark:text-white leading-tight mb-2">New Rank!</h3>
-            </p>
+            <div class="relative bg-slate-800 rounded-3xl p-6 shadow-2xl mb-6 border-4 border-yellow-600">
+                <p id="achievement-description" class="text-slate-300 font-medium italic">
+                <h3 id="achievement-title" class="text-2xl font-black text-white leading-tight mb-2">New Rank!</h3>
+                </p>
 
-            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-white dark:bg-slate-800 border-r-4 border-b-4 border-yellow-400 dark:border-yellow-600 rotate-45"></div>
-        </div>
+                <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-slate-800 border-r-4 border-b-4 border-yellow-600 rotate-45"></div>
+            </div>
 
         <div id="achievement-emoji" class="text-8xl filter drop-shadow-lg animate-bounce" style="animation-duration: 2s;">
             <span class="emoji">🎉</span>
@@ -400,10 +336,6 @@
         <p class="mt-8 text-white/50 text-sm font-bold animate-pulse">TAP ANYWHERE TO CONTINUE</p>
     </div>
 
-
-
-
-    
     <script>
         // Leaderboard Configuration
         const LEADERBOARD_CONFIG = {
@@ -459,46 +391,7 @@
         const shareBtn = document.getElementById('share-btn');
         const rankEmojiEl = document.getElementById('rank-emoji-display');
 
-        // Dark Mode
-        function initDarkMode() {
-            const isDarkMode = localStorage.getItem('darkMode') === 'true';
-            if (isDarkMode) {
-                document.documentElement.classList.add('dark-mode', 'dark');
-                document.body.classList.add('dark-mode', 'dark');
-                updateDarkModeIcon();
-            }
-        }
 
-        function toggleDarkMode() {
-            const isDarkMode = localStorage.getItem('darkMode') === 'true';
-            if (isDarkMode) {
-                document.documentElement.classList.remove('dark-mode', 'dark');
-                document.body.classList.remove('dark-mode', 'dark');
-                localStorage.setItem('darkMode', 'false');
-            } else {
-                document.documentElement.classList.add('dark-mode', 'dark');
-                document.body.classList.add('dark-mode', 'dark');
-                localStorage.setItem('darkMode', 'true');
-            }
-            // Force repaint to ensure immediate visual change
-            document.body.style.display = 'none';
-            document.body.offsetHeight; // Trigger reflow
-            document.body.style.display = '';
-            updateDarkModeIcon();
-        }
-
-        function updateDarkModeIcon() {
-            const sunIcon = document.getElementById('sun-icon');
-            const moonIcon = document.getElementById('moon-icon');
-            const isDarkMode = document.body.classList.contains('dark-mode');
-            if (isDarkMode) {
-                sunIcon.classList.add('hidden');
-                moonIcon.classList.remove('hidden');
-            } else {
-                sunIcon.classList.remove('hidden');
-                moonIcon.classList.add('hidden');
-            }
-        }
 
         function hideIntro() {
             document.getElementById('intro-modal').classList.add('hidden');
@@ -760,6 +653,28 @@
             return rObj;
         }
 
+        function formatLeaderboardRow(entry, index) {
+            const rankObj = getRankObj(entry.value);
+            const badgeClasses = 'bg-slate-600 border border-slate-600';
+
+            return `
+                <div class="flex items-center justify-between p-3 ${badgeClasses} rounded-lg text-white">
+                    <div class="flex items-center gap-3 flex-grow">
+                        <span class="text-2xl font-black w-8 text-center text-white">
+                            ${index === 0 ? '1' : index === 1 ? '2' : index === 2 ? '3' : (index + 1)}
+                        </span>
+                        <div class="flex-1">
+                            <span class="font-bold text-white">${entry.name}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-white"><span class="emoji">${rankObj.emoji}</span></span>
+                        <span class="font-black text-lg text-white">${entry.value}</span>
+                    </div>
+                </div>
+            `;
+        }
+
         function endGame() {
             const rankObj = getRankObj(score);
             document.getElementById('rank-display').innerText = rankObj.title;
@@ -792,7 +707,6 @@
             document.getElementById('player-name').value = '';
             document.getElementById('submit-score-btn').disabled = false;
             document.getElementById('submit-score-btn').innerHTML = 
-//                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg>' +
                 ' Submit to Leaderboard';
             document.getElementById('submit-score-btn').classList.remove('bg-slate-400');
             document.getElementById('submit-score-btn').classList.add('bg-green-500', 'hover:bg-green-600');
@@ -864,44 +778,20 @@
                     top5Scores = data.scores.slice(0, 5);
                     
                     const leaderboardHtml = top5Scores
-                        .map((entry, index) => {
-                            const rankObj = getRankObj(entry.value);
-                            return `
-                                <div class="flex items-center justify-between p-3 bg-gradient-to-r ${
-                                    index === 0 ? 'from-yellow-100 to-yellow-50 dark:from-yellow-900/30 dark:to-yellow-800/20 border-2 border-yellow-400 dark:border-yellow-600' :
-                                    index === 1 ? 'from-gray-100 to-gray-50 dark:from-gray-700/30 dark:to-gray-600/20 border-2 border-gray-400 dark:border-gray-600' :
-                                    index === 2 ? 'from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-800/20 border-2 border-amber-600 dark:border-amber-700' :
-                                    'from-slate-50 to-white dark:from-slate-700/30 dark:to-slate-600/20 border border-slate-200 dark:border-slate-600'
-                                } rounded-lg">
-                                    <div class="flex items-center gap-3 flex-grow">
-                                        <span class="text-2xl font-black w-8 text-center">
-                                            ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1)}
-                                        </span>
-                                        <div class="flex-1">
-                                            <span class="font-bold text-slate-800 dark:text-slate-200">${entry.name}</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-sm"><span class="emoji">${rankObj.emoji}</span></span>
-                                        <span class="font-black text-lg text-orange-600 dark:text-orange-400">${entry.value}</span>
-                                    </div>
-                                </div>
-                            `;
-                        })
+                        .map((entry, index) => formatLeaderboardRow(entry, index))
                         .join('');
                     
                     document.getElementById('start-leaderboard').innerHTML = leaderboardHtml;
                 } else {
-                    document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-500 dark:text-slate-400 py-8">No scores yet. Be first!</div>';
+                    document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-400 py-8">No scores yet. Be first!</div>';
                 }
             } catch (error) {
                 console.error('Error loading top 5 scores:', error);
-                document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-400 dark:text-slate-500 py-8">Click Start to Play</div>';
+                document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-500 py-8">Click Start to Play</div>';
             }
         }
         
         window.addEventListener('load', () => {
-            initDarkMode();
             document.getElementById('intro-modal').classList.remove('hidden');
             loadTop5Scores();
         });
@@ -935,7 +825,6 @@
                     // Disable submit button after successful submission
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = 
-                        //'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' + -->
                         '<span>Submitted!</span>';
                     submitBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
                     submitBtn.classList.add('bg-slate-400');
@@ -951,7 +840,6 @@
                 showToast("Network error. Please try again!");
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = 
-                //    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>' +
                     '<span>Submit to Leaderboard</span>';
             }
         }
@@ -961,7 +849,7 @@
             const leaderboardContent = document.getElementById('leaderboard-content');
             
             leaderboardModal.classList.remove('hidden');
-            leaderboardContent.innerHTML = '<div class="text-center text-slate-500 dark:text-slate-400 py-8">Loading scores...</div>';
+            leaderboardContent.innerHTML = '<div class="text-center text-slate-400 py-8">Loading scores...</div>';
 
             try {
                 const response = await fetch(`${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}`);
@@ -969,34 +857,14 @@
 
                 if (data.scores && data.scores.length > 0) {
                     leaderboardContent.innerHTML = data.scores
-                        .map((entry, index) => {
-                            const rankObj = getRankObj(entry.value);
-                            return `
-                            <div class="flex items-center justify-between p-3 bg-gradient-to-r ${
-                                index === 0 ? 'from-yellow-100 to-yellow-50 dark:from-yellow-900/30 dark:to-yellow-800/20 border-2 border-yellow-400 dark:border-yellow-600' :
-                                index === 1 ? 'from-gray-100 to-gray-50 dark:from-gray-700/30 dark:to-gray-600/20 border-2 border-gray-400 dark:border-gray-600' :
-                                index === 2 ? 'from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-800/20 border-2 border-amber-600 dark:border-amber-700' :
-                                'from-slate-50 to-white dark:from-slate-700/30 dark:to-slate-600/20 border border-slate-200 dark:border-slate-600'
-                            } rounded-lg">
-                                <div class="flex items-center gap-3 flex-grow">
-                                    <span class="text-2xl font-black w-8 text-center">
-                                        ${index === 0 ? '1' : index === 1 ? '2' : index === 2 ? '3' : (index + 1)}
-                                    </span>
-                                    <span class="font-bold text-slate-800 dark:text-slate-200">${entry.name}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="font-black text-lg text-orange-600 dark:text-orange-400">${entry.value}</span>
-                                    <span class="text-sm"><span class="emoji">${rankObj.emoji}</span></span>
-                                </div>
-                            </div>
-                        `})
+                        .map((entry, index) => formatLeaderboardRow(entry, index))
                         .join('');
                 } else {
-                    leaderboardContent.innerHTML = '<div class="text-center text-slate-500 dark:text-slate-400 py-8">No scores yet. Be the first!</div>';
+                    leaderboardContent.innerHTML = '<div class="text-center text-slate-400 py-8">No scores yet. Be the first!</div>';
                 }
             } catch (error) {
                 console.error('Error fetching leaderboard:', error);
-                leaderboardContent.innerHTML = '<div class="text-center text-red-500 dark:text-red-400 py-8">Failed to load leaderboard</div>';
+                leaderboardContent.innerHTML = '<div class="text-center text-red-400 py-8">Failed to load leaderboard</div>';
             }
         }
 
@@ -1008,52 +876,6 @@
             resetGame();
         }
 
-        // Load top 5 scores on start
-        async function loadTop5Scores() {
-            try {
-                const response = await fetch(`${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}`);
-                const data = await response.json();
-                
-                if (data.scores && data.scores.length > 0) {
-                    top5Scores = data.scores.slice(0, 5);
-                    
-                    const leaderboardHtml = top5Scores
-                        .map((entry, index) => {
-                            const rankObj = getRankObj(entry.value);
-                            return `
-                                <div class="flex items-center justify-between p-3 bg-gradient-to-r ${
-                                    index === 0 ? 'from-yellow-100 to-yellow-50 border-2 border-yellow-400' :
-                                    index === 1 ? 'from-gray-100 to-gray-50 border-2 border-gray-400' :
-                                    index === 2 ? 'from-amber-100 to-amber-50 border-2 border-amber-600' :
-                                    'from-slate-50 to-white border border-slate-200'
-                                } rounded-lg">
-                                    <div class="flex items-center gap-3 flex-grow">
-                                        <span class="text-2xl font-black w-8 text-center">
-                                            ${index === 0 ? '1' : index === 1 ? '2' : index === 2 ? '3' : (index + 1)}
-                                        </span>
-                                        <div class="flex-1">
-                                            <span class="font-bold text-slate-800">${entry.name}</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-black text-lg text-orange-600">${entry.value}</span>
-                                        <span class="text-sm">${rankObj.emoji}</span>
-                                    </div>
-                                </div>
-                            `;
-                        })
-                        .join('');
-                    
-                    document.getElementById('start-leaderboard').innerHTML = leaderboardHtml;
-                } else {
-                    document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-500 py-8">No scores yet. Be first!</div>';
-                }
-            } catch (error) {
-                console.error('Error loading top 5 scores:', error);
-                document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-400 py-8">Click Start to Play</div>';
-            }
-        }
-        
     </script>
 </body>
 </html>
