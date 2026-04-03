@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <link rel="preconnect" href="https://googleapis.com">
-    <link rel="preconnect" href="https://gstatic.com" crossorigin>
-    <link href="https://googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+    
     <title>Animal Flats</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
 
 
@@ -34,13 +37,21 @@
             background-color: var(--bg-primary);
             color: var(--text-primary);
             /* Noto is prioritized for emojis; system fonts handle the rest */
-            font-family: "Noto Color Emoji", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            /* font-family: "Noto Color Emoji", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; */
+
+            font-family: ui-sans-serif, system-ui, sans-serif, var(--font-emoji);
+
+
             overflow: hidden;
             -webkit-user-select: none;
             user-select: none;
             padding-bottom: env(safe-area-inset-bottom);
             transition: background-color 0.3s ease, color 0.3s ease;
         }
+
+
+
+
         .grid-container {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -165,6 +176,26 @@
             to { transform: rotate(360deg); }
         }
 
+        .emoji {
+            /* 1. Font Stack: Preserving your Noto priority and !important requirement */
+            font-family: var(--font-emoji), "Noto Color Emoji", "Segoe UI Emoji", "Apple Color Emoji", sans-serif !important;
+            
+            /* 2. Layout & Alignment: Using flex for better vertical centering with text */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            
+            /* 3. Sizing & Spacing: Standardizing the footprint */
+            width: 1.2em;
+            line-height: 1;
+            text-align: center;
+            
+            /* 4. Rendering Fixes: Prevents iOS scaling jumps and ensures consistent spacing */
+            font-variant-numeric: tabular-nums;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+        }
+
         #achievement-overlay .bg-gradient-to-br {
             transform: scale(0);
         }
@@ -191,7 +222,7 @@
                     <div>
                         <p class="text-[10px] uppercase tracking-widest text-orange-400 dark:text-orange-500 font-bold">Score</p>
                         <p id="score" class="text-3xl font-black text-orange-600 dark:text-orange-400 leading-tight">0</p>
-                        <div id="rank-countdown" class="text-[8px] text-slate-500 dark:text-slate-400 mt-1 opacity-75">Next: 🦠 150</div>
+                        <div id="rank-countdown" class="text-[8px] text-slate-500 dark:text-slate-400 mt-1 opacity-75">Next: <span class="emoji">🦠</span> 150</div>
                     </div>
                 </div>
 
@@ -220,7 +251,7 @@
     <!-- Game Over Modal -->
     <div id="modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-6 z-50 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl max-h-[90vh] overflow-y-auto border dark:border-slate-700">
-            <div id="rank-emoji-display" class="text-6xl mb-4">🦒</div>
+            <div id="rank-emoji-display" class="text-6xl mb-4"><span class="emoji">🦒</span></div>
             <h2 class="text-2xl font-black mb-1 text-slate-800 dark:text-white">All flats occupied!</h2>
             <p id="rank-display" class="text-orange-500 dark:text-orange-400 font-bold italic mb-4 uppercase text-sm tracking-tight"></p>
             <p class="text-slate-500 dark:text-slate-300 mb-6">Final Score: <span id="final-score" class="text-2xl font-black text-slate-800 dark:text-white">0</span></p>
@@ -232,11 +263,11 @@
             
             <div class="flex flex-col gap-3">
                 <button id="submit-score-btn" onclick="submitScoreToLeaderboard()" class="w-full py-3 bg-green-500 dark:bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-200 dark:shadow-green-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-green-600 dark:hover:bg-green-700" style="display: none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg>
+                <!--    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/></svg> -->
                     Submit to Leaderboard
                 </button>
                 <button id="share-btn" class="w-full py-3 bg-orange-500 dark:bg-orange-600 text-white font-bold rounded-2xl shadow-lg shadow-orange-200 dark:shadow-orange-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-orange-600 dark:hover:bg-orange-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>
+                <!--    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg> -->
                     Share My Rank
                 </button>
                 <button onclick="showLeaderboard()" class="w-full py-3 bg-purple-500 dark:bg-purple-600 text-white font-bold rounded-2xl shadow-lg shadow-purple-200 dark:shadow-purple-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-purple-600 dark:hover:bg-purple-700">
@@ -305,13 +336,13 @@
                     Animal Flats
                 </h1>
                 <p class="text-slate-600 dark:text-slate-300 font-semibold">
-                    3 to clear & Waste time!
+                    <span class="emoji">🏆</span> 3 to clear & Waste time!
                 </p>
             </div>
             
             <div class="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-5 mb-6 border-2 border-orange-200 dark:border-slate-700">
                 <h2 class="text-xl font-black text-slate-800 dark:text-white mb-3 text-center flex items-center justify-center gap-2">
-                    <span>🏆</span> Top Scores
+                    <span class="emoji">🏆</span> Top Scores
                 </h2>
                 <div id="start-leaderboard" class="space-y-2">
                     <div class="text-center text-slate-500 dark:text-slate-400 py-4 italic text-sm">
@@ -348,7 +379,7 @@
         </div>
 
         <div id="achievement-emoji" class="text-8xl filter drop-shadow-lg animate-bounce" style="animation-duration: 2s;">
-            🎉
+            <span class="emoji">🎉</span>
         </div>
 
         <p class="mt-8 text-white/50 text-sm font-bold animate-pulse">TAP ANYWHERE TO CONTINUE</p>
@@ -403,7 +434,8 @@
         let score = 0;
         let isProcessing = false;
         let lastSelectedCell = null;
-        let top5Scores = []; 
+        let top5Scores = [];
+        let toastTimeout = null; 
 
         const boardEl = document.getElementById('game-board');
         const scoreEl = document.getElementById('score');
@@ -416,8 +448,8 @@
         function initDarkMode() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             if (isDarkMode) {
-                document.documentElement.classList.add('dark-mode');
-                document.body.classList.add('dark-mode');
+                document.documentElement.classList.add('dark-mode', 'dark');
+                document.body.classList.add('dark-mode', 'dark');
                 updateDarkModeIcon();
             }
         }
@@ -425,12 +457,12 @@
         function toggleDarkMode() {
             const isDarkMode = localStorage.getItem('darkMode') === 'true';
             if (isDarkMode) {
-                document.documentElement.classList.remove('dark-mode');
-                document.body.classList.remove('dark-mode');
+                document.documentElement.classList.remove('dark-mode', 'dark');
+                document.body.classList.remove('dark-mode', 'dark');
                 localStorage.setItem('darkMode', 'false');
             } else {
-                document.documentElement.classList.add('dark-mode');
-                document.body.classList.add('dark-mode');
+                document.documentElement.classList.add('dark-mode', 'dark');
+                document.body.classList.add('dark-mode', 'dark');
                 localStorage.setItem('darkMode', 'true');
             }
             // Force repaint to ensure immediate visual change
@@ -465,9 +497,9 @@
             
             if (nextRank) {
                 const remaining = nextRank.threshold - score;
-                document.getElementById('rank-countdown').innerText = `Next: ${nextRank.emoji} ${remaining}`;
+                document.getElementById('rank-countdown').innerHTML = `Next: <span class="emoji">${nextRank.emoji}</span> ${remaining}`;
             } else {
-                document.getElementById('rank-countdown').innerText = `Max Rank! ${currentRank.emoji}`;
+                document.getElementById('rank-countdown').innerHTML = `Max Rank! <span class="emoji">${currentRank.emoji}</span>`;
             }
         }
 
@@ -486,7 +518,7 @@
             const titleEl = document.getElementById('achievement-title');
             const descEl = document.getElementById('achievement-description');
             
-            emojiEl.innerText = rankObj.emoji;
+            emojiEl.innerHTML = `<span class="emoji">${rankObj.emoji}</span>`;
             titleEl.innerText = rankObj.title;
             descEl.innerText = `${rankObj.title} : ${rankObj.achieved}`;
             
@@ -716,7 +748,7 @@
         function endGame() {
             const rankObj = getRankObj(score);
             document.getElementById('rank-display').innerText = rankObj.title;
-            rankEmojiEl.innerText = rankObj.emoji;
+            rankEmojiEl.innerHTML = `<span class="emoji">${rankObj.emoji}</span>`;
             document.getElementById('final-score').innerText = score;
             
             // Check if score beats top 5
@@ -756,9 +788,17 @@
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
+            // Clear any existing timeout
+            if (toastTimeout) {
+                clearTimeout(toastTimeout);
+            }
             toast.innerText = msg;
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2500);
+            // Remove the show class after 2500ms
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+                toastTimeout = null;
+            }, 2500);
         }
 
         async function shareResult() {
@@ -827,7 +867,7 @@
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-2">
-                                        <span class="text-sm">${rankObj.emoji}</span>
+                                        <span class="text-sm"><span class="emoji">${rankObj.emoji}</span></span>
                                         <span class="font-black text-lg text-orange-600 dark:text-orange-400">${entry.value}</span>
                                     </div>
                                 </div>
@@ -880,7 +920,7 @@
                     // Disable submit button after successful submission
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = 
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' +
+                        //'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' + -->
                         '<span>Submitted!</span>';
                     submitBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
                     submitBtn.classList.add('bg-slate-400');
@@ -888,7 +928,7 @@
                     showToast("Failed to submit score. Try again!");
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = 
-                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>' +
+                    //    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>' +
                         '<span>Submit to Leaderboard</span>';
                 }
             } catch (error) {
@@ -896,7 +936,7 @@
                 showToast("Network error. Please try again!");
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = 
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>' +
+                //    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>' +
                     '<span>Submit to Leaderboard</span>';
             }
         }
@@ -931,7 +971,7 @@
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span class="font-black text-lg text-orange-600 dark:text-orange-400">${entry.value}</span>
-                                    <span class="text-sm">${rankObj.emoji}</span>
+                                    <span class="text-sm"><span class="emoji">${rankObj.emoji}</span></span>
                                 </div>
                             </div>
                         `})
