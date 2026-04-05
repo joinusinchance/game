@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domino Match-3: Human vs AI</title>
+    <title>Domino Match-3: Human v Computer Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .grid-cell {
@@ -17,8 +17,8 @@
         }
         .grid-cell:hover { background-color: rgba(255,255,255,0.1); }
         .tile-preview-box {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 4px;
             display: flex;
             align-items: center;
@@ -32,25 +32,37 @@
         .last-move { outline: 2px solid white; outline-offset: -2px; z-index: 10; }
         #log-container::-webkit-scrollbar { width: 4px; }
         #log-container::-webkit-scrollbar-thumb { background: #334155; }
+        
+        .stat-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+            padding: 8px;
+            border-radius: 8px;
+        }
+        .control-panel {
+            background: linear-gradient(145deg, #0f172a, #1e293b);
+            border: 1px solid #334155;
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-200 min-h-screen p-2 md:p-4 font-sans">
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-4">
+    <div class="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
         
-        <!-- Stats & Controls -->
-        <div class="lg:col-span-1 space-y-4">
+        <!-- Left Sidebar: Game Board -->
+        <div class="lg:col-span-4 xl:col-span-3 space-y-4">
             <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-2xl">
                 <div class="flex justify-between items-center mb-4">
-                    <h1 class="font-bold text-indigo-400">Domino Lab</h1>
-                    <span id="status-pill" class="text-[9px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 uppercase">Idle</span>
+                    <h1 class="font-bold text-indigo-400 italic">DOMINO ENGINE</h1>
+                    <span id="status-pill" class="text-[9px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 uppercase tracking-widest">Idle</span>
                 </div>
 
+                <!-- Tile Display -->
                 <div class="mb-4 p-3 bg-slate-950 rounded-lg border border-slate-800">
                     <div class="flex justify-between items-center mb-2">
-                        <p class="text-[9px] text-slate-500 uppercase font-bold">Current Tile</p>
+                        <p class="text-[9px] text-slate-500 uppercase font-bold">Next Domino</p>
                         <span id="orient-tag" class="text-[9px] text-indigo-300 font-mono"></span>
                     </div>
-                    <div class="flex justify-center h-20 items-center">
+                    <div class="flex justify-center h-16 items-center">
                         <div id="next-tile-display" class="flex gap-1 p-1 bg-slate-900 rounded border border-slate-700">
                             <div id="p1" class="tile-preview-box"></div>
                             <div id="p2" class="tile-preview-box"></div>
@@ -58,44 +70,89 @@
                     </div>
                 </div>
 
-                <div id="grid" class="grid grid-cols-6 gap-0.5 bg-slate-950 p-1 rounded-lg border border-slate-800" onmouseleave="clearPreview()">
-                    <!-- Cells generated via JS -->
-                </div>
+                <!-- Game Grid -->
+                <div id="grid" class="grid grid-cols-6 gap-0.5 bg-slate-950 p-1 rounded-lg border border-slate-800 mb-4" onmouseleave="clearPreview()"></div>
 
-                <div class="mt-4 space-y-2">
-                    <div class="flex justify-between items-end border-b border-slate-800 pb-2">
-                        <div>
-                            <p class="text-[9px] text-slate-500 uppercase">Score</p>
-                            <p id="score-val" class="text-xl font-mono font-bold">0</p>
-                        </div>
-                        <div class="text-right">
-                            <p id="mode-label" class="text-[9px] text-indigo-400 uppercase font-bold">Standby</p>
-                            <p id="game-val" class="text-xs font-mono text-slate-500">Games: 0</p>
-                        </div>
+                <div class="flex justify-between items-end border-t border-slate-800 pt-4">
+                    <div>
+                        <p class="text-[9px] text-slate-500 uppercase">Live Score</p>
+                        <p id="score-val" class="text-xl font-mono font-bold">0</p>
                     </div>
-                    
-                    <button onclick="startHumanGame()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-lg text-xs font-bold transition shadow-lg active:scale-95 mb-2">PLAY MANUALLY</button>
-                    
-                    <p class="text-[9px] text-slate-500 uppercase font-bold text-center mt-4 mb-1">AI Automated Trials</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="runSim(1)" class="bg-indigo-600 hover:bg-indigo-500 py-2 rounded text-[11px] font-bold transition">1 AI Run</button>
-                        <button onclick="runSim(10)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[11px] font-bold transition">10 Runs</button>
-                        <button onclick="runSim(100)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[11px] font-bold transition">100 Runs</button>
-                        <button onclick="runSim(1000)" class="bg-rose-900 hover:bg-rose-800 py-2 rounded text-[11px] font-bold transition">1000 Runs</button>
+                    <div class="text-right">
+                        <p id="mode-label" class="text-[9px] text-indigo-400 uppercase font-bold">Standby</p>
                     </div>
-                    <button onclick="resetEverything()" class="w-full text-[9px] text-slate-600 hover:text-slate-400 uppercase tracking-widest pt-2">Clear Stats</button>
                 </div>
             </div>
+            
+            <button onclick="resetEverything()" class="w-full text-[9px] text-slate-600 hover:text-slate-400 uppercase tracking-widest text-center">Wipe All Statistical Data</button>
         </div>
 
-        <!-- Log -->
-        <div class="lg:col-span-3 flex flex-col h-[650px] lg:h-auto bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
-            <div class="p-3 border-b border-slate-800 bg-slate-800/30 flex justify-between items-center">
-                <h2 class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Game Engine Log</h2>
-                <div id="perf-metrics" class="text-[10px] text-indigo-400 font-mono"></div>
+        <!-- Right Content: Controls Top, Stats Mid, Log Bottom -->
+        <div class="lg:col-span-8 xl:col-span-9 flex flex-col gap-4">
+            
+            <!-- TOP: ACTION BOXES -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Human Session Starter -->
+                <div class="control-panel p-4 rounded-2xl shadow-xl">
+                    <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3">Manual Control</h3>
+                    <p class="text-[11px] text-slate-400 mb-4 h-8">Initiate a human-controlled session to set a baseline performance score.</p>
+                    <button onclick="startHumanGame()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-lg text-xs font-bold transition shadow-lg active:scale-95">START NEW SESSION</button>
+                </div>
+
+                <!-- AI Stress Test Starter -->
+                <div class="control-panel p-4 rounded-2xl shadow-xl">
+                    <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3">AI Deep Analysis</h3>
+                    <div class="grid grid-cols-4 gap-2 mb-2">
+                        <button onclick="runSim(1)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[10px] font-bold transition">1x</button>
+                        <button onclick="runSim(10)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[10px] font-bold transition">10x</button>
+                        <button onclick="runSim(100)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[10px] font-bold transition">100x</button>
+                        <button onclick="runSim(1000)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[10px] font-bold transition">1k</button>
+                    </div>
+                    <button onclick="runSim(10000)" class="w-full bg-indigo-600 hover:bg-indigo-500 py-2 rounded text-[11px] font-bold transition uppercase tracking-tighter">Execute 10,000 Run Stress Test</button>
+                </div>
             </div>
-            <div id="log-container" class="flex-1 overflow-y-auto p-3 font-mono text-[10px] space-y-0.5 bg-slate-950/50">
-                <div class="text-slate-600 italic">Select a mode to begin. Manual play allows you to choose placement.</div>
+
+            <!-- MIDDLE: STATISTICAL DASHBOARDS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- AI STATS -->
+                <div class="bg-slate-900 p-4 rounded-2xl border border-indigo-900/30 shadow-xl">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Computer Intelligence</h3>
+                        <span id="ai-count" class="text-[10px] font-mono text-slate-500">Samples: 0</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="stat-card"><p class="text-[9px] text-slate-500">AVG</p><p id="ai-avg" class="text-lg font-mono font-bold text-white">0</p></div>
+                        <div class="stat-card"><p class="text-[9px] text-slate-500">MAX</p><p id="ai-max" class="text-lg font-mono font-bold text-emerald-400">0</p></div>
+                        <div class="stat-card"><p class="text-[9px] text-slate-500">MIN</p><p id="ai-min" class="text-lg font-mono font-bold text-rose-400">0</p></div>
+                    </div>
+                </div>
+
+                <!-- HUMAN STATS -->
+                <div class="bg-slate-900 p-4 rounded-2xl border border-emerald-900/30 shadow-xl">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Human Strategy</h3>
+                        <span id="human-count" class="text-[10px] font-mono text-slate-500">Samples: 0</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="stat-card"><p class="text-[9px] text-slate-500">AVG</p><p id="human-avg" class="text-lg font-mono font-bold text-white">0</p></div>
+                        <div class="stat-card"><p class="text-[9px] text-slate-500">MAX</p><p id="human-max" class="text-lg font-mono font-bold text-emerald-400">0</p></div>
+                        <div class="stat-card"><p class="text-[9px] text-slate-500">MIN</p><p id="human-min" class="text-lg font-mono font-bold text-rose-400">0</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTTOM: COMPACT LOG -->
+            <div class="flex flex-col bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+                <div class="p-2 border-b border-slate-800 bg-slate-800/30 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-[9px] font-bold uppercase tracking-widest text-slate-400">Heuristic Engine Analysis</h2>
+                        <div id="perf-metrics" class="text-[9px] text-indigo-400 font-mono"></div>
+                    </div>
+                    <button onclick="logEl.innerHTML=''" class="text-[9px] text-slate-500 hover:text-slate-300 uppercase">Clear</button>
+                </div>
+                <div id="log-container" class="h-32 overflow-y-auto p-3 font-mono text-[10px] leading-relaxed space-y-0.5 bg-slate-950/50">
+                    <div class="text-slate-600 italic">Heuristic: Adjacency (8pt) | Dead-cell (-60pt). Processing ready.</div>
+                </div>
             </div>
         </div>
     </div>
@@ -103,15 +160,17 @@
     <script>
         const SIZE = 6;
         const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b']; 
-        const COLOR_NAMES = ['Red', 'Blue', 'Green', 'Gold'];
         
         let grid = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
         let score = 0;
-        let gameCount = 0;
-        let totalScoreInBatch = 0;
         let isRunning = false;
         let isHumanTurn = false;
         let currentTile = null;
+
+        const stats = {
+            ai: { count: 0, total: 0, min: Infinity, max: 0 },
+            human: { count: 0, total: 0, min: Infinity, max: 0 }
+        };
 
         const gridEl = document.getElementById('grid');
         const logEl = document.getElementById('log-container');
@@ -119,7 +178,6 @@
         const nextP1 = document.getElementById('p1');
         const nextP2 = document.getElementById('p2');
 
-        // Create Grid
         for (let r = 0; r < SIZE; r++) {
             for (let c = 0; c < SIZE; c++) {
                 const cell = document.createElement('div');
@@ -132,19 +190,29 @@
         }
 
         function log(msg, color = 'text-slate-500', force = false) {
-            if (isRunning && gameCount % 100 !== 0 && !force && gameCount > 10) return;
+            if (isRunning && stats.ai.count % 100 !== 0 && !force && stats.ai.count > 5) return;
             const div = document.createElement('div');
             div.className = color;
-            div.innerText = `[${new Date().toLocaleTimeString([], {hour12:false, minute:'2-digit', second:'2-digit'})}] ${msg}`;
+            div.innerText = `[LOG] ${msg}`;
             logEl.appendChild(div);
-            if (logEl.childElementCount > 200) logEl.removeChild(logEl.firstChild);
+            if (logEl.childElementCount > 300) logEl.removeChild(logEl.firstChild);
             logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateStatsUI() {
+            document.getElementById('ai-count').innerText = `Samples: ${stats.ai.count}`;
+            document.getElementById('ai-avg').innerText = stats.ai.count ? Math.round(stats.ai.total / stats.ai.count) : 0;
+            document.getElementById('ai-max').innerText = stats.ai.max;
+            document.getElementById('ai-min').innerText = stats.ai.min === Infinity ? 0 : stats.ai.min;
+
+            document.getElementById('human-count').innerText = `Samples: ${stats.human.count}`;
+            document.getElementById('human-avg').innerText = stats.human.count ? Math.round(stats.human.total / stats.human.count) : 0;
+            document.getElementById('human-max').innerText = stats.human.max;
+            document.getElementById('human-min').innerText = stats.human.min === Infinity ? 0 : stats.human.min;
         }
 
         function updateUI(lastMoveCells = []) {
             document.getElementById('score-val').innerText = score;
-            document.getElementById('game-val').innerText = `Games: ${gameCount}`;
-            
             for(let r=0; r<SIZE; r++) {
                 for(let c=0; c<SIZE; c++) {
                     const el = document.getElementById(`c-${r}-${c}`);
@@ -154,6 +222,7 @@
                     if (lastMoveCells.some(m => m.r === r && m.c === c)) el.classList.add('last-move');
                 }
             }
+            updateStatsUI();
         }
 
         function getValidSlots(g, orientation) {
@@ -187,22 +256,44 @@
                     }
                 }
             }
-            return Array.from(matched).map(s => ({r: parseInt(s.split(',')[0]), c: parseInt(s.split(',')[1])}));
+            return Array.from(matched).map(s => {
+                const parts = s.split(',');
+                return {r: parseInt(parts[0]), c: parseInt(parts[1])};
+            });
+        }
+
+        function evaluateBoard(g) {
+            let deadCells = 0;
+            let adjacencyBonus = 0;
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    const val = g[r][c];
+                    if (val === null) {
+                        let neighbors = 0;
+                        if (r > 0 && g[r-1][c] === null) neighbors++;
+                        if (r < SIZE-1 && g[r+1][c] === null) neighbors++;
+                        if (c > 0 && g[r][c-1] === null) neighbors++;
+                        if (c < SIZE-1 && g[r][c+1] === null) neighbors++;
+                        if (neighbors === 0) deadCells++;
+                    } else {
+                        if (r < SIZE-1 && g[r+1][c] === val) adjacencyBonus += 8;
+                        if (c < SIZE-1 && g[r][c+1] === val) adjacencyBonus += 8;
+                    }
+                }
+            }
+            return adjacencyBonus - (deadCells * 60);
         }
 
         function spawnTile() {
             const hSlots = getValidSlots(grid, 'H').length;
             const vSlots = getValidSlots(grid, 'V').length;
             if (hSlots === 0 && vSlots === 0) return null;
-
             const type = (hSlots > 0 && vSlots > 0) ? (Math.random() > 0.5 ? 'H' : 'V') : (hSlots > 0 ? 'H' : 'V');
             currentTile = { type, v1: Math.floor(Math.random() * 4), v2: Math.floor(Math.random() * 4) };
-            
             nextP1.style.backgroundColor = COLORS[currentTile.v1];
             nextP2.style.backgroundColor = COLORS[currentTile.v2];
             document.getElementById('next-tile-display').style.flexDirection = type === 'H' ? 'row' : 'column';
             document.getElementById('orient-tag').innerText = type === 'H' ? 'HORIZONTAL' : 'VERTICAL';
-            
             return currentTile;
         }
 
@@ -211,7 +302,6 @@
             clearPreview();
             const r2 = currentTile.type === 'V' ? r + 1 : r;
             const c2 = currentTile.type === 'H' ? c + 1 : c;
-
             if (r2 < SIZE && c2 < SIZE && grid[r][c] === null && grid[r2][c2] === null) {
                 document.getElementById(`c-${r}-${c}`).style.backgroundColor = COLORS[currentTile.v1];
                 document.getElementById(`c-${r}-${c}`).classList.add('valid-preview');
@@ -239,19 +329,20 @@
             if (!isHumanTurn || !currentTile) return;
             const r2 = currentTile.type === 'V' ? r + 1 : r;
             const c2 = currentTile.type === 'H' ? c + 1 : c;
-
             if (r2 < SIZE && c2 < SIZE && grid[r][c] === null && grid[r2][c2] === null) {
                 isHumanTurn = false;
                 grid[r][c] = currentTile.v1;
                 grid[r2][c2] = currentTile.v2;
-                log(`Human placed ${currentTile.type} at (${r},${c})`, 'text-emerald-400');
-                
                 await resolveMatches();
                 updateUI([{r, c}, {r: r2, c: c2}]);
-                
                 if (!spawnTile()) {
-                    log("Game Over! No more space.", "text-rose-400 font-bold", true);
+                    log("Human Game Over.", "text-rose-400 font-bold", true);
+                    stats.human.count++;
+                    stats.human.total += score;
+                    stats.human.max = Math.max(stats.human.max, score);
+                    stats.human.min = Math.min(stats.human.min, score);
                     statusPill.innerText = "Game Over";
+                    updateUI();
                 } else {
                     isHumanTurn = true;
                 }
@@ -261,9 +352,7 @@
         async function resolveMatches() {
             let chain = findMatches(grid);
             while (chain.length > 0) {
-                const points = chain.length * 10;
-                score += points;
-                log(`Match: +${points} pts`, 'text-yellow-400 font-bold');
+                score += chain.length * 10;
                 chain.forEach(m => grid[m.r][m.c] = null);
                 updateUI();
                 await new Promise(res => setTimeout(res, 200));
@@ -273,28 +362,28 @@
 
         function startHumanGame() {
             if (isRunning) return;
-            gameCount++;
             score = 0;
             grid = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
-            log(`--- Starting Manual Game ${gameCount} ---`, 'text-white font-bold', true);
-            document.getElementById('mode-label').innerText = "Human Play";
-            statusPill.innerText = "Your Turn";
+            log(`Starting Human Session`, 'text-white font-bold', true);
+            document.getElementById('mode-label').innerText = "Manual";
+            statusPill.innerText = "Player Turn";
             updateUI();
             if (spawnTile()) isHumanTurn = true;
         }
 
-        // --- AI LOGIC ---
         function getBestMoveAI(tile) {
             const slots = getValidSlots(grid, tile.type);
             if (slots.length === 0) return null;
             let best = null;
-            let maxWeight = -1;
+            let maxEvaluation = -Infinity;
             for (const s of slots) {
-                const v1_o = grid[s.r1][s.c1]; const v2_o = grid[s.r2][s.c2];
-                grid[s.r1][s.c1] = tile.v1; grid[s.r2][s.c2] = tile.v2;
-                const mCount = findMatches(grid).length;
-                const weight = (mCount * 1000) + ((SIZE - s.r1) * 10 + (SIZE - s.c1));
-                if (weight > maxWeight) { maxWeight = weight; best = s; }
+                const v1_o = grid[s.r1][s.c1];
+                const v2_o = grid[s.r2][s.c2];
+                grid[s.r1][s.c1] = tile.v1;
+                grid[s.r2][s.c2] = tile.v2;
+                let tempMatches = findMatches(grid);
+                let eval = (tempMatches.length * 50) + evaluateBoard(grid);
+                if (eval > maxEvaluation) { maxEvaluation = eval; best = s; }
                 grid[s.r1][s.c1] = v1_o; grid[s.r2][s.c2] = v2_o;
             }
             return best;
@@ -303,50 +392,58 @@
         async function runSim(runs) {
             if (isRunning || isHumanTurn) return;
             isRunning = true;
-            isHumanTurn = false;
-            document.getElementById('mode-label').innerText = "AI Running";
-            statusPill.innerText = "AI Working";
+            document.getElementById('mode-label').innerText = "AI Test";
+            statusPill.innerText = "Processing";
             const startTime = performance.now();
 
             for (let i = 0; i < runs; i++) {
-                gameCount++;
                 score = 0;
                 grid = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
-                if (runs <= 1) log(`AI Game ${gameCount} Start`, 'text-indigo-400 font-bold', true);
-
+                
                 while (true) {
                     const tile = spawnTile();
                     if (!tile) break;
                     const move = getBestMoveAI(tile);
                     if (!move) break;
-
                     grid[move.r1][move.c1] = tile.v1;
                     grid[move.r2][move.c2] = tile.v2;
-
                     let chain = findMatches(grid);
                     while (chain.length > 0) {
                         score += chain.length * 10;
                         chain.forEach(m => grid[m.r][m.c] = null);
-                        if (runs === 1) { updateUI(); await new Promise(r => setTimeout(r, 100)); }
+                        if (runs === 1) { updateUI(); await new Promise(r => setTimeout(r, 80)); }
                         chain = findMatches(grid);
                     }
-                    if (runs === 1) { updateUI([{r: move.r1, c: move.c1}, {r: move.r2, c: move.c2}]); await new Promise(r => setTimeout(r, 200)); }
+                    if (runs === 1) { updateUI([{r: move.r1, c: move.c1}, {r: move.r2, c: move.c2}]); await new Promise(r => setTimeout(r, 150)); }
                 }
-                totalScoreInBatch += score;
-                if (runs > 10 && i % 10 === 0) { updateUI([], true); if (i % 100 === 0) await new Promise(r => setTimeout(r, 0)); }
+                
+                stats.ai.count++;
+                stats.ai.total += score;
+                stats.ai.max = Math.max(stats.ai.max, score);
+                stats.ai.min = Math.min(stats.ai.min, score);
+                
+                if (runs > 10 && i % 100 === 0) { 
+                    updateUI();
+                    await new Promise(r => setTimeout(r, 0)); 
+                }
             }
 
-            log(`AI Batch Finish. Avg Score: ${Math.round(totalScoreInBatch/gameCount)}`, 'text-emerald-400', true);
+            const duration = ((performance.now() - startTime) / 1000).toFixed(2);
+            document.getElementById('perf-metrics').innerText = `${duration}s latency`;
+            log(`Batch finished (${runs} runs)`, 'text-emerald-400', true);
             isRunning = false;
             statusPill.innerText = "Idle";
             updateUI();
         }
 
         function resetEverything() {
-            gameCount = 0; score = 0; totalScoreInBatch = 0;
+            stats.ai = { count: 0, total: 0, min: Infinity, max: 0 };
+            stats.human = { count: 0, total: 0, min: Infinity, max: 0 };
+            score = 0;
             grid = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
             logEl.innerHTML = '';
             isHumanTurn = false;
+            isRunning = false;
             document.getElementById('mode-label').innerText = "Standby";
             updateUI();
         }
