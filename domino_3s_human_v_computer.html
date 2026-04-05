@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domino Match-3: Human vs AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .grid-cell {
+            aspect-ratio: 1;
+            transition: all 0.1s;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .grid-cell:hover { background-color: rgba(255,255,255,0.1); }
+        .tile-preview-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .valid-preview { opacity: 0.6; outline: 2px dashed white; }
+        .invalid-preview { opacity: 0.4; background-color: #450a0a !important; cursor: not-allowed; }
+        .last-move { outline: 2px solid white; outline-offset: -2px; z-index: 10; }
+        #log-container::-webkit-scrollbar { width: 4px; }
+        #log-container::-webkit-scrollbar-thumb { background: #334155; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen p-2 md:p-4 font-sans">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-4">
+        
+        <!-- Stats & Controls -->
+        <div class="lg:col-span-1 space-y-4">
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h1 class="font-bold text-indigo-400">Domino Lab</h1>
+                    <span id="status-pill" class="text-[9px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 uppercase">Idle</span>
+                </div>
+
+                <div class="mb-4 p-3 bg-slate-950 rounded-lg border border-slate-800">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-[9px] text-slate-500 uppercase font-bold">Current Tile</p>
+                        <span id="orient-tag" class="text-[9px] text-indigo-300 font-mono"></span>
+                    </div>
+                    <div class="flex justify-center h-20 items-center">
+                        <div id="next-tile-display" class="flex gap-1 p-1 bg-slate-900 rounded border border-slate-700">
+                            <div id="p1" class="tile-preview-box"></div>
+                            <div id="p2" class="tile-preview-box"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="grid" class="grid grid-cols-6 gap-0.5 bg-slate-950 p-1 rounded-lg border border-slate-800" onmouseleave="clearPreview()">
+                    <!-- Cells generated via JS -->
+                </div>
+
+                <div class="mt-4 space-y-2">
+                    <div class="flex justify-between items-end border-b border-slate-800 pb-2">
+                        <div>
+                            <p class="text-[9px] text-slate-500 uppercase">Score</p>
+                            <p id="score-val" class="text-xl font-mono font-bold">0</p>
+                        </div>
+                        <div class="text-right">
+                            <p id="mode-label" class="text-[9px] text-indigo-400 uppercase font-bold">Standby</p>
+                            <p id="game-val" class="text-xs font-mono text-slate-500">Games: 0</p>
+                        </div>
+                    </div>
+                    
+                    <button onclick="startHumanGame()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-lg text-xs font-bold transition shadow-lg active:scale-95 mb-2">PLAY MANUALLY</button>
+                    
+                    <p class="text-[9px] text-slate-500 uppercase font-bold text-center mt-4 mb-1">AI Automated Trials</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="runSim(1)" class="bg-indigo-600 hover:bg-indigo-500 py-2 rounded text-[11px] font-bold transition">1 AI Run</button>
+                        <button onclick="runSim(10)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[11px] font-bold transition">10 Runs</button>
+                        <button onclick="runSim(100)" class="bg-slate-800 hover:bg-slate-700 py-2 rounded text-[11px] font-bold transition">100 Runs</button>
+                        <button onclick="runSim(1000)" class="bg-rose-900 hover:bg-rose-800 py-2 rounded text-[11px] font-bold transition">1000 Runs</button>
+                    </div>
+                    <button onclick="resetEverything()" class="w-full text-[9px] text-slate-600 hover:text-slate-400 uppercase tracking-widest pt-2">Clear Stats</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log -->
+        <div class="lg:col-span-3 flex flex-col h-[650px] lg:h-auto bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+            <div class="p-3 border-b border-slate-800 bg-slate-800/30 flex justify-between items-center">
+                <h2 class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Game Engine Log</h2>
+                <div id="perf-metrics" class="text-[10px] text-indigo-400 font-mono"></div>
+            </div>
+            <div id="log-container" class="flex-1 overflow-y-auto p-3 font-mono text-[10px] space-y-0.5 bg-slate-950/50">
+                <div class="text-slate-600 italic">Select a mode to begin. Manual play allows you to choose placement.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SIZE = 6;
+        const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b']; 
+        const COLOR_NAMES = ['Red', 'Blue', 'Green', 'Gold'];
+        
+        let grid = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
+        let score = 0;
+        let gameCount = 0;
+        let totalScoreInBatch = 0;
+        let isRunning = false;
+        let isHumanTurn = false;
+        let currentTile = null;
+
+        const gridEl = document.getElementById('grid');
+        const logEl = document.getElementById('log-container');
+        const statusPill = document.getElementById('status-pill');
+        const nextP1 = document.getElementById('p1');
+        const nextP2 = document.getElementById('p2');
+
+        // Create Grid
+        for (let r = 0; r < SIZE; r++) {
+            for (let c = 0; c < SIZE; c++) {
+                const cell = document.createElement('div');
+                cell.id = `c-${r}-${c}`;
+                cell.className = 'grid-cell rounded-sm bg-slate-900';
+                cell.onmouseenter = () => showPreview(r, c);
+                cell.onclick = () => handleCellClick(r, c);
+                gridEl.appendChild(cell);
+            }
+        }
+
+        function log(msg, color = 'text-slate-500', force = false) {
+            if (isRunning && gameCount % 100 !== 0 && !force && gameCount > 10) return;
+            const div = document.createElement('div');
+            div.className = color;
+            div.innerText = `[${new Date().toLocaleTimeString([], {hour12:false, minute:'2-digit', second:'2-digit'})}] ${msg}`;
+            logEl.appendChild(div);
+            if (logEl.childElementCount > 200) logEl.removeChild(logEl.firstChild);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateUI(lastMoveCells = []) {
+            document.getElementById('score-val').innerText = score;
+            document.getElementById('game-val').innerText = `Games: ${gameCount}`;
+            
+            for(let r=0; r<SIZE; r++) {
+                for(let c=0; c<SIZE; c++) {
+                    const el = document.getElementById(`c-${r}-${c}`);
+                    const val = grid[r][c];
+                    el.style.backgroundColor = val !== null ? COLORS[val] : '';
+                    el.classList.remove('last-move', 'valid-preview', 'invalid-preview');
+                    if (lastMoveCells.some(m => m.r === r && m.c === c)) el.classList.add('last-move');
+                }
+            }
+        }
+
+        function getValidSlots(g, orientation) {
+            const slots = [];
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    if (orientation === 'H' && c < SIZE - 1 && g[r][c] === null && g[r][c+1] === null) {
+                        slots.push({r1: r, c1: c, r2: r, c2: c+1});
+                    }
+                    if (orientation === 'V' && r < SIZE - 1 && g[r][c] === null && g[r+1][c] === null) {
+                        slots.push({r1: r, c1: c, r2: r+1, c2: c});
+                    }
+                }
+            }
+            return slots;
+        }
+
+        function findMatches(g) {
+            let matched = new Set();
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE - 2; c++) {
+                    if (g[r][c] !== null && g[r][c] === g[r][c+1] && g[r][c] === g[r][c+2]) {
+                        matched.add(`${r},${c}`); matched.add(`${r},${c+1}`); matched.add(`${r},${c+2}`);
+                    }
+                }
+            }
+            for (let c = 0; c < SIZE; c++) {
+                for (let r = 0; r < SIZE - 2; r++) {
+                    if (g[r][c] !== null && g[r][c] === g[r+1][c] && g[r][c] === g[r+2][c]) {
+                        matched.add(`${r},${c}`); matched.add(`${r+1},${c}`); matched.add(`${r+2},${c}`);
+                    }
+                }
+            }
+            return Array.from(matched).map(s => ({r: parseInt(s.split(',')[0]), c: parseInt(s.split(',')[1])}));
+        }
+
+        function spawnTile() {
+            const hSlots = getValidSlots(grid, 'H').length;
+            const vSlots = getValidSlots(grid, 'V').length;
+            if (hSlots === 0 && vSlots === 0) return null;
+
+            const type = (hSlots > 0 && vSlots > 0) ? (Math.random() > 0.5 ? 'H' : 'V') : (hSlots > 0 ? 'H' : 'V');
+            currentTile = { type, v1: Math.floor(Math.random() * 4), v2: Math.floor(Math.random() * 4) };
+            
+            nextP1.style.backgroundColor = COLORS[currentTile.v1];
+            nextP2.style.backgroundColor = COLORS[currentTile.v2];
+            document.getElementById('next-tile-display').style.flexDirection = type === 'H' ? 'row' : 'column';
+            document.getElementById('orient-tag').innerText = type === 'H' ? 'HORIZONTAL' : 'VERTICAL';
+            
+            return currentTile;
+        }
+
+        function showPreview(r, c) {
+            if (!isHumanTurn || !currentTile) return;
+            clearPreview();
+            const r2 = currentTile.type === 'V' ? r + 1 : r;
+            const c2 = currentTile.type === 'H' ? c + 1 : c;
+
+            if (r2 < SIZE && c2 < SIZE && grid[r][c] === null && grid[r2][c2] === null) {
+                document.getElementById(`c-${r}-${c}`).style.backgroundColor = COLORS[currentTile.v1];
+                document.getElementById(`c-${r}-${c}`).classList.add('valid-preview');
+                document.getElementById(`c-${r2}-${c2}`).style.backgroundColor = COLORS[currentTile.v2];
+                document.getElementById(`c-${r2}-${c2}`).classList.add('valid-preview');
+            } else {
+                document.getElementById(`c-${r}-${c}`).classList.add('invalid-preview');
+            }
+        }
+
+        function clearPreview() {
+            if (!isHumanTurn) return;
+            for(let r=0; r<SIZE; r++) {
+                for(let c=0; c<SIZE; c++) {
+                    const el = document.getElementById(`c-${r}-${c}`);
+                    if (grid[r][c] === null) {
+                        el.style.backgroundColor = '';
+                        el.classList.remove('valid-preview', 'invalid-preview');
+                    }
+                }
+            }
+        }
+
+        async function handleCellClick(r, c) {
+            if (!isHumanTurn || !currentTile) return;
+            const r2 = currentTile.type === 'V' ? r + 1 : r;
+            const c2 = currentTile.type === 'H' ? c + 1 : c;
+
+            if (r2 < SIZE && c2 < SIZE && grid[r][c] === null && grid[r2][c2] === null) {
+                isHumanTurn = false;
+                grid[r][c] = currentTile.v1;
+                grid[r2][c2] = currentTile.v2;
+                log(`Human placed ${currentTile.type} at (${r},${c})`, 'text-emerald-400');
+                
+                await resolveMatches();
+                updateUI([{r, c}, {r: r2, c: c2}]);
+                
+                if (!spawnTile()) {
+                    log("Game Over! No more space.", "text-rose-400 font-bold", true);
+                    statusPill.innerText = "Game Over";
+                } else {
+                    isHumanTurn = true;
+                }
+            }
+        }
+
+        async function resolveMatches() {
+            let chain = findMatches(grid);
+            while (chain.length > 0) {
+                const points = chain.length * 10;
+                score += points;
+                log(`Match: +${points} pts`, 'text-yellow-400 font-bold');
+                chain.forEach(m => grid[m.r][m.c] = null);
+                updateUI();
+                await new Promise(res => setTimeout(res, 200));
+                chain = findMatches(grid);
+            }
+        }
+
+        function startHumanGame() {
+            if (isRunning) return;
+            gameCount++;
+            score = 0;
+            grid = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
+            log(`--- Starting Manual Game ${gameCount} ---`, 'text-white font-bold', true);
+            document.getElementById('mode-label').innerText = "Human Play";
+            statusPill.innerText = "Your Turn";
+            updateUI();
+            if (spawnTile()) isHumanTurn = true;
+        }
+
+        // --- AI LOGIC ---
+        function getBestMoveAI(tile) {
+            const slots = getValidSlots(grid, tile.type);
+            if (slots.length === 0) return null;
+            let best = null;
+            let maxWeight = -1;
+            for (const s of slots) {
+                const v1_o = grid[s.r1][s.c1]; const v2_o = grid[s.r2][s.c2];
+                grid[s.r1][s.c1] = tile.v1; grid[s.r2][s.c2] = tile.v2;
+                const mCount = findMatches(grid).length;
+                const weight = (mCount * 1000) + ((SIZE - s.r1) * 10 + (SIZE - s.c1));
+                if (weight > maxWeight) { maxWeight = weight; best = s; }
+                grid[s.r1][s.c1] = v1_o; grid[s.r2][s.c2] = v2_o;
+            }
+            return best;
+        }
+
+        async function runSim(runs) {
+            if (isRunning || isHumanTurn) return;
+            isRunning = true;
+            isHumanTurn = false;
+            document.getElementById('mode-label').innerText = "AI Running";
+            statusPill.innerText = "AI Working";
+            const startTime = performance.now();
+
+            for (let i = 0; i < runs; i++) {
+                gameCount++;
+                score = 0;
+                grid = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
+                if (runs <= 1) log(`AI Game ${gameCount} Start`, 'text-indigo-400 font-bold', true);
+
+                while (true) {
+                    const tile = spawnTile();
+                    if (!tile) break;
+                    const move = getBestMoveAI(tile);
+                    if (!move) break;
+
+                    grid[move.r1][move.c1] = tile.v1;
+                    grid[move.r2][move.c2] = tile.v2;
+
+                    let chain = findMatches(grid);
+                    while (chain.length > 0) {
+                        score += chain.length * 10;
+                        chain.forEach(m => grid[m.r][m.c] = null);
+                        if (runs === 1) { updateUI(); await new Promise(r => setTimeout(r, 100)); }
+                        chain = findMatches(grid);
+                    }
+                    if (runs === 1) { updateUI([{r: move.r1, c: move.c1}, {r: move.r2, c: move.c2}]); await new Promise(r => setTimeout(r, 200)); }
+                }
+                totalScoreInBatch += score;
+                if (runs > 10 && i % 10 === 0) { updateUI([], true); if (i % 100 === 0) await new Promise(r => setTimeout(r, 0)); }
+            }
+
+            log(`AI Batch Finish. Avg Score: ${Math.round(totalScoreInBatch/gameCount)}`, 'text-emerald-400', true);
+            isRunning = false;
+            statusPill.innerText = "Idle";
+            updateUI();
+        }
+
+        function resetEverything() {
+            gameCount = 0; score = 0; totalScoreInBatch = 0;
+            grid = Array(SIZE).fill().map(() => Array(SIZE).fill(null));
+            logEl.innerHTML = '';
+            isHumanTurn = false;
+            document.getElementById('mode-label').innerText = "Standby";
+            updateUI();
+        }
+
+        window.onload = () => updateUI();
+    </script>
+</body>
+</html>
