@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domino Match-3: Human v Computer Lab</title>
+    <title>Domino Match-3: Strategic AI Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .grid-cell {
@@ -151,7 +151,7 @@
                     <button onclick="logEl.innerHTML=''" class="text-[9px] text-slate-500 hover:text-slate-300 uppercase">Clear</button>
                 </div>
                 <div id="log-container" class="h-32 overflow-y-auto p-3 font-mono text-[10px] leading-relaxed space-y-0.5 bg-slate-950/50">
-                    <div class="text-slate-600 italic">Heuristic: Adjacency (8pt) | Dead-cell (-60pt). Processing ready.</div>
+                    <div class="text-slate-600 italic">Advanced Heuristic: Lookahead + Grouping (12pt) + Connectivity. Processing ready.</div>
                 </div>
             </div>
         </div>
@@ -262,26 +262,55 @@
             });
         }
 
+        /**
+         * IMPROVED AI EVALUATION ENGINE
+         */
         function evaluateBoard(g) {
+            let scoreValue = 0;
+            let emptyCells = 0;
             let deadCells = 0;
-            let adjacencyBonus = 0;
+
             for (let r = 0; r < SIZE; r++) {
                 for (let c = 0; c < SIZE; c++) {
                     const val = g[r][c];
                     if (val === null) {
+                        emptyCells++;
                         let neighbors = 0;
-                        if (r > 0 && g[r-1][c] === null) neighbors++;
-                        if (r < SIZE-1 && g[r+1][c] === null) neighbors++;
-                        if (c > 0 && g[r][c-1] === null) neighbors++;
-                        if (c < SIZE-1 && g[r][c+1] === null) neighbors++;
+                        let blockedNeighbors = 0;
+                        
+                        // Check adjacency for connectivity
+                        [[0,1],[0,-1],[1,0],[-1,0]].forEach(([dr, dc]) => {
+                            let nr = r + dr, nc = c + dc;
+                            if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE) {
+                                if (g[nr][nc] === null) neighbors++;
+                            } else {
+                                blockedNeighbors++;
+                            }
+                        });
+
+                        // Penalize "islands" or pockets that can't fit a domino
                         if (neighbors === 0) deadCells++;
+                        // Penalize being cramped against edges
+                        if (blockedNeighbors >= 2) scoreValue -= 5;
                     } else {
-                        if (r < SIZE-1 && g[r+1][c] === val) adjacencyBonus += 8;
-                        if (c < SIZE-1 && g[r][c+1] === val) adjacencyBonus += 8;
+                        // Color Grouping Bonus: Reward placing same colors together even without match
+                        [[0,1],[1,0]].forEach(([dr, dc]) => {
+                            let nr = r + dr, nc = c + dc;
+                            if (nr < SIZE && nc < SIZE && g[nr][nc] === val) {
+                                scoreValue += 12; 
+                            }
+                        });
                     }
                 }
             }
-            return adjacencyBonus - (deadCells * 60);
+
+            // High penalty for dead space
+            scoreValue -= (deadCells * 150);
+            
+            // Reward keeping the board open
+            scoreValue += (emptyCells * 10);
+
+            return scoreValue;
         }
 
         function spawnTile() {
@@ -371,20 +400,48 @@
             if (spawnTile()) isHumanTurn = true;
         }
 
+        /**
+         * RE-ENGINEERED AI DECISION LOGIC
+         */
         function getBestMoveAI(tile) {
             const slots = getValidSlots(grid, tile.type);
             if (slots.length === 0) return null;
+            
             let best = null;
             let maxEvaluation = -Infinity;
+
             for (const s of slots) {
+                // Clone board state efficiently
                 const v1_o = grid[s.r1][s.c1];
                 const v2_o = grid[s.r2][s.c2];
+                
                 grid[s.r1][s.c1] = tile.v1;
                 grid[s.r2][s.c2] = tile.v2;
-                let tempMatches = findMatches(grid);
-                let eval = (tempMatches.length * 50) + evaluateBoard(grid);
-                if (eval > maxEvaluation) { maxEvaluation = eval; best = s; }
-                grid[s.r1][s.c1] = v1_o; grid[s.r2][s.c2] = v2_o;
+
+                // 1. Calculate Score Potential from this move
+                let simulatedPoints = 0;
+                let tempGrid = grid.map(row => [...row]);
+                let chain = findMatches(tempGrid);
+                while (chain.length > 0) {
+                    simulatedPoints += chain.length * 50; // Heavy weight on scoring
+                    chain.forEach(m => tempGrid[m.r][m.c] = null);
+                    chain = findMatches(tempGrid);
+                }
+
+                // 2. Evaluate Board Health after the move and any matches
+                let boardHealth = evaluateBoard(tempGrid);
+                
+                // 3. Combined Heuristic
+                let totalEval = simulatedPoints + boardHealth;
+
+                if (totalEval > maxEvaluation) { 
+                    maxEvaluation = totalEval; 
+                    best = s; 
+                }
+
+                // Backtrack
+                grid[s.r1][s.c1] = v1_o; 
+                grid[s.r2][s.c2] = v2_o;
             }
             return best;
         }
@@ -405,8 +462,10 @@
                     if (!tile) break;
                     const move = getBestMoveAI(tile);
                     if (!move) break;
+                    
                     grid[move.r1][move.c1] = tile.v1;
                     grid[move.r2][move.c2] = tile.v2;
+                    
                     let chain = findMatches(grid);
                     while (chain.length > 0) {
                         score += chain.length * 10;
