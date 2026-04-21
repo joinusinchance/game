@@ -12,7 +12,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-
         :root {
             --bg-primary: #1a1a1a;
             --bg-secondary: #2d2d2d;
@@ -97,19 +96,13 @@
         }
         
         #next-piece-display span {
-            font-size: 2.4rem;
+            font-size: 2rem;
             line-height: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             width: auto;
             height: auto;
-        }
-
-        .vertical-text {
-            writing-mode: vertical-rl;
-            transform: rotate(180deg);
-            text-align: center;
         }
 
         #toast {
@@ -124,12 +117,30 @@
             font-weight: 600;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 100;
+            border: 1px solid var(--border-color);
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        /* Achievement Overlay Stylized */
+        #achievement-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            backdrop-filter: blur(12px);
+        }
+        #achievement-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .emoji {
@@ -140,204 +151,165 @@
             width: 1.2em;
             line-height: 1;
             text-align: center;
-            font-variant-numeric: tabular-nums;
-            text-rendering: optimizeLegibility;
-            -webkit-font-smoothing: antialiased;
         }
 
         .header-bg {
             background-color: #1e293b;
             border-color: #334155;
         }
+
+        .disabled-btn {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+            pointer-events: none;
+        }
+
+        .speech-bubble-tail {
+            position: absolute;
+            bottom: -1rem;
+            left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 2rem;
+            height: 2rem;
+            background: #1e293b; /* matches bg-slate-800 */
+            border-right: 4px solid #ca8a04; /* matches border-yellow-600 */
+            border-bottom: 4px solid #ca8a04;
+        }
     </style>
 </head>
 <body class="flex flex-col items-center h-[100dvh] p-4">
 
     <div class="w-full max-w-md flex flex-col h-full">
-        <!-- Header with Score and Next Piece (Top) -->
-        <div
-            class="w-full h-24 flex justify-between items-center mb-1 p-3 rounded-2xl shadow-sm border border-slate-700 flex-shrink-0 bg-slate-800 header-bg">
-            <div class="flex items-center gap-3">
+        <!-- Header: HOME -- NEXT TILE -- SCORE & UNDO -->
+        <div class="w-full h-24 grid grid-cols-3 items-center mb-1 p-3 rounded-2xl shadow-sm border border-slate-700 flex-shrink-0 bg-slate-800 header-bg">
+            
+            <!-- Left: HOME -->
+            <div class="flex items-center justify-start pl-1">
                 <button onclick="resetGame()"
-                    class="p-2 text-orange-500 hover:text-orange-400 active:scale-90 transition-all bg-slate-700 rounded-xl border border-slate-600"
-                    title="Restart Game">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                        <path d="M21 3v5h-5" />
-                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                        <path d="M8 16H3v5" />
-                    </svg>
+                    class="p-3 text-slate-400 hover:text-white active:scale-90 transition-all bg-slate-700/50 rounded-xl border border-slate-600"
+                    title="Home">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 </button>
-        
-                <div class="flex flex-col">
-                    <div class="flex items-baseline gap-2">
-                        <p class="text-s uppercase tracking-widest text-orange-500 font-bold">
-                            Score
-                        </p>
-                        <p id="score" class="text-s uppercase tracking-widest text-orange-500 font-bold">
-                            0
-                        </p>
-                    </div>
-        
-                    <div id="rank-countdown" class="text-s font-bold text-slate-400 opacity-90 flex items-center gap-1 mt-1">
-                        <span class="uppercase tracking-tighter text-[10px]">Boss:</span>
-                        <span class="emoji">🦠</span>
-                        <span>150</span>
-                    </div>
-                </div>
-        
-                <div class="flex items-center gap-3">
-                    <div class="inline-block">
-                        <div id="next-piece-display" class="inline-flex">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        
-        </div>
-            <!-- Game Board (Center) -->
-            <div class="flex-grow flex flex-col items-center justify-start pt-1 overflow-visible">
-                <div id="game-board" class="grid-container mx-auto">
-                    </div>
             </div>
 
+            <!-- Center: NEXT TILE -->
+            <div class="flex flex-col items-center justify-center">
+                <div id="next-piece-display" class="min-w-[60px] min-h-[40px]"></div>
+            </div>
+
+            <!-- Right: SCORE & UNDO -->
+            <div class="flex items-center justify-end gap-3 pr-1">
+                <div class="flex flex-col items-end">
+                    <div class="flex items-baseline gap-1">
+                        <p class="text-s uppercase tracking-widest text-orange-500 font-bold">Score</p>
+                        <p id="score" class="text-s uppercase tracking-widest text-orange-500 font-bold">0</p>
+                    </div>
+                    <div id="rank-countdown" class="text-s font-bold text-slate-400 opacity-90 flex items-center gap-1 mt-1">
+                        <span id="countdown-content">...</span>
+                    </div>
+                </div>
+
+                <button id="undo-btn" onclick="undoMove()"
+                    class="p-2.5 text-blue-400 hover:text-blue-300 active:scale-90 transition-all bg-slate-700 rounded-xl border border-slate-600 disabled-btn"
+                    title="Undo Last Move">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-15 9 9 0 0 0-6 2.3L3 13"/></svg>
+                </button>
+            </div>
         </div>
-    
+
+        <!-- Board -->
+        <div class="flex-grow flex flex-col items-center justify-start pt-1 overflow-visible">
+            <div id="game-board" class="grid-container mx-auto"></div>
+        </div>
     </div>
 
-    <!-- Game Over Modal - Shows final score, rank, and leaderboard submission options -->
+    <!-- Achievement Overlay -->
+    <div id="achievement-overlay" class="hidden">
+        <div class="w-full max-w-sm flex flex-col items-center">
+            <div class="relative bg-slate-800 rounded-3xl p-6 shadow-2xl mb-8 border-4 border-yellow-600">
+                <h2 id="achievement-title" class="text-3xl font-black text-orange-400 mb-2 uppercase tracking-tighter"></h2>
+                <p id="achievement-description" class="text-lg text-slate-300 italic font-medium"></p>
+                <div class="speech-bubble-tail"></div>
+            </div>
+            
+            <div id="achievement-emoji" class="text-8xl filter drop-shadow-lg animate-bounce" style="animation-duration: 2s;"></div>
+            <p class="text-sm text-slate-500 font-bold uppercase tracking-widest animate-pulse">Tap to continue</p>
+        </div>
+    </div>
+
+    <!-- Modal (Game Over) -->
     <div id="modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-6 z-50 backdrop-blur-sm">
         <div class="bg-slate-800 rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-700">
             <div id="rank-emoji-display" class="text-6xl mb-4"><span class="emoji">🦒</span></div>
-            <h2 class="text-2xl font-black mb-1 text-white">All flats occupied!</h2>
+            <h2 class="text-2xl font-black mb-1 text-white">Grid Full!</h2>
             <p id="rank-display" class="text-orange-400 font-bold italic mb-4 uppercase text-sm tracking-tight"></p>
             <p class="text-slate-300 mb-6">Final Score: <span id="final-score" class="text-2xl font-black text-white">0</span></p>
             
-            <!-- Name Input for Leaderboard -->
-            <div id="player-name-container" class="mb-6" style="display: none;">
+            <div id="player-name-container" class="mb-6 hidden">
                 <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" class="w-full px-4 py-3 border-2 border-slate-600 rounded-xl focus:outline-none focus:border-orange-400 bg-slate-700 text-white placeholder-slate-500" />
             </div>
             
             <div class="flex flex-col gap-3">
-                <button id="submit-score-btn" onclick="submitScoreToLeaderboard()" class="w-full py-3 bg-green-600 text-white font-bold rounded-2xl shadow-lg shadow-green-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-green-700" style="display: none;">
-                    Submit to Leaderboard
-                </button>
-                <button id="share-btn" class="w-full py-3 bg-orange-600 text-white font-bold rounded-2xl shadow-lg shadow-orange-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-orange-700">
-                    Share My Rank
-                </button>
-                <button onclick="showLeaderboard()" class="w-full py-3 bg-purple-600 text-white font-bold rounded-2xl shadow-lg shadow-purple-900 active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-purple-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>
-                    See Leaderboard
-                </button>
-                <button onclick="playAgain()" class="w-full py-3 bg-slate-700 text-slate-200 font-bold rounded-2xl active:scale-95 transition-transform hover:bg-slate-600">
-                    Play Again
-                </button>
+                <button id="submit-score-btn" onclick="submitScoreToLeaderboard()" class="w-full py-3 bg-green-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-green-700 hidden">Submit Score</button>
+                <button id="share-btn" class="w-full py-3 bg-orange-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 hover:bg-orange-700">Share Rank</button>
+                <button onclick="playAgain()" class="w-full py-3 bg-slate-700 text-slate-200 font-bold rounded-2xl active:scale-95 transition-transform hover:bg-slate-600">Main Menu</button>
             </div>
         </div>
     </div>
 
-    <!-- Leaderboard Modal - Displays full leaderboard with all player scores -->
-    <div id="leaderboard-modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-6 z-50 backdrop-blur-sm">
-        <div class="bg-slate-800 rounded-3xl p-8 w-full max-w-md shadow-2xl max-h-[80vh] overflow-y-auto border border-slate-700">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-black text-white">🏆 Leaderboard</h2>
-                <button onclick="closeLeaderboard()" class="text-slate-400 hover:text-slate-300 text-2xl">&times;</button>
-            </div>
-            
-            <div id="leaderboard-content" class="space-y-2">
-                <div class="text-center text-slate-400 py-8">Loading scores...</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Intro Modal - Welcome screen with game instructions and story -->
-    <div id="intro-modal" class="fixed inset-0 bg-gradient-to-b from-slate-900 to-slate-800 hidden flex items-center justify-center p-6 z-50 overflow-y-auto">
+    <!-- Intro Modal -->
+    <div id="intro-modal" class="fixed inset-0 bg-gradient-to-b from-slate-900 to-slate-800 hidden flex items-center justify-center p-6 z-[300] overflow-y-auto">
         <div class="w-full max-w-sm flex flex-col items-center my-auto">
             <div class="text-center mb-6">
                 <h1 class="text-5xl sm:text-6xl font-black text-orange-400 mb-2 leading-tight">
                     Animal Flats
                 </h1>
-                <p class="text-slate-300 font-semibold">
-                     Earn for Others
+                <p class="text-slate-300 font-semibold uppercase tracking-widest text-xs">
+                     Waste your potential
                 </p>
             </div>
 
-            <div class="relative bg-slate-800 rounded-3xl p-6 shadow-2xl mb-6 border-4 border-yellow-600">
-                
-                <p class="text-slate-300 font-medium italic">
-                    "Pair up three of the same faces to fill the flats and score points. The more you fill, the more profit for me and my 25 Slum Landlord buddies! ..and procrastination for you"
+            <div class="relative bg-slate-800 rounded-3xl p-6 shadow-2xl mb-8 border-4 border-yellow-600">
+                <p class="text-slate-300 font-medium italic mb-2">
+                    "Pair up three of the same faces to fill the flats. The more you fill, the more profit for me and my 25 Slum Landlord buddies!"
                 </p>
-                <h3 class="text-2xl font-black text-white leading-tight mb-2">-Apathetic Amoeba</h3>
-                <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-slate-800 border-r-4 border-b-4 border-yellow-600 rotate-45"></div>
+                <h3 class="text-2xl font-black text-white leading-tight">-Apathetic Amoeba</h3>
+                <div class="speech-bubble-tail"></div>
             </div>
 
             <div class="text-8xl filter drop-shadow-lg animate-bounce" style="animation-duration: 2s;">
                 🦠
             </div>
 
-            <button onclick="hideIntro()" class="mt-8 w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-none active:scale-95 transition-all hover:brightness-110">
+            <button onclick="hideIntro()" class="mt-8 w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-lg rounded-2xl shadow-xl active:scale-95 transition-all hover:brightness-110">
                 Next
             </button>
         </div>
     </div>
 
-    <!-- Start Screen Modal - Main menu with top 5 leaderboard and play button -->
-    <div id="start-screen" class="fixed inset-0 min-h-dvh bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-6 z-50 overflow-y-auto hidden">
+    <!-- Start Screen -->
+    <div id="start-screen" class="fixed inset-0 min-h-dvh bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-6 z-50 overflow-y-auto">
         <div class="w-full max-w-sm flex flex-col items-center my-auto">
             <div class="text-center mb-6">
-                <h1 class="text-5xl sm:text-6xl font-black text-orange-400 mb-2 leading-tight">
-                    Animal Flats
-                </h1>
-                <p class="text-slate-300 font-semibold">
-                    <span class="emoji">💰</span> 3 to clear & waste your potential
-                </p>
+                <h1 class="text-5xl sm:text-6xl font-black text-orange-400 mb-2 leading-tight">Animal Flats</h1>
+                <p class="text-slate-300 font-semibold"><span class="emoji">💰</span> Clear 3 and profit</p>
             </div>
             
             <div class="w-full bg-slate-800 rounded-2xl shadow-lg p-5 mb-6 border-2 border-slate-700">
-                <h2 class="text-xl font-black text-white mb-3 text-center flex items-center justify-center gap-2">
-                    <span class="emoji">💰</span> Top Earners
-                </h2>
-                <div id="start-leaderboard" class="space-y-2">
-                    <div class="text-center text-slate-400 py-4 italic text-sm">
-                        Loading scores...
-                    </div>
-                </div>
+                <h2 class="text-xl font-black text-white mb-3 text-center flex items-center justify-center gap-2">🏆 Top Earners</h2>
+                <div id="start-leaderboard" class="space-y-2"><div class="text-center text-slate-400 py-4 italic text-sm">Loading...</div></div>
             </div>
             
-            <button onclick="startGame()" class="w-full py-4 px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-black text-lg rounded-2xl shadow-xl shadow-none active:scale-95 transition-all hover:brightness-110">
-                Let's Play!
-            </button>
-
-        </div>
-    </div>
-
-
-
-
-
-    <div id="toast">Score copied to clipboard!</div>
-
-    <!-- Achievement Overlay - Shows rank advancement notifications -->
-    <div id="achievement-overlay" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-6 z-60 backdrop-blur-md">
-        <div class="flex flex-col items-center w-full max-w-sm transition-all duration-500 transform scale-110">
-            <div class="relative bg-slate-800 rounded-3xl p-6 shadow-2xl mb-6 border-4 border-yellow-600">
-                <p id="achievement-description" class="text-slate-300 font-medium italic">
-                <h3 id="achievement-title" class="text-2xl font-black text-white leading-tight mb-2">New Rank!</h3>
-                </p>
-
-                <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-8 h-8 bg-slate-800 border-r-4 border-b-4 border-yellow-600 rotate-45"></div>
+            <div class="grid grid-cols-1 gap-3 w-full">
+                <button onclick="startGame(false)" class="w-full py-4 px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-black text-lg rounded-2xl shadow-xl active:scale-95 transition-all hover:brightness-110">Continue the toil</button>
+                <button id="daily-btn" onclick="startGame(true)" class="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black text-lg rounded-2xl shadow-xl active:scale-95 transition-all hover:brightness-110">Daily Grind</button>
             </div>
-
-        <div id="achievement-emoji" class="text-8xl filter drop-shadow-lg animate-bounce" style="animation-duration: 2s;">
-            <span class="emoji">🎉</span>
         </div>
-
-        <p class="mt-8 text-white/50 text-sm font-bold animate-pulse">TAP ANYWHERE TO CONTINUE</p>
     </div>
+
+    <div id="toast">Message</div>
 
     <script>
-        // Leaderboard Configuration
         const LEADERBOARD_CONFIG = {
             id: 121,
             secret: "146237b143514297870eef8d22040c23",
@@ -348,7 +320,7 @@
         const ANIMALS = ['🐊', '🐟', '🦋', '🦜'];
         const RANKS = [
     { threshold: 30, title: "Apathetic Amoeba", emoji: "🦠", achieved: "I appreciate you overfilling the Aqueous Abyss, but there are more puddles to overcharge for." },
-    { threshold: 150, title: "Bumbling Beetle", emoji: "🪲", achieved: "Cheers for cluttering up the Broken Barn, but those dung heaps won't rent themselves." },
+    { threshold: 150, title: "Bumbling Beetle", emoji: "🪲", achieved: "Cheers for cluttering up the Broken Barn, but those dung heaps won't rent themselves."  },
     { threshold: 400, title: "Clumsy Cat", emoji: "🐱", achieved: "Nice job squeezing souls into the Cramped Condo; now go find some more kittens to exploit." },
     { threshold: 750, title: "Dashing Dolphin", emoji: "🐬", achieved: "Delightful work drowning them in the Damp Depot; it’s time to inflate the tide-water taxes." },
     { threshold: 1200, title: "Elongated Eel", emoji: "🪱", achieved: "Excellent effort exhausting the Empty Estuary; keep squeezing the tenants for every volt." },
@@ -357,7 +329,7 @@
     { threshold: 3500, title: "Heroic Hippo", emoji: "🦛", achieved: "Hats off for hoarding life in the Humid Habitat; now go ignore a plumbing repair request." },
     { threshold: 4600, title: "Intelligent Iguana", emoji: "🦎", achieved: "I’m impressed with how you’ve infested the Isolated Island; your empire of heat-lamp surcharges awaits." },
     { threshold: 5800, title: "Jovial Jaguar", emoji: "🐆", achieved: "Just love how you jammed the Jagged Jungle-hut; keep prowling for those security deposits." },
-    { threshold: 7100, title: "King Koala", emoji: "🐨", achieved: "Kudos for keeping the Knotted Kerbside crowded; don't let the residents sleep on the job." },
+    { threshold: 7100, title: "King Koala", emoji: "🐨", achieved: "Kudos for keeping the Knotted Kerbside crowded; just don't let the residents sleep in their beds." },
     { threshold: 8500, title: "Legendary Lion", emoji: "🦁", achieved: "Lovely work levying fees at the Loathsome Loft; it's time for some predatory leasing." },
     { threshold: 10000, title: "Majestic Mammoth", emoji: "🦣", achieved: "Many thanks for mass-renting the Mouldy Mansion; keep those prehistoric floorboards creaking." },
     { threshold: 11600, title: "Noble Nightingale", emoji: "🐦", achieved: "Nothing beats the noise in the Narrow Nest; now go whistle for some late fees." },
@@ -372,7 +344,8 @@
     { threshold: 30500, title: "Wise Wolf", emoji: "🐺", achieved: "Wicked work warehousing souls in the Wretched Warehouse; keep the pack hungry for more real estate." },
     { threshold: 33100, title: "Xenon X-ray Fish", emoji: "🦴", achieved: "X-tremely good job exploiting the Xeric Xylophone-factory; let's keep the profit margins transparent." },
     { threshold: 35800, title: "Yearning Yak", emoji: "🐃", achieved: "You’ve yielded great results at the Yellowing Yard; there are more pastures to overpopulate." },
-    { threshold: 38600, title: "Zazzy Zebra", emoji: "🦓", achieved: "Zealously zipping up the Zig-zagged Zone; the world is your black-and-white balance sheet! Unfortunately, the rent is due next month..." }
+    { threshold: 38600, title: "Zazzy Zebra", emoji: "🦓", achieved: "Zealously zipping up the Zig-zagged Zone; the world is your black-and-white balance sheet! Unfortunately, your rent is due, WHERE IS THE MONEY??" }
+
 
         ];
 
@@ -382,40 +355,91 @@
         let isProcessing = false;
         let lastSelectedCell = null;
         let top5Scores = [];
-        let toastTimeout = null; 
+        let toastTimeout = null;
+        let history = null;
 
         const boardEl = document.getElementById('game-board');
-        const scoreEl = document.getElementById('score');
-        const nextEl = document.getElementById('next-piece-display');
-        const modal = document.getElementById('modal');
-        const shareBtn = document.getElementById('share-btn');
-        const rankEmojiEl = document.getElementById('rank-emoji-display');
+        const scoreDisplayEl = document.getElementById('score');
 
-
+        let isDailyMode = false;
+        let sfc_a, sfc_b, sfc_c, sfc_d;
 
         function hideIntro() {
+       //     localStorage.setItem('intro_seen', 'true');
             document.getElementById('intro-modal').classList.add('hidden');
             document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        function hashMix(h) {
+            h = BigInt(h);
+            h ^= h >> 33n;
+            h *= 0xff51afd7ed558ccdn;
+            h ^= h >> 33n;
+            h *= 0xc4ceb9fe1a85ec53n;
+            h ^= h >> 33n;
+            return Number(h & 0xffffffffn);
+        }
+
+        function sfc32() {
+            sfc_a >>>= 0; sfc_b >>>= 0; sfc_c >>>= 0; sfc_d >>>= 0; 
+            let t = (sfc_a + sfc_b | 0) + sfc_d | 0;
+            sfc_d = sfc_d + 1 | 0;
+            sfc_a = sfc_b ^ sfc_b >>> 9;
+            sfc_b = sfc_c + (sfc_c << 3) | 0;
+            sfc_c = (sfc_c << 21 | sfc_c >>> 11);
+            sfc_c = sfc_c + t | 0;
+            return (t >>> 0) / 4294967296;
+        }
+
+        function initDailyPRNG() {
+            const seed = getDailySeedNum();
+            sfc_a = hashMix(seed);
+            sfc_b = hashMix(sfc_a);
+            sfc_c = hashMix(sfc_b);
+            sfc_d = hashMix(sfc_c);
+            for (let i = 0; i < 12; i++) sfc32();
+        }
+
+        function getDailySeedNum() {
+            const d = new Date();
+            return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+        }
+
+        function getFormattedDate() {
+            const d = new Date();
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+        }
+
+        function checkDailyStatus() {
+            const played = localStorage.getItem('daily_played_' + getDailySeedNum());
+            if (played) {
+                const btn = document.getElementById('daily-btn');
+                if (btn) {
+                    btn.classList.add('disabled-btn');
+                    btn.innerHTML = 'Daily Played <span class="text-[10px] opacity-60 ml-2">Tomorrow</span>';
+                }
+            }
         }
 
         function updateRankCountdown() {
             const currentRank = getRankObj(score);
             const currentRankIndex = RANKS.findIndex(rank => rank.title === currentRank.title);
             const nextRank = RANKS[currentRankIndex + 1];
-            
-            if (nextRank) {
-                const remaining = nextRank.threshold - score;
-                document.getElementById('rank-countdown').innerHTML = `Boss: <span class="emoji">${nextRank.emoji}</span> ${remaining}`;
-            } else {
-                document.getElementById('rank-countdown').innerHTML = `Final Boss: <span class="emoji">${currentRank.emoji}</span>`;
+            const display = document.getElementById('countdown-content');
+            if (display) {
+                if (nextRank) {
+                    display.innerHTML = `<span>Next</span> <span class="emoji">${nextRank.emoji}</span> ${nextRank.threshold - score}`;
+                } else {
+                    display.innerHTML = `MAX <span class="emoji">${currentRank.emoji}</span>`;
+                }
             }
         }
 
         function checkRankAchievement(oldScore, newScore) {
             const oldRank = getRankObj(oldScore);
             const newRank = getRankObj(newScore);
-            
-            if (oldRank.title !== newRank.title) {
+            if (oldRank.title !== newRank.title && newScore > oldScore) {
                 showAchievement(newRank);
             }
         }
@@ -426,23 +450,25 @@
             const titleEl = document.getElementById('achievement-title');
             const descEl = document.getElementById('achievement-description');
             
-            emojiEl.innerHTML = `<span class="emoji">${rankObj.emoji}</span>`;
-            titleEl.innerText = `-${rankObj.title}`;
-            descEl.innerText = `"${rankObj.achieved}"`;
+            if (emojiEl) emojiEl.innerHTML = `<span class="emoji">${rankObj.emoji}</span>`;
+            if (titleEl) titleEl.innerText = `${rankObj.title}`;
+            if (descEl) descEl.innerText = `"${rankObj.achieved}"`;
             
-            overlay.classList.remove('hidden');
-            overlay.classList.add('show');
-            
-            // Add click handler to close overlay
-            const closeOverlay = () => {
-                overlay.classList.remove('show');
-                setTimeout(() => overlay.classList.add('hidden'), 500);
-                overlay.removeEventListener('click', closeOverlay);
-            };
-            overlay.addEventListener('click', closeOverlay);
+            if (overlay) {
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.add('show'), 10);
+                
+                const closeOverlay = () => {
+                    overlay.classList.remove('show');
+                    setTimeout(() => overlay.classList.add('hidden'), 500);
+                    overlay.removeEventListener('click', closeOverlay);
+                };
+                overlay.addEventListener('click', closeOverlay);
+            }
         }
 
         function initBoard() {
+            if (!boardEl) return;
             boardEl.innerHTML = '';
             for (let r = 0; r < GRID_SIZE; r++) {
                 for (let c = 0; c < GRID_SIZE; c++) {
@@ -450,23 +476,9 @@
                     cell.className = 'cell';
                     cell.dataset.r = r;
                     cell.dataset.c = c;
-                    
-                    cell.onmouseenter = () => {
-                        if (window.matchMedia("(pointer: fine)").matches) {
-                            highlightPreview(r, c, true);
-                        }
-                    };
-                    cell.onmouseleave = () => {
-                        if (window.matchMedia("(pointer: fine)").matches) {
-                            highlightPreview(r, c, false);
-                        }
-                    };
-                    
-                    cell.onclick = (e) => {
-                        e.preventDefault();
-                        handleCellInteraction(r, c);
-                    };
-
+                    cell.onmouseenter = () => { if (window.matchMedia("(pointer: fine)").matches) highlightPreview(r, c, true); };
+                    cell.onmouseleave = () => { if (window.matchMedia("(pointer: fine)").matches) highlightPreview(r, c, false); };
+                    cell.onclick = (e) => { e.preventDefault(); handleCellInteraction(r, c); };
                     boardEl.appendChild(cell);
                 }
             }
@@ -474,10 +486,8 @@
 
         function handleCellInteraction(r, c) {
             if (isProcessing) return;
-
             const isMobile = !window.matchMedia("(pointer: fine)").matches;
             const currentCoord = `${r},${c}`;
-
             if (isMobile) {
                 if (lastSelectedCell !== currentCoord) {
                     clearAllHighlights();
@@ -485,6 +495,7 @@
                     lastSelectedCell = currentCoord;
                 } else {
                     if (isValidPlacement(r, c)) {
+                        saveStateForUndo();
                         placePiece(r, c);
                         lastSelectedCell = null;
                     } else {
@@ -493,96 +504,78 @@
                     }
                 }
             } else {
-                placePiece(r, c);
+                if (isValidPlacement(r, c)) {
+                    saveStateForUndo();
+                    placePiece(r, c);
+                }
             }
         }
 
         function clearAllHighlights() {
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach(cell => cell.classList.remove('preview-valid', 'preview-invalid'));
+            document.querySelectorAll('.cell').forEach(cell => cell.classList.remove('preview-valid', 'preview-invalid'));
         }
 
         function generateNextPiece() {
-            let canFitHorizontal = false;
-            let canFitVertical = false;
-
+            let canFitH = false, canFitV = false;
             for (let r = 0; r < GRID_SIZE; r++) {
                 for (let c = 0; c < GRID_SIZE; c++) {
                     if (board[r][c] === null) {
-                        if (c < GRID_SIZE - 1 && board[r][c+1] === null) canFitHorizontal = true;
-                        if (r < GRID_SIZE - 1 && board[r+1][c] === null) canFitVertical = true;
+                        if (c < GRID_SIZE - 1 && board[r][c+1] === null) canFitH = true;
+                        if (r < GRID_SIZE - 1 && board[r+1][c] === null) canFitV = true;
                     }
                 }
             }
+            if (!canFitH && !canFitV) return endGame();
 
-            if (!canFitHorizontal && !canFitVertical) {
-                endGame();
-                return;
-            }
-
-            let isHorizontal;
-            if (canFitHorizontal && canFitVertical) {
-                isHorizontal = Math.random() > 0.5;
-            } else {
-                isHorizontal = canFitHorizontal;
-            }
+            const rng = isDailyMode ? sfc32 : Math.random;
+            let isH = canFitH && canFitV ? rng() > 0.5 : canFitH;
 
             currentPiece = {
-                animals: [
-                    ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
-                    ANIMALS[Math.floor(Math.random() * ANIMALS.length)]
-                ],
-                horizontal: isHorizontal
+                animals: [ANIMALS[Math.floor(rng() * ANIMALS.length)], ANIMALS[Math.floor(rng() * ANIMALS.length)]],
+                horizontal: isH
             };
-            
-            nextEl.style.flexDirection = isHorizontal ? 'row' : 'column';
+            updatePieceUI();
+        }
+
+        function updatePieceUI() {
+            const nextEl = document.getElementById('next-piece-display');
+            if (!nextEl || !currentPiece) return;
+            nextEl.style.flexDirection = currentPiece.horizontal ? 'row' : 'column';
             nextEl.innerHTML = currentPiece.animals.map(a => `<span>${a}</span>`).join('');
         }
 
         function isValidPlacement(r, c) {
             if (!currentPiece) return false;
-            if (currentPiece.horizontal) {
-                return c < GRID_SIZE - 1 && board[r][c] === null && board[r][c+1] === null;
-            } else {
-                return r < GRID_SIZE - 1 && board[r][c] === null && board[r+1][c] === null;
-            }
+            if (currentPiece.horizontal) return c < GRID_SIZE - 1 && board[r][c] === null && board[r][c+1] === null;
+            return r < GRID_SIZE - 1 && board[r][c] === null && board[r+1][c] === null;
         }
 
         function highlightPreview(r, c, active) {
             if (isProcessing) return;
-            const coords = getAffectedCells(r, c);
+            const coords = currentPiece.horizontal ? [{r, c}, {r, c: c+1}] : [{r, c}, {r: r+1, c}];
             const valid = isValidPlacement(r, c);
-            
             coords.forEach(coord => {
                 const el = getCellEl(coord.r, coord.c);
                 if (el) {
-                    if (active) {
-                        el.classList.add(valid ? 'preview-valid' : 'preview-invalid');
-                    } else {
-                        el.classList.remove('preview-valid', 'preview-invalid');
-                    }
+                    if (active) el.classList.add(valid ? 'preview-valid' : 'preview-invalid');
+                    else el.classList.remove('preview-valid', 'preview-invalid');
                 }
             });
-        }
-
-        function getAffectedCells(r, c) {
-            if (currentPiece.horizontal) return [{r, c}, {r, c: c+1}];
-            return [{r, c}, {r: r+1, c}];
         }
 
         async function placePiece(r, c) {
             if (isProcessing || !isValidPlacement(r, c)) return;
             isProcessing = true;
-
-            const coords = getAffectedCells(r, c);
+            const coords = currentPiece.horizontal ? [{r, c}, {r, c: c+1}] : [{r, c}, {r: r+1, c}];
             coords.forEach((coord, i) => {
                 board[coord.r][coord.c] = currentPiece.animals[i];
                 const el = getCellEl(coord.r, coord.c);
-                el.innerText = currentPiece.animals[i];
-                el.classList.add('tile-filled');
-                el.classList.remove('preview-valid', 'preview-invalid');
+                if (el) { 
+                    el.innerText = currentPiece.animals[i]; 
+                    el.classList.add('tile-filled'); 
+                    el.classList.remove('preview-valid', 'preview-invalid'); 
+                }
             });
-
             await processMatches();
             generateNextPiece();
             isProcessing = false;
@@ -612,13 +605,11 @@
                 if (toClear.size > 0) {
                     const oldScore = score;
                     score += toClear.size * 10;
-                    scoreEl.innerText = score;
+                    if (scoreDisplayEl) scoreDisplayEl.innerText = score;
                     
-                    // Check for rank achievement
                     checkRankAchievement(oldScore, score);
-                    
-                    // Update countdown display
                     updateRankCountdown();
+
                     toClear.forEach(id => {
                         const [r, c] = id.split(',').map(Number);
                         const el = getCellEl(r, c);
@@ -629,253 +620,180 @@
                         const [r, c] = id.split(',').map(Number);
                         board[r][c] = null;
                         const el = getCellEl(r, c);
-                        if (el) {
-                            el.innerText = '';
-                            el.classList.remove('tile-filled', 'match-anim');
-                        }
+                        if (el) { el.innerText = ''; el.classList.remove('tile-filled', 'match-anim'); }
                     });
-                } else {
-                    matchesFound = false;
+                } else matchesFound = false;
+            }
+        }
+
+        function saveStateForUndo() {
+            history = { board: JSON.parse(JSON.stringify(board)), score, currentPiece: JSON.parse(JSON.stringify(currentPiece)), sfc: [sfc_a, sfc_b, sfc_c, sfc_d] };
+            const undoBtn = document.getElementById('undo-btn');
+            if (undoBtn) undoBtn.classList.remove('disabled-btn');
+        }
+
+        function undoMove() {
+            if (!history || isProcessing) return;
+            board = JSON.parse(JSON.stringify(history.board));
+            score = history.score;
+            currentPiece = JSON.parse(JSON.stringify(history.currentPiece));
+            if (isDailyMode) [sfc_a, sfc_b, sfc_c, sfc_d] = history.sfc;
+            
+            if (scoreDisplayEl) scoreDisplayEl.innerText = score;
+            updateRankCountdown();
+            updatePieceUI();
+            for(let r=0; r<GRID_SIZE; r++) {
+                for(let c=0; c<GRID_SIZE; c++) {
+                    const el = getCellEl(r, c);
+                    if (el) {
+                        el.innerText = board[r][c] || '';
+                        if (board[r][c]) el.classList.add('tile-filled'); else el.classList.remove('tile-filled');
+                    }
                 }
             }
+            history = null;
+            const undoBtn = document.getElementById('undo-btn');
+            if (undoBtn) undoBtn.classList.add('disabled-btn');
+            showToast("Move undone!");
         }
 
-        function getCellEl(r, c) {
-            if (r < 0 || r >= GRID_SIZE || c < 0 || c >= GRID_SIZE) return null;
-            return boardEl.children[r * GRID_SIZE + c];
-        }
-
-        function getRankObj(s) {
-            let rObj = RANKS[0];
-            for (let i = 0; i < RANKS.length; i++) {
-                if (s >= RANKS[i].threshold) rObj = RANKS[i];
-            }
-            return rObj;
-        }
+        function getCellEl(r, c) { return boardEl ? boardEl.children[r * GRID_SIZE + c] : null; }
+        function getRankObj(s) { let rObj = RANKS[0]; RANKS.forEach(r => { if (s >= r.threshold) rObj = r; }); return rObj; }
 
         function formatLeaderboardRow(entry, index) {
             const rankObj = getRankObj(entry.value);
-            const badgeClasses = 'bg-slate-600 border border-slate-600';
-
-            return `
-                <div class="flex items-center justify-between p-3 ${badgeClasses} rounded-lg text-white">
-                    <div class="flex items-center gap-3 flex-grow">
-                        <span class="text-2xl font-black w-8 text-center text-white">
-                            ${index === 0 ? '1' : index === 1 ? '2' : index === 2 ? '3' : (index + 1)}
-                        </span>
-                        <div class="flex-1">
-                            <span class="font-bold text-white">${entry.name}</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm text-white"><span class="emoji">${rankObj.emoji}</span></span>
-                        <span class="font-black text-lg text-white">${entry.value}</span>
-                    </div>
-                </div>
-            `;
+            return `<div class="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg text-white border border-slate-600">
+                <div class="flex items-center gap-3"><span class="text-sm font-black w-4 opacity-50">${index+1}</span><span class="font-bold text-sm">${entry.name}</span></div>
+                <div class="flex items-center gap-2"><span class="emoji text-xs">${rankObj.emoji}</span><span class="font-black text-white">${entry.value}</span></div>
+            </div>`;
         }
 
         function endGame() {
             const rankObj = getRankObj(score);
-            document.getElementById('rank-display').innerText = rankObj.title;
-            rankEmojiEl.innerHTML = `<span class="emoji">${rankObj.emoji}</span>`;
-            document.getElementById('final-score').innerText = score;
+            const rankDisp = document.getElementById('rank-display');
+            const emojiDisp = document.getElementById('rank-emoji-display');
+            const finalScoreDisp = document.getElementById('final-score');
             
-            // Check if score beats top 5
-            const beatTop5 = score > 0 && top5Scores.length > 0 && score >= top5Scores[top5Scores.length - 1]?.value;
+            if (rankDisp) rankDisp.innerText = rankObj.title;
+            if (emojiDisp) emojiDisp.innerHTML = `<span class="emoji">${rankObj.emoji}</span>`;
+            if (finalScoreDisp) finalScoreDisp.innerText = score;
             
-            // Show/hide name input and submit button based on if they beat top 5
-            document.getElementById('player-name-container').style.display = beatTop5 ? 'block' : 'none';
-            document.getElementById('submit-score-btn').style.display = beatTop5 ? 'block' : 'none';
+            if (isDailyMode) {
+                localStorage.setItem('daily_played_' + getDailySeedNum(), 'true');
+                checkDailyStatus();
+            }
+
+            const beatTop5 = score > 0 && (top5Scores.length < 5 || score >= top5Scores[top5Scores.length - 1]?.value);
+            const nameContainer = document.getElementById('player-name-container');
+            const submitBtn = document.getElementById('submit-score-btn');
             
-            modal.classList.remove('hidden');
+            if (nameContainer) nameContainer.classList.toggle('hidden', !beatTop5);
+            if (submitBtn) submitBtn.classList.toggle('hidden', !beatTop5);
+            
+            const modal = document.getElementById('modal');
+            if (modal) modal.classList.remove('hidden');
         }
 
         function resetGame() {
             board = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
             score = 0;
-            scoreEl.innerText = '0';
-            updateRankCountdown();
-            modal.classList.add('hidden');
-            document.getElementById('start-screen').classList.remove('hidden');
-            lastSelectedCell = null;
-            isProcessing = false;
+            history = null;
+            if (scoreDisplayEl) scoreDisplayEl.innerText = '0';
+            
+            const undoBtn = document.getElementById('undo-btn');
+            if (undoBtn) undoBtn.classList.add('disabled-btn');
+            
+            const modal = document.getElementById('modal');
+            if (modal) modal.classList.add('hidden');
+            
+            const startScreen = document.getElementById('start-screen');
+            if (startScreen) startScreen.classList.remove('hidden');
+            
+            checkDailyStatus();
         }
 
-        async function startGame() {
-            document.getElementById('start-screen').classList.add('hidden');
-            document.getElementById('player-name').value = '';
-            document.getElementById('submit-score-btn').disabled = false;
-            document.getElementById('submit-score-btn').innerHTML = 
-                ' Submit to Leaderboard';
-            document.getElementById('submit-score-btn').classList.remove('bg-slate-400');
-            document.getElementById('submit-score-btn').classList.add('bg-green-500', 'hover:bg-green-600');
-            updateRankCountdown();
+        async function startGame(daily) {
+            isDailyMode = daily;
+            if (daily) {
+                const played = localStorage.getItem('daily_played_' + getDailySeedNum());
+                if (played) return showToast("Daily Challenge already completed!");
+                initDailyPRNG();
+            }
+            
+            const startScreen = document.getElementById('start-screen');
+            if (startScreen) startScreen.classList.add('hidden');
+            
+            
             initBoard();
             generateNextPiece();
+            updateRankCountdown();
         }
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
-            // Clear any existing timeout
-            if (toastTimeout) {
-                clearTimeout(toastTimeout);
-            }
+            if (!toast) return;
+            if (toastTimeout) clearTimeout(toastTimeout);
             toast.innerText = msg;
             toast.classList.add('show');
-            // Remove the show class after 2500ms
-            toastTimeout = setTimeout(() => {
-                toast.classList.remove('show');
-                toastTimeout = null;
-            }, 2500);
+            toastTimeout = setTimeout(() => { toast.classList.remove('show'); toastTimeout = null; }, 2500);
         }
 
-        async function shareResult() {
+        function shareResult() {
             const rankObj = getRankObj(score);
-            const shareData = {
-                title: 'Animal Flats',
-                text: `${rankObj.emoji} I achieved ${score} points and reached the rank of "${rankObj.title}" in Animal Flats. Can you beat me?`,
-                url: window.location.href
-            };
-            const canShareNative = navigator.share && (navigator.canShare ? navigator.canShare(shareData) : true);
-            if (canShareNative) {
-                try {
-                    await navigator.share(shareData);
-                } catch (err) {
-                    if (err.name !== 'AbortError') copyToClipboard(shareData.text);
-                }
-            } else {
-                copyToClipboard(shareData.text);
-            }
-        }
-
-        function copyToClipboard(text) {
+            const dateStr = isDailyMode ? ` on ${getFormattedDate()}` : '';
+            const text = `${rankObj.emoji} I scored ${score} ("${rankObj.title}") in Animal Flats${dateStr}! ${isDailyMode ? '[Daily Challenge]' : ''}`;
             const el = document.createElement('textarea');
-            el.value = text;
-            el.setAttribute('readonly', '');
-            el.style.position = 'absolute';
-            el.style.left = '-9999px';
-            document.body.appendChild(el);
-            el.select();
-            try {
-                document.execCommand('copy');
-                showToast("Rank copied to clipboard!");
-            } catch (err) {
-                console.error('Unable to copy', err);
-            }
-            document.body.removeChild(el);
+            el.value = text; document.body.appendChild(el);
+            el.select(); document.execCommand('copy'); document.body.removeChild(el);
+            showToast("Copied to clipboard!");
         }
 
-        shareBtn.addEventListener('click', shareResult);
-        
-        // Load top 5 scores on start
         async function loadTop5Scores() {
+            const container = document.getElementById('start-leaderboard');
+            if (!container) return;
             try {
                 const response = await fetch(`${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}`);
                 const data = await response.json();
-                
-                if (data.scores && data.scores.length > 0) {
+                if (data.scores?.length > 0) {
                     top5Scores = data.scores.slice(0, 5);
-                    
-                    const leaderboardHtml = top5Scores
-                        .map((entry, index) => formatLeaderboardRow(entry, index))
-                        .join('');
-                    
-                    document.getElementById('start-leaderboard').innerHTML = leaderboardHtml;
-                } else {
-                    document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-400 py-8">No scores yet. Be first!</div>';
-                }
-            } catch (error) {
-                console.error('Error loading top 5 scores:', error);
-                document.getElementById('start-leaderboard').innerHTML = '<div class="text-center text-slate-500 py-8">Click Start to Play</div>';
-            }
+                    container.innerHTML = top5Scores.map((e, i) => formatLeaderboardRow(e, i)).join('');
+                } else container.innerHTML = '<div class="text-center text-slate-400 py-4 italic text-sm">No high scores yet!</div>';
+            } catch (error) { container.innerHTML = '<div class="text-center text-slate-400 py-4 italic text-sm">Offline</div>'; }
         }
+
+        async function submitScoreToLeaderboard() {
+            const nameEl = document.getElementById('player-name');
+            const name = nameEl ? nameEl.value.trim() : "";
+            if (!name) return showToast("Enter a name!");
+            const btn = document.getElementById('submit-score-btn');
+            if (!btn) return;
+            btn.disabled = true; btn.innerText = "Submitting...";
+            try {
+                const url = `${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}/${LEADERBOARD_CONFIG.secret}/add/${encodeURIComponent(name)}/${score}/0`;
+                const response = await fetch(url, { method: 'POST' });
+                if (response.ok) { showToast("Score Submitted!"); btn.innerText = "Submitted!"; btn.classList.replace('bg-green-600', 'bg-slate-600'); loadTop5Scores(); }
+            } catch (e) { showToast("Submission failed."); btn.disabled = false; }
+        }
+
+        function playAgain() { resetGame(); }
+        const shareBtn = document.getElementById('share-btn');
+        if (shareBtn) shareBtn.onclick = shareResult;
         
         window.addEventListener('load', () => {
-            document.getElementById('intro-modal').classList.remove('hidden');
+            //const introSeen = localStorage.getItem('intro_seen');
+            const introSeen = false
+			const introModal = document.getElementById('intro-modal');
+            const startScreen = document.getElementById('start-screen');
+            
+            if (!introSeen) {
+                if (introModal) introModal.classList.remove('hidden');
+                if (startScreen) startScreen.classList.add('hidden');
+            } else {
+                if (startScreen) startScreen.classList.remove('hidden');
+            }
             loadTop5Scores();
+            checkDailyStatus();
         });
-
-        // Leaderboard Functions
-        async function submitScoreToLeaderboard() {
-            const playerName = document.getElementById('player-name').value.trim();
-            const submitBtn = document.getElementById('submit-score-btn');
-            
-            if (!playerName) {
-                showToast("Please enter your name!");
-                return;
-            }
-
-            // Disable button and show loading state
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="1"/><path d="M12 2v4m7.07 7.07h-4m-5.66 5.66v-4m-5.66-5.66h4"/></svg><span>Submitting...</span>';
-
-            try {
-                const url = `${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}/${LEADERBOARD_CONFIG.secret}/add/${encodeURIComponent(playerName)}/${score}/0`;
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    showToast(`🎉 Score submitted! Great job, ${playerName}!`);
-                    // Disable submit button after successful submission
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = 
-                        '<span>Submitted!</span>';
-                    submitBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
-                    submitBtn.classList.add('bg-slate-400');
-                } else {
-                    showToast("Failed to submit score. Try again!");
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = 
-                    //    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26H22L17.18 12.02L19.34 18.26L12 14.5L4.66 18.26L6.82 12.02L2 8.26h6.91L12 2z"/></svg>' +
-                        '<span>Submit to Leaderboard</span>';
-                }
-            } catch (error) {
-                console.error('Error submitting score:', error);
-                showToast("Network error. Please try again!");
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 
-                    '<span>Submit to Leaderboard</span>';
-            }
-        }
-
-        async function showLeaderboard() {
-            const leaderboardModal = document.getElementById('leaderboard-modal');
-            const leaderboardContent = document.getElementById('leaderboard-content');
-            
-            leaderboardModal.classList.remove('hidden');
-            leaderboardContent.innerHTML = '<div class="text-center text-slate-400 py-8">Loading scores...</div>';
-
-            try {
-                const response = await fetch(`${LEADERBOARD_CONFIG.apiUrl}/${LEADERBOARD_CONFIG.id}`);
-                const data = await response.json();
-
-                if (data.scores && data.scores.length > 0) {
-                    leaderboardContent.innerHTML = data.scores
-                        .map((entry, index) => formatLeaderboardRow(entry, index))
-                        .join('');
-                } else {
-                    leaderboardContent.innerHTML = '<div class="text-center text-slate-400 py-8">No scores yet. Be the first!</div>';
-                }
-            } catch (error) {
-                console.error('Error fetching leaderboard:', error);
-                leaderboardContent.innerHTML = '<div class="text-center text-red-400 py-8">Failed to load leaderboard</div>';
-            }
-        }
-
-        function closeLeaderboard() {
-            document.getElementById('leaderboard-modal').classList.add('hidden');
-        }
-
-        function playAgain() {
-            resetGame();
-        }
-
     </script>
 </body>
 </html>
