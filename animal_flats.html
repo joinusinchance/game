@@ -121,7 +121,6 @@
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
-        /* Achievement Overlay Stylized */
         #achievement-overlay {
             position: fixed;
             inset: 0;
@@ -171,8 +170,8 @@
             transform: translateX(-50%) rotate(45deg);
             width: 2rem;
             height: 2rem;
-            background: #1e293b; /* matches bg-slate-800 */
-            border-right: 4px solid #ca8a04; /* matches border-yellow-600 */
+            background: #1e293b; 
+            border-right: 4px solid #ca8a04; 
             border-bottom: 4px solid #ca8a04;
         }
     </style>
@@ -180,10 +179,7 @@
 <body class="flex flex-col items-center h-[100dvh] p-4">
 
     <div class="w-full max-w-md flex flex-col h-full">
-        <!-- Header: HOME -- NEXT TILE -- SCORE & UNDO -->
         <div class="w-full h-24 grid grid-cols-3 items-center mb-1 p-3 rounded-2xl shadow-sm border border-slate-700 flex-shrink-0 bg-slate-800 header-bg">
-            
-            <!-- Left: HOME -->
             <div class="flex items-center justify-start pl-1">
                 <button onclick="resetGame()"
                     class="p-3 text-slate-400 hover:text-white active:scale-90 transition-all bg-slate-700/50 rounded-xl border border-slate-600"
@@ -192,12 +188,10 @@
                 </button>
             </div>
 
-            <!-- Center: NEXT TILE -->
             <div class="flex flex-col items-center justify-center">
                 <div id="next-piece-display" class="min-w-[60px] min-h-[40px]"></div>
             </div>
 
-            <!-- Right: SCORE & UNDO -->
             <div class="flex items-center justify-end gap-3 pr-1">
                 <div class="flex flex-col items-end">
                     <div class="flex items-baseline gap-1">
@@ -216,13 +210,11 @@
             </div>
         </div>
 
-        <!-- Board -->
         <div class="flex-grow flex flex-col items-center justify-start pt-1 overflow-visible">
             <div id="game-board" class="grid-container mx-auto"></div>
         </div>
     </div>
 
-    <!-- Achievement Overlay -->
     <div id="achievement-overlay" class="hidden">
         <div class="w-full max-w-sm flex flex-col items-center">
             <div class="relative bg-slate-800 rounded-3xl p-6 shadow-2xl mb-8 border-4 border-yellow-600">
@@ -236,7 +228,6 @@
         </div>
     </div>
 
-    <!-- Modal (Game Over) -->
     <div id="modal" class="fixed inset-0 bg-slate-900/80 hidden flex items-center justify-center p-6 z-50 backdrop-blur-sm">
         <div class="bg-slate-800 rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-700">
             <div id="rank-emoji-display" class="text-6xl mb-4"><span class="emoji">🦒</span></div>
@@ -256,49 +247,32 @@
         </div>
     </div>
 
-    <!-- Intro Modal -->
     <div id="intro-modal" class="fixed inset-0 bg-gradient-to-b from-slate-900 to-slate-800 hidden flex items-center justify-center p-6 z-[300] overflow-y-auto">
         <div class="w-full max-w-sm flex flex-col items-center my-auto">
             <div class="text-center mb-6">
-                <h1 class="text-5xl sm:text-6xl font-black text-orange-400 mb-2 leading-tight">
-                    Animal Flats
-                </h1>
-                <p class="text-slate-300 font-semibold uppercase tracking-widest text-xs">
-                     Waste your potential
-                </p>
+                <h1 class="text-5xl sm:text-6xl font-black text-orange-400 mb-2 leading-tight">Animal Flats</h1>
+                <p class="text-slate-300 font-semibold uppercase tracking-widest text-xs">Waste your potential</p>
             </div>
-
             <div class="relative bg-slate-800 rounded-3xl p-6 shadow-2xl mb-8 border-4 border-yellow-600">
-                <p class="text-slate-300 font-medium italic mb-2">
-                    "Pair up three of the same faces to fill the flats. The more you fill, the more profit for me and my 25 Slum Landlord buddies!"
-                </p>
+                <p class="text-slate-300 font-medium italic mb-2">"Pair up three of the same faces to fill the flats. The more you fill, the more profit for me and my 25 Slum Landlord buddies!"</p>
                 <h3 class="text-2xl font-black text-white leading-tight">-Apathetic Amoeba</h3>
                 <div class="speech-bubble-tail"></div>
             </div>
-
-            <div class="text-8xl filter drop-shadow-lg animate-bounce" style="animation-duration: 2s;">
-                🦠
-            </div>
-
-            <button onclick="hideIntro()" class="mt-8 w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-lg rounded-2xl shadow-xl active:scale-95 transition-all hover:brightness-110">
-                Next
-            </button>
+            <div class="text-8xl filter drop-shadow-lg animate-bounce" style="animation-duration: 2s;">🦠</div>
+            <button onclick="hideIntro()" class="mt-8 w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black text-lg rounded-2xl shadow-xl active:scale-95 transition-all hover:brightness-110">Next</button>
         </div>
     </div>
 
-    <!-- Start Screen -->
     <div id="start-screen" class="fixed inset-0 min-h-dvh bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-6 z-50 overflow-y-auto">
         <div class="w-full max-w-sm flex flex-col items-center my-auto">
             <div class="text-center mb-6">
                 <h1 class="text-5xl sm:text-6xl font-black text-orange-400 mb-2 leading-tight">Animal Flats</h1>
-                <p class="text-slate-300 font-semibold"><span class="emoji">💰</span> Clear 3 and profit</p>
+                <p class="text-slate-300 font-semibold"><span class="emoji">💰</span> Match 3 & earn for others</p>
             </div>
-            
             <div class="w-full bg-slate-800 rounded-2xl shadow-lg p-5 mb-6 border-2 border-slate-700">
-                <h2 class="text-xl font-black text-white mb-3 text-center flex items-center justify-center gap-2">🏆 Top Earners</h2>
+                <h2 class="text-xl font-black text-white mb-3 text-center flex items-center justify-center gap-2">Top Toilers</h2>
                 <div id="start-leaderboard" class="space-y-2"><div class="text-center text-slate-400 py-4 italic text-sm">Loading...</div></div>
             </div>
-            
             <div class="grid grid-cols-1 gap-3 w-full">
                 <button onclick="startGame(false)" class="w-full py-4 px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-black text-lg rounded-2xl shadow-xl active:scale-95 transition-all hover:brightness-110">Continuous Toil</button>
                 <button id="daily-btn" onclick="startGame(true)" class="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black text-lg rounded-2xl shadow-xl active:scale-95 transition-all hover:brightness-110">Daily Grind</button>
@@ -318,34 +292,32 @@
         const GRID_SIZE = 6;
         const ANIMALS = ['🐊', '🐟', '🦋', '🦜'];
         const RANKS = [
-    { threshold: 30, title: "Apathetic Amoeba", emoji: "🦠", achieved: "I appreciate you overfilling the Aqueous Abyss, but there are more puddles to overcharge for." },
-    { threshold: 150, title: "Bumbling Beetle", emoji: "🪲", achieved: "Cheers for cluttering up the Broken Barn, but those dung heaps won't rent themselves."  },
-    { threshold: 400, title: "Clumsy Cat", emoji: "🐱", achieved: "Nice job squeezing souls into the Cramped Condo; now go find some more kittens to exploit." },
-    { threshold: 750, title: "Dashing Dolphin", emoji: "🐬", achieved: "Delightful work drowning them in the Damp Depot; it’s time to inflate the tide-water taxes." },
-    { threshold: 1200, title: "Elongated Eel", emoji: "🪱", achieved: "Excellent effort exhausting the Empty Estuary; keep squeezing the tenants for every volt." },
-    { threshold: 1800, title: "Fancy Flamingo", emoji: "🦩", achieved: "Fabulous job fattening the profits at the Fragile Flat; it’s time to paint over the damp and raise the rent." },
-    { threshold: 2500, title: "Gilded Gorilla", emoji: "🦍", achieved: "Grand work glutting the Grimy Garage; there’s still more concrete jungle to monetize." },
-    { threshold: 3500, title: "Heroic Hippo", emoji: "🦛", achieved: "Hats off for hoarding life in the Humid Habitat; now go ignore a plumbing repair request." },
-    { threshold: 4600, title: "Intelligent Iguana", emoji: "🦎", achieved: "I’m impressed with how you’ve infested the Isolated Island; your empire of heat-lamp surcharges awaits." },
-    { threshold: 5800, title: "Jovial Jaguar", emoji: "🐆", achieved: "Just love how you jammed the Jagged Jungle-hut; keep prowling for those security deposits." },
-    { threshold: 7100, title: "King Koala", emoji: "🐨", achieved: "Kudos for keeping the Knotted Kerbside crowded; just don't let the residents sleep in their beds." },
-    { threshold: 8500, title: "Legendary Lion", emoji: "🦁", achieved: "Lovely work levying fees at the Loathsome Loft; it's time for some predatory leasing." },
-    { threshold: 10000, title: "Majestic Mammoth", emoji: "🦣", achieved: "Many thanks for mass-renting the Mouldy Mansion; keep those prehistoric floorboards creaking." },
-    { threshold: 11600, title: "Noble Nightingale", emoji: "🐦", achieved: "Nothing beats the noise in the Narrow Nest; now go whistle for some late fees." },
-    { threshold: 13300, title: "Observant Otter", emoji: "🦦", achieved: "Oh, the opulence of the Overcrowded Outpost! There's more riverfront to ruin." },
-    { threshold: 15100, title: "Powerful Panther", emoji: "🐈‍⬛", achieved: "Perfectly packed, that Pitiful Penthouse; continue your shadowy sub-letting." },
-    { threshold: 17000, title: "Quizzical Quokka", emoji: "🐹", achieved: "Quite the quota you reached at the Quaint Quarters; don't let the smiles distract from the lack of heating." },
-    { threshold: 19000, title: "Radiant Rhino", emoji: "🦏", achieved: "Rarely have I seen such revenue from the Rusty Residence; keep charging extra for the 'industrial' aesthetic." },
-    { threshold: 21100, title: "Stellar Shark", emoji: "🦈", achieved: "Splendid job stocking the Submerged Shanty; there are more small fish to fry in the market." },
-    { threshold: 23300, title: "Triumphant Tiger", emoji: "🐯", achieved: "Truly terrifying turnover at the Tiny Tenement; your stripes as a ruthless manager are showing." },
-    { threshold: 25600, title: "Unstoppable Unicorn", emoji: "🦄", achieved: "Utterly amazed at the usury in the Underwhelming Unit; even magical properties need a high-interest mortgage." },
-    { threshold: 28000, title: "Valiant Viper", emoji: "🐍", achieved: "Very vigorous void-filling at the Vacant Villa; slither over to the next plot and demand a premium." },
-    { threshold: 30500, title: "Wise Wolf", emoji: "🐺", achieved: "Wicked work warehousing souls in the Wretched Warehouse; keep the pack hungry for more real estate." },
-    { threshold: 33100, title: "Xenon X-ray Fish", emoji: "🦴", achieved: "X-tremely good job exploiting the Xeric Xylophone-factory; let's keep the profit margins transparent." },
-    { threshold: 35800, title: "Yearning Yak", emoji: "🐃", achieved: "You’ve yielded great results at the Yellowing Yard; there are more pastures to overpopulate." },
-    { threshold: 38600, title: "Zazzy Zebra", emoji: "🦓", achieved: "Zealously zipping up the Zig-zagged Zone; the world is your black-and-white balance sheet! Unfortunately, your rent is due, WHERE MY THE MONEY??" }
-
-
+            { threshold: 30, title: "Apathetic Amoeba", emoji: "🦠", achieved: "I appreciate you overfilling the Aqueous Abyss, but there are more puddles to overcharge for." },
+            { threshold: 150, title: "Bumbling Beetle", emoji: "🪲", achieved: "Cheers for cluttering up the Broken Barn, but those dung heaps won't rent themselves."  },
+            { threshold: 400, title: "Clumsy Cat", emoji: "🐱", achieved: "Nice job squeezing souls into the Cramped Condo; now go find some more kittens to exploit." },
+            { threshold: 750, title: "Dashing Dolphin", emoji: "🐬", achieved: "Delightful work drowning them in the Damp Depot; it’s time to inflate the tide-water taxes." },
+            { threshold: 1200, title: "Elongated Eel", emoji: "🪱", achieved: "Excellent effort exhausting the Empty Estuary; keep squeezing the tenants for every volt." },
+            { threshold: 1800, title: "Fancy Flamingo", emoji: "🦩", achieved: "Fabulous job fattening the profits at the Fragile Flat; it’s time to paint over the damp and raise the rent." },
+            { threshold: 2500, title: "Gilded Gorilla", emoji: "🦍", achieved: "Grand work glutting the Grimy Garage; there’s still more concrete jungle to monetize." },
+            { threshold: 3500, title: "Heroic Hippo", emoji: "🦛", achieved: "Hats off for hoarding life in the Humid Habitat; now go ignore a plumbing repair request." },
+            { threshold: 4600, title: "Intelligent Iguana", emoji: "🦎", achieved: "I’m impressed with how you’ve infested the Isolated Island; your empire of heat-lamp surcharges awaits." },
+            { threshold: 5800, title: "Jovial Jaguar", emoji: "🐆", achieved: "Just love how you jammed the Jagged Jungle-hut; keep prowling for those security deposits." },
+            { threshold: 7100, title: "King Koala", emoji: "🐨", achieved: "Kudos for keeping the Knotted Kerbside crowded; just don't let the residents sleep in their beds." },
+            { threshold: 8500, title: "Legendary Lion", emoji: "🦁", achieved: "Lovely work levying fees at the Loathsome Loft; it's time for some predatory leasing." },
+            { threshold: 10000, title: "Majestic Mammoth", emoji: "🦣", achieved: "Many thanks for mass-renting the Mouldy Mansion; keep those prehistoric floorboards creaking." },
+            { threshold: 11600, title: "Noble Nightingale", emoji: "🐦", achieved: "Nothing beats the noise in the Narrow Nest; now go whistle for some late fees." },
+            { threshold: 13300, title: "Observant Otter", emoji: "🦦", achieved: "Oh, the opulence of the Overcrowded Outpost! There's more riverfront to ruin." },
+            { threshold: 15100, title: "Powerful Panther", emoji: "🐈‍⬛", achieved: "Perfectly packed, that Pitiful Penthouse; continue your shadowy sub-letting." },
+            { threshold: 17000, title: "Quizzical Quokka", emoji: "🐹", achieved: "Quite the quota you reached at the Quaint Quarters; don't let the smiles distract from the lack of heating." },
+            { threshold: 19000, title: "Radiant Rhino", emoji: "🦏", achieved: "Rarely have I seen such revenue from the Rusty Residence; keep charging extra for the 'industrial' aesthetic." },
+            { threshold: 21100, title: "Stellar Shark", emoji: "🦈", achieved: "Splendid job stocking the Submerged Shanty; there are more small fish to fry in the market." },
+            { threshold: 23300, title: "Triumphant Tiger", emoji: "🐯", achieved: "Truly terrifying turnover at the Tiny Tenement; your stripes as a ruthless manager are showing." },
+            { threshold: 25600, title: "Unstoppable Unicorn", emoji: "🦄", achieved: "Utterly amazed at the usury in the Underwhelming Unit; even magical properties need a high-interest mortgage." },
+            { threshold: 28000, title: "Valiant Viper", emoji: "🐍", achieved: "Very vigorous void-filling at the Vacant Villa; slither over to the next plot and demand a premium." },
+            { threshold: 30500, title: "Wise Wolf", emoji: "🐺", achieved: "Wicked work warehousing souls in the Wretched Warehouse; keep the pack hungry for more real estate." },
+            { threshold: 33100, title: "Xenon X-ray Fish", emoji: "🦴", achieved: "X-tremely good job exploiting the Xeric Xylophone-factory; let's keep the profit margins transparent." },
+            { threshold: 35800, title: "Yearning Yak", emoji: "🐃", achieved: "You’ve yielded great results at the Yellowing Yard; there are more pastures to overpopulate." },
+            { threshold: 38600, title: "Zazzy Zebra", emoji: "🦓", achieved: "Zealously zipping up the Zig-zagged Zone; the world is your black-and-white balance sheet! Unfortunately, your rent is due, WHERE MY THE MONEY??" }
         ];
 
         let board = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
@@ -360,11 +332,9 @@
         const boardEl = document.getElementById('game-board');
         const scoreDisplayEl = document.getElementById('score');
 
-        let isDailyMode = false;
         let sfc_a, sfc_b, sfc_c, sfc_d;
 
         function hideIntro() {
-       //     localStorage.setItem('intro_seen', 'true');
             document.getElementById('intro-modal').classList.add('hidden');
             document.getElementById('start-screen').classList.remove('hidden');
         }
@@ -390,8 +360,7 @@
             return (t >>> 0) / 4294967296;
         }
 
-        function initDailyPRNG() {
-            const seed = getDailySeedNum();
+        function initPRNG(seed) {
             sfc_a = hashMix(seed);
             sfc_b = hashMix(sfc_a);
             sfc_c = hashMix(sfc_b);
@@ -526,11 +495,11 @@
             }
             if (!canFitH && !canFitV) return endGame();
 
-            const rng = isDailyMode ? sfc32 : Math.random;
-            let isH = canFitH && canFitV ? rng() > 0.5 : canFitH;
+            const rng = sfc32();
+            let isH = canFitH && canFitV ? rng > 0.5 : canFitH;
 
             currentPiece = {
-                animals: [ANIMALS[Math.floor(rng() * ANIMALS.length)], ANIMALS[Math.floor(rng() * ANIMALS.length)]],
+                animals: [ANIMALS[Math.floor(sfc32() * ANIMALS.length)], ANIMALS[Math.floor(sfc32() * ANIMALS.length)]],
                 horizontal: isH
             };
             updatePieceUI();
@@ -636,7 +605,7 @@
             board = JSON.parse(JSON.stringify(history.board));
             score = history.score;
             currentPiece = JSON.parse(JSON.stringify(history.currentPiece));
-            if (isDailyMode) [sfc_a, sfc_b, sfc_c, sfc_d] = history.sfc;
+            [sfc_a, sfc_b, sfc_c, sfc_d] = history.sfc;
             
             if (scoreDisplayEl) scoreDisplayEl.innerText = score;
             updateRankCountdown();
@@ -667,6 +636,7 @@
             </div>`;
         }
 
+        let isDailyModeGlobal = false;
         function endGame() {
             const rankObj = getRankObj(score);
             const rankDisp = document.getElementById('rank-display');
@@ -677,7 +647,7 @@
             if (emojiDisp) emojiDisp.innerHTML = `<span class="emoji">${rankObj.emoji}</span>`;
             if (finalScoreDisp) finalScoreDisp.innerText = score;
             
-            if (isDailyMode) {
+            if (isDailyModeGlobal) {
                 localStorage.setItem('daily_played_' + getDailySeedNum(), 'true');
                 checkDailyStatus();
             }
@@ -712,16 +682,17 @@
         }
 
         async function startGame(daily) {
-            isDailyMode = daily;
+            isDailyModeGlobal = daily;
             if (daily) {
                 const played = localStorage.getItem('daily_played_' + getDailySeedNum());
                 if (played) return showToast("Daily Challenge already completed!");
-                initDailyPRNG();
+                initPRNG(getDailySeedNum());
+            } else {
+                initPRNG(Date.now() * 1000); // Use microsecond-ish precision
             }
             
             const startScreen = document.getElementById('start-screen');
             if (startScreen) startScreen.classList.add('hidden');
-            
             
             initBoard();
             generateNextPiece();
@@ -739,8 +710,10 @@
 
         function shareResult() {
             const rankObj = getRankObj(score);
-            const dateStr = isDailyMode ? ` on ${getFormattedDate()}` : '';
-            const text = `${rankObj.emoji} I scored ${score} ("${rankObj.title}") in Animal Flats${dateStr}! ${isDailyMode ? '[Daily Challenge]' : ''}`;
+            const dateStr = isDailyModeGlobal ? ` on ${getFormattedDate()}` : '';
+            const gameUrl = window.location.href;
+            const text = `${rankObj.emoji} I scored ${score} ("${rankObj.title}") in Animal Flats${dateStr}! ${isDailyModeGlobal ? '[Daily Challenge]' : ''} Waste time here: ${gameUrl}`;
+            
             const el = document.createElement('textarea');
             el.value = text; document.body.appendChild(el);
             el.select(); document.execCommand('copy'); document.body.removeChild(el);
@@ -779,8 +752,7 @@
         if (shareBtn) shareBtn.onclick = shareResult;
         
         window.addEventListener('load', () => {
-            //const introSeen = localStorage.getItem('intro_seen');
-            const introSeen = false
+            const introSeen = false;
 			const introModal = document.getElementById('intro-modal');
             const startScreen = document.getElementById('start-screen');
             
