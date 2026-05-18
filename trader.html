@@ -121,7 +121,7 @@
             <div class="bg-[#3e2712] px-3 py-1.5 rounded-lg border border-[#8b5e3c] flex items-center gap-2">
                 <i data-lucide="shield" class="w-4 h-4 text-red-400"></i>
                 <div>
-                    <span class="text-xs text-amber-300 block leading-none">Ship Condition</span>
+                    <span class="text-xs text-amber-300 block leading-none">Fleet Condition</span>
                     <span class="font-bold text-red-200" id="ship-condition">Hull: 100% | Sails: 100%</span>
                 </div>
             </div>
@@ -181,7 +181,7 @@
                     <i data-lucide="beer" class="w-3.5 h-3.5"></i> Visit Tavern
                 </button>
                 <button onclick="toggleTab('shipyard')" class="flex-1 btn-vintage py-1.5 px-2 rounded-lg text-xs flex items-center justify-center gap-1">
-                    <i data-lucide="hammer" class="w-3.5 h-3.5"></i> Shipyard
+                    <i data-lucide="hammer" class="w-3.5 h-3.5"></i> Shipyard & Fleet
                 </button>
             </div>
         </section>
@@ -215,7 +215,6 @@
 
                 <svg id="interactive-map-svg" class="absolute inset-0 w-full h-full pointer-events-auto" viewBox="0 0 500 400" preserveAspectRatio="none">
                     <!-- Dotted lines indicating shipping lanes -->
-                    <!-- Generated dynamically in JS -->
                 </svg>
 
                 <!-- Anchor indicators and icons container -->
@@ -269,7 +268,7 @@
                         Tavern
                     </button>
                     <button id="tab-shipyard" onclick="switchRightTab('shipyard')" class="flex-1 pb-2 text-xs uppercase tracking-wider font-bold border-b-2 border-transparent text-amber-800/60 hover:text-amber-950">
-                        Shipyard
+                        Shipyard & Fleet
                     </button>
                 </div>
 
@@ -277,10 +276,6 @@
                 <div id="content-log" class="flex-grow flex flex-col justify-between overflow-y-auto pr-1">
                     <div class="space-y-2 max-h-[290px]" id="log-list">
                         <!-- Simulated Ship logs -->
-                        <div class="text-xs border-b border-amber-900/10 pb-1.5">
-                            <span class="text-amber-800 block">Day 1</span>
-                            <span class="text-amber-950">Arrived at Port Royal with 10 sailors and 1,200 Gold. Weather is clear.</span>
-                        </div>
                     </div>
                     <!-- End Day / Wait turn button -->
                     <div class="mt-4 pt-3 border-t border-amber-900/10">
@@ -323,55 +318,54 @@
                     </div>
                 </div>
 
-                <!-- TAB 3: SHIPYARD -->
+                <!-- TAB 3: SHIPYARD & FLEET -->
                 <div id="content-shipyard" class="hidden flex-grow flex flex-col justify-between overflow-y-auto">
                     <div class="space-y-3">
                         <h4 class="font-bold text-sm text-amber-950 uppercase border-b border-amber-900/10 pb-1 mb-2">Shipwright & Armory</h4>
                         
-                        <!-- Current Ship Stats -->
+                        <!-- Current Ship Stats / FLEET LIST -->
                         <div class="bg-amber-900/5 p-2 rounded-lg border border-amber-900/10 text-xs text-amber-900">
-                            <div class="flex justify-between">
-                                <span class="font-bold">Vessel Type:</span>
-                                <span id="shipyard-vessel-name" class="font-bold text-amber-950">Sloop</span>
+                            <div class="flex justify-between font-bold text-amber-950 border-b border-amber-900/15 pb-1 mb-1">
+                                <span>Active Fleet</span>
+                                <span>Guns Mounted</span>
                             </div>
-                            <div class="flex justify-between mt-0.5">
-                                <span>Cannons Mounted:</span>
-                                <span id="shipyard-cannons">2 / 4 max</span>
+                            <div id="fleet-list-container" class="space-y-1.5 max-h-[110px] overflow-y-auto pr-1">
+                                <!-- Generated Dynamically: Lists Sloop, Brigantine, etc. in your fleet, with SELL buttons -->
+                            </div>
+                        </div>
+
+                        <!-- Local Ship Market (Buy / Commodity Trade Ships) -->
+                        <div class="bg-amber-950/10 p-2 rounded-xl border border-amber-800/30 text-xs">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="font-bold text-amber-950">Local Ship Market:</span>
+                                <span class="bg-amber-800 text-amber-100 text-[9px] px-1 rounded uppercase">Available</span>
+                            </div>
+                            <div id="ship-market-container" class="space-y-1.5">
+                                <!-- Dynamic Ship available for buy -->
                             </div>
                         </div>
 
                         <!-- Repair Actions -->
                         <div class="space-y-1.5">
                             <div class="flex items-center justify-between text-xs">
-                                <span class="text-amber-900">Repair Hull (+25%)</span>
+                                <span class="text-amber-900">Patch Fleet Hulls (+25%)</span>
                                 <button onclick="repairShip('hull')" id="repair-hull-btn" class="px-2 py-1 btn-vintage rounded text-[11px]">Cost: 50 Gold</button>
                             </div>
                             <div class="flex items-center justify-between text-xs">
-                                <span class="text-amber-900">Repair Sails (+25%)</span>
+                                <span class="text-amber-900">Mend Fleet Sails (+25%)</span>
                                 <button onclick="repairShip('sails')" id="repair-sails-btn" class="px-2 py-1 btn-vintage rounded text-[11px]">Cost: 35 Gold</button>
                             </div>
                         </div>
 
                         <!-- Armory/Upgrade Upgrades -->
                         <div class="border-t border-amber-900/10 pt-2 space-y-2">
-                            <h5 class="text-xs font-bold text-amber-950 uppercase">Upgrade Fleet / Cannons</h5>
-                            
                             <!-- Add Cannon -->
                             <div class="flex items-center justify-between text-xs">
                                 <div class="flex flex-col">
                                     <span class="font-bold text-amber-900">Add 4-pounder Cannon</span>
-                                    <span class="text-[10px] text-amber-800">Increases pirate deterrence</span>
+                                    <span class="text-[10px] text-amber-800">Increases combat capability</span>
                                 </div>
                                 <button onclick="buyCannon()" id="buy-cannon-btn" class="px-2 py-1 btn-vintage rounded text-[11px]">Cost: 200 Gold</button>
-                            </div>
-
-                            <!-- Buy Bigger Ship -->
-                            <div class="bg-amber-950/10 p-2 rounded border border-amber-800/30 text-xs">
-                                <div class="flex justify-between items-center mb-1">
-                                    <span class="font-bold text-amber-950" id="ship-upgrade-title">Brigantine (Cargo: 80)</span>
-                                    <span class="font-semibold text-amber-900" id="ship-upgrade-cost">2,500 Gold</span>
-                                </div>
-                                <button onclick="upgradeShipType()" id="upgrade-ship-btn" class="w-full btn-vintage py-1 rounded text-xs">Upgrade Vessel</button>
                             </div>
                         </div>
                     </div>
@@ -404,16 +398,44 @@
 
             <!-- Event Decisions Buttons -->
             <div class="space-y-3" id="event-actions">
-                <button onclick="handleEventChoice('fight')" class="w-full btn-vintage py-2.5 rounded-xl font-bold flex items-center justify-center gap-2">
-                    <i data-lucide="swords" class="w-4 h-4"></i> Stand & Fight! (Use Cannons)
-                </button>
-                <button onclick="handleEventChoice('flee')" class="w-full btn-vintage py-2.5 rounded-xl font-bold flex items-center justify-center gap-2">
-                    <i data-lucide="wind" class="w-4 h-4"></i> Catch Gale & Flee
-                </button>
-                <button onclick="handleEventChoice('surrender')" class="w-full bg-red-950 text-red-100 hover:bg-red-900 py-2.5 rounded-xl border border-red-700 font-bold flex items-center justify-center gap-2">
-                    <i data-lucide="flag" class="w-4 h-4"></i> Surrender Cargo
-                </button>
+                <!-- Buttons are rendered dynamically -->
             </div>
+        </div>
+    </div>
+
+    <!-- PIRATE SHIP CAPTURE MODAL -->
+    <div id="capture-modal" class="fixed inset-0 z-[101] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="parchment max-w-md w-full rounded-2xl p-6 text-center border-4 border-[#c0a070] relative">
+            <span class="absolute top-2 left-2 text-yellow-800">★</span>
+            <span class="absolute top-2 right-2 text-yellow-800">★</span>
+            
+            <h2 class="vintage-title text-3xl text-amber-950 mb-3">Ship Captured!</h2>
+            <div class="w-20 h-20 bg-amber-900/10 rounded-full flex items-center justify-center border-2 border-[#8c6239] mx-auto mb-4">
+                <i data-lucide="anchor" class="w-10 h-10 text-amber-900 animate-pulse"></i>
+            </div>
+            
+            <p class="text-base text-amber-900 italic mb-4" id="capture-text">
+                Your crew successfully boarded and captured a Pirate Sloop! It has been added to your merchant fleet.
+            </p>
+
+            <div class="bg-amber-900/5 p-3.5 rounded-xl border border-amber-900/20 text-xs text-left space-y-2 mb-5">
+                <div class="flex justify-between">
+                    <span>Captured Ship:</span>
+                    <strong class="text-amber-950" id="captured-ship-name">Sloop</strong>
+                </div>
+                <div class="flex justify-between">
+                    <span>Additional Cargo Space:</span>
+                    <strong class="text-green-800" id="captured-ship-cargo">+40 Tons</strong>
+                </div>
+                <div class="flex justify-between">
+                    <span>Gold Doubloons Looted:</span>
+                    <strong class="text-yellow-700" id="captured-ship-loot">+120 G</strong>
+                </div>
+            </div>
+
+            <button onclick="dismissCaptureModal()" class="w-full btn-vintage py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs">
+                Incorporate to Fleet
+            </button>
         </div>
     </div>
 
@@ -440,7 +462,7 @@
                     <span class="font-bold text-amber-950" id="stat-gold">1,200 Gold</span>
                 </div>
                 <div class="flex justify-between py-1">
-                    <span>Final Fleet Level:</span>
+                    <span>Total Fleet Value:</span>
                     <span class="font-bold text-amber-950" id="stat-fleet">Sloop</span>
                 </div>
             </div>
@@ -451,7 +473,7 @@
         </div>
     </div>
 
-    <!-- IMMERSIVE CARIBBEAN AUDIO NOTIFICATION & FOOTER INFO -->
+    <!-- FOOTER INFO -->
     <footer class="w-full max-w-7xl mx-auto mt-4 text-center text-xs text-amber-200/60 pb-2">
         <p>&copy; 1684 Crown Trading Company &bull; Master Your Cargo, Rule the Seas &bull; Click ports on the Charter Map to set routes.</p>
     </footer>
@@ -515,20 +537,13 @@
             Gold: 480      // Highly volatile bullion currency
         };
 
-        const baseCapacity = {
-            Sloop: 40,
-            Brigantine: 80,
-            Galleon: 200,
-            Frigate: 120
+        // Ship specifications (Ships as commodities and structural elements)
+        const shipSpecs = {
+            Sloop: { cargo: 40, maxCannons: 4, value: 800, name: "Sloop" },
+            Brigantine: { cargo: 80, maxCannons: 10, value: 2200, name: "Brigantine" },
+            Frigate: { cargo: 130, maxCannons: 20, value: 5500, name: "Frigate" },
+            Galleon: { cargo: 220, maxCannons: 32, value: 11000, name: "Galleon" }
         };
-
-        // --- SHIP UPGRADES CONFIG ---
-        const shipClasses = [
-            { id: "Sloop", next: "Brigantine", upgradeCost: 2500, maxCannons: 4, label: "Brigantine (Cargo: 80)" },
-            { id: "Brigantine", next: "Frigate", upgradeCost: 6000, maxCannons: 10, label: "Frigate (Cargo: 120)" },
-            { id: "Frigate", next: "Galleon", upgradeCost: 12000, maxCannons: 18, label: "Galleon (Cargo: 200)" },
-            { id: "Galleon", next: null, upgradeCost: null, maxCannons: 28, label: "Maximum Fleet Power Achieved!" }
-        ];
 
         // --- GAME INSTANCE STATE ---
         let gameState = {
@@ -541,8 +556,12 @@
             hullHealth: 100,
             sailsHealth: 100,
             crew: 10,
-            cannons: 2,
-            shipType: "Sloop",
+            
+            // FLEET array storing individual ships
+            fleet: [
+                { id: "ship_init", type: "Sloop", cannons: 2 }
+            ],
+            
             localPrices: {},
             log: [],
             dailyVolatility: 0.05, // 5% base noise in trade
@@ -551,11 +570,10 @@
             travelProgress: 0,
             totalTravelDays: 0,
             tavernCrewAvailable: 4,
-            currentEventContext: null
+            currentEventContext: null,
+            localShipAvailable: null // Current ship available in shipyard
         };
 
-        // --- STREAMING_CHUNK: Initializing Audio Engine (Web Audio Synths)... ---
-        // Native Synthesizer to output pirate-themed cannon shots or waves without loading external files
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         function playChime(frequency, type = 'sine', duration = 0.5) {
@@ -577,7 +595,6 @@
         function playCannonSound() {
             try {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
-                // Create brown noise or heavy bass lowpass filtered square wave for cannon blast
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'triangle';
@@ -592,12 +609,43 @@
             } catch (e) { }
         }
 
-        // --- STREAMING_CHUNK: Engine Game Initialization Core... ---
-        // START THE ENGINE
+        function getFleetCargoCapacity() {
+            return gameState.fleet.reduce((sum, ship) => sum + shipSpecs[ship.type].cargo, 0);
+        }
+
+        function getFleetMaxCannons() {
+            return gameState.fleet.reduce((sum, ship) => sum + shipSpecs[ship.type].maxCannons, 0);
+        }
+
+        function getFleetCannonsCount() {
+            return gameState.fleet.reduce((sum, ship) => sum + ship.cannons, 0);
+        }
+
+        function getFleetAvgSpeedMod() {
+            if (gameState.fleet.length === 0) return 1.0;
+            let totalSpeed = 0;
+            gameState.fleet.forEach(ship => {
+                if (ship.type === "Sloop") totalSpeed += 1.35;
+                else if (ship.type === "Brigantine") totalSpeed += 1.15;
+                else if (ship.type === "Frigate") totalSpeed += 0.95;
+                else if (ship.type === "Galleon") totalSpeed += 0.75;
+            });
+            return totalSpeed / gameState.fleet.length;
+        }
+
+        function getFleetTotalValue() {
+            return gameState.fleet.reduce((sum, ship) => sum + shipSpecs[ship.type].value, 0);
+        }
+
+        function getCargoUsed() {
+            return Object.values(gameState.cargo).reduce((sum, val) => sum + val, 0);
+        }
+
         window.onload = function () {
             initializeMap();
+            generateLocalShipForSale();
             recalculatePrices();
-            addLog("Day 1", "Anchored in Port Royal with 10 sailors, 2 mounted cannons, and 1,200 Gold. Good winds prevail.");
+            addLog("Day 1", "Anchored in Port Royal with a Sloop. Fleet trading empire established! 10 sailors, 2 mounted cannons, and 1,200 Gold.");
             updateUI();
             lucide.createIcons();
         }
@@ -607,14 +655,13 @@
             if (gameState.log.length > 25) gameState.log.pop();
         }
 
-        // Generate the shipping lane connections on SVG Map
         function initializeMap() {
             const svg = document.getElementById("interactive-map-svg");
             const citiesContainer = document.getElementById("map-cities-container");
             svg.innerHTML = "";
             citiesContainer.innerHTML = "";
 
-            // 1. Draw routes
+            // 1. Draw shipping lane dotted indicators
             for (let i = 0; i < cities.length; i++) {
                 for (let j = i + 1; j < cities.length; j++) {
                     const c1 = cities[i];
@@ -633,11 +680,10 @@
                 }
             }
 
-            // 2. Draw Ports
+            // 2. Plot ports on layout
             cities.forEach(city => {
                 const isCurrent = city.id === gameState.currentCity;
                 
-                // SVG Element Node
                 const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 circle.setAttribute("cx", `${city.x}%`);
                 circle.setAttribute("cy", `${city.y}%`);
@@ -648,11 +694,9 @@
                 circle.setAttribute("class", "cursor-pointer hover:scale-125 transition-transform duration-200");
                 circle.id = `node-${city.id}`;
                 
-                // Attach click behavior
                 circle.onclick = () => selectDestination(city.id);
                 svg.appendChild(circle);
 
-                // Absolute Interactive Div Overlay on top for hover descriptions
                 const cityEl = document.createElement("div");
                 cityEl.style.left = `${city.x}%`;
                 cityEl.style.top = `${city.y}%`;
@@ -662,13 +706,12 @@
                         <span class="bg-[#2b1d11] text-[#f1e4cb] border border-[#c0a070] px-2 py-0.5 rounded text-[10px] font-semibold shadow whitespace-nowrap group-hover:bg-amber-900 group-hover:text-amber-50" onclick="selectDestination('${city.id}')">
                             ⚓ ${city.name}
                         </span>
-                        <!-- Tooltip with port stats -->
                         <div class="absolute bottom-full left-1/2 -translate-x-1/2 bg-amber-950 text-amber-50 border border-amber-600 rounded-lg p-2.5 w-48 text-xs hidden group-hover:block z-40 shadow-xl mb-1 leading-snug">
                             <h5 class="font-bold border-b border-amber-800 pb-1 mb-1 text-yellow-300">${city.name}</h5>
                             <p class="text-[10px] text-amber-200">${city.description}</p>
                             <div class="mt-1 flex flex-wrap gap-1 text-[9px] font-bold">
-                                <span class="bg-red-950/40 text-red-300 px-1 py-0.5 rounded border border-red-900/40">Production: ${getProduceLabel(city)}</span>
-                                <span class="bg-green-950/40 text-green-300 px-1 py-0.5 rounded border border-green-900/40">Demands: ${getDemandLabel(city)}</span>
+                                <span class="bg-red-950/40 text-red-300 px-1 py-0.5 rounded border border-red-900/40 font-normal">Sells: ${getProduceLabel(city)}</span>
+                                <span class="bg-green-950/40 text-green-300 px-1 py-0.5 rounded border border-green-900/40 font-normal">Buys: ${getDemandLabel(city)}</span>
                             </div>
                         </div>
                     </div>
@@ -685,32 +728,19 @@
             return Object.keys(city.baseModifiers).reduce((a, b) => city.baseModifiers[a] > city.baseModifiers[b] ? a : b);
         }
 
-        // Calculate Cargo utilization dynamically
-        function getCargoUsed() {
-            return Object.values(gameState.cargo).reduce((sum, val) => sum + val, 0);
-        }
-
-        // --- STREAMING_CHUNK: Dynamic Price System & Economic Logic... ---
-        // Dynamically shift local market pricing matrix daily
         function recalculatePrices() {
             const currentCityData = cities.find(c => c.id === gameState.currentCity);
-            
-            // Random Seed volatility (fever state or storm scarcity index)
             const seed = 1 + (Math.random() * gameState.dailyVolatility * 2 - gameState.dailyVolatility);
             
             gameState.localPrices = {};
             for (const [item, basePrice] of Object.entries(basePrices)) {
-                // Apply modifiers
                 const mod = currentCityData.baseModifiers[item] || 1.0;
                 let finalPrice = Math.round(basePrice * mod * seed);
-
-                // Keep bounds realistic
                 if (finalPrice < 2) finalPrice = 2;
                 gameState.localPrices[item] = finalPrice;
             }
         }
 
-        // --- SELECT A DESTINATION FROM THE MAP ---
         function selectDestination(cityId) {
             if (gameState.eventInProgress || gameState.travelDaysRemaining > 0) return;
             if (cityId === gameState.currentCity) {
@@ -722,18 +752,11 @@
             const origin = cities.find(c => c.id === gameState.currentCity);
             const target = cities.find(c => c.id === cityId);
 
-            // Compute Euclidean Distance for travel duration
             const dx = origin.x - target.x;
             const dy = origin.y - target.y;
             const distance = Math.sqrt(dx*dx + dy*dy);
             
-            // Speed adjustments depending on vessel type
-            let speedMod = 1.0;
-            if (gameState.shipType === "Sloop") speedMod = 1.25; // Sloop is fast & light
-            if (gameState.shipType === "Galleon") speedMod = 0.8; // Heavy Galleon with heavy cargo is slow
-            if (gameState.shipType === "Frigate") speedMod = 1.1;
-
-            const days = Math.max(1, Math.round((distance / 8) / speedMod));
+            const days = Math.max(1, Math.round((distance / 8) / getFleetAvgSpeedMod()));
 
             gameState.selectedDestination = {
                 id: cityId,
@@ -741,7 +764,6 @@
                 days: days
             };
 
-            // Highlight chosen port visual
             cities.forEach(c => {
                 const node = document.getElementById(`node-${c.id}`);
                 if (node) {
@@ -762,7 +784,6 @@
             updateUI();
         }
 
-        // --- COMMENCE VOYAGE SAILING ENGINE ---
         function commenceVoyage() {
             if (!gameState.selectedDestination) return;
             if (gameState.crew <= 0) {
@@ -776,79 +797,67 @@
             gameState.eventInProgress = false;
 
             document.getElementById("sailing-overlay").classList.remove("hidden");
-            
-            // Move Avatar and begin navigation loop day-by-day
             runSailingTick();
         }
 
         function runSailingTick() {
             if (gameState.travelDaysRemaining <= 0) {
-                // Arrived
                 gameState.currentCity = gameState.selectedDestination.id;
                 gameState.selectedDestination = null;
                 document.getElementById("sailing-overlay").classList.add("hidden");
                 
-                // Recalculate economic values
                 recalculatePrices();
+                generateLocalShipForSale();
                 
-                // Reflesh recruitment boards
                 gameState.tavernCrewAvailable = Math.floor(Math.random() * 5) + 2;
 
-                addLog(`Day ${gameState.day}`, `Safely moored at the docks of ${cities.find(c=>c.id === gameState.currentCity).name}. Fresh trade inventories are available.`);
+                addLog(`Day ${gameState.day}`, `Safely moored at the docks of ${cities.find(c=>c.id === gameState.currentCity).name}. Fresh trade inventories and shipyards available.`);
                 playChime(520, 'sine', 0.4);
                 
-                // Reposition ship directly on map
                 positionShipAvatar(gameState.currentCity);
                 updateUI();
                 return;
             }
 
-            // Decrement remaining journey distance
             gameState.travelDaysRemaining--;
             gameState.day++;
             gameState.currentDate.setDate(gameState.currentDate.getDate() + 1);
 
-            // Crew food consumption mechanics
+            // Food deduction
             const foodNeeded = Math.ceil(gameState.crew / 10);
             if (gameState.cargo.Food >= foodNeeded) {
                 gameState.cargo.Food -= foodNeeded;
             } else {
-                // Famine on board! Crew members suffer and leave or die
                 const starved = Math.min(gameState.crew, Math.ceil(Math.random() * 3));
                 gameState.crew -= starved;
                 gameState.cargo.Food = 0;
-                addLog(`Day ${gameState.day}`, `🚨 SCURVY OUTBREAK! Out of Food rations during travel. ${starved} crew perished at sea.`);
+                addLog(`Day ${gameState.day}`, `🚨 SCURVY OUTBREAK! Out of Food. ${starved} crew perished at sea.`);
             }
 
-            // Crew wages deduction (1 Gold/day per sailor)
+            // Pay deduction
             const wages = gameState.crew * 1;
             if (gameState.gold >= wages) {
                 gameState.gold -= wages;
             } else {
-                // Mutiny hazard index due to no money
                 const desertions = Math.min(gameState.crew, 1);
                 gameState.crew -= desertions;
                 gameState.gold = 0;
                 addLog(`Day ${gameState.day}`, `⚠️ Crew unpaid! Morale has collapsed. Sailors abandoned post.`);
             }
 
-            // Dynamic ocean hazard check (25% chance of severe storms or pirate raiders)
             const hazardRoll = Math.random();
             if (hazardRoll < 0.25) {
                 triggerHazardEncounter();
-                return; // Interrupt continuous sailing until resolved
+                return;
             }
 
-            // Continue normal sail
             updateSailingProgressHUD();
             
-            // Visual travel step transition
             setTimeout(() => {
                 runSailingTick();
             }, 1200);
         }
 
-        // Dynamic Position Adjuster for Ship Icon on map
         function positionShipAvatar(cityId) {
             const city = cities.find(c => c.id === cityId);
             const avatar = document.getElementById("player-ship-avatar");
@@ -860,7 +869,6 @@
             const originCity = cities.find(c => c.id === gameState.currentCity);
             const destCity = cities.find(c => c.id === gameState.selectedDestination.id);
             
-            // Calculate midpoint percentage
             const completedRatio = (gameState.totalTravelDays - gameState.travelDaysRemaining) / gameState.totalTravelDays;
             const currentX = originCity.x + (destCity.x - originCity.x) * completedRatio;
             const currentY = originCity.y + (destCity.y - originCity.y) * completedRatio;
@@ -876,9 +884,7 @@
             updateUI();
         }
 
-        // --- STREAMING_CHUNK: Random Encounters / Pirates & Storm Combat Systems... ---
         function triggerHazardEncounter() {
-            // Conceal Sea HUD, show modal choice menu
             document.getElementById("sailing-overlay").classList.add("hidden");
             const modal = document.getElementById("event-modal");
             const title = document.getElementById("event-title");
@@ -888,19 +894,17 @@
 
             const dice = Math.random();
             if (dice < 0.5) {
-                // Pirate Event
                 gameState.currentEventContext = "pirate";
                 iconContainer.innerHTML = '<i data-lucide="skull" class="w-10 h-10 text-red-900 animate-pulse"></i>';
-                title.innerText = "Pirates Spotted!";
+                title.innerText = "Pirates Sighted!";
                 title.className = "vintage-title text-2xl text-red-950";
                 
-                // Calculate scale of threat based on player wealth
                 const pirateStrength = Math.floor(Math.random() * 5) + 1;
-                desc.innerHTML = `A hostile Privateer Corsair carrying <strong>${pirateStrength} guns</strong> intercept your course! They prepare their cannons and demand 300 Gold to bypass, or face fire.`;
+                desc.innerHTML = `A hostile Privateer Corsair carrying <strong>${pirateStrength} guns</strong> intercepts your fleet! They prepare their cannons and demand 300 Gold to bypass, or face fire.`;
                 
                 actions.innerHTML = `
                     <button onclick="handleEventChoice('fight')" class="w-full btn-vintage py-2.5 rounded-xl font-bold flex items-center justify-center gap-2">
-                        <i data-lucide="swords" class="w-4 h-4"></i> Battle Broadside (Mounted Cannons: ${gameState.cannons})
+                        <i data-lucide="swords" class="w-4 h-4"></i> Battle Broadside (Your Fleet Guns: ${getFleetCannonsCount()})
                     </button>
                     <button onclick="handleEventChoice('flee')" class="w-full btn-vintage py-2.5 rounded-xl font-bold flex items-center justify-center gap-2">
                         <i data-lucide="wind" class="w-4 h-4"></i> Attempt to Outrun Them
@@ -910,12 +914,11 @@
                     </button>
                 `;
             } else {
-                // Storm Event
                 gameState.currentEventContext = "storm";
                 iconContainer.innerHTML = '<i data-lucide="cloud-lightning" class="w-10 h-10 text-blue-900 animate-bounce"></i>';
                 title.innerText = "Savage Squall!";
                 title.className = "vintage-title text-2xl text-blue-950";
-                desc.innerHTML = `A ferocious tropical hurricane sweeps over your course. Huge waves are smashing into the ship hull! How will you steer?`;
+                desc.innerHTML = `A ferocious tropical hurricane sweeps over your course. Huge waves are smashing into the ship hulls! How will you steer?`;
                 
                 actions.innerHTML = `
                     <button onclick="handleEventChoice('storm_safe')" class="w-full btn-vintage py-2.5 rounded-xl font-bold flex items-center justify-center gap-2">
@@ -931,7 +934,6 @@
             lucide.createIcons();
         }
 
-        // Resolve Event Interactions
         function handleEventChoice(action) {
             const modal = document.getElementById("event-modal");
             modal.classList.add("hidden");
@@ -939,18 +941,36 @@
             if (gameState.currentEventContext === "pirate") {
                 if (action === "fight") {
                     playCannonSound();
-                    // Combat resolution (compare cannons vs random pirate modifier)
-                    const combatRoll = Math.floor(Math.random() * 6) + gameState.cannons;
+                    
+                    const fleetCannons = getFleetCannonsCount();
+                    const combatRoll = Math.floor(Math.random() * 6) + fleetCannons;
                     const pirateRoll = Math.floor(Math.random() * 6) + 3;
 
                     if (combatRoll >= pirateRoll) {
-                        // Success!
-                        const loot = Math.floor(Math.random() * 150) + 50;
+                        // Success! Captured the ship
+                        const pTypes = ["Sloop", "Brigantine", "Frigate"];
+                        let capturedType = "Sloop";
+                        const roll = Math.random();
+                        if (roll > 0.8) capturedType = "Frigate";
+                        else if (roll > 0.45) capturedType = "Brigantine";
+
+                        const spec = shipSpecs[capturedType];
+                        const loot = Math.floor(Math.random() * 180) + 60;
+                        
+                        // Push captured ship to fleet
+                        gameState.fleet.push({
+                            id: "captured_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+                            type: capturedType,
+                            cannons: Math.floor(spec.maxCannons / 3) + 1
+                        });
+
                         gameState.gold += loot;
-                        addLog(`Day ${gameState.day}`, `💥 VICTORY! Your crew boarded and routed the Pirate vessel. Looted ${loot} Gold!`);
-                        alertBox("Pirate Defeated", `Your broadside fire shattered their mainmast! They surrendered and your crew scavenged ${loot} Gold in spoils!`);
+                        addLog(`Day ${gameState.day}`, `💥 VICTORY! Boarded and captured a Pirate ${capturedType}! Looted ${loot} Gold.`);
+                        
+                        showCaptureModal(capturedType, loot);
+                        return; // Modal handles progression
                     } else {
-                        // Defeat/Damage
+                        // Defeat
                         const hullLoss = Math.floor(Math.random() * 30) + 15;
                         const crewLoss = Math.floor(Math.random() * 4) + 1;
                         gameState.hullHealth -= hullLoss;
@@ -959,7 +979,6 @@
                         alertBox("Ship Damaged", `The pirates breached your cargo bays! You took -${hullLoss}% Hull damage and lost ${crewLoss} brave crew.`);
                     }
                 } else if (action === "flee") {
-                    // Flight speed test based on sails
                     const success = Math.random() < (gameState.sailsHealth / 150);
                     if (success) {
                         addLog(`Day ${gameState.day}`, `💨 Outmaneuvered! Flew before the wind and left the pirates behind.`);
@@ -976,7 +995,6 @@
                         gameState.gold -= 300;
                         addLog(`Day ${gameState.day}`, `💸 Paid off Pirate Privateers with 300 Gold to bypass safely.`);
                     } else {
-                        // Not enough gold - forced surrender of all goods
                         gameState.cargo = { Food: 0, Goods: 0, Guns: 0, Gold: 0 };
                         addLog(`Day ${gameState.day}`, `⚠️ Pirates seized entire cargo hold since you didn't have gold.`);
                         alertBox("Seized Goods", "Cruel pirates dumped your trading barrels and seized all inventory!");
@@ -984,13 +1002,12 @@
                 }
             } else if (gameState.currentEventContext === "storm") {
                 if (action === "storm_safe") {
-                    gameState.travelDaysRemaining++; // Takes longer
+                    gameState.travelDaysRemaining++;
                     gameState.totalTravelDays++;
                     gameState.sailsHealth = Math.max(10, gameState.sailsHealth - 5);
                     addLog(`Day ${gameState.day}`, `⚓ Anchored safely during storm. Gained 1 journey day with minimal sail strain.`);
                     alertBox("Storm Resolved", "By anchoring behind a reef, you survived the storm with minor damage, though delayed by 1 day.");
                 } else if (action === "storm_fast") {
-                    // Fast run risky
                     const damageRoll = Math.random();
                     if (damageRoll < 0.4) {
                         const damage = Math.floor(Math.random() * 25) + 10;
@@ -1004,56 +1021,84 @@
                 }
             }
 
-            // Check game over
             if (gameState.hullHealth <= 0 || gameState.crew <= 0) {
                 triggerGameOver("The Sea Claims You...", "Your ship hull cracked and sank below the waves, or you ran completely out of crew.");
                 return;
             }
 
-            // Resume Sailing
             document.getElementById("sailing-overlay").classList.remove("hidden");
             setTimeout(() => {
                 runSailingTick();
             }, 1000);
         }
 
-        // --- STREAMING_CHUNK: Trading buy & sell UI interfaces... ---
-        // MARKET COMMODITIES RENDER
+        function showCaptureModal(type, goldLooted) {
+            const spec = shipSpecs[type];
+            document.getElementById("captured-ship-name").innerText = type;
+            document.getElementById("captured-ship-cargo").innerText = `+${spec.cargo} Tons`;
+            document.getElementById("captured-ship-loot").innerText = `+${goldLooted} G`;
+            document.getElementById("capture-text").innerText = `Your crew successfully boarded and captured a Pirate ${type}! It has been safely incorporated into your merchant fleet.`;
+            
+            document.getElementById("capture-modal").classList.remove("hidden");
+            playChime(620, 'sine', 0.5);
+            lucide.createIcons();
+        }
+
+        function dismissCaptureModal() {
+            document.getElementById("capture-modal").classList.add("hidden");
+            
+            // Resume sailing
+            document.getElementById("sailing-overlay").classList.remove("hidden");
+            setTimeout(() => {
+                runSailingTick();
+            }, 1000);
+        }
+
         function renderMarket() {
             const container = document.getElementById("market-container");
             container.innerHTML = "";
 
-            const cargoMax = baseCapacity[gameState.shipType];
+            const cargoMax = getFleetCargoCapacity();
             const currentCargoTotal = getCargoUsed();
 
             for (const [item, price] of Object.entries(gameState.localPrices)) {
                 const qtyHeld = gameState.cargo[item] || 0;
                 
                 const itemDiv = document.createElement("div");
-                itemDiv.className = "bg-amber-900/5 p-2 rounded-xl border border-amber-900/10 flex items-center justify-between text-sm";
+                itemDiv.className = "bg-amber-900/5 p-2.5 rounded-xl border border-amber-900/10 flex items-center justify-between text-sm";
                 itemDiv.innerHTML = `
                     <div class="flex items-center space-x-2">
-                        <span class="p-1.5 bg-amber-950/10 rounded-lg text-amber-900 font-bold" style="font-size: 1.1rem;">
+                        <span class="p-1.5 bg-amber-950/10 rounded-lg text-amber-900 font-bold text-lg leading-none">
                             ${getItemIcon(item)}
                         </span>
                         <div>
                             <span class="font-bold text-amber-950 block">${item}</span>
-                            <span class="text-xs font-semibold text-amber-800">Buy: <span class="text-amber-950 font-bold">${price}</span> G</span>
+                            <span class="text-xs font-semibold text-amber-800">Price: <span class="text-amber-950 font-bold">${price}</span> G</span>
                         </div>
                     </div>
 
-                    <!-- Market quantity interactions -->
-                    <div class="flex items-center space-x-3">
-                        <span class="text-xs bg-amber-950/10 px-2 py-1 rounded font-bold text-amber-900" id="inv-${item}">
+                    <!-- Market quantity interactions and MAX helpers -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs bg-amber-950/10 px-2.5 py-1.5 rounded font-bold text-amber-900 w-8 text-center" id="inv-${item}">
                             ${qtyHeld}
                         </span>
-                        <div class="flex space-x-1">
-                            <button onclick="sellItem('${item}')" class="px-2.5 py-1 bg-red-800 text-amber-100 hover:bg-red-900 rounded font-bold text-xs" title="Sell item">
-                                Sell
-                            </button>
-                            <button onclick="buyItem('${item}')" class="px-2.5 py-1 bg-green-800 text-amber-100 hover:bg-green-900 rounded font-bold text-xs" title="Buy item" ${currentCargoTotal >= cargoMax ? "disabled" : ""}>
-                                Buy
-                            </button>
+                        <div class="flex flex-col gap-1">
+                            <div class="flex space-x-1">
+                                <button onclick="buyItem('${item}')" class="px-2 py-0.5 bg-green-800 text-amber-100 hover:bg-green-900 rounded font-bold text-xs" title="Buy 1 unit" ${currentCargoTotal >= cargoMax ? "disabled" : ""}>
+                                    +1
+                                </button>
+                                <button onclick="buyMax('${item}')" class="px-1.5 py-0.5 bg-green-700 text-amber-100 hover:bg-green-800 rounded font-semibold text-[10px]" title="Buy maximum affordable" ${currentCargoTotal >= cargoMax ? "disabled" : ""}>
+                                    Max
+                                </button>
+                            </div>
+                            <div class="flex space-x-1">
+                                <button onclick="sellItem('${item}')" class="px-2 py-0.5 bg-red-800 text-amber-100 hover:bg-red-900 rounded font-bold text-xs" title="Sell 1 unit">
+                                    -1
+                                </button>
+                                <button onclick="sellMax('${item}')" class="px-1.5 py-0.5 bg-red-700 text-amber-100 hover:bg-red-800 rounded font-semibold text-[10px]" title="Sell all units">
+                                    Max
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1071,17 +1116,17 @@
             }
         }
 
-        // --- TRANSACTION ACTORS ---
+        // --- TRANSACTION EXECUTORS (Standard + Max Bulk actions) ---
         function buyItem(item) {
             const price = gameState.localPrices[item];
-            const cargoMax = baseCapacity[gameState.shipType];
+            const cargoMax = getFleetCargoCapacity();
 
             if (gameState.gold < price) {
                 alertBox("Sailing Treasury Limit", "You do not have enough gold coins to secure this purchase!");
                 return;
             }
             if (getCargoUsed() >= cargoMax) {
-                alertBox("Hold Capacity Reached", "There is no more physical storage space left in your vessel!");
+                alertBox("Hold Capacity Reached", "There is no more physical storage space left in your fleet!");
                 return;
             }
 
@@ -1089,6 +1134,33 @@
             gameState.cargo[item]++;
             
             playChime(640, 'triangle', 0.1);
+            updateUI();
+        }
+
+        function buyMax(item) {
+            const price = gameState.localPrices[item];
+            const cargoMax = getFleetCargoCapacity();
+            const currentCargo = getCargoUsed();
+            const spaceAvailable = cargoMax - currentCargo;
+
+            if (spaceAvailable <= 0) {
+                alertBox("Hold Full", "You have no cargo space left to buy commodities!");
+                return;
+            }
+
+            const affordable = Math.floor(gameState.gold / price);
+            const toBuy = Math.min(spaceAvailable, affordable);
+
+            if (toBuy <= 0) {
+                alertBox("No Treasury", "You cannot afford even 1 unit of this commodity!");
+                return;
+            }
+
+            gameState.gold -= toBuy * price;
+            gameState.cargo[item] += toBuy;
+            
+            playChime(640, 'triangle', 0.15);
+            addLog(`Day ${gameState.day}`, `🛒 Bought ${toBuy} tons of ${item} for ${toBuy * price} Gold.`);
             updateUI();
         }
 
@@ -1104,8 +1176,105 @@
             updateUI();
         }
 
-        // --- STREAMING_CHUNK: Ship upgrade logic and shipyard UI... ---
-        // SHIPYARD & REPAIR CONTROL
+        function sellMax(item) {
+            const qtyHeld = gameState.cargo[item] || 0;
+            if (qtyHeld <= 0) return;
+
+            const price = gameState.localPrices[item];
+            const earned = qtyHeld * price;
+            gameState.gold += earned;
+            gameState.cargo[item] = 0;
+
+            playChime(480, 'sine', 0.15);
+            addLog(`Day ${gameState.day}`, `💸 Sold ${qtyHeld} tons of ${item} for ${earned} Gold.`);
+            updateUI();
+        }
+
+        function generateLocalShipForSale() {
+            const currentCityData = cities.find(c => c.id === gameState.currentCity);
+            const types = ["Sloop", "Brigantine", "Frigate", "Galleon"];
+            
+            // Randomly select type
+            let type = "Sloop";
+            const rand = Math.random();
+            if (rand > 0.85) type = "Galleon";
+            else if (rand > 0.6) type = "Frigate";
+            else if (rand > 0.3) type = "Brigantine";
+
+            const spec = shipSpecs[type];
+            let mod = 1.0;
+            if (currentCityData.id === "nassau") mod = 0.85; // Pirate port sells cheap ships
+            if (currentCityData.id === "port_royal") mod = 1.15; // Prisinte ports charge a premium
+            
+            const price = Math.round(spec.value * mod * (0.9 + Math.random() * 0.2));
+            
+            gameState.localShipAvailable = {
+                type: type,
+                price: price,
+                cannons: Math.max(1, Math.floor(spec.maxCannons / 3))
+            };
+        }
+
+        function buyShipFromMarket() {
+            if (!gameState.localShipAvailable) return;
+            const ship = gameState.localShipAvailable;
+            
+            if (gameState.gold < ship.price) {
+                alertBox("Shipyard Credit", `You need ${ship.price} Gold to buy this ${ship.type}!`);
+                return;
+            }
+
+            gameState.gold -= ship.price;
+            gameState.fleet.push({
+                id: "ship_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
+                type: ship.type,
+                cannons: ship.cannons
+            });
+
+            addLog(`Day ${gameState.day}`, `👑 BOUGHT: Added a ${ship.type} to your fleet for ${ship.price} Gold.`);
+            playChime(600, 'triangle', 0.4);
+            gameState.localShipAvailable = null; // Sold out!
+            updateUI();
+        }
+
+        function sellShipFromFleet(shipId) {
+            if (gameState.fleet.length <= 1) {
+                alertBox("Flagship Regulation", "You cannot sell your last ship! You must maintain at least one flagship to sail.");
+                return;
+            }
+
+            const shipIndex = gameState.fleet.findIndex(s => s.id === shipId);
+            if (shipIndex === -1) return;
+            const ship = gameState.fleet[shipIndex];
+            const spec = shipSpecs[ship.type];
+            
+            // Selling modifier
+            const currentCityData = cities.find(c => c.id === gameState.currentCity);
+            let mod = 0.70; // Depreciation
+            if (currentCityData.id === "port_royal") mod = 0.80; // Reputable shipwrights pay more
+            
+            const payout = Math.round(spec.value * mod);
+
+            // Check if selling violates cargo capacity of remaining fleet
+            const currentCargo = getCargoUsed();
+            const newCapacity = gameState.fleet.reduce((sum, s, idx) => {
+                if (idx === shipIndex) return sum;
+                return sum + shipSpecs[s.type].cargo;
+            }, 0);
+
+            if (currentCargo > newCapacity) {
+                alertBox("Cargo Excess", `Selling this ship reduces your fleet's capacity to ${newCapacity} tons, but you are carrying ${currentCargo} tons! Sell your cargo first.`);
+                return;
+            }
+
+            gameState.gold += payout;
+            gameState.fleet.splice(shipIndex, 1);
+
+            addLog(`Day ${gameState.day}`, `💸 SOLD: Sold your ${ship.type} for ${payout} Gold.`);
+            playChime(480, 'sine', 0.2);
+            updateUI();
+        }
+
         function repairShip(type) {
             if (type === "hull") {
                 if (gameState.hullHealth >= 100) return;
@@ -1113,7 +1282,7 @@
                 if (gameState.gold >= cost) {
                     gameState.gold -= cost;
                     gameState.hullHealth = Math.min(100, gameState.hullHealth + 25);
-                    addLog(`Day ${gameState.day}`, "🛠️ Shipyard carpenters patched hull cracks (+25% Hull).");
+                    addLog(`Day ${gameState.day}`, "🛠️ Shipyard carpenters patched fleet hulls (+25% Hull).");
                     playChime(300, 'sine', 0.2);
                 } else {
                     alertBox("Shipyard Credit", "The shipwright demands 50 gold coins upfront!");
@@ -1124,7 +1293,7 @@
                 if (gameState.gold >= cost) {
                     gameState.gold -= cost;
                     gameState.sailsHealth = Math.min(100, gameState.sailsHealth + 25);
-                    addLog(`Day ${gameState.day}`, "🛠️ Rigging mended and patched with new canvas (+25% Sails).");
+                    addLog(`Day ${gameState.day}`, "🛠️ Fleet sails mended and patched with fresh canvas (+25% Sails).");
                     playChime(320, 'sine', 0.2);
                 } else {
                     alertBox("Shipyard Credit", "The sailmaker demands 35 gold coins upfront!");
@@ -1134,48 +1303,29 @@
         }
 
         function buyCannon() {
-            const currentClass = shipClasses.find(c => c.id === gameState.shipType);
-            if (gameState.cannons >= currentClass.maxCannons) {
-                alertBox("Vessel Limitation", "This ship type can hold no more heavy armaments!");
-                return;
-            }
-
             const cost = 200;
-            if (gameState.gold >= cost) {
-                gameState.gold -= cost;
-                gameState.cannons++;
-                addLog(`Day ${gameState.day}`, `⚔️ Mounted a heavy 4-pounder cannon. Defense firepower is now ${gameState.cannons}.`);
-                playCannonSound();
-            } else {
-                alertBox("Armory Cost", "Guns require 200 gold in hard cash!");
-            }
-            updateUI();
-        }
-
-        function upgradeShipType() {
-            const currentClass = shipClasses.find(c => c.id === gameState.shipType);
-            if (!currentClass || !currentClass.next) {
-                alertBox("Max Level", "You already command a majestic war Galleon!");
+            if (gameState.gold < cost) {
+                alertBox("Armory Cost", "Heavy guns require 200 gold in hard currency!");
                 return;
             }
 
-            const cost = currentClass.upgradeCost;
-            if (gameState.gold >= cost) {
-                gameState.gold -= cost;
-                gameState.shipType = currentClass.next;
-                addLog(`Day ${gameState.day}`, `👑 COMMISSION: Upgraded vessel class to ${gameState.shipType}! Extended cargo bay available.`);
-                playChime(600, 'triangle', 0.4);
-            } else {
-                alertBox("Insufficient Funding", `Commissioning a ${currentClass.next} requires ${cost} gold!`);
+            // Find first ship in fleet with room for cannons
+            const targetShip = gameState.fleet.find(s => s.cannons < shipSpecs[s.type].maxCannons);
+            if (!targetShip) {
+                alertBox("Fleet Limitation", "All ships in your fleet have reached their maximum cannon capability!");
+                return;
             }
+
+            gameState.gold -= cost;
+            targetShip.cannons++;
+            addLog(`Day ${gameState.day}`, `⚔️ Mounted a 4-pounder cannon on your ${targetShip.type}. Fleet firepower at ${getFleetCannonsCount()} guns.`);
+            playCannonSound();
             updateUI();
         }
 
-        // --- STREAMING_CHUNK: Tavern interaction handlers... ---
-        // TAVERN ACTIONS
         function hireCrew() {
             if (gameState.tavernCrewAvailable <= 0) {
-                alertBox("No Hands", "No fresh sailors are current resting in the local tavern. Try another day.");
+                alertBox("No Hands", "No fresh sailors are resting in the local tavern. Try again tomorrow.");
                 return;
             }
 
@@ -1184,7 +1334,7 @@
                 gameState.gold -= cost;
                 gameState.crew++;
                 gameState.tavernCrewAvailable--;
-                addLog(`Day ${gameState.day}`, `⚓ Hired a veteran hand from the tavern docks.`);
+                addLog(`Day ${gameState.day}`, `⚓ Hired a veteran hand from the tavern.`);
                 playChime(450, 'sine', 0.15);
             } else {
                 alertBox("No Cash", "Sailors won't commit to a ship without pre-wage gold!");
@@ -1192,14 +1342,12 @@
             updateUI();
         }
 
-        // STAND FAST / WAIT DAY ACTION
         function endDay() {
             if (gameState.eventInProgress || gameState.travelDaysRemaining > 0) return;
             
             gameState.day++;
             gameState.currentDate.setDate(gameState.currentDate.getDate() + 1);
 
-            // Crew wages/food daily deductions in port
             const foodNeeded = Math.ceil(gameState.crew / 10);
             if (gameState.cargo.Food >= foodNeeded) {
                 gameState.cargo.Food -= foodNeeded;
@@ -1211,10 +1359,8 @@
             const wages = gameState.crew * 1;
             gameState.gold = Math.max(0, gameState.gold - wages);
 
-            // Volatile trade noise shift
             recalculatePrices();
             
-            // Randomly update tavern recruitment board
             if (Math.random() < 0.3) {
                 gameState.tavernCrewAvailable = Math.min(8, gameState.tavernCrewAvailable + 1);
             }
@@ -1224,15 +1370,13 @@
             updateUI();
         }
 
-        // --- STREAMING_CHUNK: Master UI Updater Loop... ---
-        // MAIN UI BINDINGS LOOP
         function updateUI() {
-            // Stats Panel
+            // Header stats
             document.getElementById("gold-counter").innerText = Number(gameState.gold).toLocaleString();
             document.getElementById("calendar-date").innerText = gameState.currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             document.getElementById("day-counter").innerText = `Day ${gameState.day}`;
 
-            const cargoMax = baseCapacity[gameState.shipType];
+            const cargoMax = getFleetCargoCapacity();
             const cargoUsed = getCargoUsed();
             document.getElementById("cargo-status").innerText = `${cargoUsed} / ${cargoMax} Tons`;
             document.getElementById("cargo-bar").style.width = `${(cargoUsed / cargoMax) * 100}%`;
@@ -1240,20 +1384,17 @@
             document.getElementById("ship-condition").innerText = `Hull: ${gameState.hullHealth}% | Sails: ${gameState.sailsHealth}%`;
             document.getElementById("crew-count").innerText = `${gameState.crew} Crew`;
 
-            // Port details
+            // Port info banner
             const currentCityData = cities.find(c => c.id === gameState.currentCity);
             document.getElementById("port-name").innerText = currentCityData.name;
             document.getElementById("port-nation").innerText = currentCityData.nation;
             document.getElementById("port-desc").innerText = currentCityData.description;
             document.getElementById("current-location-pill").innerText = `Docked: ${currentCityData.name}`;
-
-            // Market dynamics ticker
             document.getElementById("market-news-text").innerText = currentCityData.news;
 
-            // Render trade matrix
             renderMarket();
 
-            // Destination and Sailing Calculator
+            // Voyage planner
             const sailBtn = document.getElementById("sail-button");
             const destText = document.getElementById("selected-destination-stats");
             if (gameState.selectedDestination) {
@@ -1264,65 +1405,92 @@
                 sailBtn.disabled = true;
             }
 
-            // Shipyard stats
-            document.getElementById("shipyard-vessel-name").innerText = gameState.shipType;
-            document.getElementById("shipyard-cannons").innerText = `${gameState.cannons} / ${shipClasses.find(c=>c.id===gameState.shipType).maxCannons} Max`;
-            
-            const upgradeData = shipClasses.find(c => c.id === gameState.shipType);
-            document.getElementById("ship-upgrade-title").innerText = upgradeData.label;
-            document.getElementById("ship-upgrade-cost").innerText = upgradeData.upgradeCost ? `${upgradeData.upgradeCost.toLocaleString()} Gold` : "";
-            document.getElementById("upgrade-ship-btn").disabled = !upgradeData.upgradeCost;
-
-            // Recruitment Board
+            // Tavern Recruitment Info
             document.getElementById("tavern-crew-available").innerText = `${gameState.tavernCrewAvailable} hands ready`;
             document.getElementById("hire-crew-btn").disabled = gameState.tavernCrewAvailable <= 0;
 
-            // Render Log Book
+            // RENDER ACTIVE FLEET LIST
+            const fleetContainer = document.getElementById("fleet-list-container");
+            fleetContainer.innerHTML = "";
+            gameState.fleet.forEach(ship => {
+                const spec = shipSpecs[ship.type];
+                const sellValue = Math.round(spec.value * 0.70); // Depot base value
+                
+                const shipRow = document.createElement("div");
+                shipRow.className = "flex items-center justify-between py-1 border-b border-amber-900/10 last:border-0";
+                shipRow.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="font-semibold text-amber-950">${ship.type}</span>
+                        <span class="text-[10px] text-amber-800">Cap: ${spec.cargo}T &bull; Max Guns: ${spec.maxCannons}</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[11px] font-bold bg-amber-950/10 px-1.5 py-0.5 rounded">${ship.cannons} G</span>
+                        <button onclick="sellShipFromFleet('${ship.id}')" class="px-1.5 py-0.5 bg-red-800 text-amber-100 hover:bg-red-900 rounded text-[10px]" ${gameState.fleet.length <= 1 ? "disabled" : ""}>
+                            Sell: ${sellValue}G
+                        </button>
+                    </div>
+                `;
+                fleetContainer.appendChild(shipRow);
+            });
+
+            // RENDER LOCAL SHIPYARD SHIP FOR SALE
+            const shipMarketContainer = document.getElementById("ship-market-container");
+            shipMarketContainer.innerHTML = "";
+            if (gameState.localShipAvailable) {
+                const s = gameState.localShipAvailable;
+                const spec = shipSpecs[s.type];
+                const itemDiv = document.createElement("div");
+                itemDiv.className = "flex flex-col gap-1 pb-1 border-b border-amber-900/10 last:border-0 last:pb-0";
+                itemDiv.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-amber-950 text-sm">${s.type}</span>
+                        <span class="text-xs font-semibold text-amber-800">${s.price} G</span>
+                    </div>
+                    <p class="text-[10px] text-amber-800 italic">Holds ${spec.cargo} Tons of cargo. Mounted with ${s.cannons} Cannons.</p>
+                    <button onclick="buyShipFromMarket()" class="w-full btn-vintage py-1 mt-1 rounded text-xs">Purchase Vessel</button>
+                `;
+                shipMarketContainer.appendChild(itemDiv);
+            } else {
+                shipMarketContainer.innerHTML = `<p class="text-xs text-amber-800 italic text-center py-2">No vessels currently docked for sale.</p>`;
+            }
+
+            // Log outputting
             const logBox = document.getElementById("log-list");
             logBox.innerHTML = "";
             gameState.log.forEach(entry => {
                 const logDiv = document.createElement("div");
-                logDiv.className = "text-xs border-b border-amber-900/10 pb-1.5";
+                logDiv.className = "text-xs border-b border-amber-900/10 pb-1.5 last:border-0";
                 logDiv.innerHTML = `<span class="text-amber-800 font-semibold block">${entry.day}</span><span class="text-amber-950">${entry.text}</span>`;
                 logBox.appendChild(logDiv);
             });
 
-            // Re-render icons
             lucide.createIcons();
         }
 
-        // --- TAB MANEUVERING INTERFACES ---
         function switchRightTab(tabId) {
-            // Hide all tab containers
             document.getElementById("content-log").classList.add("hidden");
             document.getElementById("content-tavern").classList.add("hidden");
             document.getElementById("content-shipyard").classList.add("hidden");
 
-            // Deactivate highlight
             document.getElementById("tab-log").className = "flex-1 pb-2 text-xs uppercase tracking-wider font-bold border-b-2 border-transparent text-amber-800/60";
             document.getElementById("tab-tavern").className = "flex-1 pb-2 text-xs uppercase tracking-wider font-bold border-b-2 border-transparent text-amber-800/60";
             document.getElementById("tab-shipyard").className = "flex-1 pb-2 text-xs uppercase tracking-wider font-bold border-b-2 border-transparent text-amber-800/60";
 
-            // Activate chosen target
             document.getElementById(`content-${tabId}`).classList.remove("hidden");
             document.getElementById(`tab-${tabId}`).className = "flex-1 pb-2 text-xs uppercase tracking-wider font-bold border-b-2 border-amber-900 text-amber-950";
             
             playChime(420, 'sine', 0.1);
         }
 
-        // Direct toggle helpers for port banner buttons
         function toggleTab(tabId) {
             switchRightTab(tabId);
         }
 
-        // Native Alert Dialog replacement (avoid using window.alert!)
         function alertBox(title, message) {
-            // Instead of disrupting normal flow, prepend an emergency log alert card
             addLog(`Day ${gameState.day} Alert`, `🔔 [${title}]: ${message}`);
             updateUI();
         }
 
-        // --- GAME OVER & RESTART SYSTEM ---
         function triggerGameOver(title, reason) {
             document.getElementById("sailing-overlay").classList.add("hidden");
             document.getElementById("game-over-modal").classList.remove("hidden");
@@ -1332,11 +1500,10 @@
             
             document.getElementById("stat-days").innerText = `Day ${gameState.day}`;
             document.getElementById("stat-gold").innerText = `${gameState.gold.toLocaleString()} Gold`;
-            document.getElementById("stat-fleet").innerText = gameState.shipType;
+            document.getElementById("stat-fleet").innerText = `${gameState.fleet.length} Ships (Value: ${getFleetTotalValue()}G)`;
         }
 
         function restartGame() {
-            // Re-initialize default state
             gameState = {
                 gold: 1200,
                 day: 1,
@@ -1347,8 +1514,9 @@
                 hullHealth: 100,
                 sailsHealth: 100,
                 crew: 10,
-                cannons: 2,
-                shipType: "Sloop",
+                fleet: [
+                    { id: "ship_init", type: "Sloop", cannons: 2 }
+                ],
                 localPrices: {},
                 log: [],
                 dailyVolatility: 0.05,
@@ -1357,11 +1525,13 @@
                 travelProgress: 0,
                 totalTravelDays: 0,
                 tavernCrewAvailable: 4,
-                currentEventContext: null
+                currentEventContext: null,
+                localShipAvailable: null
             };
 
             document.getElementById("game-over-modal").classList.add("hidden");
             initializeMap();
+            generateLocalShipForSale();
             recalculatePrices();
             addLog("Day 1", "Sailed a new Sloop out of Bristol to begin fresh Caribbean exploration. Wealth and wind awaits!");
             updateUI();
