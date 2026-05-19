@@ -1,0 +1,2740 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Caribbean Sails: 1600s</title>
+    <!-- Tailwind CSS for rich interface layouts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for retro pirate/parchment vibes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=IM+Fell+DW+Pica:ital@0;1&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            background-color: #071013;
+        }
+        .parchment-text {
+            font-family: 'IM Fell DW Pica', serif;
+        }
+        .parchment-title {
+            font-family: 'Cinzel Decorative', serif;
+        }
+        /* Custom scrollbar for trade panels */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(43, 24, 16, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #8b5a2b;
+            border-radius: 3px;
+        }
+        /* Pulsing glows for interactive actions */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); transform: scale(1); }
+            50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.95); transform: scale(1.05); }
+        }
+        .pulse-fire-btn {
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+        @keyframes dock-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.7); transform: translate(-50%, -50%) scale(1); }
+            50% { box-shadow: 0 0 40px rgba(16, 185, 129, 1); transform: translate(-50%, -50%) scale(1.08); }
+        }
+        .pulse-dock-btn {
+            animation: dock-pulse 1.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-full overflow-hidden text-amber-100 flex flex-col justify-between select-none">
+
+    <!-- Sound toggling and Intro overlays -->
+    <div id="intro-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-cover bg-center" style="background-image: linear-gradient(rgba(10,20,30,0.85), rgba(5,10,15,0.95)), url('https://placehold.co/1200x800/101f30/ffe4b5?text=Caribbean+Sea+1600s');">
+        <div class="max-w-md w-full bg-amber-950/95 border-4 border-amber-800 p-6 rounded-xl shadow-2xl text-center border-double flex flex-col items-center gap-4">
+            <h1 class="parchment-title text-3xl md:text-4xl text-amber-400 font-bold tracking-wider leading-none">CARIBBEAN SAILS</h1>
+            <p class="parchment-text text-lg text-amber-200 leading-relaxed italic">
+                "Set course for riches and infamy. Master the changing winds, steer clear of dangerous shoals, consult your First Mate, and search out messages in bottles."
+            </p>
+
+            <div class="w-full space-y-3 my-1">
+                <label class="block text-sm font-semibold tracking-wide uppercase text-amber-400">Choose your Allegiance</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="selectFaction('English Privateer')" id="faction-btn-english" class="faction-btn border border-amber-400 bg-amber-800 p-2 rounded hover:bg-amber-800 transition text-sm flex flex-col items-center">
+                        <span class="font-bold">English Privateer</span>
+                        <span class="text-xs text-amber-300/80">Bonus Speed</span>
+                    </button>
+                    <button onclick="selectFaction('French Buccaneer')" id="faction-btn-french" class="faction-btn border border-amber-600/50 bg-amber-900/40 p-2 rounded hover:bg-amber-800 transition text-sm flex flex-col items-center">
+                        <span class="font-bold">French Buccaneer</span>
+                        <span class="text-xs text-amber-300/80">Bonus Cannon Dmg</span>
+                    </button>
+                    <button onclick="selectFaction('Spanish Guardacosta')" id="faction-btn-spanish" class="faction-btn border border-amber-600/50 bg-amber-900/40 p-2 rounded hover:bg-amber-800 transition text-sm flex flex-col items-center">
+                        <span class="font-bold">Guardacosta</span>
+                        <span class="text-xs text-amber-300/80">Bonus Hull armor</span>
+                    </button>
+                    <button onclick="selectFaction('Independent Rogue')" id="faction-btn-rogue" class="faction-btn border border-amber-600/30 bg-amber-900/20 p-2 rounded hover:bg-amber-800 transition text-sm flex flex-col items-center">
+                        <span class="font-bold">Smuggler / Rogue</span>
+                        <span class="text-xs text-amber-300/80">Better Market rates</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ship Selection -->
+            <div class="w-full space-y-2">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-amber-400">Choose Your Starting Vessel</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="selectShip('Sloop')" id="ship-btn-sloop" class="ship-btn border border-amber-400 bg-amber-800 p-2 rounded hover:bg-amber-800 transition text-sm">
+                        <span class="font-bold block">Sloop</span>
+                        <span class="text-xs text-amber-300/80">Fast & Agile (10 Cargo)</span>
+                    </button>
+                    <button onclick="selectShip('Schooner')" id="ship-btn-schooner" class="ship-btn border border-amber-600/30 bg-amber-900/20 p-2 rounded hover:bg-amber-800 transition text-sm">
+                        <span class="font-bold block">Schooner</span>
+                        <span class="text-xs text-amber-300/80">Sturdy Trader (22 Cargo)</span>
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="w-full bg-amber-600 hover:bg-amber-500 text-amber-950 font-extrabold text-lg py-3.5 px-6 rounded-lg shadow-lg border-2 border-amber-300 transition uppercase tracking-widest mt-2 active:scale-95">
+                Set Sail!
+            </button>
+        </div>
+    </div>
+
+    <!-- Death / Game Over Screen -->
+    <div id="game-over-screen" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/95">
+        <div class="max-w-sm w-full bg-red-950 border-4 border-red-800 p-6 rounded-xl shadow-2xl text-center">
+            <h2 class="parchment-title text-3xl text-red-500 font-bold mb-3">SHIPWRECKED!</h2>
+            <p id="death-reason" class="parchment-text text-amber-200 mb-6 italic"></p>
+            <button onclick="restartGame()" class="w-full bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold py-3 px-6 rounded-lg border-2 border-amber-300 transition">
+                Create New Captain
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN INTERACTIVE HUD LAYER -->
+    <div class="relative w-full h-full flex flex-col justify-between overflow-hidden">
+        <!-- Background Canvas -->
+        <canvas id="game-canvas" class="absolute inset-0 w-full h-full bg-[#0d2a3a] block"></canvas>
+
+        <!-- Top Status Bar -->
+        <div class="absolute top-2 left-2 right-2 flex justify-between gap-2 pointer-events-none z-10 text-xs md:text-sm">
+            <!-- Left Info Panel -->
+            <div class="bg-amber-950/95 border border-amber-700/80 px-3 py-2 rounded-lg shadow-md flex gap-4 pointer-events-auto backdrop-blur-sm">
+                <div>
+                    <span class="text-amber-400 block uppercase font-bold text-[10px] tracking-wide">Ship Status</span>
+                    <div class="flex items-center gap-2">
+                        <span id="vessel-name" class="font-bold text-amber-100">Sloop</span>
+                        <span class="text-xs text-amber-300" id="faction-badge">(English)</span>
+                    </div>
+                </div>
+                <div>
+                    <span class="text-amber-400 block uppercase font-bold text-[10px] tracking-wide">Gold</span>
+                    <span class="font-bold text-amber-200 flex items-center gap-1">🪙 <span id="hud-gold">500</span></span>
+                </div>
+                <div>
+                    <span class="text-amber-400 block uppercase font-bold text-[10px] tracking-wide">Cargo</span>
+                    <span class="font-bold text-amber-200"><span id="hud-cargo-used">0</span>/<span id="hud-cargo-max">10</span></span>
+                </div>
+                <!-- Interactive AI First Mate Log Launcher -->
+                <button onclick="toggleFirstMateDrawer()" class="bg-amber-900/90 hover:bg-amber-800 border border-amber-700/60 px-2 py-1 rounded flex items-center gap-1.5 transition text-[10px] font-bold text-amber-200 active:scale-95">
+                    <span>👨‍✈️</span> <span>First Mate</span>
+                </button>
+            </div>
+
+            <!-- Right Info Panel: Ship Durability & Wind Indicators -->
+            <div class="bg-amber-950/95 border border-amber-700/80 px-3 py-2 rounded-lg shadow-md flex gap-4 pointer-events-auto backdrop-blur-sm">
+                <!-- Hull Healthbar -->
+                <div class="flex flex-col justify-center">
+                    <span class="text-amber-400 block uppercase font-bold text-[10px] tracking-wide mb-1">Hull Plating</span>
+                    <div class="w-24 md:w-32 bg-amber-900/60 h-3 rounded-full border border-amber-600/50 overflow-hidden relative">
+                        <div id="hull-bar" class="bg-gradient-to-r from-red-600 to-green-500 h-full w-full transition-all duration-300"></div>
+                        <div class="absolute inset-0 text-[9px] font-bold flex items-center justify-center text-white" id="hull-text">100 / 100</div>
+                    </div>
+                </div>
+                <!-- Speed Display -->
+                <div class="flex flex-col justify-center text-center">
+                    <span class="text-amber-400 block uppercase font-bold text-[10px] tracking-wide">Speed</span>
+                    <span class="font-bold text-amber-100 text-xs md:text-sm"><span id="hud-speed">0.0</span> kts</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Wind Compass HUD (Mid-Right) -->
+        <div class="absolute top-16 right-2 z-10 pointer-events-auto flex flex-col items-center gap-2 bg-amber-950/95 border border-amber-700/80 p-3 rounded-xl shadow-lg backdrop-blur-sm w-28 text-center">
+            <span class="text-[9px] font-bold tracking-wider uppercase text-amber-400">Wind Direction</span>
+            <!-- Compass Rose Visualizer -->
+            <div class="relative w-16 h-16 border-2 border-amber-700 rounded-full flex items-center justify-center bg-amber-900/20">
+                <span class="absolute top-0 text-[8px] text-amber-400 font-bold">N</span>
+                <span class="absolute right-1 text-[8px] text-amber-400 font-bold">E</span>
+                <span class="absolute bottom-0 text-[8px] text-amber-400 font-bold">S</span>
+                <span class="absolute left-1 text-[8px] text-amber-400 font-bold">W</span>
+
+                <!-- Wind Arrow (Rotated) -->
+                <div id="wind-arrow" class="absolute w-12 h-12 flex items-center justify-center transition-transform duration-500">
+                    <svg class="w-8 h-8 text-sky-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L4 21l8-4 8 4L12 2z"/>
+                    </svg>
+                </div>
+                <div id="relative-ship-direction" class="absolute w-2 h-6 bg-amber-400 rounded-sm shadow-md" style="opacity: 0.65;"></div>
+            </div>
+            <div class="text-[10px]">
+                <span class="text-amber-300/90 block">Wind: <span id="wind-strength-text">12</span> kts</span>
+                <span id="sailing-efficiency" class="font-semibold block text-green-400">Perfect reach</span>
+            </div>
+        </div>
+
+        <!-- Alert Log Messages Overlay (Top-Center) -->
+        <div id="log-overlay" class="absolute top-20 left-1/2 -translate-x-1/2 z-10 pointer-events-none flex flex-col gap-1 items-center max-w-sm w-full px-4 text-center"></div>
+
+        <!-- Sail Control Lever Overlay (Right Side) -->
+        <div class="absolute right-2 bottom-44 z-10 flex flex-col items-center gap-4 pointer-events-auto">
+            <div class="bg-amber-950/95 border border-amber-700/85 p-2 rounded-xl shadow-lg flex flex-col gap-2 w-20 text-center backdrop-blur-sm">
+                <span class="text-[9px] font-bold tracking-wider uppercase text-amber-400">Sails</span>
+                <button onclick="setSailState('full')" id="sail-btn-full" class="bg-amber-900/60 text-amber-300 px-2 py-1.5 text-xs rounded hover:bg-amber-800 transition">Full</button>
+                <button onclick="setSailState('half')" id="sail-btn-half" class="bg-amber-900/60 text-amber-300 px-2 py-1.5 text-xs rounded hover:bg-amber-800 transition">Half</button>
+                <button onclick="setSailState('furled')" id="sail-btn-furled" class="bg-amber-600 text-amber-950 font-bold px-2 py-1.5 text-xs rounded shadow">Anchor</button>
+            </div>
+        </div>
+
+        <!-- Center-Bottom Dock / Anchor Prompt (Contextual & Highly Visible) -->
+        <div id="dock-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
+            <button onclick="dockAtPort()" class="pulse-dock-btn bg-emerald-600 hover:bg-emerald-500 text-amber-950 font-extrabold text-lg py-4 px-8 rounded-full border-4 border-emerald-300 shadow-2xl transition duration-200 active:scale-95 flex items-center gap-2 whitespace-nowrap">
+                ⚓ ENTER <span id="dock-port-name">PORT ROYAL</span>
+            </button>
+        </div>
+
+        <!-- Capture / Boarding Tactical Prompt (Contextual) -->
+        <div id="capture-prompt" class="hidden absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2">
+            <div class="bg-red-950 border-4 border-red-600 p-4 rounded-xl shadow-2xl text-center max-w-xs animate-bounce border-double">
+                <h3 class="text-lg font-bold text-red-400 parchment-title mb-1">⚔️ BOARD HOSTILE</h3>
+                <p id="capture-enemy-desc" class="text-xs text-amber-200 mb-3">Target is disabled! Order your crew to board?</p>
+                <button onclick="openBoardingScreen()" class="bg-red-600 hover:bg-red-500 text-amber-100 font-extrabold px-6 py-2 rounded-lg text-sm border-2 border-red-400 transition active:scale-95">
+                    🏴‍☠️ BOARD SHIP
+                </button>
+            </div>
+        </div>
+
+        <!-- BOTTOM TOUCH CONTROLS (Steering & High-Visibility Cannons) -->
+        <div class="absolute bottom-4 left-2 right-2 flex justify-between items-end pointer-events-none z-10 gap-2">
+            
+            <!-- Left Side: Interactive Virtual Steering Wheel -->
+            <div class="pointer-events-auto flex flex-col items-center gap-1 bg-amber-950/90 p-2.5 rounded-2xl border border-amber-800/60 backdrop-blur-sm">
+                <span class="text-[9px] font-bold tracking-wider uppercase text-amber-400">Helm (Steer)</span>
+                <div class="flex items-center gap-1.5">
+                    <button id="steer-left-btn" class="w-14 h-14 bg-amber-900/90 active:bg-amber-700 hover:bg-amber-800 text-amber-100 rounded-full font-bold border border-amber-700 flex items-center justify-center shadow-lg text-xl select-none" style="-webkit-tap-highlight-color: transparent;">◀</button>
+                    <!-- Steering Wheel Center Graphic -->
+                    <div id="steering-wheel" class="w-16 h-16 border-4 border-amber-800 rounded-full relative flex items-center justify-center bg-amber-950 shadow-inner transition-transform duration-100">
+                        <div class="absolute w-1 h-20 bg-amber-600 -top-2 rounded"></div>
+                        <div class="absolute h-1 w-20 bg-amber-600 -left-2 rounded"></div>
+                        <div class="w-6 h-6 rounded-full border-2 border-amber-700 bg-amber-900"></div>
+                    </div>
+                    <button id="steer-right-btn" class="w-14 h-14 bg-amber-900/90 active:bg-amber-700 hover:bg-amber-800 text-amber-100 rounded-full font-bold border border-amber-700 flex items-center justify-center shadow-lg text-xl select-none" style="-webkit-tap-highlight-color: transparent;">▶</button>
+                </div>
+            </div>
+
+            <!-- Middle: Dynamic Target Info Helper -->
+            <div class="hidden md:flex flex-col items-center gap-1">
+                <span class="text-[10px] text-amber-400 font-bold bg-amber-950/90 px-2 py-1 rounded border border-amber-800/40">Broadside Recharge</span>
+                <div class="flex gap-2">
+                    <div class="w-20 bg-amber-950/90 h-2 rounded-full overflow-hidden border border-amber-800 relative">
+                        <div id="port-cooldown-bar" class="h-full bg-cyan-400 w-full transition-all"></div>
+                        <div class="absolute inset-0 text-[8px] font-bold flex items-center justify-center">PORT</div>
+                    </div>
+                    <div class="w-20 bg-amber-950/90 h-2 rounded-full overflow-hidden border border-amber-800 relative">
+                        <div id="starboard-cooldown-bar" class="h-full bg-cyan-400 w-full transition-all"></div>
+                        <div class="absolute inset-0 text-[8px] font-bold flex items-center justify-center">STARBOARD</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: ENLARGED, HIGH-VISIBILITY COMBAT BUTTONS -->
+            <div class="pointer-events-auto flex gap-3">
+                <!-- Port Broadside (Fire Left) -->
+                <button id="btn-fire-left" class="pulse-fire-btn w-18 h-18 md:w-20 md:h-20 bg-gradient-to-br from-red-600 to-red-950 border-3 border-red-400 hover:from-red-500 hover:to-red-900 text-white rounded-2xl flex flex-col items-center justify-center shadow-2xl text-center select-none cursor-pointer active:scale-95 transition-all duration-150" style="-webkit-tap-highlight-color: transparent;">
+                    <span class="text-xs font-extrabold uppercase tracking-widest text-red-100">💥 Port</span>
+                    <span class="text-[14px] font-black">◄ FIRE</span>
+                    <span class="text-[8px] text-red-300 font-bold">LEFT FLANK</span>
+                </button>
+                <!-- Starboard Broadside (Fire Right) -->
+                <button id="btn-fire-right" class="pulse-fire-btn w-18 h-18 md:w-20 md:h-20 bg-gradient-to-br from-red-600 to-red-950 border-3 border-red-400 hover:from-red-500 hover:to-red-900 text-white rounded-2xl flex flex-col items-center justify-center shadow-2xl text-center select-none cursor-pointer active:scale-95 transition-all duration-150" style="-webkit-tap-highlight-color: transparent;">
+                    <span class="text-xs font-extrabold uppercase tracking-widest text-red-100">💥 Stbd</span>
+                    <span class="text-[14px] font-black">FIRE ►</span>
+                    <span class="text-[8px] text-red-300 font-bold">RIGHT FLANK</span>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- PORT MODAL LAYOUT (DOCKING INTERACTIVE SCREENS) -->
+        <div id="port-modal" class="hidden absolute inset-0 bg-black/70 backdrop-blur-sm z-30 flex items-center justify-center p-2 md:p-4">
+            <div class="bg-amber-950 border-4 border-amber-700 rounded-xl shadow-2xl max-w-lg w-full h-[90vh] md:h-[80vh] flex flex-col overflow-hidden border-double text-amber-100">
+                <!-- Port Title & Flag Header -->
+                <div class="p-3 md:p-4 border-b-2 border-amber-800 bg-amber-900/50 flex justify-between items-center">
+                    <div>
+                        <h2 id="port-title-modal" class="parchment-title text-2xl font-bold tracking-wide text-amber-300">PORT ROYAL</h2>
+                        <p id="port-allegiance-modal" class="text-xs text-amber-400 italic font-semibold">Under English Crown Protection</p>
+                    </div>
+                    <button onclick="undockFromPort()" class="bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold px-4 py-1.5 rounded text-sm active:scale-95 transition">
+                        ⛵ Set Sail
+                    </button>
+                </div>
+
+                <!-- Tabs (Market, Tavern, Shipyard) -->
+                <div class="flex border-b border-amber-800 bg-amber-900/30 text-sm">
+                    <button onclick="switchTab('market')" id="tab-btn-market" class="flex-1 py-2 font-bold text-amber-300 border-b-2 border-amber-400 bg-amber-950/60 uppercase tracking-wider">Market</button>
+                    <button onclick="switchTab('shipyard')" id="tab-btn-shipyard" class="flex-1 py-2 font-bold text-amber-500 hover:text-amber-300 uppercase tracking-wider">Shipyard</button>
+                    <button onclick="switchTab('tavern')" id="tab-btn-tavern" class="flex-1 py-2 font-bold text-amber-500 hover:text-amber-300 uppercase tracking-wider">Tavern</button>
+                </div>
+
+                <!-- Tab Panels Area (Scrollable) -->
+                <div class="flex-1 overflow-y-auto p-3 md:p-4 space-y-4 bg-amber-950/40">
+
+                    <!-- Tab: MARKET PANEL -->
+                    <div id="panel-market" class="space-y-3">
+                        <div class="bg-amber-900/20 p-2 rounded border border-amber-800/40 flex justify-between text-xs text-amber-200">
+                            <span>Prices vary dynamically based on local supply and demand!</span>
+                            <span class="font-bold text-amber-400">Your Cargo: <span id="market-cargo-info">0 / 10</span></span>
+                        </div>
+
+                        <!-- Commodity List -->
+                        <div class="space-y-2" id="commodity-list-container"></div>
+                    </div>
+
+                    <!-- Tab: SHIPYARD PANEL -->
+                    <div id="panel-shipyard" class="space-y-4 hidden">
+                        <!-- Repair Ship Section -->
+                        <div class="bg-amber-900/20 p-3 rounded-lg border border-amber-800/50 flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-amber-300 text-sm">Repair Ship Hull</h3>
+                                <p class="text-xs text-amber-400" id="shipyard-repair-status">Hull Health: 75/100</p>
+                            </div>
+                            <button onclick="buyRepair()" id="repair-ship-btn" class="bg-green-700 hover:bg-green-600 text-amber-100 font-bold px-4 py-2 rounded text-xs transition">
+                                Repair (+25 HP) <br> <span class="text-[10px] text-amber-300">🪙 <span id="repair-cost-text">20</span> Gold</span>
+                            </button>
+                        </div>
+
+                        <!-- Upgrades Section -->
+                        <div class="space-y-2">
+                            <h3 class="font-bold text-amber-400 text-xs uppercase tracking-wider border-b border-amber-800 pb-1">Vessel Upgrades</h3>
+
+                            <!-- Upgrade Item: Cannons -->
+                            <div class="bg-amber-900/10 p-2 rounded border border-amber-800/40 flex justify-between items-center">
+                                <div>
+                                    <span class="font-bold block text-sm text-amber-100">Add Cannons</span>
+                                    <span class="text-xs text-amber-400" id="shipyard-cannon-count">Current Cannons: 2</span>
+                                </div>
+                                <button onclick="buyUpgrade('cannons')" id="upgrade-cannon-btn" class="bg-amber-800 hover:bg-amber-700 text-amber-100 font-bold px-3 py-1.5 rounded text-xs">
+                                    Upgrade <br> <span class="text-[10px] text-amber-300">🪙 <span id="upgrade-cannon-cost">150</span> Gold</span>
+                                </button>
+                            </div>
+
+                            <!-- Upgrade Item: Sails -->
+                            <div class="bg-amber-900/10 p-2 rounded border border-amber-800/40 flex justify-between items-center">
+                                <div>
+                                    <span class="font-bold block text-sm text-amber-100">Premium Canvas Sails</span>
+                                    <span class="text-xs text-amber-400" id="shipyard-sail-level">Level 1 (Normal Speed)</span>
+                                </div>
+                                <button onclick="buyUpgrade('sails')" id="upgrade-sails-btn" class="bg-amber-800 hover:bg-amber-700 text-amber-100 font-bold px-3 py-1.5 rounded text-xs">
+                                    Upgrade <br> <span class="text-[10px] text-amber-300">🪙 <span id="upgrade-sails-cost">100</span> Gold</span>
+                                </button>
+                            </div>
+
+                            <!-- Upgrade Item: Cargo hold -->
+                            <div class="bg-amber-900/10 p-2 rounded border border-amber-800/40 flex justify-between items-center">
+                                <div>
+                                    <span class="font-bold block text-sm text-amber-100">Expand Hold Capacity</span>
+                                    <span class="text-xs text-amber-400" id="shipyard-cargo-cap">Capacity: 10 barrels</span>
+                                </div>
+                                <button onclick="buyUpgrade('cargo')" id="upgrade-cargo-btn" class="bg-amber-800 hover:bg-amber-700 text-amber-100 font-bold px-3 py-1.5 rounded text-xs">
+                                    Upgrade <br> <span class="text-[10px] text-amber-300">🪙 <span id="upgrade-cargo-cost">120</span> Gold</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: TAVERN PANEL -->
+                    <div id="panel-tavern" class="space-y-3 hidden">
+                        <div class="bg-amber-950 p-3 rounded-lg border border-amber-800/40 text-center">
+                            <h3 class="parchment-text text-lg text-amber-400 italic mb-2">"Welcome to the Rusty Anchor, Captain!"</h3>
+                            <p class="text-xs text-amber-300 leading-relaxed mb-4">
+                                Gather rumors of rich galleons, hire sailors to man your batteries, and prepare to capture disabled hostile vessels.
+                            </p>
+                        </div>
+
+                        <!-- Tavern Crew Recruitment -->
+                        <div class="bg-amber-900/10 p-3 rounded-lg border border-amber-800/40 flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-amber-200 block text-sm">Hire Experienced Sailors</span>
+                                <span class="text-xs text-amber-400 block" id="tavern-crew-count">Active Crew: 4 buccaneers</span>
+                            </div>
+                            <button onclick="hireCrew()" class="bg-amber-700 hover:bg-green-600 text-amber-100 font-bold px-4 py-2 rounded text-xs">
+                                Recruit +1 Sailor <br> <span class="text-[10px] text-amber-300">🪙 40 Gold</span>
+                            </button>
+                        </div>
+
+                        <!-- Local Rumors Box -->
+                        <div class="p-3 bg-amber-900/30 rounded border border-amber-800">
+                            <h4 class="text-xs uppercase text-amber-400 font-bold tracking-wider mb-2">Sea Gossip & Rumors</h4>
+                            <ul id="rumors-list" class="space-y-2 text-xs text-amber-200 list-disc list-inside"></ul>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Gold and Status Footer in Modal -->
+                <div class="p-3 bg-amber-950 border-t-2 border-amber-800 flex justify-between items-center text-sm">
+                    <span class="font-semibold text-amber-400">Total Gold: 🪙 <span id="port-gold-display">500</span></span>
+                    <button onclick="undockFromPort()" class="bg-green-700 hover:bg-green-600 text-amber-100 font-bold px-5 py-2 rounded shadow transition active:scale-95 uppercase tracking-wider text-xs">
+                        ⚓ SET COURSE
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CAPTURE / BOARDING ACTION MODAL -->
+        <div id="boarding-modal" class="hidden absolute inset-0 bg-black/80 backdrop-blur-md z-40 flex items-center justify-center p-4">
+            <div class="bg-red-950 border-4 border-amber-600 rounded-xl shadow-2xl max-w-md w-full p-5 text-center border-double text-amber-100 space-y-4">
+                <h2 class="parchment-title text-2xl font-bold tracking-wider text-amber-400">BOARDING SUCCESS!</h2>
+                <div class="border-t border-b border-amber-800/60 py-3 my-2 space-y-1 text-sm">
+                    <p class="text-amber-200" id="board-success-desc">The enemy warship strikes her colors and surrenders. Your crew holds the decks!</p>
+                    <p class="text-xs text-amber-400 font-bold">Select the fate of the captured vessel:</p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                    <button onclick="resolveCapture('plunder')" class="bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between">
+                        <div>
+                            <span class="font-bold block text-amber-100">Plunder Hold & Chests</span>
+                            <span class="text-xs text-amber-300">Seize remaining cargo & gold</span>
+                        </div>
+                        <span class="text-xl">🪙</span>
+                    </button>
+
+                    <button onclick="resolveCapture('pressgang')" class="bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between">
+                        <div>
+                            <span class="font-bold block text-amber-100">Press-Gang Surviving Crew</span>
+                            <span class="text-xs text-amber-300">Draft able-bodied men to your deck</span>
+                        </div>
+                        <span class="text-xl">🙋</span>
+                    </button>
+
+                    <button onclick="resolveCapture('scuttle')" class="bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between">
+                        <div>
+                            <span class="font-bold block text-amber-100">Strip Timbers & Scuttle</span>
+                            <span class="text-xs text-amber-300">Patch up your hull with timber logs</span>
+                        </div>
+                        <span class="text-xl">🛠️</span>
+                    </button>
+                </div>
+
+                <div class="pt-2">
+                    <p class="text-[10px] text-amber-400 italic">"Mercy or efficiency, Captain. Choose well."</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI FIRST MATE INTERACTIVE LOG (LEFT DRAWER) -->
+        <div id="first-mate-drawer" class="hidden fixed top-0 left-0 h-full w-full max-w-sm bg-amber-950 border-r-4 border-amber-800/90 z-40 shadow-2xl flex flex-col transition-all duration-300 overflow-hidden text-amber-100">
+            <div class="p-4 border-b-2 border-amber-800 bg-amber-900/40 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">👨‍✈️</span>
+                    <div>
+                        <h3 class="font-bold text-amber-300 parchment-title">First Mate's Cabin</h3>
+                        <p id="first-mate-personality" class="text-[10px] text-amber-400 italic font-sans">Awaiting orders, Cap'n.</p>
+                    </div>
+                </div>
+                <button onclick="toggleFirstMateDrawer()" class="text-amber-400 hover:text-amber-200 font-black text-lg p-1.5 active:scale-95">&times;</button>
+            </div>
+            
+            <!-- Chat Log Scroll View -->
+            <div id="first-mate-chat-log" class="flex-1 p-3 overflow-y-auto space-y-3 bg-amber-950/20 text-xs flex flex-col">
+                <div class="bg-amber-900/35 border border-amber-800 p-2.5 rounded-lg text-amber-200">
+                    <p class="font-bold mb-1">👨‍✈️ First Mate:</p>
+                    <p class="italic">"We are geared up and ready, Captain! Ask me anything about our tactical standing, trade routes, or local history!"</p>
+                </div>
+            </div>
+
+            <!-- Quick Action Suggestion Chips -->
+            <div class="p-2 bg-amber-950/80 border-t border-amber-900/50 flex flex-wrap gap-1.5">
+                <button onclick="sendQuickMatePrompt('Check our trading inventory and give profit advice')" class="text-[10px] bg-amber-900 hover:bg-amber-800 border border-amber-700/60 text-amber-200 px-2 py-1 rounded">💰 Profit Plan</button>
+                <button onclick="sendQuickMatePrompt('Report on our current vessel and crew status')" class="text-[10px] bg-amber-900 hover:bg-amber-800 border border-amber-700/60 text-amber-200 px-2 py-1 rounded">🛡️ Vessel Report</button>
+                <button onclick="sendQuickMatePrompt('Tell me a legendary 1600s pirate story')" class="text-[10px] bg-amber-900 hover:bg-amber-800 border border-amber-700/60 text-amber-200 px-2 py-1 rounded">🗺️ Pirate Legend</button>
+            </div>
+
+            <!-- Input Box -->
+            <div class="p-3 border-t-2 border-amber-800 bg-amber-900/20 flex gap-2">
+                <input id="first-mate-input" type="text" placeholder="Speak to your mate..." class="flex-1 bg-amber-950/80 border border-amber-700 rounded-lg px-3 py-2 text-xs text-amber-100 placeholder-amber-600/60 focus:outline-none focus:border-amber-400">
+                <button onclick="sendFirstMateMessage()" class="bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold px-4 py-2 rounded-lg text-xs active:scale-95">Send</button>
+            </div>
+        </div>
+
+        <!-- GENERATIVE AI SEA ENCOUNTER MODAL (CHOOSE YOUR OWN ADVENTURE) -->
+        <div id="encounter-modal" class="hidden absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div class="bg-amber-950 border-4 border-amber-700 rounded-2xl shadow-2xl max-w-lg w-full p-6 text-center border-double text-amber-100 space-y-4 relative overflow-hidden">
+                <!-- Golden compass card graphic background -->
+                <div class="absolute -right-16 -bottom-16 w-48 h-48 border border-amber-800/10 rounded-full opacity-10 pointer-events-none"></div>
+
+                <div id="encounter-loading" class="py-12 flex flex-col items-center gap-3 animate-pulse">
+                    <span class="text-3xl animate-bounce">🍾</span>
+                    <h3 class="parchment-title text-xl text-amber-400">Uncorking Bottle...</h3>
+                    <p class="text-xs text-amber-300 italic">"Whispers of the deep sea are being decoded..."</p>
+                </div>
+
+                <div id="encounter-content" class="hidden space-y-4">
+                    <div class="flex items-center justify-center gap-2">
+                        <span class="text-2xl">📜</span>
+                        <h2 id="encounter-title" class="parchment-title text-2xl font-bold tracking-wider text-amber-400">MESSAGE IN A BOTTLE</h2>
+                    </div>
+
+                    <p id="encounter-desc" class="parchment-text text-sm text-amber-100 leading-relaxed italic border-t border-b border-amber-800/50 py-3 my-2"></p>
+
+                    <div class="space-y-2.5 pt-2">
+                        <button id="encounter-btn-a" onclick="selectEncounterOption('A')" class="w-full bg-amber-900/50 hover:bg-amber-900 border border-amber-600/60 p-3 rounded-lg text-left text-xs text-amber-200 transition active:scale-95 flex items-center justify-between">
+                            <span id="encounter-text-a">Investigate</span> <span class="text-[10px] text-amber-400">Option A</span>
+                        </button>
+                        <button id="encounter-btn-b" onclick="selectEncounterOption('B')" class="w-full bg-amber-900/50 hover:bg-amber-900 border border-amber-600/60 p-3 rounded-lg text-left text-xs text-amber-200 transition active:scale-95 flex items-center justify-between">
+                            <span id="encounter-text-b">Keep sailing</span> <span class="text-[10px] text-amber-400">Option B</span>
+                        </button>
+                        <button id="encounter-btn-c" onclick="selectEncounterOption('C')" class="w-full bg-amber-900/50 hover:bg-amber-900 border border-amber-600/60 p-3 rounded-lg text-left text-xs text-amber-200 transition active:scale-95 flex items-center justify-between">
+                            <span id="encounter-text-c">Consult stars</span> <span class="text-[10px] text-amber-400">Option C</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- RESOLUTION CARD -->
+                <div id="encounter-resolution" class="hidden space-y-4">
+                    <h3 class="parchment-title text-lg text-amber-400 font-bold" id="res-heading">Event Resolved</h3>
+                    <p id="encounter-res-text" class="text-xs text-amber-200 italic leading-relaxed"></p>
+                    
+                    <!-- Reward Stat Badge Overlay -->
+                    <div class="flex justify-center gap-4 text-xs font-bold font-mono">
+                        <span id="res-badge-gold" class="hidden text-amber-400">🪙 <span id="res-gold-val"></span></span>
+                        <span id="res-badge-hull" class="hidden text-red-400">🛠️ <span id="res-hull-val"></span> HP</span>
+                        <span id="res-badge-crew" class="hidden text-emerald-400">🙋 <span id="res-crew-val"></span> Crew</span>
+                    </div>
+
+                    <button onclick="closeEncounterModal()" class="w-full bg-amber-600 hover:bg-amber-500 text-amber-950 font-black text-xs py-2.5 rounded-lg tracking-wider transition uppercase">
+                        Resume Captaincy
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // SOUND ENGINE (Web Audio API Synthesizer)
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'cannon') {
+                    // Exploding white noise sound for cannon blast
+                    const bufferSize = audioCtx.sampleRate * 0.8;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = buffer;
+
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(400, now);
+                    filter.frequency.exponentialRampToValueAtTime(10, now + 0.6);
+
+                    const gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.8, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    noise.start(now);
+                } 
+                else if (type === 'impact') {
+                    // Wood breaking crash sound
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } 
+                else if (type === 'gold') {
+                    // Double coin bell chimes
+                    const osc1 = audioCtx.createOscillator();
+                    const osc2 = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc1.type = 'sine';
+                    osc1.frequency.setValueAtTime(987.77, now); // B5
+                    osc1.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+                    osc1.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc1.start(now);
+                    osc1.stop(now + 0.3);
+                }
+                else if (type === 'port') {
+                    // Triumphant arpeggio
+                    const notes = [261.63, 329.63, 392.00, 523.25]; // C major
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                        gain.gain.setValueAtTime(0.12, now + idx * 0.1);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.4);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now + idx * 0.1);
+                        osc.stop(now + idx * 0.1 + 0.4);
+                    });
+                }
+            } catch (e) {
+                console.warn("Sound engine error: ", e);
+            }
+        }
+
+        // CONSTANTS & GAME SETTINGS
+        const WORLD_WIDTH = 4000;
+        const WORLD_HEIGHT = 4000;
+
+        // Faction bonuses configurations
+        const FACTION_BONUSES = {
+            'English Privateer': { speed: 1.15, damage: 1.0, armor: 1.0, tradeDiscount: 1.0 },
+            'French Buccaneer': { speed: 1.0, damage: 1.25, armor: 1.0, tradeDiscount: 1.0 },
+            'Spanish Guardacosta': { speed: 0.95, damage: 1.0, armor: 1.3, tradeDiscount: 1.0 },
+            'Independent Rogue': { speed: 1.0, damage: 1.0, armor: 1.0, tradeDiscount: 0.85 }
+        };
+
+        // Commodities details
+        const COMMODITIES = {
+            sugar: { name: 'Raw Sugar', basePrice: 15, weight: 1 },
+            rum: { name: 'Jamaica Rum', basePrice: 28, weight: 1 },
+            tobacco: { name: 'Leaf Tobacco', basePrice: 42, weight: 1 },
+            spices: { name: 'Exotic Spices', basePrice: 65, weight: 1 },
+            wood: { name: 'Mahogany Logs', basePrice: 10, weight: 1 }
+        };
+
+        // Static historical Ports (Added larger interactive dock coordinates and harbor visual markers)
+        const PORTS_DATA = [
+            { id: 'havana', name: 'Havana', x: 600, y: 800, color: '#f39c12', allegiance: 'Spanish Guardacosta', produce: 'tobacco', demand: 'rum' },
+            { id: 'port_royal', name: 'Port Royal', x: 2100, y: 1900, color: '#3498db', allegiance: 'English Privateer', produce: 'rum', demand: 'sugar' },
+            { id: 'tortuga', name: 'Tortuga', x: 2600, y: 700, color: '#9b59b6', allegiance: 'Independent Rogue', produce: 'sugar', demand: 'spices' },
+            { id: 'nassau', name: 'Nassau', x: 1700, y: 600, color: '#1abc9c', allegiance: 'Independent Rogue', produce: 'wood', demand: 'tobacco' },
+            { id: 'san_juan', name: 'San Juan', x: 3400, y: 2200, color: '#e74c3c', allegiance: 'Spanish Guardacosta', produce: 'spices', demand: 'wood' }
+        ];
+
+        // Static Land Masses/Islands for Collision Detection
+        const ISLANDS_DATA = [
+            { id: 'cay_romano', name: 'Cayo Romano Reefs', x: 950, y: 1100, radius: 160 },
+            { id: 'blue_mtn', name: 'Blue Mountain Shoals', x: 1650, y: 2150, radius: 180 },
+            { id: 'devils_cay', name: "Devil's Cay", x: 2350, y: 920, radius: 130 },
+            { id: 'andros_shoals', name: 'Andros Island', x: 1950, y: 1050, radius: 170 },
+            { id: 'isla_vieques', name: 'Isla de Vieques', x: 3050, y: 2450, radius: 210 },
+            { id: 'dead_man', name: "Dead Man's Chest", x: 1200, y: 2900, radius: 240 },
+            { id: 'gallows_pt', name: 'Gallows Point Reef', x: 2800, y: 3100, radius: 200 }
+        ];
+
+        // Rumor lines
+        const TAVERN_RUMORS = [
+            "Pirate sloop spotted chasing a Spanish Merchant to the east of Havana!",
+            "They say Tortuga has the sweetest prices for raw sugar barrels right now.",
+            "San Juan is starved of Mahogany logs to rebuild their harbor fort!",
+            "Be careful out in the deep blue. Island shoals are hazardous to wooden hulls!",
+            "Disabled warships fly white flags. Board them to salvage timbers or press-gang their crew."
+        ];
+
+        // GAME INITIAL STATE
+        let gameState = {
+            faction: 'English Privateer',
+            shipType: 'Sloop',
+            gold: 500,
+            activeCrew: 4,
+            currentPort: null,
+            cargo: {
+                sugar: 0,
+                rum: 0,
+                tobacco: 0,
+                spices: 0,
+                wood: 0
+            },
+            cargoCapacity: 10,
+            hullMax: 100,
+            hull: 100,
+            speedUpgradeLevel: 1,
+            cannonCount: 2,
+            hasGameStarted: false
+        };
+
+        // WIND STATE
+        let wind = {
+            angle: Math.PI / 4, // blows towards northeast
+            speed: 14, // knots
+            nextShiftIn: 25000, // milliseconds
+        };
+
+        // SHIP STATE
+        let ship = {
+            x: 1800,
+            y: 1500,
+            angle: 0, 
+            targetAngle: 0,
+            speed: 0,
+            targetSpeed: 0,
+            sailState: 'furled', // 'furled', 'half', 'full'
+            turnSpeed: 0.035, // radians per frame
+            maxBaseSpeed: 4.8
+        };
+
+        // OBJECTS IN WORLD
+        let enemies = [];
+        let cannonballs = [];
+        let particles = [];
+        let cargoLoot = [];
+        let waveLines = [];
+        let currentBoardingTarget = null; // references disabled enemy ship being captured
+
+        // NEW AI BOTTLE ENCOUNTER VARIABLE DESIGNS
+        let bottles = []; // Messages in bottles found floating on the map
+        let currentActiveEncounter = null; // holds decoded json payload
+
+        // COMBAT COOLDOWNS (ms)
+        let cooldowns = {
+            left: 0,
+            right: 0,
+            max: 2000 // 2 seconds between broadsides
+        };
+
+        // CANVAS & CONTROLS REFERENCES
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        let keysPressed = {};
+        let portModalOpen = false;
+        let boardingModalOpen = false;
+        let currentModalTab = 'market';
+        let activeSteeringDir = 0; // -1 Left, 1 Right, 0 Center
+
+        function initWaves() {
+            waveLines = [];
+            for (let i = 0; i < 40; i++) {
+                waveLines.push({
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    length: 30 + Math.random() * 50,
+                    speed: 0.4 + Math.random() * 0.6
+                });
+            }
+        }
+
+        // Handle Responsive Resizing
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initWaves();
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // TOUCH CONTROLS HELPER
+        const leftBtn = document.getElementById('steer-left-btn');
+        const rightBtn = document.getElementById('steer-right-btn');
+        const steerWheel = document.getElementById('steering-wheel');
+
+        function startSteer(dir) {
+            initAudio(); // Trigger audio context unlock on user interaction
+            activeSteeringDir = dir;
+            if(dir !== 0) {
+                steerWheel.style.transform = `rotate(${dir * 45}deg)`;
+            } else {
+                steerWheel.style.transform = `rotate(0deg)`;
+            }
+        }
+
+        // Steer left bindings
+        leftBtn.addEventListener('mousedown', () => startSteer(-1));
+        leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startSteer(-1); }, {passive: false});
+        leftBtn.addEventListener('mouseup', () => startSteer(0));
+        leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); startSteer(0); }, {passive: false});
+
+        // Steer right bindings
+        rightBtn.addEventListener('mousedown', () => startSteer(1));
+        rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startSteer(1); }, {passive: false});
+        rightBtn.addEventListener('mouseup', () => startSteer(0));
+        rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); startSteer(0); }, {passive: false});
+
+        // Direct event binding on enlarged Fire Cannon buttons
+        const fireLeftBtn = document.getElementById('btn-fire-left');
+        const fireRightBtn = document.getElementById('btn-fire-right');
+
+        fireLeftBtn.addEventListener('mousedown', (e) => { initAudio(); fireCannons('left'); });
+        fireLeftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); fireCannons('left'); }, {passive: false});
+
+        fireRightBtn.addEventListener('mousedown', (e) => { initAudio(); fireCannons('right'); });
+        fireRightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); fireCannons('right'); }, {passive: false});
+
+        // Keyboard Controls mapping
+        window.addEventListener('keydown', (e) => {
+            initAudio();
+            keysPressed[e.key.toLowerCase()] = true;
+            if (e.key === ' ' || e.code === 'Space') {
+                fireCannons('left');
+                fireCannons('right');
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            keysPressed[e.key.toLowerCase()] = false;
+        });
+
+        // UI Selection Actions
+        function selectFaction(faction) {
+            gameState.faction = faction;
+            document.querySelectorAll('.faction-btn').forEach(btn => {
+                btn.classList.remove('border-amber-400', 'bg-amber-800');
+                btn.classList.add('border-amber-600/50', 'bg-amber-900/40');
+            });
+            const lookup = {
+                'English Privateer': 'english',
+                'French Buccaneer': 'french',
+                'Spanish Guardacosta': 'spanish',
+                'Independent Rogue': 'rogue'
+            };
+            const selected = document.getElementById(`faction-btn-${lookup[faction]}`);
+            if (selected) {
+                selected.classList.remove('border-amber-600/50', 'bg-amber-900/40');
+                selected.classList.add('border-amber-400', 'bg-amber-800');
+            }
+        }
+
+        function selectShip(shipType) {
+            gameState.shipType = shipType;
+            document.querySelectorAll('.ship-btn').forEach(btn => {
+                btn.classList.remove('border-amber-400', 'bg-amber-800');
+                btn.classList.add('border-amber-600/50', 'bg-amber-900/40');
+            });
+            const selected = document.getElementById(`ship-btn-${shipType.toLowerCase()}`);
+            if (selected) {
+                selected.classList.remove('border-amber-600/50', 'bg-amber-900/40');
+                selected.classList.add('border-amber-400', 'bg-amber-800');
+            }
+        }
+
+        // Initialize default selections
+        selectFaction('English Privateer');
+        selectShip('Sloop');
+
+        // Setup initial entities
+        function initWorldEntities() {
+            enemies = [];
+            cargoLoot = [];
+            cannonballs = [];
+            particles = [];
+            bottles = [];
+
+            // Spawn patrol & pirate AI ships
+            for (let i = 0; i < 14; i++) {
+                spawnPirateShip();
+            }
+
+            // Spawn floating sea junk/treasures
+            for (let i = 0; i < 15; i++) {
+                spawnFloatingLoot();
+            }
+
+            // Spawn 3 starting Messages in Bottles
+            for (let i = 0; i < 3; i++) {
+                spawnMessageInBottle();
+            }
+        }
+
+        function spawnPirateShip() {
+            const types = ['Sloop', 'Brigantine', 'Galleon'];
+            const chosenType = types[Math.floor(Math.random() * types.length)];
+            const isPirate = Math.random() > 0.4;
+            const maxHp = chosenType === 'Galleon' ? 180 : chosenType === 'Brigantine' ? 100 : 50;
+
+            // Ensure they don't spawn directly inside land masses
+            let x, y, insideLand;
+            do {
+                x = Math.random() * WORLD_WIDTH;
+                y = Math.random() * WORLD_HEIGHT;
+                insideLand = false;
+                for (let island of ISLANDS_DATA) {
+                    const dx = x - island.x;
+                    const dy = y - island.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < island.radius + 80) {
+                        insideLand = true;
+                        break;
+                    }
+                }
+            } while (insideLand);
+            
+            enemies.push({
+                id: Math.random().toString(36).substr(2, 9),
+                x: x,
+                y: y,
+                angle: Math.random() * Math.PI * 2,
+                speed: 1 + Math.random() * 2,
+                type: chosenType,
+                isPirate: isPirate,
+                hull: maxHp,
+                hullMax: maxHp,
+                cooldown: 0,
+                targetRange: 350,
+                patrolOriginX: Math.random() * WORLD_WIDTH,
+                patrolOriginY: Math.random() * WORLD_HEIGHT,
+                state: 'patrol', // 'patrol' or 'pursue'
+                status: 'active' // 'active' or 'disabled' (surrendered)
+            });
+        }
+
+        function spawnFloatingLoot() {
+            const goods = Object.keys(COMMODITIES);
+            const item = goods[Math.floor(Math.random() * goods.length)];
+            cargoLoot.push({
+                x: Math.random() * WORLD_WIDTH,
+                y: Math.random() * WORLD_HEIGHT,
+                type: item,
+                quantity: Math.floor(Math.random() * 3) + 1,
+                radius: 15,
+                pulse: 0
+            });
+        }
+
+        function spawnMessageInBottle() {
+            bottles.push({
+                x: Math.random() * WORLD_WIDTH,
+                y: Math.random() * WORLD_HEIGHT,
+                radius: 18,
+                pulse: Math.random() * Math.PI
+            });
+        }
+
+        function startGame() {
+            initAudio(); // Audio Unlock
+
+            document.getElementById('intro-screen').classList.add('hidden');
+            
+            // Adjust stats based on starting vessel selection
+            if (gameState.shipType === 'Sloop') {
+                gameState.cargoCapacity = 10;
+                gameState.hullMax = 100;
+                gameState.hull = 100;
+                gameState.cannonCount = 2;
+                ship.maxBaseSpeed = 5.2;
+            } else if (gameState.shipType === 'Schooner') {
+                gameState.cargoCapacity = 22;
+                gameState.hullMax = 150;
+                gameState.hull = 150;
+                gameState.cannonCount = 4;
+                ship.maxBaseSpeed = 4.2;
+            }
+
+            // Apply Faction badges
+            document.getElementById('vessel-name').innerText = gameState.shipType;
+            document.getElementById('faction-badge').innerText = `(${gameState.faction})`;
+            
+            gameState.hasGameStarted = true;
+            initWorldEntities();
+            updateHUD();
+
+            addLogMessage("🔱 Welcome Captain! Sail with WASD/Arrows or the Touch Steering wheel!");
+            addLogMessage("🍃 Tip: Watch the Wind Indicator to optimize sail trims!");
+            addLogMessage("⛰️ Warning: Navigate carefully to avoid grounding on island reefs!");
+            addLogMessage("🍾 Notice: Glowing Bottles drift on the waves. Sail into them for AI Encounters!");
+            
+            window.requestAnimationFrame(gameLoop);
+        }
+
+        // Calculate Sailing Physics (Polar Wind diagram modeling)
+        function getWindEfficiency() {
+            const windSourceAngle = normalizeAngle(wind.angle + Math.PI);
+            const headingIntoWindDiff = Math.abs(normalizeAngle(ship.angle - windSourceAngle));
+            const headwindDeg = (headingIntoWindDiff * 180) / Math.PI;
+
+            if (headwindDeg < 45) {
+                return { multiplier: 0.1, label: 'In Irons (Headwind)', color: 'text-red-500' };
+            } else if (headwindDeg < 80) {
+                return { multiplier: 0.75, label: 'Close Hauled', color: 'text-yellow-400' };
+            } else if (headwindDeg < 135) {
+                return { multiplier: 1.35, label: 'Broad Reach (Fastest)', color: 'text-green-400' };
+            } else {
+                return { multiplier: 0.9, label: 'Running Downwind', color: 'text-emerald-300' };
+            }
+        }
+
+        function normalizeAngle(angle) {
+            while (angle > Math.PI) angle -= Math.PI * 2;
+            while (angle < -Math.PI) angle += Math.PI * 2;
+            return angle;
+        }
+
+        // Apply Sail control triggers
+        function setSailState(state) {
+            ship.sailState = state;
+            document.getElementById('sail-btn-full').className = state === 'full' ? 'bg-amber-600 text-amber-950 font-bold px-2 py-1.5 text-xs rounded shadow' : 'bg-amber-900/60 text-amber-300 px-2 py-1.5 text-xs rounded hover:bg-amber-800 transition';
+            document.getElementById('sail-btn-half').className = state === 'half' ? 'bg-amber-600 text-amber-950 font-bold px-2 py-1.5 text-xs rounded shadow' : 'bg-amber-900/60 text-amber-300 px-2 py-1.5 text-xs rounded hover:bg-amber-800 transition';
+            document.getElementById('sail-btn-furled').className = state === 'furled' ? 'bg-amber-600 text-amber-950 font-bold px-2 py-1.5 text-xs rounded shadow' : 'bg-amber-900/60 text-amber-300 px-2 py-1.5 text-xs rounded hover:bg-amber-800 transition';
+
+            addLogMessage(`⛵ Sails adjusted to: ${state.toUpperCase()}`);
+        }
+
+        function updateHUD() {
+            document.getElementById('hud-gold').innerText = Math.floor(gameState.gold);
+            document.getElementById('port-gold-display').innerText = Math.floor(gameState.gold);
+            document.getElementById('hud-cargo-used').innerText = getCargoCount();
+            document.getElementById('hud-cargo-max').innerText = gameState.cargoCapacity;
+            document.getElementById('market-cargo-info').innerText = `${getCargoCount()} / ${gameState.cargoCapacity}`;
+            
+            // Health percentage
+            const hpPct = (gameState.hull / gameState.hullMax) * 100;
+            document.getElementById('hull-bar').style.width = `${hpPct}%`;
+            document.getElementById('hull-text').innerText = `${Math.floor(gameState.hull)} / ${gameState.hullMax}`;
+
+            // Cooldowns update UI elements
+            const leftPct = Math.max(0, 100 - (cooldowns.left / cooldowns.max) * 100);
+            const rightPct = Math.max(0, 100 - (cooldowns.right / cooldowns.max) * 100);
+            document.getElementById('port-cooldown-bar').style.width = `${leftPct}%`;
+            document.getElementById('starboard-cooldown-bar').style.width = `${rightPct}%`;
+
+            // Shipyard stats updates
+            document.getElementById('shipyard-repair-status').innerText = `Hull: ${Math.floor(gameState.hull)} / ${gameState.hullMax} HP`;
+            document.getElementById('shipyard-cannon-count').innerText = `Current Cannons: ${gameState.cannonCount} batteries`;
+            document.getElementById('shipyard-sail-level').innerText = `Level ${gameState.speedUpgradeLevel} Sails`;
+            document.getElementById('shipyard-cargo-cap').innerText = `Hold Capacity: ${gameState.cargoCapacity} barrels`;
+            document.getElementById('tavern-crew-count').innerText = `Crew: ${gameState.activeCrew} seasoned sailors`;
+        }
+
+        function getCargoCount() {
+            return Object.values(gameState.cargo).reduce((a, b) => a + b, 0);
+        }
+
+        // Notification Log Feed System
+        function addLogMessage(msg, type = 'info') {
+            const overlay = document.getElementById('log-overlay');
+            const item = document.createElement('div');
+            item.className = `px-3 py-1.5 rounded-md text-xs font-semibold shadow-md backdrop-blur-md transform transition-all duration-300 translate-y-2 opacity-0 text-amber-100 ${
+                type === 'combat' ? 'bg-red-950/90 border border-red-700/60' : 
+                type === 'success' ? 'bg-emerald-950/90 border border-emerald-700/60' : 
+                'bg-amber-950/95 border border-amber-800/60'
+            }`;
+            item.innerText = msg;
+            overlay.appendChild(item);
+
+            setTimeout(() => {
+                item.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                item.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => item.remove(), 400);
+            }, 4000);
+        }
+
+        function fireCannons(side) {
+            if (!gameState.hasGameStarted || portModalOpen || boardingModalOpen) return;
+
+            // Check Cooldown
+            if (side === 'left' && cooldowns.left > 0) return;
+            if (side === 'right' && cooldowns.right > 0) return;
+
+            // Set specific broadside trigger cooldowns
+            if (side === 'left') cooldowns.left = cooldowns.max;
+            if (side === 'right') cooldowns.right = cooldowns.max;
+
+            // PLAY AUDIO BLAST
+            playSound('cannon');
+
+            addLogMessage(`💥 Broadside fired from ${side.toUpperCase()} batteries!`, 'combat');
+
+            const damageMult = FACTION_BONUSES[gameState.faction].damage;
+            const ballCount = gameState.cannonCount; 
+            const offsetDir = side === 'left' ? -Math.PI / 2 : Math.PI / 2;
+            const fireAngle = ship.angle + offsetDir;
+
+            for (let i = 0; i < ballCount; i++) {
+                const spread = (Math.random() - 0.5) * 0.25;
+                const ballSpeed = 8 + Math.random() * 2;
+                
+                const startX = ship.x + Math.sin(ship.angle + offsetDir) * 12;
+                const startY = ship.y - Math.cos(ship.angle + offsetDir) * 12;
+
+                cannonballs.push({
+                    x: startX,
+                    y: startY,
+                    vx: Math.sin(fireAngle + spread) * ballSpeed + Math.sin(ship.angle)*ship.speed,
+                    vy: -Math.cos(fireAngle + spread) * ballSpeed - Math.cos(ship.angle)*ship.speed,
+                    life: 45, 
+                    isPlayer: true,
+                    damage: 20 * damageMult
+                });
+
+                // Spawn cannon smoke particles
+                for (let j = 0; j < 4; j++) {
+                    particles.push({
+                        x: startX + (Math.random() - 0.5) * 10,
+                        y: startY + (Math.random() - 0.5) * 10,
+                        vx: Math.sin(fireAngle + (Math.random() - 0.5) * 0.5) * (2 + Math.random() * 2),
+                        vy: -Math.cos(fireAngle + (Math.random() - 0.5) * 0.5) * (2 + Math.random() * 2),
+                        size: 6 + Math.random() * 8,
+                        color: 'rgba(220, 220, 220, 0.75)',
+                        life: 20 + Math.random() * 15
+                    });
+                }
+            }
+        }
+
+        // Calculate dynamic prices for a port
+        function getMarketPrice(port, commodityId, buyOrSell) {
+            const base = COMMODITIES[commodityId].basePrice;
+            let price = base;
+
+            if (port.produce === commodityId) {
+                price = Math.floor(base * 0.55);
+            }
+            else if (port.demand === commodityId) {
+                price = Math.floor(base * 1.65);
+            }
+
+            if (buyOrSell === 'buy' && gameState.faction === 'Independent Rogue') {
+                price = Math.floor(price * 0.90);
+            } else if (buyOrSell === 'sell' && gameState.faction === 'Independent Rogue') {
+                price = Math.ceil(price * 1.10);
+            }
+
+            return Math.max(2, price);
+        }
+
+        // Port Proximity & Docking Trigger Zone (Expanded to 160 pixels with automatic deceleration)
+        function checkPortProximity() {
+            let closeToPort = null;
+            PORTS_DATA.forEach(p => {
+                const dx = ship.x - p.x;
+                const dy = ship.y - p.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 160) {
+                    closeToPort = p;
+                }
+            });
+
+            const prompt = document.getElementById('dock-prompt');
+            if (closeToPort && !portModalOpen && !boardingModalOpen) {
+                prompt.classList.remove('hidden');
+                document.getElementById('dock-port-name').innerText = closeToPort.name.toUpperCase();
+                gameState.currentPort = closeToPort;
+
+                // Gentle Harbor drag - Slow the ship down automatically for easier mooring
+                if (ship.speed > 1.2) {
+                    ship.speed *= 0.93;
+                }
+            } else {
+                prompt.classList.add('hidden');
+                if(!portModalOpen) {
+                    gameState.currentPort = null;
+                }
+            }
+        }
+
+        function dockAtPort() {
+            if (!gameState.currentPort) return;
+            portModalOpen = true;
+            ship.speed = 0;
+            ship.sailState = 'furled';
+            setSailState('furled');
+
+            playSound('port'); // Play triumphant port entrance sound
+
+            document.getElementById('dock-prompt').classList.add('hidden');
+            document.getElementById('port-title-modal').innerText = gameState.currentPort.name.toUpperCase();
+            document.getElementById('port-allegiance-modal').innerText = `Under ${gameState.currentPort.allegiance} protection`;
+            
+            // Generate rumor list
+            const rumorBox = document.getElementById('rumors-list');
+            rumorBox.innerHTML = '';
+            const rumors = [...TAVERN_RUMORS];
+            rumors.sort(() => 0.5 - Math.random());
+            for (let i = 0; i < 3; i++) {
+                const li = document.createElement('li');
+                li.innerText = rumors[i];
+                rumorBox.appendChild(li);
+            }
+
+            renderMarket();
+            updateHUD();
+
+            document.getElementById('port-modal').classList.remove('hidden');
+        }
+
+        function undockFromPort() {
+            portModalOpen = false;
+            document.getElementById('port-modal').classList.add('hidden');
+            addLogMessage(`⛵ Sailing away from ${gameState.currentPort.name}. Safe winds!`, 'success');
+            ship.speed = 0.5;
+            setSailState('half');
+        }
+
+        function renderMarket() {
+            const container = document.getElementById('commodity-list-container');
+            container.innerHTML = '';
+
+            const port = gameState.currentPort;
+            if(!port) return;
+
+            Object.keys(COMMODITIES).forEach(cid => {
+                const com = COMMODITIES[cid];
+                const buyPrice = getMarketPrice(port, cid, 'buy');
+                const sellPrice = getMarketPrice(port, cid, 'sell');
+                const playerQty = gameState.cargo[cid] || 0;
+
+                const row = document.createElement('div');
+                row.className = "bg-amber-900/10 p-3 rounded-lg border border-amber-800/40 flex flex-col md:flex-row justify-between items-center gap-2";
+                
+                row.innerHTML = `
+                    <div class="flex-1 text-center md:text-left">
+                        <span class="font-bold text-amber-200 text-sm block">${com.name}</span>
+                        <span class="text-[10px] text-amber-400">Barrels in Hold: <span class="font-bold text-amber-200">${playerQty}</span></span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="tradeItem('${cid}', 'buy', ${buyPrice})" class="bg-amber-800 hover:bg-amber-700 active:scale-95 text-amber-100 font-bold px-3 py-1.5 rounded text-xs flex flex-col items-center min-w-[70px]">
+                            <span>Buy</span>
+                            <span class="text-[10px] text-amber-300">🪙 ${buyPrice}</span>
+                        </button>
+
+                        <button onclick="tradeItem('${cid}', 'sell', ${sellPrice})" class="bg-amber-950 hover:bg-amber-900 active:scale-95 text-amber-400 border border-amber-800/60 font-bold px-3 py-1.5 rounded text-xs flex flex-col items-center min-w-[70px]">
+                            <span>Sell</span>
+                            <span class="text-[10px] text-amber-300">🪙 ${sellPrice}</span>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function tradeItem(commodityId, type, price) {
+            const currentCargoCount = getCargoCount();
+
+            if (type === 'buy') {
+                if (currentCargoCount >= gameState.cargoCapacity) {
+                    addLogMessage("⚠️ Cargo hold is fully laden!", "warning");
+                    return;
+                }
+                if (gameState.gold < price) {
+                    addLogMessage("⚠️ Lacking silver coins to make purchase!", "warning");
+                    return;
+                }
+                gameState.gold -= price;
+                gameState.cargo[commodityId] = (gameState.cargo[commodityId] || 0) + 1;
+                addLogMessage(`Bought 1 barrel of ${COMMODITIES[commodityId].name}`, "success");
+                playSound('gold');
+            } else {
+                if ((gameState.cargo[commodityId] || 0) <= 0) {
+                    addLogMessage("⚠️ You have none of this commodity in cargo hold!", "warning");
+                    return;
+                }
+                gameState.gold += price;
+                gameState.cargo[commodityId] = (gameState.cargo[commodityId] || 0) - 1;
+                addLogMessage(`Sold 1 barrel of ${COMMODITIES[commodityId].name}`, "success");
+                playSound('gold');
+            }
+
+            renderMarket();
+            updateHUD();
+        }
+
+        function switchTab(tab) {
+            currentModalTab = tab;
+            document.querySelectorAll('#port-modal button').forEach(btn => {
+                if (btn.id && btn.id.startsWith('tab-btn-')) {
+                    btn.classList.remove('text-amber-300', 'border-b-2', 'border-amber-400', 'bg-amber-950/60');
+                    btn.classList.add('text-amber-500');
+                }
+            });
+
+            document.getElementById(`tab-btn-${tab}`).classList.add('text-amber-300', 'border-b-2', 'border-amber-400', 'bg-amber-950/60');
+            document.getElementById(`tab-btn-${tab}`).classList.remove('text-amber-500');
+
+            document.getElementById('panel-market').classList.add('hidden');
+            document.getElementById('panel-shipyard').classList.add('hidden');
+            document.getElementById('panel-tavern').classList.add('hidden');
+
+            document.getElementById(`panel-${tab}`).classList.remove('hidden');
+        }
+
+        function buyRepair() {
+            const cost = 25;
+            if (gameState.hull >= gameState.hullMax) {
+                addLogMessage("⚠️ Ship Hull is already in pristine condition!");
+                return;
+            }
+            if (gameState.gold < cost) {
+                addLogMessage("⚠️ Not enough gold coins for repairs!");
+                return;
+            }
+
+            gameState.gold -= cost;
+            gameState.hull = Math.min(gameState.hullMax, gameState.hull + 25);
+            addLogMessage("🛠️ Ship carpenter repaired hull damage!", "success");
+            playSound('port');
+            updateHUD();
+        }
+
+        function buyUpgrade(type) {
+            let cost = 100;
+            if (type === 'cannons') {
+                cost = 150 + (gameState.cannonCount - 2) * 80;
+                if (gameState.gold < cost) { addLogMessage("⚠️ Lacking funds!"); return; }
+                gameState.gold -= cost;
+                gameState.cannonCount += 2;
+                addLogMessage("🔊 Upgraded cannon configurations!");
+                playSound('port');
+            } else if (type === 'sails') {
+                cost = 100 * gameState.speedUpgradeLevel;
+                if (gameState.gold < cost) { addLogMessage("⚠️ Lacking funds!"); return; }
+                gameState.gold -= cost;
+                gameState.speedUpgradeLevel += 1;
+                ship.maxBaseSpeed += 0.65;
+                addLogMessage("⛵ Installed high efficiency broadcloth sails!");
+                playSound('port');
+            } else if (type === 'cargo') {
+                cost = 120 + (gameState.cargoCapacity - 10) * 10;
+                if (gameState.gold < cost) { addLogMessage("⚠️ Lacking funds!"); return; }
+                gameState.gold -= cost;
+                gameState.cargoCapacity += 6;
+                addLogMessage("📦 Reinforced bottom hold for massive trading runs!");
+                playSound('port');
+            }
+            updateHUD();
+        }
+
+        function hireCrew() {
+            const cost = 40;
+            if(gameState.gold < cost) {
+                addLogMessage("⚠️ Lacking gold to recruit crewmen!");
+                return;
+            }
+            gameState.gold -= cost;
+            gameState.activeCrew += 1;
+            addLogMessage("🙋 Recruited an extra buccaneer to the crew!", "success");
+            playSound('gold');
+            updateHUD();
+        }
+
+        // TACTICAL BOARDING & CAPTURE ACTION TRIGGERS
+        function checkCaptureProximity() {
+            let closeToDisabled = null;
+            enemies.forEach(e => {
+                if (e.status === 'disabled') {
+                    const dx = ship.x - e.x;
+                    const dy = ship.y - e.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 80) {
+                        closeToDisabled = e;
+                    }
+                }
+            });
+
+            const capturePrompt = document.getElementById('capture-prompt');
+            if (closeToDisabled && !boardingModalOpen && !portModalOpen) {
+                capturePrompt.classList.remove('hidden');
+                currentBoardingTarget = closeToDisabled;
+            } else {
+                capturePrompt.classList.add('hidden');
+                if (!boardingModalOpen) {
+                    currentBoardingTarget = null;
+                }
+            }
+        }
+
+        function openBoardingScreen() {
+            if (!currentBoardingTarget) return;
+            boardingModalOpen = true;
+            ship.speed = 0;
+            ship.sailState = 'furled';
+            setSailState('furled');
+
+            playSound('port'); // Play horn sound for capture success
+
+            document.getElementById('capture-prompt').classList.add('hidden');
+            
+            // Customize text
+            document.getElementById('board-success-desc').innerText = `Your crew of ${gameState.activeCrew} seasoned sailors storms the decks of the disabled ${currentBoardingTarget.type}! The hostile crew surrenders.`;
+            document.getElementById('boarding-modal').classList.remove('hidden');
+        }
+
+        function resolveCapture(decision) {
+            if (!currentBoardingTarget) return;
+
+            if (decision === 'plunder') {
+                // Steal Gold & Cargo
+                const goldStolen = currentBoardingTarget.type === 'Galleon' ? 350 : currentBoardingTarget.type === 'Brigantine' ? 200 : 100;
+                gameState.gold += goldStolen;
+                
+                // Randomly add a resource to cargo
+                const commoditiesList = Object.keys(COMMODITIES);
+                const lootedGood = commoditiesList[Math.floor(Math.random() * commoditiesList.length)];
+                
+                if (getCargoCount() < gameState.cargoCapacity) {
+                    gameState.cargo[lootedGood] = (gameState.cargo[lootedGood] || 0) + 1;
+                    addLogMessage(`🏴‍☠️ Captured the hull! Looted ${goldStolen} Gold and 1 barrel of ${COMMODITIES[lootedGood].name}!`, 'success');
+                } else {
+                    addLogMessage(`🏴‍☠️ Captured the hull! Looted ${goldStolen} Gold! (Your cargo hold was full)`, 'success');
+                }
+                playSound('gold');
+            } 
+            else if (decision === 'pressgang') {
+                // Draft Crew
+                const recruits = currentBoardingTarget.type === 'Galleon' ? 2 : 1;
+                gameState.activeCrew += recruits;
+                addLogMessage(`🙋 Press-ganged +${recruits} surviving sailor(s) into your crew!`, 'success');
+                playSound('port');
+            } 
+            else if (decision === 'scuttle') {
+                // Scrap for timber hull repairs
+                const repairAmt = currentBoardingTarget.type === 'Galleon' ? 60 : currentBoardingTarget.type === 'Brigantine' ? 40 : 25;
+                gameState.hull = Math.min(gameState.hullMax, gameState.hull + repairAmt);
+                addLogMessage(`🛠️ Scuttled ship timber logs! Repaired +${repairAmt} Hull integrity!`, 'success');
+                playSound('impact');
+            }
+
+            // Explode / Sink target
+            spawnExplosionParticles(currentBoardingTarget.x, currentBoardingTarget.y);
+            
+            // Remove target from world
+            const targetIndex = enemies.findIndex(e => e.id === currentBoardingTarget.id);
+            if (targetIndex !== -1) {
+                enemies.splice(targetIndex, 1);
+            }
+
+            // Spawn replacement far away
+            setTimeout(spawnPirateShip, 6000);
+
+            // Close boarding modal
+            boardingModalOpen = false;
+            currentBoardingTarget = null;
+            document.getElementById('boarding-modal').classList.add('hidden');
+            updateHUD();
+
+            // Sail off
+            ship.speed = 0.5;
+            setSailState('half');
+        }
+
+        // Ship movement calculations with Island Recoil/Collision Physics
+        function updateSailingPhysics() {
+            if (portModalOpen || boardingModalOpen) return;
+
+            let actualTurnSpeed = ship.turnSpeed;
+            if (ship.sailState === 'furled') actualTurnSpeed *= 0.2; 
+
+            // Steer Left / Right
+            if (activeSteeringDir === -1 || keysPressed['a'] || keysPressed['arrowleft']) {
+                ship.angle -= actualTurnSpeed;
+                steerWheel.style.transform = `rotate(-45deg)`;
+            } else if (activeSteeringDir === 1 || keysPressed['d'] || keysPressed['arrowright']) {
+                ship.angle += actualTurnSpeed;
+                steerWheel.style.transform = `rotate(45deg)`;
+            } else {
+                steerWheel.style.transform = `rotate(0deg)`;
+            }
+
+            // Keyboard sail triggers
+            if (keysPressed['w'] || keysPressed['arrowup']) {
+                if (ship.sailState === 'furled') setSailState('half');
+                else if (ship.sailState === 'half') setSailState('full');
+                keysPressed['w'] = false; keysPressed['arrowup'] = false; 
+            }
+            if (keysPressed['s'] || keysPressed['arrowdown']) {
+                if (ship.sailState === 'full') setSailState('half');
+                else if (ship.sailState === 'half') setSailState('furled');
+                keysPressed['s'] = false; keysPressed['arrowdown'] = false;
+            }
+
+            const windEfficiency = getWindEfficiency();
+            let sailMultiplier = 0;
+            if (ship.sailState === 'half') sailMultiplier = 0.55;
+            if (ship.sailState === 'full') sailMultiplier = 1.0;
+
+            const factionMult = FACTION_BONUSES[gameState.faction].speed;
+            const targetSpeed = ship.maxBaseSpeed * sailMultiplier * windEfficiency.multiplier * factionMult;
+
+            // Inertial acceleration
+            ship.speed += (targetSpeed - ship.speed) * 0.035;
+
+            // Calculate prospective next coordinates
+            let nextX = ship.x + Math.sin(ship.angle) * ship.speed;
+            let nextY = ship.y - Math.cos(ship.angle) * ship.speed;
+
+            // COLLISION DETECTION: Check against Island Reef Shoals
+            const shipVisualRadius = 18; 
+            let groundedOnIsland = false;
+
+            for (let island of ISLANDS_DATA) {
+                const dx = nextX - island.x;
+                const dy = nextY - island.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const minDist = island.radius + shipVisualRadius;
+
+                if (dist < minDist) {
+                    groundedOnIsland = true;
+                    
+                    // Physical recoil vector
+                    const pushAngle = Math.atan2(dx, dy);
+                    
+                    // Push ship away from island center
+                    nextX = island.x + Math.sin(pushAngle) * minDist;
+                    nextY = island.y + Math.cos(pushAngle) * minDist;
+
+                    // Reverse speed and cause recoil bounce
+                    ship.speed = -ship.speed * 0.4; 
+
+                    // Play impact Audio
+                    playSound('impact');
+
+                    // Apply groundings damage penalty
+                    gameState.hull = Math.max(0, gameState.hull - 6);
+                    addLogMessage(`⚠️ Gilded reef collision! Run aground on ${island.name}! -6 HP`, "combat");
+                    
+                    // Spawn debris dust particles
+                    for (let p = 0; p < 6; p++) {
+                        particles.push({
+                            x: ship.x,
+                            y: ship.y,
+                            vx: (Math.random() - 0.5) * 3,
+                            vy: (Math.random() - 0.5) * 3,
+                            size: 4 + Math.random() * 4,
+                            color: '#8b5a2b', // Wood color brown
+                            life: 20
+                        });
+                    }
+
+                    if (gameState.hull <= 0) {
+                        triggerGameOver(`Your vessel struck the razor-sharp reefs of ${island.name} and broke apart.`);
+                    }
+                    updateHUD();
+                    break;
+                }
+            }
+
+            // Apply calculated movements
+            ship.x = nextX;
+            ship.y = nextY;
+
+            // Constrain map boundaries
+            ship.x = Math.max(50, Math.min(WORLD_WIDTH - 50, ship.x));
+            ship.y = Math.max(50, Math.min(WORLD_HEIGHT - 50, ship.y));
+
+            if (cooldowns.left > 0) cooldowns.left -= 16.66; 
+            if (cooldowns.right > 0) cooldowns.right -= 16.66;
+
+            document.getElementById('hud-speed').innerText = Math.abs(ship.speed).toFixed(1);
+            const relativeAngle = normalizeAngle(wind.angle - ship.angle);
+            document.getElementById('wind-arrow').style.transform = `rotate(${relativeAngle}rad)`;
+            const sailingEffText = document.getElementById('sailing-efficiency');
+            sailingEffText.innerText = windEfficiency.label;
+            sailingEffText.className = `font-semibold block ${windEfficiency.color}`;
+        }
+
+        // Combat and AI state machine updates
+        function updateEnemiesAndCombat() {
+            if (portModalOpen || boardingModalOpen) return;
+
+            for (let i = cannonballs.length - 1; i >= 0; i--) {
+                const b = cannonballs[i];
+                b.x += b.vx;
+                b.y += b.vy;
+                b.life--;
+
+                if (b.life <= 0) {
+                    for (let j = 0; j < 3; j++) {
+                        particles.push({
+                            x: b.x + (Math.random() - 0.5) * 6,
+                            y: b.y + (Math.random() - 0.5) * 6,
+                            vx: (Math.random() - 0.5) * 1.5,
+                            vy: (Math.random() - 0.5) * 1.5,
+                            size: 2 + Math.random() * 3,
+                            color: 'rgba(255, 255, 255, 0.85)',
+                            life: 15
+                        });
+                    }
+                    cannonballs.splice(i, 1);
+                    continue;
+                }
+
+                // Check collision with player
+                if (!b.isPlayer) {
+                    const dx = b.x - ship.x;
+                    const dy = b.y - ship.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 20) {
+                        const armorMult = FACTION_BONUSES[gameState.faction].armor;
+                        const damageTaken = b.damage / armorMult;
+                        gameState.hull -= damageTaken;
+                        addLogMessage(`💥 Hull struck by hostile cannonfire! -${Math.floor(damageTaken)} HP`, "combat");
+                        
+                        playSound('impact');
+                        spawnExplosionParticles(b.x, b.y);
+                        cannonballs.splice(i, 1);
+                        
+                        if (gameState.hull <= 0) {
+                            triggerGameOver("Your vessel was blown to pieces by enemy broadsides.");
+                        }
+                        updateHUD();
+                        continue;
+                    }
+                }
+
+                // Check collision with enemy ships
+                if (b.isPlayer) {
+                    for (let j = enemies.length - 1; j >= 0; j--) {
+                        const enemy = enemies[j];
+                        
+                        // Can't shoot already disabled surrendered ships
+                        if (enemy.status === 'disabled') continue;
+
+                        const edx = b.x - enemy.x;
+                        const edy = b.y - enemy.y;
+                        const edist = Math.sqrt(edx*edx + edy*edy);
+                        if (edist < 22) {
+                            enemy.hull -= b.damage;
+                            
+                            playSound('impact');
+                            spawnExplosionParticles(b.x, b.y);
+                            cannonballs.splice(i, 1);
+
+                            enemy.state = 'pursue';
+
+                            // Disable Target Mechanic instead of sinking immediately
+                            if (enemy.hull <= 0) {
+                                enemy.status = 'disabled';
+                                enemy.hull = 0;
+                                enemy.speed = 0.2; // Slow drift
+                                addLogMessage(`🏳️ Hostile ${enemy.type} has been DISABLED! Sail close to board & capture her!`, "success");
+                            }
+                            updateHUD();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Move & Control Enemy AI with land avoidance
+            enemies.forEach(e => {
+                const dx = ship.x - e.x;
+                const dy = ship.y - e.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < 350 && e.isPirate && e.status === 'active') {
+                    e.state = 'pursue';
+                }
+
+                if (e.status === 'disabled') {
+                    // Slow drift of surrendered vessel
+                    e.x += Math.sin(e.angle) * e.speed;
+                    e.y -= Math.cos(e.angle) * e.speed;
+                    return; // Bypass tactical combat routines
+                }
+
+                // Land Avoidance routine for AI
+                let avoidingLand = false;
+                let avoidanceAngle = 0;
+
+                for (let island of ISLANDS_DATA) {
+                    const idx = island.x - e.x;
+                    const idy = island.y - e.y;
+                    const idist = Math.sqrt(idx*idx + idy*idy);
+                    
+                    if (idist < island.radius + 80) {
+                        avoidingLand = true;
+                        // Turn away from island center
+                        avoidanceAngle = Math.atan2(idx, -idy) + Math.PI; 
+                        break;
+                    }
+                }
+
+                if (e.state === 'pursue' && !avoidingLand) {
+                    const targetAngle = Math.atan2(dx, -dy);
+                    let angleDiff = targetAngle - e.angle;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+                    e.angle += Math.max(-0.02, Math.min(0.02, angleDiff));
+                    e.x += Math.sin(e.angle) * e.speed;
+                    e.y -= Math.cos(e.angle) * e.speed;
+
+                    // Enemy shooting broadside checks
+                    e.cooldown = Math.max(0, e.cooldown - 16.6);
+                    if (dist < 200 && e.cooldown <= 0) {
+                        const angleToPlayer = Math.atan2(dx, -dy);
+                        const relativeAngle = Math.abs(normalizeAngle(angleToPlayer - e.angle));
+                        
+                        if (Math.abs(relativeAngle - Math.PI/2) < 0.45) {
+                            e.cooldown = 180 + Math.random() * 120;
+                            
+                            playSound('cannon');
+                            cannonballs.push({
+                                x: e.x + Math.sin(angleToPlayer) * 10,
+                                y: e.y - Math.cos(angleToPlayer) * 10,
+                                vx: Math.sin(angleToPlayer) * 6.5,
+                                vy: -Math.cos(angleToPlayer) * 6.5,
+                                life: 50,
+                                isPlayer: false,
+                                damage: e.type === 'Galleon' ? 30 : 15
+                            });
+                        }
+                    }
+                } else {
+                    // Use patrol angle or avoidance angle
+                    const targetAngle = avoidingLand ? avoidanceAngle : Math.atan2(e.patrolOriginX - e.x, -(e.patrolOriginY - e.y));
+                    let angleDiff = targetAngle - e.angle;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+                    e.angle += Math.max(-0.02, Math.min(0.02, angleDiff));
+                    e.x += Math.sin(e.angle) * e.speed;
+                    e.y -= Math.cos(e.angle) * e.speed;
+
+                    // Re-calculate patrol destination if close
+                    if (Math.abs(e.patrolOriginX - e.x) < 50 && Math.abs(e.patrolOriginY - e.y) < 50) {
+                        e.patrolOriginX = Math.random() * WORLD_WIDTH;
+                        e.patrolOriginY = Math.random() * WORLD_HEIGHT;
+                    }
+                }
+            });
+        }
+
+        function spawnExplosionParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    size: 3 + Math.random() * 5,
+                    color: Math.random() > 0.4 ? '#e67e22' : '#f1c40f',
+                    life: 15 + Math.random() * 10
+                });
+            }
+        }
+
+        function checkCargoCollections() {
+            if (portModalOpen || boardingModalOpen) return;
+
+            // Collision check on salvaged cargo
+            for (let i = cargoLoot.length - 1; i >= 0; i--) {
+                const loot = cargoLoot[i];
+                const dx = loot.x - ship.x;
+                const dy = loot.y - ship.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < 25) {
+                    const currentHold = getCargoCount();
+                    if (currentHold < gameState.cargoCapacity) {
+                        gameState.cargo[loot.type] = (gameState.cargo[loot.type] || 0) + loot.quantity;
+                        addLogMessage(`📦 Salvaged floating ${COMMODITIES[loot.type].name}!`, "success");
+                        playSound('gold');
+                        cargoLoot.splice(i, 1);
+                        updateHUD();
+                    } else {
+                        addLogMessage("⚠️ Hold is full, cannot salvage barrels!");
+                    }
+                }
+            }
+
+            // COLLISION CHECK: Floating AI Bottles
+            for (let i = bottles.length - 1; i >= 0; i--) {
+                const bot = bottles[i];
+                const dx = bot.x - ship.x;
+                const dy = bot.y - ship.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist < 30) {
+                    bottles.splice(i, 1);
+                    playSound('gold');
+                    // Launch generative choose your own adventure
+                    triggerBottleEncounter();
+                    break;
+                }
+            }
+        }
+
+        function updateWindShifts(dt) {
+            wind.nextShiftIn -= dt;
+            if (wind.nextShiftIn <= 0) {
+                wind.angle += (Math.random() - 0.5) * (Math.PI / 2);
+                wind.speed = Math.floor(8 + Math.random() * 14);
+                wind.nextShiftIn = 30000 + Math.random() * 30000; 
+
+                addLogMessage(`🍃 Notice: The sea breezes have shifted to ${wind.speed} knots!`, "info");
+                
+                // Periodically spawn replacement messages in bottles if under cap
+                if (bottles.length < 3) {
+                    spawnMessageInBottle();
+                }
+            }
+        }
+
+        function triggerGameOver(reason) {
+            gameState.hasGameStarted = false;
+            document.getElementById('death-reason').innerText = reason;
+            document.getElementById('game-over-screen').classList.remove('hidden');
+        }
+
+        function restartGame() {
+            gameState.hull = gameState.hullMax;
+            gameState.gold = 300;
+            gameState.cargo = { sugar: 0, rum: 0, tobacco: 0, spices: 0, wood: 0 };
+            ship.x = 1800;
+            ship.y = 1500;
+            ship.speed = 0;
+            ship.sailState = 'furled';
+            setSailState('furled');
+
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('intro-screen').classList.remove('hidden');
+        }
+
+        // ==========================================
+        //  GEMINI API CALLS: FIRST MATE LOG
+        // ==========================================
+        let isFirstMateOpen = false;
+
+        function toggleFirstMateDrawer() {
+            const drawer = document.getElementById('first-mate-drawer');
+            isFirstMateOpen = !isFirstMateOpen;
+            if (isFirstMateOpen) {
+                initAudio();
+                drawer.classList.remove('hidden');
+                updateFirstMatePersonalityLabel();
+            } else {
+                drawer.classList.add('hidden');
+            }
+        }
+
+        function updateFirstMatePersonalityLabel() {
+            const label = document.getElementById('first-mate-personality');
+            if (gameState.faction === 'English Privateer') {
+                label.innerText = "Royal Navy Officer (Formidable & Orderly)";
+            } else if (gameState.faction === 'French Buccaneer') {
+                label.innerText = "Boisterous Corsair (Fiery & Plunderous)";
+            } else if (gameState.faction === 'Spanish Guardacosta') {
+                label.innerText = "Noble Officer of the Crown (Pious & Stern)";
+            } else {
+                label.innerText = "Cynical smuggler mate (Greedy & Shrewd)";
+            }
+        }
+
+        function sendQuickMatePrompt(promptText) {
+            document.getElementById('first-mate-input').value = promptText;
+            sendFirstMateMessage();
+        }
+
+        async function sendFirstMateMessage() {
+            const inputEl = document.getElementById('first-mate-input');
+            const messageText = inputEl.value.trim();
+            if (!messageText) return;
+
+            // Display Captain message immediately
+            appendFirstMateLog("Captain", messageText, 'captain');
+            inputEl.value = "";
+
+            // Display loading indicator
+            const logBox = document.getElementById('first-mate-chat-log');
+            const loadBubble = document.createElement('div');
+            loadBubble.id = 'first-mate-loading-bubble';
+            loadBubble.className = 'text-[11px] text-amber-500 animate-pulse italic';
+            loadBubble.innerText = "Your First Mate is formulating a report...";
+            logBox.appendChild(loadBubble);
+            logBox.scrollTop = logBox.scrollHeight;
+
+            // Build Contextual State injection payload
+            const systemPrompt = `You are a legendary 17th-century Caribbean First Mate on a wooden sailing vessel.
+Your personality and dialect strictly depends on the Captain's chosen faction:
+- English Privateer: Elegant, highly disciplined, loyal, uses official Royal Navy terms like "By Her Majesty's grace" or "Steady as she goes".
+- French Buccaneer: Loud, enthusiastic, talks of plunder, French-creole pirate slang.
+- Spanish Guardacosta: Extremely formal, pious, protective of Spanish galleons, addresses captain as "Señor Capitán".
+- Independent Rogue: Cynical, focuses on smuggling, talks of double crossing, informal and rough.
+
+You are fully aware of the ship's current live state:
+- Faction: ${gameState.faction}
+- Ship Class: ${gameState.shipType}
+- Gold reserves: ${gameState.gold} doubloons
+- Current Hull strength: ${gameState.hull}/${gameState.hullMax} HP
+- Crew hands: ${gameState.activeCrew} seasoned sailors
+- Current cargo inventory: ${JSON.stringify(gameState.cargo)} (sugar, rum, tobacco, spices, wood)
+- Nearby Caribbean Ports: Havana (Spanish), Port Royal (English), Tortuga (Rogue), Nassau (Rogue), San Juan (Spanish).
+
+Respond to the Captain in character. Keep answers short, vivid, atmospheric, and strategically helpful. Give accurate advice based on current cargo (e.g. if they have sugar, suggest selling at Tortuga or Port Royal; if hull is damaged, advise stopping at a local dock shipyard). Maximum length: 3 sentences. Do not mention system rules.`;
+
+            const apiKey = ""; // Left empty; Canvas injects key dynamically at runtime
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: messageText }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+                
+                document.getElementById('first-mate-loading-bubble')?.remove();
+                const result = await response.json();
+                const aiResponseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (aiResponseText) {
+                    appendFirstMateLog("First Mate", aiResponseText, 'mate');
+                } else {
+                    throw new Error("Empty AI response");
+                }
+            } catch (err) {
+                console.warn("AI Log API Error:", err);
+                document.getElementById('first-mate-loading-bubble')?.remove();
+                
+                // Adaptive thematic fallback responses if offline/throttled
+                let fallback = "";
+                if (gameState.faction === 'English Privateer') {
+                    fallback = "Forgive me, Sir. Static fog has clouded my charts. Our broadsides are ready, but we must make port to repair our timber hull.";
+                } else if (gameState.faction === 'French Buccaneer') {
+                    fallback = "Ahoy Cap'n! The waves are shouting too loud for me to read the sky! Let's plunder another prize for rum!";
+                } else {
+                    fallback = "No wind is blowing in my sails right now, Captain. Let us secure our cargo and steer clear of dangerous shallow reefs!";
+                }
+                appendFirstMateLog("First Mate", fallback, 'mate');
+            }
+        }
+
+        function appendFirstMateLog(sender, text, role) {
+            const logBox = document.getElementById('first-mate-chat-log');
+            const wrapper = document.createElement('div');
+            
+            if (role === 'captain') {
+                wrapper.className = "bg-amber-950 border border-amber-800 p-2 rounded-lg self-end max-w-[85%] text-right";
+                wrapper.innerHTML = `
+                    <p class="font-bold text-amber-400 text-[10px] uppercase">Captain (You)</p>
+                    <p class="text-amber-100">${text}</p>
+                `;
+            } else {
+                wrapper.className = "bg-amber-900/35 border border-amber-800 p-2 rounded-lg self-start max-w-[85%]";
+                wrapper.innerHTML = `
+                    <p class="font-bold text-amber-300 text-[10px] uppercase">👨‍✈️ First Mate</p>
+                    <p class="italic text-amber-100">${text}</p>
+                `;
+            }
+            
+            logBox.appendChild(wrapper);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // ==========================================
+        //  GEMINI API CALLS: DYNAMIC SEA ENCOUNTERS (MESSAGE IN A BOTTLE)
+        // ==========================================
+        async function triggerBottleEncounter() {
+            // Anchor ship during encounter to prevent combat death during reading
+            ship.speed = 0;
+            ship.sailState = 'furled';
+            setSailState('furled');
+
+            document.getElementById('encounter-modal').classList.remove('hidden');
+            document.getElementById('encounter-loading').classList.remove('hidden');
+            document.getElementById('encounter-content').classList.add('hidden');
+            document.getElementById('encounter-resolution').classList.add('hidden');
+
+            const systemPrompt = `Generate an immersive, atmospheric 17th-century sea event encounter.
+It could be an encounter with a ghost ship, a stranded merchant, a bizarre sea creature, a mutinous crew dispute, or a mysterious island.
+Create three distinct options for the Captain to choose from, each with a specific consequence (affecting Gold, Hull HP, or Crew).
+Ensure the changes are balanced (e.g. gain 100 gold, lose 20 hull HP, or recruit/lose 1 crew).
+
+Format the output strictly as a JSON object matching this schema:
+{
+  "title": "Short Epic Title",
+  "description": "Flavorful narrative setup of the encounter (2-3 sentences).",
+  "optionA": "Action description for option A",
+  "optionB": "Action description for option B",
+  "optionC": "Action description for option C",
+  "outcomeA": {
+    "text": "Outcome narrative if they choose A.",
+    "gold": -50,
+    "hull": 20,
+    "crew": 0
+  },
+  "outcomeB": {
+    "text": "Outcome narrative if they choose B.",
+    "gold": 150,
+    "hull": -30,
+    "crew": 0
+  },
+  "outcomeC": {
+    "text": "Outcome narrative if they choose C.",
+    "gold": 0,
+    "hull": 0,
+    "crew": 1
+  }
+}`;
+
+            const userPrompt = `Generate a randomized Caribbean sea encounter for a ${gameState.faction} captain sailing a ${gameState.shipType} with ${gameState.gold} Gold and ${gameState.activeCrew} crew. Use theme elements matching 1600s piracy, colonial rivalry, or sea mythology.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            title: { type: "STRING" },
+                            description: { type: "STRING" },
+                            optionA: { type: "STRING" },
+                            optionB: { type: "STRING" },
+                            optionC: { type: "STRING" },
+                            outcomeA: {
+                                type: "OBJECT",
+                                properties: {
+                                    text: { type: "STRING" },
+                                    gold: { type: "INTEGER" },
+                                    hull: { type: "INTEGER" },
+                                    crew: { type: "INTEGER" }
+                                },
+                                required: ["text", "gold", "hull", "crew"]
+                            },
+                            outcomeB: {
+                                type: "OBJECT",
+                                properties: {
+                                    text: { type: "STRING" },
+                                    gold: { type: "INTEGER" },
+                                    hull: { type: "INTEGER" },
+                                    crew: { type: "INTEGER" }
+                                },
+                                required: ["text", "gold", "hull", "crew"]
+                            },
+                            outcomeC: {
+                                type: "OBJECT",
+                                properties: {
+                                    text: { type: "STRING" },
+                                    gold: { type: "INTEGER" },
+                                    hull: { type: "INTEGER" },
+                                    crew: { type: "INTEGER" }
+                                },
+                                required: ["text", "gold", "hull", "crew"]
+                            }
+                        },
+                        required: ["title", "description", "optionA", "optionB", "optionC", "outcomeA", "outcomeB", "outcomeC"]
+                    }
+                },
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            const apiKey = ""; // Left empty; Canvas injects key dynamically at runtime
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                    currentActiveEncounter = JSON.parse(text);
+                    renderEncounter(currentActiveEncounter);
+                } else {
+                    throw new Error("Invalid response JSON structure");
+                }
+            } catch (err) {
+                console.warn("AI Encounter generation error, running offline fallback event:", err);
+                
+                // Immersive localized fallback event if API down/offline
+                currentActiveEncounter = {
+                    title: "Ghostly Caravel",
+                    description: "A rotting Spanish Caravel with pale torn canvas sails emerges from a local mist reef. Her decks appear abandoned, save for chests glistening on the deck.",
+                    optionA: "Send a salvage boat to inspect the galleon hold.",
+                    optionB: "Fire a broadside warning and scuttle the wreck.",
+                    optionC: "Consult local maps and steer clear of her shadow.",
+                    outcomeA: {
+                        text: "Your crew boards her and discovers a hidden chest of silver, but a decayed deck timber breaks, injuring active hands.",
+                        gold: 120,
+                        hull: 0,
+                        crew: -1
+                    },
+                    outcomeB: {
+                        text: "A direct hit! The rotten hull crumbles instantly into timbers. You scrap the logs to repair your ship plates.",
+                        gold: 0,
+                        hull: 30,
+                        crew: 0
+                    },
+                    outcomeC: {
+                        text: "You steer away safely. The specter vanishes into the mist, leaving your crew inspired and safe.",
+                        gold: 0,
+                        hull: 0,
+                        crew: 0
+                    }
+                };
+                renderEncounter(currentActiveEncounter);
+            }
+        }
+
+        function renderEncounter(data) {
+            document.getElementById('encounter-loading').classList.add('hidden');
+            document.getElementById('encounter-content').classList.remove('hidden');
+
+            document.getElementById('encounter-title').innerText = data.title.toUpperCase();
+            document.getElementById('encounter-desc').innerText = `"${data.description}"`;
+            
+            document.getElementById('encounter-text-a').innerText = data.optionA;
+            document.getElementById('encounter-text-b').innerText = data.optionB;
+            document.getElementById('encounter-text-c').innerText = data.optionC;
+        }
+
+        function selectEncounterOption(opt) {
+            if (!currentActiveEncounter) return;
+            playSound('port');
+
+            const outcome = opt === 'A' ? currentActiveEncounter.outcomeA : opt === 'B' ? currentActiveEncounter.outcomeB : currentActiveEncounter.outcomeC;
+
+            // Apply modifications to Game State
+            if (outcome.gold) gameState.gold = Math.max(0, gameState.gold + outcome.gold);
+            if (outcome.hull) gameState.hull = Math.max(1, Math.min(gameState.hullMax, gameState.hull + outcome.hull));
+            if (outcome.crew) gameState.activeCrew = Math.max(1, gameState.activeCrew + outcome.crew);
+
+            // Display resolution UI
+            document.getElementById('encounter-content').classList.add('hidden');
+            document.getElementById('encounter-resolution').classList.remove('hidden');
+
+            document.getElementById('res-heading').innerText = "CONSEQUENCE REVEALED";
+            document.getElementById('encounter-res-text').innerText = outcome.text;
+
+            // Stats badges
+            const bGold = document.getElementById('res-badge-gold');
+            const bHull = document.getElementById('res-badge-hull');
+            const bCrew = document.getElementById('res-badge-crew');
+
+            bGold.classList.add('hidden');
+            bHull.classList.add('hidden');
+            bCrew.classList.add('hidden');
+
+            if (outcome.gold) {
+                bGold.classList.remove('hidden');
+                document.getElementById('res-gold-val').innerText = (outcome.gold > 0 ? "+" : "") + outcome.gold;
+            }
+            if (outcome.hull) {
+                bHull.classList.remove('hidden');
+                document.getElementById('res-hull-val').innerText = (outcome.hull > 0 ? "+" : "") + outcome.hull;
+            }
+            if (outcome.crew) {
+                bCrew.classList.remove('hidden');
+                document.getElementById('res-crew-val').innerText = (outcome.crew > 0 ? "+" : "") + outcome.crew;
+            }
+
+            updateHUD();
+        }
+
+        function closeEncounterModal() {
+            document.getElementById('encounter-modal').classList.add('hidden');
+            addLogMessage("📝 Message resolved! The crew returns to active watch.", "success");
+            
+            // Resume sail movements
+            ship.speed = 0.5;
+            setSailState('half');
+        }
+
+        // ==========================================
+        //  CANVAS AND RENDERING LOOPS
+        // ==========================================
+        function renderScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const camX = ship.x - canvas.width / 2;
+            const camY = ship.y - canvas.height / 2;
+
+            ctx.save();
+            ctx.fillStyle = "#113043"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Subtle map grid lines
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
+            ctx.lineWidth = 1;
+            const gridSize = 150;
+            const startGridX = Math.floor(camX / gridSize) * gridSize;
+            const startGridY = Math.floor(camY / gridSize) * gridSize;
+
+            for (let x = startGridX; x < startGridX + canvas.width + gridSize; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x - camX, 0);
+                ctx.lineTo(x - camX, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = startGridY; y < startGridY + canvas.height + gridSize; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y - camY);
+                ctx.lineTo(canvas.width, y - camY);
+                ctx.stroke();
+            }
+
+            // Draw red map boundaries
+            ctx.strokeStyle = "rgba(180, 50, 50, 0.35)";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(50 - camX, 50 - camY, WORLD_WIDTH - 100, WORLD_HEIGHT - 100);
+            ctx.restore();
+
+            // Render wave lines
+            ctx.save();
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+            ctx.lineWidth = 1.5;
+            waveLines.forEach(w => {
+                const wx = Math.sin(wind.angle);
+                const wy = -Math.cos(wind.angle);
+                w.x += wx * w.speed;
+                w.y += wy * w.speed;
+
+                if (w.x < 0) w.x = canvas.width;
+                if (w.x > canvas.width) w.x = 0;
+                if (w.y < 0) w.y = canvas.height;
+                if (w.y > canvas.height) w.y = 0;
+
+                ctx.beginPath();
+                ctx.moveTo(w.x, w.y);
+                ctx.lineTo(w.x + wx * w.length, w.y + wy * w.length);
+                ctx.stroke();
+            });
+            ctx.restore();
+
+            // RENDER REEF ISLANDS WITH FORESTS & BEACHES
+            ISLANDS_DATA.forEach(island => {
+                const screenX = island.x - camX;
+                const screenY = island.y - camY;
+
+                if (screenX > -300 && screenX < canvas.width + 300 && screenY > -300 && screenY < canvas.height + 300) {
+                    ctx.save();
+
+                    // Outer reef ring (cyan shallow water)
+                    ctx.fillStyle = "rgba(0, 188, 212, 0.15)";
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, island.radius + 35, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Sand bank beach ring (gold/beige)
+                    ctx.fillStyle = "#ebd6b0";
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, island.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Jungle forest center (tropical deep green)
+                    ctx.fillStyle = "#2e7d32";
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, island.radius - 22, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Add subtle inner jungle highlights
+                    ctx.fillStyle = "#1b5e20";
+                    ctx.beginPath();
+                    ctx.arc(screenX - 15, screenY - 15, island.radius * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Island label tags
+                    ctx.fillStyle = "rgba(255, 228, 181, 0.9)";
+                    ctx.font = "bold 12px 'Cinzel Decorative', Georgia, serif";
+                    ctx.textAlign = "center";
+                    ctx.fillText(island.name, screenX, screenY);
+                    
+                    ctx.fillStyle = "rgba(255, 228, 181, 0.6)";
+                    ctx.font = "9px sans-serif";
+                    ctx.fillText("⚠️ HAZARD SHOALS", screenX, screenY + 15);
+
+                    ctx.restore();
+                }
+            });
+
+            // RENDER HISTORICAL PORTS WITH ANCHOR DOCKING ZONE RINGS
+            PORTS_DATA.forEach(p => {
+                const screenX = p.x - camX;
+                const screenY = p.y - camY;
+
+                if (screenX > -300 && screenX < canvas.width + 300 && screenY > -300 && screenY < canvas.height + 300) {
+                    ctx.save();
+                    
+                    // EXPANDED DOCKING BOUNDARY RING (Glowing blue anchor zone)
+                    ctx.strokeStyle = "rgba(45, 185, 255, 0.45)";
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([8, 6]);
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 160, 0, Math.PI*2);
+                    ctx.stroke();
+
+                    // Shimmering water harbor circle
+                    ctx.fillStyle = "rgba(45, 185, 255, 0.08)";
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 160, 0, Math.PI*2);
+                    ctx.fill();
+
+                    // Normal fort island beach
+                    ctx.fillStyle = "rgba(235, 215, 175, 0.85)";
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 48, 0, Math.PI*2);
+                    ctx.fill();
+
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 24, 0, Math.PI*2);
+                    ctx.fill();
+
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "bold 11px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("🏰", screenX, screenY);
+
+                    ctx.fillStyle = "#ffe4b5";
+                    ctx.font = "bold 13px 'Cinzel Decorative', Georgia, serif";
+                    ctx.fillText(p.name, screenX, screenY - 58);
+
+                    ctx.fillStyle = "rgba(255,255,255,0.7)";
+                    ctx.font = "9px 'IM Fell DW Pica', serif";
+                    const isEnglish = p.allegiance.includes('English');
+                    const isSpanish = p.allegiance.includes('Spanish');
+                    ctx.fillText(isEnglish ? "🇬🇧 English" : isSpanish ? "🇪🇸 Spanish" : "🏴‍☠️ Independent", screenX, screenY + 62);
+
+                    // Helpful overlay tip
+                    ctx.fillStyle = "rgba(100, 220, 255, 0.75)";
+                    ctx.font = "bold 9px sans-serif";
+                    ctx.fillText("⚓ DOCK ZONE", screenX, screenY + 76);
+
+                    ctx.restore();
+                }
+            });
+
+            // RENDER SALVAGABLE FLOATING CARGO
+            cargoLoot.forEach(l => {
+                const screenX = l.x - camX;
+                const screenY = l.y - camY;
+
+                if (screenX > -50 && screenX < canvas.width + 50 && screenY > -50 && screenY < canvas.height + 50) {
+                    ctx.save();
+                    l.pulse += 0.05;
+                    ctx.strokeStyle = `rgba(212, 175, 55, ${0.25 + Math.sin(l.pulse) * 0.15})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, l.radius + Math.sin(l.pulse) * 3, 0, Math.PI*2);
+                    ctx.stroke();
+
+                    ctx.fillStyle = "#a0522d"; 
+                    ctx.strokeStyle = "#ffe4b5";
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(screenX - 4, screenY - 6);
+                    ctx.lineTo(screenX - 4, screenY + 6);
+                    ctx.moveTo(screenX + 4, screenY - 6);
+                    ctx.lineTo(screenX + 4, screenY + 6);
+                    ctx.stroke();
+
+                    ctx.fillStyle = "rgba(255,228,181,0.9)";
+                    ctx.font = "bold 9px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.fillText(COMMODITIES[l.type].name, screenX, screenY - 14);
+
+                    ctx.restore();
+                }
+            });
+
+            // RENDER ACTIVE AI BOTTLES
+            bottles.forEach(b => {
+                const screenX = b.x - camX;
+                const screenY = b.y - camY;
+
+                if (screenX > -50 && screenX < canvas.width + 50 && screenY > -50 && screenY < canvas.height + 50) {
+                    ctx.save();
+                    b.pulse += 0.04;
+                    ctx.strokeStyle = `rgba(52, 211, 153, ${0.35 + Math.sin(b.pulse) * 0.2})`;
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(screenX, screenY, b.radius + Math.sin(b.pulse) * 3, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Draw Bottle visual
+                    ctx.fillStyle = "#34d399";
+                    ctx.font = "16px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("🍾", screenX, screenY);
+
+                    // Bottle tag overlay
+                    ctx.fillStyle = "#a7f3d0";
+                    ctx.font = "bold 9px sans-serif";
+                    ctx.fillText("AI EVENT", screenX, screenY - 18);
+
+                    ctx.restore();
+                }
+            });
+
+            // RENDER AI HOSTILE WARSHIPS
+            enemies.forEach(e => {
+                const screenX = e.x - camX;
+                const screenY = e.y - camY;
+
+                if (screenX > -100 && screenX < canvas.width + 100 && screenY > -100 && screenY < canvas.height + 100) {
+                    ctx.save();
+                    ctx.translate(screenX, screenY);
+                    ctx.rotate(e.angle);
+
+                    // If disabled/surrendered, render hull scorched/brown and flag white
+                    const hullColor = e.status === 'disabled' ? "#5d4037" : (e.isPirate ? "#3e2723" : "#37474f");
+                    const borderColor = e.status === 'disabled' ? "rgba(255, 255, 255, 0.4)" : (e.isPirate ? "#f44336" : "#42a5f5");
+
+                    ctx.fillStyle = hullColor;
+                    ctx.strokeStyle = borderColor;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -20); 
+                    ctx.bezierCurveTo(11, -10, 11, 10, 8, 20); 
+                    ctx.lineTo(-8, 20); 
+                    ctx.bezierCurveTo(-11, 10, -11, -10, 0, -20); 
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Render Sails (white or black, ripped and furled if surrendered)
+                    if (e.status === 'disabled') {
+                        // SURRENDERED FLAG
+                        ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+                        ctx.beginPath();
+                        ctx.rect(-4, -6, 8, 5);
+                        ctx.fill();
+                        
+                        // Crossed mast logs visual
+                        ctx.strokeStyle = "#ffffff";
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.moveTo(-7, -10); ctx.lineTo(7, 10);
+                        ctx.moveTo(7, -10); ctx.lineTo(-7, 10);
+                        ctx.stroke();
+                    } else {
+                        // Standard Sails
+                        ctx.fillStyle = e.isPirate ? "rgba(33, 33, 33, 0.9)" : "rgba(245, 245, 245, 0.95)";
+                        ctx.strokeStyle = "#ffe4b5";
+                        ctx.lineWidth = 0.5;
+
+                        ctx.beginPath();
+                        ctx.ellipse(0, -8, 8, 4, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.ellipse(0, 5, 11, 5, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        // Faction banner
+                        ctx.fillStyle = e.isPirate ? "#ff1744" : "#29b6f6";
+                        ctx.beginPath();
+                        ctx.moveTo(0, 16);
+                        ctx.lineTo(7, 13);
+                        ctx.lineTo(0, 10);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+
+                    ctx.restore();
+
+                    // HP Bar layout drawing
+                    ctx.save();
+                    const barW = 30;
+                    const hpPct = e.status === 'disabled' ? 0 : e.hull / e.hullMax;
+                    
+                    ctx.fillStyle = "rgba(0,0,0,0.5)";
+                    ctx.fillRect(screenX - barW/2, screenY - 32, barW, 4);
+                    
+                    // Show surrender trigger badges
+                    if (e.status === 'disabled') {
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(screenX - barW/2, screenY - 32, barW, 4);
+                        
+                        ctx.fillStyle = "#ffffff";
+                        ctx.font = "bold 10px sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText("🏳️ DISABLED", screenX, screenY - 38);
+                    } else {
+                        ctx.fillStyle = e.isPirate ? "#ef5350" : "#26c6da";
+                        ctx.fillRect(screenX - barW/2, screenY - 32, barW * hpPct, 4);
+                        
+                        ctx.fillStyle = "#ffe4b5";
+                        ctx.font = "9px sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText(`${e.isPirate ? 'Pirate' : 'Hunter'} ${e.type}`, screenX, screenY - 38);
+                    }
+                    ctx.restore();
+                }
+            });
+
+            // RENDER ACTIVE PLAYER SHIP
+            const playerScrX = ship.x - camX;
+            const playerScrY = ship.y - camY;
+
+            // DRAW AIMING TRAJECTORY RETICLES (Port & Starboard dotted guide arcs)
+            if (!portModalOpen && !boardingModalOpen) {
+                ctx.save();
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 6]);
+                
+                // PORT side aiming vector
+                ctx.strokeStyle = cooldowns.left > 0 ? "rgba(239, 68, 68, 0.2)" : "rgba(34, 211, 238, 0.65)";
+                ctx.beginPath();
+                const portAngle = ship.angle - Math.PI / 2;
+                ctx.moveTo(playerScrX + Math.sin(portAngle) * 15, playerScrY - Math.cos(portAngle) * 15);
+                ctx.lineTo(playerScrX + Math.sin(portAngle) * 220, playerScrY - Math.cos(portAngle) * 220);
+                ctx.stroke();
+
+                // STARBOARD side aiming vector
+                ctx.strokeStyle = cooldowns.right > 0 ? "rgba(239, 68, 68, 0.2)" : "rgba(34, 211, 238, 0.65)";
+                ctx.beginPath();
+                const stbdAngle = ship.angle + Math.PI / 2;
+                ctx.moveTo(playerScrX + Math.sin(stbdAngle) * 15, playerScrY - Math.cos(stbdAngle) * 15);
+                ctx.lineTo(playerScrX + Math.sin(stbdAngle) * 220, playerScrY - Math.cos(stbdAngle) * 220);
+                ctx.stroke();
+
+                // Firing range guide dots indicators
+                ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
+                ctx.font = "bold 9px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(cooldowns.left > 0 ? "RECHARGING" : "READY", playerScrX + Math.sin(portAngle) * 120, playerScrY - Math.cos(portAngle) * 120 - 5);
+                ctx.fillText(cooldowns.right > 0 ? "RECHARGING" : "READY", playerScrX + Math.sin(stbdAngle) * 120, playerScrY - Math.cos(stbdAngle) * 120 - 5);
+
+                ctx.restore();
+            }
+
+            ctx.save();
+            ctx.translate(playerScrX, playerScrY);
+            ctx.rotate(ship.angle);
+
+            // Water Ripple trails
+            if (ship.speed > 0.4) {
+                ctx.save();
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 12]);
+                ctx.beginPath();
+                ctx.moveTo(-5, 22);
+                ctx.lineTo(-12, 45);
+                ctx.moveTo(5, 22);
+                ctx.lineTo(12, 45);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Ship Wooden Hull geometry
+            ctx.fillStyle = "#5d4037"; 
+            ctx.strokeStyle = "#d4af37"; 
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(0, -22); 
+            ctx.bezierCurveTo(12, -12, 12, 10, 8, 22); 
+            ctx.lineTo(-8, 22); 
+            ctx.bezierCurveTo(-12, 10, -12, -12, 0, -22); 
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Port and Starboard Cannon gunports
+            ctx.fillStyle = "#000000";
+            if (gameState.cannonCount >= 2) {
+                ctx.fillRect(-12, -4, 2, 4); 
+                ctx.fillRect(10, -4, 2, 4); 
+            }
+            if (gameState.cannonCount >= 4) {
+                ctx.fillRect(-12, 6, 2, 4);
+                ctx.fillRect(10, 6, 2, 4);
+            }
+
+            // Billowing White Canvas Sails
+            if (ship.sailState !== 'furled') {
+                ctx.fillStyle = "rgba(255, 250, 240, 0.95)"; 
+                ctx.strokeStyle = "#b0c4de";
+                ctx.lineWidth = 1.5;
+
+                const scale = ship.sailState === 'half' ? 0.6 : 1.0;
+                ctx.beginPath();
+                ctx.ellipse(0, 4, 13 * scale, 5 * scale, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.ellipse(0, -9, 9 * scale, 4 * scale, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // Deck cabin
+            ctx.fillStyle = "#3e2723";
+            ctx.fillRect(-5, 12, 10, 8);
+
+            // Flag colors
+            ctx.fillStyle = gameState.faction === 'English Privateer' ? '#1e88e5' : gameState.faction === 'Spanish Guardacosta' ? '#e53935' : '#8e24aa';
+            ctx.beginPath();
+            ctx.moveTo(0, 20);
+            ctx.lineTo(8, 17);
+            ctx.lineTo(0, 14);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.restore();
+
+            // RENDER CANNONBALLS
+            cannonballs.forEach(b => {
+                ctx.save();
+                ctx.fillStyle = "#2c3e50";
+                ctx.strokeStyle = "#ffe4b5";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(b.x - camX, b.y - camY, b.isPlayer ? 4 : 3.5, 0, Math.PI*2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+            });
+
+            // RENDER PARTICLES
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+
+                if (p.life <= 0) {
+                    particles.splice(index, 1);
+                    return;
+                }
+
+                ctx.save();
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x - camX, p.y - camY, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // Draw Minimap overlay
+            renderMiniMap();
+        }
+
+        function renderMiniMap() {
+            const mapSize = 100;
+            const margin = 10;
+            const mapX = canvas.width - mapSize - margin;
+            const mapY = canvas.height - mapSize - margin;
+
+            ctx.save();
+            ctx.fillStyle = "rgba(40, 25, 10, 0.85)";
+            ctx.strokeStyle = "#8b5a2b";
+            ctx.lineWidth = 3;
+            ctx.fillRect(mapX, mapY, mapSize, mapSize);
+            ctx.strokeRect(mapX, mapY, mapSize, mapSize);
+
+            // Draw islands on Minimap (subtle grey/brown dots)
+            ISLANDS_DATA.forEach(island => {
+                const ix = mapX + (island.x / WORLD_WIDTH) * mapSize;
+                const iy = mapY + (island.y / WORLD_HEIGHT) * mapSize;
+                ctx.fillStyle = "rgba(100, 120, 100, 0.7)";
+                ctx.beginPath();
+                ctx.arc(ix, iy, (island.radius / WORLD_WIDTH) * mapSize * 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw player dot
+            const px = mapX + (ship.x / WORLD_WIDTH) * mapSize;
+            const py = mapY + (ship.y / WORLD_HEIGHT) * mapSize;
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(px, py, 3.5, 0, Math.PI*2);
+            ctx.fill();
+
+            // Draw Port dots on Minimap
+            PORTS_DATA.forEach(p => {
+                const portX = mapX + (p.x / WORLD_WIDTH) * mapSize;
+                const portY = mapY + (p.y / WORLD_HEIGHT) * mapSize;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(portX, portY, 4, 0, Math.PI*2);
+                ctx.fill();
+            });
+
+            // Draw enemies
+            enemies.forEach(e => {
+                const ex = mapX + (e.x / WORLD_WIDTH) * mapSize;
+                const ey = mapY + (e.y / WORLD_HEIGHT) * mapSize;
+                ctx.fillStyle = e.status === 'disabled' ? "#ffffff" : "#e74c3c";
+                ctx.fillRect(ex - 1.5, ey - 1.5, 3, 3);
+            });
+
+            // Draw active bottles as green dots on minimap
+            bottles.forEach(b => {
+                const bx = mapX + (b.x / WORLD_WIDTH) * mapSize;
+                const by = mapY + (b.y / WORLD_HEIGHT) * mapSize;
+                ctx.fillStyle = "#10b981";
+                ctx.beginPath();
+                ctx.arc(bx, by, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.restore();
+        }
+
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            if (!gameState.hasGameStarted) return;
+
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+
+            const actualDt = Math.min(32, dt || 16.6);
+
+            updateSailingPhysics();
+            updateEnemiesAndCombat();
+            checkCargoCollections();
+            checkPortProximity();
+            checkCaptureProximity();
+            updateWindShifts(actualDt);
+
+            renderScene();
+
+            window.requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize wave graphics
+        initWaves();
+    </script>
+</body>
+</html>
