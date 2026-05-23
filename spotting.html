@@ -246,7 +246,7 @@
 
         <!-- Speed Factor / Focus HUD Indicator -->
         <div id="focus-banner" class="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-3 py-1 rounded text-[10px] font-bold tracking-wider uppercase z-50 shadow-lg hidden">
-            ⚡ Thermos Swig Active - Slow-Mo Gen Mode! ⚡
+            ⚡ Thermos Swig Active - Slow-Mo Mode! ⚡
         </div>
 
         <!-- Custom toast for share feedback & errors -->
@@ -311,7 +311,7 @@
                 </div>
             </div>
 
-            
+            <!-- debug button here-->
 
             <!-- Action buttons container -->
             <div class="flex flex-col gap-1.5" id="modal-buttons">
@@ -576,10 +576,10 @@
             const savedRank = localStorage.getItem('spotter_today_rank');
 
             // Set debug checkbox from previous preference if available
-            const isDebugChecked = localStorage.getItem('spotter_debug_bypass') === 'true';
-            document.getElementById('debug-bypass-checkbox').checked = isDebugChecked;
+            //const isDebugChecked = localStorage.getItem('spotter_debug_bypass') === 'true';
+            //document.getElementById('debug-bypass-checkbox').checked = isDebugChecked;
 
-            if (lastPlayed === gameState.today && !isDebugChecked) {
+            if (lastPlayed === gameState.today) { // && !isDebugChecked) {
                 // Already played today and debug is off: Display high score overview
                 document.getElementById('modal-title').textContent = "SHIFT COMPLETE";
                 document.getElementById('modal-body-content').innerHTML = `
@@ -591,7 +591,7 @@
                 
                 document.getElementById('modal-buttons').innerHTML = `
                     <button onclick="shareLogbook('${savedScore || 0}', '${savedRank || 'Kettle-Boiler'}')" class="bg-[#1b4332] text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-[#2d6a4f] active:scale-95 transition-all text-sm uppercase">Share Your Gricer Slip</button>
-                    <button onclick="resetDailyLockForDebugging()" class="mt-4 text-[10px] text-gray-500 underline hover:text-red-700">Debug Bypass: Clear Daily Lockout</button>
+                    <!-- <button onclick="resetDailyLockForDebugging()" class="mt-4 text-[10px] text-gray-500 underline hover:text-red-700">Debug Bypass: Clear Daily Lockout</button> -->
                 `;
             } else {
                 // Available to play! (Either a brand new day or debug bypass is checked)
@@ -603,7 +603,7 @@
                     Get your pen ready! It's time for some serious bashing on <strong>${gameState.today}</strong>.<br><br>
                     You have <strong class="text-red-800">9 lives</strong>. Letting required traction speed past unspotted costs Thermos Warmth (1 life). Decoy DMUs do not penalize you.<br><br>
                     Train speeds remain constant throughout, but locomotive ID codes grow progressively more complex as you log successful cops! Focus is key.<br><br>
-                    Swigging hot tea from your Thermos (☕ max 3) restores 1 Warmth life and triggers "Slow-Mo Gen Mode" to ease the pace.
+                    Swigging hot tea from your Thermos (☕ max 3) restores 1 warmth point and triggers Slow-Mo mode to ease the pace.
                 `;
                 document.getElementById('modal-buttons').innerHTML = `
                     <button onclick="beginDailyGame()" class="bg-[#1b4332] text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-[#2d6a4f] active:scale-95 transition-all text-sm uppercase">Start Bashing (Begin Shift)</button>
@@ -620,14 +620,14 @@
         }
 
         // Set state when the user toggles the checkbox
-        document.getElementById('debug-bypass-checkbox').addEventListener('change', (e) => {
+        /*document.getElementById('debug-bypass-checkbox').addEventListener('change', (e) => {
             localStorage.setItem('spotter_debug_bypass', e.target.checked ? 'true' : 'false');
-        });
+        }); */
 
         function beginDailyGame() {
             // Check debug bypass state
-            const isDebugChecked = document.getElementById('debug-bypass-checkbox').checked;
-            localStorage.setItem('spotter_debug_bypass', isDebugChecked ? 'true' : 'false');
+            //const isDebugChecked = document.getElementById('debug-bypass-checkbox').checked;
+            //localStorage.setItem('spotter_debug_bypass', isDebugChecked ? 'true' : 'false');
 
             // Dismiss Overlay UI screen
             document.getElementById('overlay-screen').style.display = 'none';
@@ -990,7 +990,7 @@
             const earnedRank = getDailyRank(gameState.score);
 
             // Check if debug lockout bypass is active
-            const isDebugChecked = document.getElementById('debug-bypass-checkbox').checked;
+            const isDebugChecked = false; //document.getElementById('debug-bypass-checkbox').checked;
 
             if (!isDebugChecked) {
                 // Lock the system registry for today using local storage keys
@@ -1011,7 +1011,7 @@
 
             document.getElementById('modal-buttons').innerHTML = `
                 <button onclick="shareLogbook('${gameState.score}', '${earnedRank}')" class="bg-[#1b4332] text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-[#2d6a4f] active:scale-95 transition-all text-sm uppercase">Share Your Gricer Standing</button>
-                <button onclick="restartDailyGame()" class="bg-amber-800 text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-amber-900 active:scale-95 transition-all text-sm uppercase mt-2">Practice Again (Debug Mode)</button>
+               <!-- <button onclick="restartDailyGame()" class="bg-amber-800 text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-amber-900 active:scale-95 transition-all text-sm uppercase mt-2">Practice Again (Debug Mode)</button> -->
             `;
 
             document.getElementById('overlay-screen').style.display = 'flex';
