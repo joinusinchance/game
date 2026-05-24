@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>The Platform End: Daily Gricer's Journal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ballast: #3e3e3e;
+            --rail: #9e9e9e;
+            --brass: #d4af37;
+            --british-green: #1b4332;
+            --station-cream: #f4ebd0;
+        }
+
+        body {
+            font-family: 'Courier Prime', Courier, monospace;
+            background-color: #121212;
+            color: #222;
+            overflow: hidden;
+            /* Prevent mobile browser safari chrome cutoffs */
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
+        /* Viewport Configuration */
+        #game-viewport {
+            flex: 1;
+            background: linear-gradient(to bottom, #87ceeb 0%, #b0e0e6 50%, #708090 100%);
+            position: relative;
+            overflow: hidden;
+            border-bottom: 6px solid #222;
+            min-height: 200px;
+        }
+
+        /* Scenery styling */
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 50px;
+            pointer-events: none;
+            filter: blur(2px);
+        }
+
+        /* --- Rail Layer Positioning (Full Screen Width) --- */
+        .track-layer {
+            position: absolute;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 70px;
+            display: flex;
+            align-items: flex-end;
+            pointer-events: none; /* Prevents track container from blocking clicks on clipboard */
+        }
+        #track-3 { top: 22%; z-index: 10; transform: scale(0.75); }
+        #track-2 { top: 44%; z-index: 20; transform: scale(0.85); }
+        #track-1 { top: 66%; z-index: 30; }
+
+        .ballast {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            right: 0;
+            height: 18px;
+            background: var(--ballast);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+        }
+        .rails {
+            position: absolute;
+            bottom: 11px;
+            left: 0;
+            right: 0;
+            height: 8px;
+            border-top: 2px solid var(--rail);
+            border-bottom: 2px solid var(--rail);
+        }
+
+        /* --- Train Mechanics --- */
+        .train {
+            position: absolute;
+            display: flex;
+            align-items: flex-end;
+            cursor: default;
+            pointer-events: none; /* Trains are purely visual, users click clipboard watchlist */
+            will-change: transform;
+            touch-action: none;
+        }
+
+        .car {
+            height: 44px; /* Increased from 32px to handle larger text plates nicely */
+            margin-right: 3px;
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 4px 4px rgba(255,255,255,0.25);
+            border: 1px solid rgba(0,0,0,0.3);
+        }
+        .engine { width: 75px; border-radius: 8px 12px 0 0; }
+        .passenger { width: 62px; }
+
+        /* Window rows */
+        .car::after {
+            content: '';
+            position: absolute;
+            top: 6px;
+            left: 5px;
+            right: 5px;
+            height: 8px;
+            background: rgba(255, 248, 220, 0.8);
+            border-radius: 2px;
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.4);
+        }
+
+        /* Train ID Plate Stamp - Designed to be extremely bold and readable */
+        .train-id {
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            color: #000000;
+            font-weight: 900;
+            font-size: 15px; /* Significantly increased from 10px for maximum legibility */
+            padding: 2px 6px;
+            border: 2px solid #000000;
+            border-radius: 4px;
+            font-family: 'Courier Prime', Courier, monospace;
+            letter-spacing: 0.5px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.6);
+            z-index: 40;
+            white-space: nowrap;
+        }
+
+        /* Clipboard Area (Bottom Panel) */
+        #clipboard-panel {
+            /* Responsive height using Dynamic Viewport scaling */
+            height: 38vh;
+            height: 38dvh;
+            min-height: 220px;
+            max-height: 280px;
+            background: #4a2c11; /* Rich wood backplate */
+            position: relative;
+            padding: 8px;
+            box-shadow: inset 0 8px 12px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        /* Elegant metal clip on top of the clipboard sheet */
+        .brass-clip {
+            width: 120px;
+            height: 20px;
+            background: linear-gradient(135deg, #d4af37, #aa7c11);
+            border: 2px solid #8a5a00;
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 6px 6px 2px 2px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            z-index: 110;
+        }
+
+        .notepad-paper {
+            background-color: var(--station-cream);
+            font-family: 'Courier Prime', Courier, monospace; /* Swapped to clean monospace to guarantee oversized alignment */
+            flex: 1;
+            border-radius: 6px;
+            padding: 10px 12px;
+            box-shadow: 2px 4px 10px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 2px solid #e2d4b7;
+        }
+
+        /* Custom scrollbar for checklist manifest */
+        .manifest-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .manifest-scroll::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+        }
+        .manifest-scroll::-webkit-scrollbar-thumb {
+            background: #bcaaa4;
+            border-radius: 3px;
+        }
+
+        /* Gulping tea visual animation */
+        #slurp-effect {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(109, 76, 65, 0.4); /* Brown splash */
+            z-index: 999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        .cup-animation {
+            font-size: 80px;
+            animation: tipCup 0.8s ease-in-out forwards;
+        }
+        @keyframes tipCup {
+            0% { transform: scale(0.6) rotate(-45deg); opacity: 0; }
+            40% { transform: scale(1.2) rotate(15deg); opacity: 1; }
+            70% { transform: scale(1.1) rotate(25deg); opacity: 1; }
+            100% { transform: scale(0.7) rotate(0deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="safe-area-bottom">
+
+    <!-- Game Running Viewport -->
+    <div id="game-viewport">
+        <!-- Floating scenery details -->
+        <div class="cloud w-20 h-6 top-4 left-[10%] opacity-60"></div>
+        <div class="cloud w-28 h-8 top-8 left-[55%] opacity-45"></div>
+        <div class="absolute top-3 right-6 bg-[#fff7cd] w-10 h-10 rounded-full opacity-80 blur-[1px]"></div>
+
+        <!-- Upper HUD Overlay -->
+        <div class="absolute top-2 left-2 right-2 flex justify-between items-center z-50 pointer-events-none">
+            <!-- Score Gauge -->
+            <div class="bg-black/85 text-white font-bold px-2.5 py-1 rounded-lg border border-yellow-600/50 flex items-center gap-1.5 pointer-events-auto shadow-md">
+                <span class="text-[10px] text-yellow-500 font-sans tracking-wider uppercase">Copped:</span>
+                <span id="score-val" class="text-base font-mono text-green-400">0</span>
+            </div>
+
+            <!-- Lives Indicator -->
+            <div class="bg-black/85 px-2.5 py-1 rounded-lg border border-red-600/50 flex items-center gap-1 pointer-events-auto shadow-md">
+                <span class="text-[10px] text-red-500 font-sans tracking-wider uppercase mr-1">Thermos:</span>
+                <div id="lives-container" class="flex gap-0.5 text-xs">
+                    <!-- Dynamic Hearts populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Speed Factor / Focus HUD Indicator -->
+        <div id="focus-banner" class="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-3 py-1 rounded text-[10px] font-bold tracking-wider uppercase z-50 shadow-lg hidden">
+            ⚡ Thermos Swig Active - Slow-Mo Gen Mode! ⚡
+        </div>
+
+        <!-- Custom toast for share feedback & errors -->
+        <div id="feedback-toast" class="absolute top-14 left-1/2 transform -translate-x-1/2 bg-stone-900 text-amber-100 text-xs py-2 px-4 rounded-md shadow-lg border border-amber-600/30 z-[3000] transition-opacity duration-300 opacity-0 pointer-events-none text-center min-w-[200px]">
+            Notification message
+        </div>
+
+        <!-- Tracks layers stretching fully across the viewport width -->
+        <div class="track-layer" id="track-3">
+            <div class="ballast"></div>
+            <div class="rails"></div>
+        </div>
+        <div class="track-layer" id="track-2">
+            <div class="ballast"></div>
+            <div class="rails"></div>
+        </div>
+        <div class="track-layer" id="track-1">
+            <div class="ballast"></div>
+            <div class="rails"></div>
+        </div>
+
+        <!-- Visual Coffee/Tea Gulp Flash -->
+        <div id="slurp-effect">
+            <div class="cup-animation">☕💨</div>
+        </div>
+    </div>
+
+    <!-- Bottom Clipboard Notepad Panel -->
+    <div id="clipboard-panel">
+        <div class="brass-clip"></div>
+        <div class="notepad-paper">
+            <!-- Headings -->
+            <div class="flex justify-between items-center border-b-2 border-dashed border-red-800/30 pb-1.5 mb-1.5 flex-shrink-0">
+                <div class="max-w-[60%]">
+                    <h2 class="text-xs font-bold text-red-900 tracking-wide uppercase">Required Cops</h2>
+                    <p class="text-[9px] text-gray-600 font-sans tracking-tight truncate leading-tight">Match layout targets precisely!</p>
+                </div>
+                
+                <!-- Daily Tea Action Trigger -->
+                <button onclick="sipTea()" id="tea-button" class="bg-red-950 text-amber-100 border border-amber-600 px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1 shadow-md active:scale-95 transition-transform">
+                    <span class="text-[10px] sm:text-xs">☕ Swig</span>
+                    <span id="tea-count" class="bg-yellow-600 text-black text-[9px] px-1 py-0.2 rounded-full font-sans">3/3</span>
+                </button>
+            </div>
+
+            <!-- Active Spot Checklist Panel -->
+            <div class="manifest-scroll overflow-y-auto flex-1 grid grid-cols-2 gap-2 text-xs" id="watchlist-grid">
+                <!-- Spatially-allocated live targets here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Unified Dynamic Modal Screens Layer -->
+    <div id="overlay-screen" class="fixed inset-0 bg-black/95 z-[2000] flex items-center justify-center p-3">
+        <div class="bg-[#f4ebd0] p-5 rounded-lg max-w-sm w-full border-4 border-double border-[#5d4037] text-center shadow-2xl relative max-h-[92dvh] overflow-y-auto">
+            <h1 class="font-bold text-xl sm:text-2xl text-[#5d4037] mb-1 tracking-wide uppercase font-serif" id="modal-title">DAILY GRICER'S LOG</h1>
+            
+            <div class="border-y-2 border-dashed border-red-800/30 my-3 py-2">
+                <div id="modal-date-tag" class="text-[10px] text-[#8d6e63] font-bold tracking-widest uppercase mb-1">DATE: YYYY-MM-DD</div>
+                <div id="modal-body-content" class="text-xs sm:text-sm leading-relaxed text-[#3e2723]">
+                    Grab your notebook and thermos flask! Required traction units are charging past the platform. Scratch off your cops before they escape down the fast lines.
+                </div>
+            </div>
+
+            <!-- Debug controls container inside start modal -->
+            <div class="mb-3 flex items-center justify-center gap-2 bg-stone-200/50 p-1.5 rounded border border-stone-300">
+                <input type="checkbox" id="debug-bypass-checkbox" class="w-4 h-4 accent-red-800 cursor-pointer">
+                <label for="debug-bypass-checkbox" class="text-[10px] sm:text-xs font-bold text-stone-700 cursor-pointer">🛠️ Debug Mode: Bypass Daily Limit</label>
+            </div>
+
+            <!-- Action buttons container -->
+            <div class="flex flex-col gap-1.5" id="modal-buttons">
+                <!-- Populated dynamically based on game locked vs game start state -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getTodayString() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        let seed = 0;
+        function setSeedForDay(dateStr) {
+            let hash = 0;
+            for (let i = 0; i < dateStr.length; i++) {
+                hash = dateStr.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            seed = Math.abs(hash);
+        }
+
+        function seededRandom() {
+            // LCG algorithm
+            seed = (seed * 9301 + 49297) % 233280;
+            return seed / 233280;
+        }
+
+        // --- GAME PLAY STATE VARIABLES ---
+        const LIVERY_COLORS = [
+            '#002060', // BR Blue
+            '#1b4332', // BR Green
+            '#a20025', // EWS Maroon
+            '#ffcc00', // Network Rail Yellow
+            '#4a5d6e', // InterCity Swallow Grey
+            '#730046', // WCR Maroon
+            '#0066cc'  // Regional Railways Blue
+        ];
+        
+        const UK_CLASSES = [
+            { name: 'Class 37 "Tractor"', prefix: '37' },
+            { name: 'Class 47 "Duff"', prefix: '47' },
+            { name: 'Class 55 "Deltic"', prefix: '55' },
+            { name: 'Class 43 "HST"', prefix: '43' },
+            { name: 'Class 50 "Hovercraft"', prefix: '50' },
+            { name: 'Class 66 "Shed"', prefix: '66' },
+            { name: 'Class 08 "Gronk"', prefix: '08' }
+        ];
+        
+        let gameState = {
+            today: getTodayString(),
+            score: 0,
+            lives: 9,
+            activeTargets: [], // current targets displayed on the clipboard watchlist
+            allDailyTargets: [], // Pool of deterministic targets for the day
+            nextTargetIndex: 0,
+            speedMultiplier: 1.0,
+            focusMode: false,
+            teaRemaining: 3,
+            gameActive: false,
+            spawnInterval: 2600,
+            spawners: []
+        };
+
+        // Active trains list handled by JavaScript frame loop
+        let activeTrains = [];
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSynthSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                if (type === 'slurp') {
+                    // Simulates a warm gulp of tea using resonant noise bandpass sweeps
+                    const bufferSize = audioCtx.sampleRate * 0.45;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = buffer;
+
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    filter.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 0.35);
+                    filter.Q.setValueAtTime(12, audioCtx.currentTime);
+
+                    const gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    noise.start();
+                } 
+                else if (type === 'whistle') {
+                    // Iconic high pitched twin-tone steam engine whistle
+                    const now = audioCtx.currentTime;
+                    const osc1 = audioCtx.createOscillator();
+                    const osc2 = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+
+                    osc1.type = 'sawtooth';
+                    osc1.frequency.setValueAtTime(880, now); // A5
+                    osc1.frequency.exponentialRampToValueAtTime(910, now + 0.5);
+
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(1100, now); // C#6
+                    osc2.frequency.exponentialRampToValueAtTime(1130, now + 0.5);
+
+                    gainNode.gain.setValueAtTime(0.001, now);
+                    gainNode.gain.linearRampToValueAtTime(0.12, now + 0.1);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+                    osc1.connect(gainNode);
+                    osc2.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    osc1.start(now);
+                    osc2.start(now);
+                    osc1.stop(now + 0.6);
+                    osc2.stop(now + 0.6);
+                } 
+                else if (type === 'spot') {
+                    // Positive success notification chime
+                    const now = audioCtx.currentTime;
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                } 
+                else if (type === 'miss') {
+                    // Sad buzzing error tone representing a missed spot
+                    const now = audioCtx.currentTime;
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.linearRampToValueAtTime(90, now + 0.35);
+
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                }
+            } catch (e) {
+                console.warn('Audio synthesis issue:', e);
+            }
+        }
+
+        function generateTrainCode(tier, useSeeded) {
+            const rand = useSeeded ? seededRandom : Math.random;
+            const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            const numbers = "0123456789";
+            
+            const randChar = (set) => set[Math.floor(rand() * set.length)];
+            
+            if (tier === 1) {
+                // Tier 1: Single char (e.g., 'A', '5')
+                return rand() > 0.5 ? randChar(letters) : randChar(numbers);
+            } else if (tier === 2) {
+                // Tier 2: Double char (e.g., '3A', 'B7')
+                return rand() > 0.5 ? (randChar(numbers) + randChar(letters)) : (randChar(letters) + randChar(numbers));
+            } else if (tier === 3) {
+                // Tier 3: Triple char (e.g., 'B52', '4A1')
+                const choice = Math.floor(rand() * 3);
+                if (choice === 0) return randChar(numbers) + randChar(letters) + randChar(numbers);
+                if (choice === 1) return randChar(letters) + randChar(numbers) + randChar(numbers);
+                return randChar(numbers) + randChar(numbers) + randChar(numbers);
+            } else if (tier === 4) {
+                // Tier 4: Four-char code (e.g., 'D102', '37A2')
+                if (rand() > 0.5) {
+                    return randChar(numbers) + randChar(numbers) + randChar(letters) + randChar(numbers);
+                } else {
+                    return randChar(letters) + randChar(numbers) + randChar(numbers) + randChar(numbers);
+                }
+            } else {
+                // Tier 5: Fully complex multi-digit loco number
+                let code = "";
+                for (let i = 0; i < 5; i++) {
+                    code += randChar(numbers);
+                }
+                return code;
+            }
+        }
+
+        function getCurrentPlayerTier() {
+            const score = gameState.score;
+            if (score < 5) return 1;
+            if (score < 12) return 2;
+            if (score < 20) return 3;
+            if (score < 30) return 4;
+            return 5;
+        }
+
+        function generateDailySchedule() {
+            setSeedForDay(gameState.today);
+            gameState.allDailyTargets = [];
+            
+            // Generate deterministic trains for this day's run grouped by difficulty
+            for (let i = 0; i < 150; i++) {
+                let tier = 1;
+                if (i >= 5 && i < 12) tier = 2;
+                else if (i >= 12 && i < 20) tier = 3;
+                else if (i >= 20 && i < 30) tier = 4;
+                else if (i >= 30) tier = 5;
+
+                const numberCode = generateTrainCode(tier, true);
+                const classObj = UK_CLASSES[Math.floor(seededRandom() * UK_CLASSES.length)];
+                const colorIndex = Math.floor(seededRandom() * LIVERY_COLORS.length);
+                const length = 2 + Math.floor(seededRandom() * 4); // 2-5 cars
+                
+                gameState.allDailyTargets.push({
+                    id: numberCode,
+                    name: classObj.name,
+                    color: LIVERY_COLORS[colorIndex],
+                    cars: length,
+                    spotted: false
+                });
+            }
+            gameState.nextTargetIndex = 0;
+        }
+
+        window.addEventListener('load', () => {
+            // Check for debug state URL parameter (e.g. ?debug=true or ?debug=false)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('debug')) {
+                const isDebugParam = urlParams.get('debug') === 'true';
+                localStorage.setItem('spotter_debug_bypass', isDebugParam ? 'true' : 'false');
+            }
+
+            // Update today's date and check if date changed from last play
+            gameState.today = getTodayString();
+            document.getElementById('modal-date-tag').textContent = `DAILY WORKSHIFT: ${gameState.today}`;
+            checkDailyStatus();
+        });
+
+        function checkDailyStatus() {
+            const lastPlayed = localStorage.getItem('spotter_last_played');
+            const savedScore = localStorage.getItem('spotter_today_score');
+            const savedRank = localStorage.getItem('spotter_today_rank');
+
+            // Set debug checkbox from previous preference or URL param override
+            const isDebugChecked = localStorage.getItem('spotter_debug_bypass') === 'true';
+            document.getElementById('debug-bypass-checkbox').checked = isDebugChecked;
+
+            if (lastPlayed === gameState.today && !isDebugChecked) {
+                // Already played today and debug is off: Display high score overview
+                document.getElementById('modal-title').textContent = "SHIFT COMPLETE";
+                document.getElementById('modal-body-content').innerHTML = `
+                    You have already completed your daily gricing run for today!<br><br>
+                    <strong>Final Score:</strong> <span class="text-xl text-green-800">${savedScore || 0} Cops Logged</span><br>
+                    <strong>Gricer Standing:</strong> <span class="text-lg text-amber-900">${savedRank || 'N/A'}</span><br><br>
+                    Keep practicing your sightlines and return tomorrow morning for a new layout of required traction.
+                `;
+                
+                document.getElementById('modal-buttons').innerHTML = `
+                    <button onclick="shareLogbook('${savedScore || 0}', '${savedRank || 'Kettle-Boiler'}')" class="bg-[#1b4332] text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-[#2d6a4f] active:scale-95 transition-all text-sm uppercase">Share Your Gricer Slip</button>
+                    <button onclick="resetDailyLockForDebugging()" class="mt-4 text-[10px] text-gray-500 underline hover:text-red-700">Debug Bypass: Clear Daily Lockout</button>
+                `;
+            } else {
+                // Available to play! (Either a brand new day, URL override, or manual debug bypass is checked)
+                if (lastPlayed !== gameState.today && lastPlayed) {
+                    showFeedbackToast("☀️ New Day Shift Unlocked! Let's get gricing.");
+                }
+                document.getElementById('modal-title').textContent = "TODAY'S REQUIRED COPS";
+                document.getElementById('modal-body-content').innerHTML = `
+                    Get your pen ready! It's time for some serious bashing on <strong>${gameState.today}</strong>.<br><br>
+                    You have <strong class="text-red-800">9 lives</strong>. Letting required traction speed past unspotted costs Thermos Warmth (1 life). Decoy DMUs do not penalize you.<br><br>
+                    Train speeds remain constant throughout, but locomotive ID codes grow progressively more complex as you log successful cops! Focus is key.<br><br>
+                    Swigging hot tea from your Thermos (☕ max 3) restores 1 Warmth life and triggers "Slow-Mo Gen Mode" to ease the pace.
+                `;
+                document.getElementById('modal-buttons').innerHTML = `
+                    <button onclick="beginDailyGame()" class="bg-[#1b4332] text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-[#2d6a4f] active:scale-95 transition-all text-sm uppercase">Start Bashing (Begin Shift)</button>
+                `;
+            }
+        }
+
+        // Bypasses daily lock through direct localStorage deletion
+        function resetDailyLockForDebugging() {
+            localStorage.removeItem('spotter_last_played');
+            localStorage.removeItem('spotter_today_score');
+            localStorage.removeItem('spotter_today_rank');
+            location.reload();
+        }
+
+        // Set state when the user toggles the checkbox
+        document.getElementById('debug-bypass-checkbox').addEventListener('change', (e) => {
+            localStorage.setItem('spotter_debug_bypass', e.target.checked ? 'true' : 'false');
+        });
+
+        function beginDailyGame() {
+            // Check debug bypass state
+            const isDebugChecked = document.getElementById('debug-bypass-checkbox').checked;
+            localStorage.setItem('spotter_debug_bypass', isDebugChecked ? 'true' : 'false');
+
+            // Dismiss Overlay UI screen
+            document.getElementById('overlay-screen').style.display = 'none';
+            
+            // Reset gameplay states
+            gameState.score = 0;
+            gameState.lives = 9;
+            gameState.teaRemaining = 3;
+            gameState.speedMultiplier = 1.0;
+            gameState.focusMode = false;
+            gameState.gameActive = true;
+            gameState.spawners = [];
+            
+            // Empty existing active trains safely
+            document.querySelectorAll('.train').forEach(el => el.remove());
+            activeTrains = [];
+            
+            document.getElementById('score-val').textContent = '0';
+            updateHeartsUI();
+            updateTeaButton();
+            
+            generateDailySchedule();
+            
+            // Pop the first 4 targets onto the clipboard display
+            populateInitialClipboard();
+
+            // Fire up spawning timers
+            triggerTimedSpawns(1);
+            triggerTimedSpawns(2);
+            triggerTimedSpawns(3);
+
+            // Initiate frame update loop
+            requestAnimationFrame(gameLoopUpdateTick);
+        }
+
+        function updateHeartsUI() {
+            const container = document.getElementById('lives-container');
+            container.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                if (i < gameState.lives) {
+                    container.innerHTML += `<span class="text-red-500 animate-pulse">❤️</span>`;
+                } else {
+                    container.innerHTML += `<span class="opacity-25 filter grayscale">🖤</span>`;
+                }
+            }
+        }
+
+        function populateInitialClipboard() {
+            gameState.activeTargets = [];
+            for (let i = 0; i < 4; i++) {
+                rotateNewTargetIntoSlot(i);
+            }
+            renderClipboardGrid();
+        }
+
+        function rotateNewTargetIntoSlot(index) {
+            if (gameState.nextTargetIndex < gameState.allDailyTargets.length) {
+                const newT = gameState.allDailyTargets[gameState.nextTargetIndex++];
+                gameState.activeTargets[index] = newT;
+            }
+        }
+
+        function renderClipboardGrid() {
+            const grid = document.getElementById('watchlist-grid');
+            grid.innerHTML = '';
+            
+            gameState.activeTargets.forEach((target, i) => {
+                if (!target) return;
+                const liveryHTML = `<span class="inline-block w-4 h-4 rounded border border-gray-400 flex-shrink-0" style="background-color: ${target.color}"></span>`;
+                
+                // Formatted with prominent '[CODE] : [CARS]' text styling to optimize fast scanning
+                grid.innerHTML += `
+                    <button onclick="spotClipboardTarget('${target.id}')" class="bg-white hover:bg-stone-100 active:scale-95 transition-all border-2 border-stone-800 p-2 rounded-lg shadow-md flex items-center justify-between text-left cursor-pointer focus:outline-none w-full h-full min-h-[50px]">
+                        <div class="flex items-center gap-2 overflow-hidden w-full">
+                            ${liveryHTML}
+                            <div class="overflow-hidden flex-1 leading-tight">
+                                <span class="font-mono font-bold text-stone-900 block text-[13px] sm:text-[15px] md:text-[17px] truncate tracking-wide">
+                                    ${target.id} : ${target.cars}
+                                </span>
+                                <span class="text-[9px] text-stone-500 font-sans block truncate uppercase tracking-wider">${target.name}</span>
+                            </div>
+                        </div>
+                        <span class="text-sm sm:text-base text-stone-600 flex-shrink-0 ml-1">📋</span>
+                    </button>
+                `;
+            });
+        }
+
+        function triggerTimedSpawns(trackId) {
+            if (!gameState.gameActive) return;
+
+            // Spawning interval scales down as player progresses to keep tension high
+            const difficultyFactor = Math.min(25, gameState.score);
+            const dynamicInterval = Math.max(1400, 3200 - (difficultyFactor * 100)); 
+            const randomizedJitter = seededRandom() * 1400;
+
+            const nextTimer = setTimeout(() => {
+                if (gameState.gameActive) {
+                    spawnLiveryLocomotive(trackId);
+                    triggerTimedSpawns(trackId);
+                }
+            }, dynamicInterval + randomizedJitter);
+
+            gameState.spawners.push(nextTimer);
+        }
+
+        function spawnLiveryLocomotive(trackId) {
+            const trackEl = document.getElementById(`track-${trackId}`);
+            if (!trackEl) return;
+
+            // Allow trains to travel in EITHER direction at random
+            const direction = Math.random() > 0.5 ? 'right' : 'left';
+            
+            // Decoy ratio: 40% decoys, 60% daily targets 
+            const isTarget = Math.random() > 0.40;
+            let currentTrain;
+
+            if (isTarget && gameState.activeTargets.length > 0) {
+                // Choose one of the active target patterns
+                currentTrain = gameState.activeTargets[Math.floor(Math.random() * gameState.activeTargets.length)];
+            } else {
+                // Generate a random decoy matching the player's current difficulty tier
+                const tier = getCurrentPlayerTier();
+                const num = generateTrainCode(tier, false);
+                const classObj = UK_CLASSES[Math.floor(Math.random() * UK_CLASSES.length)];
+                currentTrain = {
+                    id: num,
+                    name: classObj.name,
+                    color: LIVERY_COLORS[Math.floor(Math.random() * LIVERY_COLORS.length)],
+                    cars: 2 + Math.floor(Math.random() * 3),
+                    spotted: false
+                };
+            }
+
+            // Create Locomotive UI Element wrapper
+            const trainNode = document.createElement('div');
+            trainNode.className = `train`;
+            trainNode.dataset.trainId = currentTrain.id;
+            trainNode.dataset.isTarget = isTarget;
+            trainNode.dataset.spotted = "false";
+            trainNode.style.zIndex = trackId * 10;
+
+            // Flip leading engine position so it pulls passenger cars based on travel direction
+            if (direction === 'right') {
+                trainNode.style.flexDirection = 'row-reverse';
+            } else {
+                trainNode.style.flexDirection = 'row';
+            }
+
+            // Cruise speed remains steady throughout the game
+            const baseSpeed = 1.8 + Math.random() * 1.0;
+
+            // Construct locomotive composition elements
+            const trainWidth = (currentTrain.cars * 62) + 13; // Estimated width
+            
+            for (let i = 0; i < currentTrain.cars; i++) {
+                const car = document.createElement('div');
+                car.className = `car ${i === 0 ? 'engine' : 'passenger'}`;
+                car.style.backgroundColor = currentTrain.color;
+                
+                // Spot identification plate goes in center compartment
+                if (i === Math.floor(currentTrain.cars / 2)) {
+                    const plate = document.createElement('div');
+                    plate.className = 'train-id';
+                    plate.textContent = '#' + currentTrain.id;
+                    car.appendChild(plate);
+                }
+                trainNode.appendChild(car);
+            }
+
+            // Place initial positioning coordinates out of bounds based on traveling direction
+            const viewportWidth = document.getElementById('game-viewport').clientWidth;
+            let startX = 0;
+            if (direction === 'right') {
+                startX = -trainWidth - 100;
+            } else {
+                startX = viewportWidth + 100;
+            }
+
+            trainNode.style.transform = `translateX(${startX}px)`;
+            trackEl.appendChild(trainNode);
+
+            // Register track object to frame update handler array
+            activeTrains.push({
+                element: trainNode,
+                id: currentTrain.id,
+                isTarget: isTarget,
+                spotted: false,
+                direction: direction,
+                x: startX,
+                speed: baseSpeed,
+                width: trainWidth
+            });
+
+            // Set up whistle sounds occasionally on entry
+            if (Math.random() > 0.65) {
+                setTimeout(() => { if (gameState.gameActive) playSynthSound('whistle'); }, 200);
+            }
+        }
+
+        function spotClipboardTarget(trainId) {
+            if (!gameState.gameActive) return;
+
+            // Search if there is currently an unspotted train with this exact ID visible in activeTrains
+            const trainIndex = activeTrains.findIndex(t => t.id === trainId && !t.spotted);
+
+            if (trainIndex !== -1) {
+                // Correctly spotted!
+                const trainObj = activeTrains[trainIndex];
+                trainObj.spotted = true;
+                trainObj.element.style.opacity = "0.4"; // Fade the train out to indicate spotted state
+                playSynthSound('spot');
+
+                gameState.score++;
+                document.getElementById('score-val').textContent = gameState.score;
+
+                // Cycle spotted target off watchlist, load fresh entry
+                const matchedIndex = gameState.activeTargets.findIndex(t => t.id === trainId);
+                if (matchedIndex !== -1) {
+                    rotateNewTargetIntoSlot(matchedIndex);
+                }
+                renderClipboardGrid();
+                showFeedbackToast(`Copped target #${trainId}! 📝`);
+            } else {
+                // Incorrect spotting click (penalty)
+                playSynthSound('miss');
+                processMissPenalty();
+                showFeedbackToast(`Duff gen! #${trainId} is not passing.`);
+            }
+        }
+
+        function showFeedbackToast(message) {
+            const toast = document.getElementById('feedback-toast');
+            toast.textContent = message;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            
+            // Auto hide after short display
+            if (window.toastTimeout) clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 1800);
+        }
+
+        function gameLoopUpdateTick() {
+            if (!gameState.gameActive) return;
+
+            const viewportWidth = document.getElementById('game-viewport').clientWidth;
+
+            for (let i = activeTrains.length - 1; i >= 0; i--) {
+                const trainObj = activeTrains[i];
+                
+                // Scale factor if tea focus mode is active (70% reduction in velocity)
+                const modifier = gameState.focusMode ? 0.3 : 1.0;
+                const frameStep = trainObj.speed * modifier;
+
+                if (trainObj.direction === 'right') {
+                    trainObj.x += frameStep;
+                } else {
+                    trainObj.x -= frameStep;
+                }
+
+                // Render translation updates
+                trainObj.element.style.transform = `translateX(${trainObj.x}px)`;
+
+                // Boundary exit checker
+                let hasExited = false;
+                if (trainObj.direction === 'right' && trainObj.x > viewportWidth + 100) {
+                    hasExited = true;
+                } else if (trainObj.direction === 'left' && trainObj.x < -trainObj.width - 100) {
+                    hasExited = true;
+                }
+
+                if (hasExited) {
+                    // Penalty check: target locomotive escaped safely unspotted
+                    if (trainObj.isTarget && !trainObj.spotted) {
+                        processMissPenalty();
+                    }
+                    trainObj.element.remove();
+                    activeTrains.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(gameLoopUpdateTick);
+        }
+
+        function processMissPenalty() {
+            gameState.lives--;
+            updateHeartsUI();
+            playSynthSound('miss');
+
+            if (gameState.lives <= 0) {
+                triggerGameOver();
+            }
+        }
+
+        function updateTeaButton() {
+            const btn = document.getElementById('tea-button');
+            const counter = document.getElementById('tea-count');
+            counter.textContent = `${gameState.teaRemaining}/3`;
+            
+            if (gameState.teaRemaining <= 0) {
+                btn.disabled = true;
+                btn.className = "bg-stone-700 text-stone-500 border border-stone-600 px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1.5 cursor-not-allowed opacity-50";
+            } else {
+                btn.disabled = false;
+                btn.className = "bg-red-950 text-amber-100 border border-amber-600 px-2 py-1 rounded-md text-xs font-bold flex items-center gap-1 shadow-md active:scale-95 transition-transform";
+            }
+        }
+
+        function sipTea() {
+            if (gameState.teaRemaining <= 0 || !gameState.gameActive) return;
+            
+            gameState.teaRemaining--;
+            updateTeaButton();
+
+            // Sound tea bubble audio slurps
+            playSynthSound('slurp');
+
+            // Trigger graphic splash overlay
+            const splash = document.getElementById('slurp-effect');
+            splash.style.display = 'flex';
+            setTimeout(() => splash.style.display = 'none', 850);
+
+            // Recover 1 lost safety life up to maximum 9 cap
+            if (gameState.lives < 9) {
+                gameState.lives++;
+                updateHeartsUI();
+            }
+
+            // Trigger matrix motion focus slowdown
+            gameState.focusMode = true;
+            document.getElementById('focus-banner').classList.remove('hidden');
+
+            setTimeout(() => {
+                gameState.focusMode = false;
+                document.getElementById('focus-banner').classList.add('hidden');
+            }, 6000);
+        }
+
+        function getDailyRank(score) {
+            if (score >= 45) return "Grand Master Gricer";
+            if (score >= 32) return "Legendary Loco Basher";
+            if (score >= 20) return "Master of TOPS Gen";
+            if (score >= 12) return "Noon-day Anorak";
+            if (score >= 6)  return "Platform-End Rookie";
+            return "Platform-End Kettle-Boiler";
+        }
+
+        function triggerGameOver() {
+            gameState.gameActive = false;
+            
+            // Clean active display timers
+            gameState.spawners.forEach(clearTimeout);
+            document.querySelectorAll('.train').forEach(t => t.remove());
+            activeTrains = [];
+
+            const earnedRank = getDailyRank(gameState.score);
+
+            // Check if debug lockout bypass is active
+            const isDebugChecked = document.getElementById('debug-bypass-checkbox').checked;
+
+            if (!isDebugChecked) {
+                // Lock the system registry for today using local storage keys
+                localStorage.setItem('spotter_last_played', gameState.today);
+                localStorage.setItem('spotter_today_score', gameState.score);
+                localStorage.setItem('spotter_today_rank', earnedRank);
+            }
+
+            // Re-render Game End Screen inside unified modal dialog
+            document.getElementById('modal-title').textContent = "THERMOS EMPTY";
+            document.getElementById('modal-body-content').innerHTML = `
+                The fast lines have gone quiet and you've run out of flask warmth.<br><br>
+                <strong>Final Daily Score:</strong> <span class="text-xl text-green-800">${gameState.score} Cops Registered</span><br>
+                <strong>Gricer Standing:</strong> <span class="text-lg text-amber-900">${earnedRank}</span><br><br>
+                ${isDebugChecked ? '<span class="text-red-600 font-bold">[DEBUG PLAY: Score not locked today]</span><br><br>' : ''}
+                Your notebook is logged! Revisit tomorrow for a completely fresh set of mainline schedules.
+            `;
+
+            document.getElementById('modal-buttons').innerHTML = `
+                <button onclick="shareLogbook('${gameState.score}', '${earnedRank}')" class="bg-[#1b4332] text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-[#2d6a4f] active:scale-95 transition-all text-sm uppercase">Share Your Gricer Standing</button>
+                <button onclick="restartDailyGame()" class="bg-amber-800 text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-amber-900 active:scale-95 transition-all text-sm uppercase mt-2">Practice Again (Debug Mode)</button>
+            `;
+
+            document.getElementById('overlay-screen').style.display = 'flex';
+        }
+
+        // Restarts practice run bypass logic
+        function restartDailyGame() {
+            document.getElementById('debug-bypass-checkbox').checked = true;
+            localStorage.setItem('spotter_debug_bypass', 'true');
+            beginDailyGame();
+        }
+
+        function shareLogbook(score, rank) {
+            const shareText = `🚂 The Platform End: Daily Gricer Log!\n📅 Date: ${gameState.today}\n🎯 Score: Copped ${score} required traction units!\n🎖️ Gricer Standing: ${rank}\nThink you've got better gen than me? Check today's schedule!`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Train Spotting Daily Score',
+                    text: shareText
+                }).catch(err => {
+                    console.log("Web Share canceled or errored: ", err);
+                });
+            } else {
+                // Standard copy-paste notification system using DOM execCommand fallback
+                const tempArea = document.createElement("textarea");
+                tempArea.value = shareText;
+                document.body.appendChild(tempArea);
+                tempArea.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempArea);
+                
+                showFeedbackToast("📋 Log text copied! Share your gricer stats.");
+            }
+        }
+    </script>
+</body>
+</html>
