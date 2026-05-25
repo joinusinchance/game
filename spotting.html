@@ -53,27 +53,27 @@
             left: 0;
             right: 0;
             width: 100%;
-            height: 60px;
+            height: 70px;
             display: flex;
             align-items: flex-end;
             pointer-events: none; /* Prevents track container from blocking clicks on clipboard */
         }
-        #track-3 { top: 25%; z-index: 10; }
-        #track-2 { top: 45%; z-index: 20; }
-        #track-1 { top: 68%; z-index: 30; }
+        #track-3 { top: 22%; z-index: 10; }
+        #track-2 { top: 44%; z-index: 20; }
+        #track-1 { top: 66%; z-index: 30; }
 
         .ballast {
             position: absolute;
             bottom: 5px;
             left: 0;
             right: 0;
-            height: 16px;
+            height: 18px;
             background: var(--ballast);
             box-shadow: 0 4px 6px rgba(0,0,0,0.4);
         }
         .rails {
             position: absolute;
-            bottom: 10px;
+            bottom: 11px;
             left: 0;
             right: 0;
             height: 8px;
@@ -93,7 +93,7 @@
         }
 
         .car {
-            height: 32px;
+            height: 44px; /* Increased from 32px to handle larger text plates nicely */
             margin-right: 3px;
             border-radius: 4px 4px 0 0;
             position: relative;
@@ -103,8 +103,8 @@
             box-shadow: inset 0 4px 4px rgba(255,255,255,0.25);
             border: 1px solid rgba(0,0,0,0.3);
         }
-        .engine { width: 62px; border-radius: 8px 12px 0 0; }
-        .passenger { width: 50px; }
+        .engine { width: 75px; border-radius: 8px 12px 0 0; }
+        .passenger { width: 62px; }
 
         /* Window rows */
         .car::after {
@@ -119,22 +119,22 @@
             box-shadow: inset 1px 1px 2px rgba(0,0,0,0.4);
         }
 
-        /* Train ID Plate Stamp */
+        /* Train ID Plate Stamp - Designed to be extremely bold and readable */
         .train-id {
             position: absolute;
-            bottom: 3px;
+            bottom: 2px;
             left: 50%;
             transform: translateX(-50%);
-            background: #fff;
-            color: #111;
-            font-weight: 700;
-            font-size: 10px;
-            padding: 1px 4px;
-            border: 1.5px solid #333;
-            border-radius: 3px;
-            font-family: Arial, Helvetica, sans-serif;
+            background: #ffffff;
+            color: #000000;
+            font-weight: 900;
+            font-size: 35px; /* Significantly increased from 10px for maximum legibility */
+            padding: 4px 4px;
+            border: 2px solid #000000;
+            border-radius: 4px;
+            font-family: 'Courier Prime', Courier, monospace;
             letter-spacing: 0.5px;
-            box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.6);
             z-index: 40;
             white-space: nowrap;
         }
@@ -142,10 +142,10 @@
         /* Clipboard Area (Bottom Panel) */
         #clipboard-panel {
             /* Responsive height using Dynamic Viewport scaling */
-            height: 35vh;
-            height: 35dvh;
-            min-height: 200px;
-            max-height: 260px;
+            height: 38vh;
+            height: 38dvh;
+            min-height: 220px;
+            max-height: 280px;
             background: #4a2c11; /* Rich wood backplate */
             position: relative;
             padding: 8px;
@@ -172,9 +172,9 @@
 
         .notepad-paper {
             background-color: var(--station-cream);
-            font-family: 'Special Elite', cursive, serif;
+            font-family: 'Courier Prime', Courier, monospace; /* Swapped to clean monospace to guarantee oversized alignment */
             flex: 1;
-            border-radius: 6px;
+            border-radius: 6px; /* was 6px */ 
             padding: 10px 12px;
             box-shadow: 2px 4px 10px rgba(0,0,0,0.5);
             display: flex;
@@ -246,7 +246,7 @@
 
         <!-- Speed Factor / Focus HUD Indicator -->
         <div id="focus-banner" class="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-black px-3 py-1 rounded text-[10px] font-bold tracking-wider uppercase z-50 shadow-lg hidden">
-            ⚡ Thermos Swig Active - Slow-Mo Mode! ⚡
+            ⚡ Swig Active - Slow-Mo Gen Mode! ⚡
         </div>
 
         <!-- Custom toast for share feedback & errors -->
@@ -281,8 +281,7 @@
             <!-- Headings -->
             <div class="flex justify-between items-center border-b-2 border-dashed border-red-800/30 pb-1.5 mb-1.5 flex-shrink-0">
                 <div class="max-w-[60%]">
-                    <h2 class="text-xs font-bold text-red-900 tracking-wide uppercase">Required Cops</h2>
-                    <p class="text-[9px] text-gray-600 font-sans tracking-tight truncate leading-tight">Check the fast lines - log the correct targets!</p>
+                    <h1 class="text-xs font-bold text-red-900 tracking-wide uppercase">Match [Code]:[Cars]</h1>
                 </div>
                 
                 <!-- Daily Tea Action Trigger -->
@@ -293,7 +292,7 @@
             </div>
 
             <!-- Active Spot Checklist Panel -->
-            <div class="manifest-scroll overflow-y-auto flex-1 grid grid-cols-2 gap-1.5 text-xs" id="watchlist-grid">
+            <div class="manifest-scroll overflow-y-auto flex-1 grid grid-cols-2 gap-2 text-xs" id="watchlist-grid">
                 <!-- Spatially-allocated live targets here -->
             </div>
         </div>
@@ -306,12 +305,16 @@
             
             <div class="border-y-2 border-dashed border-red-800/30 my-3 py-2">
                 <div id="modal-date-tag" class="text-[10px] text-[#8d6e63] font-bold tracking-widest uppercase mb-1">DATE: YYYY-MM-DD</div>
-                <div id="modal-body-content" class="text-xs sm:text-sm leading-relaxed text-[#3e2723]">
-                    Grab your notebook and thermos flask! Required traction units are charging past the platform. Scratch off your cops before they escape down the fast lines.
+                <div id="modal-body-content" class="text-xl sm:text-sm leading-relaxed text-[#3e2723]">
+                    Grab your notebook and thermos! Required units are charging past the platform. Scratch off your cops before they escape down the fast lines.
                 </div>
             </div>
 
-            <!-- debug button here-->
+            <!-- Debug controls container inside start modal (Hidden by default, unhidden only with ?debug=true) -->
+            <div id="debug-controls-container" class="hidden mb-3 items-center justify-center gap-2 bg-stone-200/50 p-1.5 rounded border border-stone-300">
+                <input type="checkbox" id="debug-bypass-checkbox" class="w-4 h-4 accent-red-800 cursor-pointer">
+                <label for="debug-bypass-checkbox" class="text-[10px] sm:text-xs font-bold text-stone-700 cursor-pointer">🛠️ Debug Mode: Bypass Daily Limit</label>
+            </div>
 
             <!-- Action buttons container -->
             <div class="flex flex-col gap-1.5" id="modal-buttons">
@@ -321,7 +324,6 @@
     </div>
 
     <script>
-        // --- SEEDED RANDOM PSEUDO-GENERATOR ---
         function getTodayString() {
             const d = new Date();
             const year = d.getFullYear();
@@ -370,7 +372,7 @@
             today: getTodayString(),
             score: 0,
             lives: 9,
-            activeTargets: [], // 4 current targets displayed on the clipboard watchlist
+            activeTargets: [], // current targets displayed on the clipboard watchlist
             allDailyTargets: [], // Pool of deterministic targets for the day
             nextTargetIndex: 0,
             speedMultiplier: 1.0,
@@ -384,7 +386,6 @@
         // Active trains list handled by JavaScript frame loop
         let activeTrains = [];
 
-        // --- WEB AUDIO SYNTHESIS ENGINE ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playSynthSound(type) {
@@ -489,7 +490,6 @@
             }
         }
 
-        // --- STREAMING_CHUNK: Setting up train generation rules and complexity systems ---
         function generateTrainCode(tier, useSeeded) {
             const rand = useSeeded ? seededRandom : Math.random;
             const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -539,13 +539,13 @@
             setSeedForDay(gameState.today);
             gameState.allDailyTargets = [];
             
-            // Generate a massive roster of 150 deterministic trains for this day's run grouped by difficulty
+            // Generate deterministic trains for this day's run grouped by difficulty
             for (let i = 0; i < 150; i++) {
                 let tier = 1;
-                if (i >= 10 && i < 25) tier = 2;
-                else if (i >= 25 && i < 45) tier = 3;
-                else if (i >= 45 && i < 70) tier = 4;
-                else if (i >= 70) tier = 5;
+                if (i >= 5 && i < 12) tier = 2;
+                else if (i >= 12 && i < 20) tier = 3;
+                else if (i >= 20 && i < 30) tier = 4;
+                else if (i >= 30) tier = 5;
 
                 const numberCode = generateTrainCode(tier, true);
                 const classObj = UK_CLASSES[Math.floor(seededRandom() * UK_CLASSES.length)];
@@ -564,6 +564,22 @@
         }
 
         window.addEventListener('load', () => {
+            // Check for debug state URL parameter (e.g. ?debug=true or ?debug=false)
+            // Default parameter is strictly false unless explicitly declared as 'true'
+            const urlParams = new URLSearchParams(window.location.search);
+            const isDebugParam = urlParams.get('debug') === 'true';
+            localStorage.setItem('spotter_debug_bypass', isDebugParam ? 'true' : 'false');
+
+            // Handle visibility and layouts of visual debug elements based on parameters
+            const debugContainer = document.getElementById('debug-controls-container');
+            if (isDebugParam) {
+                debugContainer.classList.remove('hidden');
+                debugContainer.classList.add('flex');
+            } else {
+                debugContainer.classList.add('hidden');
+                debugContainer.classList.remove('flex');
+            }
+
             // Update today's date and check if date changed from last play
             gameState.today = getTodayString();
             document.getElementById('modal-date-tag').textContent = `DAILY WORKSHIFT: ${gameState.today}`;
@@ -574,39 +590,44 @@
             const lastPlayed = localStorage.getItem('spotter_last_played');
             const savedScore = localStorage.getItem('spotter_today_score');
             const savedRank = localStorage.getItem('spotter_today_rank');
+            const isDebugMode = localStorage.getItem('spotter_debug_bypass') === 'true';
 
-            // Set debug checkbox from previous preference if available
-            //const isDebugChecked = localStorage.getItem('spotter_debug_bypass') === 'true';
-            //document.getElementById('debug-bypass-checkbox').checked = isDebugChecked;
+            // Set debug checkbox matching URL parameter status
+            document.getElementById('debug-bypass-checkbox').checked = isDebugMode;
 
-            if (lastPlayed === gameState.today) { // && !isDebugChecked) {
+            if (lastPlayed === gameState.today && !isDebugMode) {
                 // Already played today and debug is off: Display high score overview
                 document.getElementById('modal-title').textContent = "SHIFT COMPLETE";
                 document.getElementById('modal-body-content').innerHTML = `
                     You have already completed your daily gricing run for today!<br><br>
-                    <strong>Final Score:</strong> <span class="text-xl text-green-800">${savedScore || 0} Cops Logged</span><br>
+                    <strong>Final Score:</strong> <span class="text-xl text-green-800">${savedScore || 0}</span><br>
                     <strong>Gricer Standing:</strong> <span class="text-lg text-amber-900">${savedRank || 'N/A'}</span><br><br>
-                    Keep practicing your sightlines and return tomorrow morning for a new layout of required traction.
+                    Keep practicing your sightlines and return tomorrow morning.
                 `;
                 
                 document.getElementById('modal-buttons').innerHTML = `
                     <button onclick="shareLogbook('${savedScore || 0}', '${savedRank || 'Kettle-Boiler'}')" class="bg-[#1b4332] text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-[#2d6a4f] active:scale-95 transition-all text-sm uppercase">Share Your Gricer Slip</button>
-                    <!-- <button onclick="resetDailyLockForDebugging()" class="mt-4 text-[10px] text-gray-500 underline hover:text-red-700">Debug Bypass: Clear Daily Lockout</button> -->
                 `;
             } else {
-                // Available to play! (Either a brand new day or debug bypass is checked)
+                // Available to play! (Either a brand new day, URL override, or manual debug bypass is checked)
                 if (lastPlayed !== gameState.today && lastPlayed) {
                     showFeedbackToast("☀️ New Day Shift Unlocked! Let's get gricing.");
                 }
                 document.getElementById('modal-title').textContent = "TODAY'S REQUIRED COPS";
                 document.getElementById('modal-body-content').innerHTML = `
-                    Get your pen ready! It's time for some serious bashing on <strong>${gameState.today}</strong>.<br><br>
-                    You have <strong class="text-red-800">9 lives</strong>. Letting required traction speed past unspotted costs Thermos Warmth (1 life). Decoy DMUs do not penalize you.<br><br>
-                    Train speeds remain constant throughout, but locomotive ID codes grow progressively more complex as you log successful cops! Focus is key.<br><br>
-                    Swigging hot tea from your Thermos (☕ max 3) restores 1 warmth point and triggers Slow-Mo mode to ease the pace.
+                    Get your pen ready- It's time for Train Spotting!!<br><br>
+                    Missing a train rightly cost a life<br><br>
+                    Swigging tea (☕ max 3) restores 1 life and triggers "Slow-Mo".
                 `;
+
+                let debugBtnHTML = '';
+                if (isDebugMode) {
+                    debugBtnHTML = `<button onclick="resetDailyLockForDebugging()" class="mt-4 text-[10px] text-gray-500 underline hover:text-red-700">Debug Bypass: Clear Daily Lockout</button>`;
+                }
+
                 document.getElementById('modal-buttons').innerHTML = `
-                    <button onclick="beginDailyGame()" class="bg-[#1b4332] text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-[#2d6a4f] active:scale-95 transition-all text-sm uppercase">Start Bashing (Begin Shift)</button>
+                    <button onclick="beginDailyGame()" class="bg-[#1b4332] text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-[#2d6a4f] active:scale-95 transition-all text-sm uppercase">Start</button>
+                    ${debugBtnHTML}
                 `;
             }
         }
@@ -620,14 +641,14 @@
         }
 
         // Set state when the user toggles the checkbox
-        /*document.getElementById('debug-bypass-checkbox').addEventListener('change', (e) => {
+        document.getElementById('debug-bypass-checkbox').addEventListener('change', (e) => {
             localStorage.setItem('spotter_debug_bypass', e.target.checked ? 'true' : 'false');
-        }); */
+        });
 
         function beginDailyGame() {
             // Check debug bypass state
-            //const isDebugChecked = document.getElementById('debug-bypass-checkbox').checked;
-            //localStorage.setItem('spotter_debug_bypass', isDebugChecked ? 'true' : 'false');
+            const isDebugChecked = document.getElementById('debug-bypass-checkbox').checked;
+            localStorage.setItem('spotter_debug_bypass', isDebugChecked ? 'true' : 'false');
 
             // Dismiss Overlay UI screen
             document.getElementById('overlay-screen').style.display = 'none';
@@ -696,25 +717,26 @@
             
             gameState.activeTargets.forEach((target, i) => {
                 if (!target) return;
-                const liveryHTML = `<span class="inline-block w-3.5 h-3.5 rounded border border-gray-400 flex-shrink-0" style="background-color: ${target.color}"></span>`;
+                const liveryHTML = `<span class="inline-block w-4 h-4 rounded border border-gray-400 flex-shrink-0" style="background-color: ${target.color}"></span>`;
                 
+                // Formatted with prominent '[CODE] : [CARS]' text styling to optimize fast scanning
                 grid.innerHTML += `
-                    <button onclick="spotClipboardTarget('${target.id}')" class="bg-stone-100/90 hover:bg-stone-200/90 active:scale-95 transition-all border border-[#8d6e63]/30 p-1.5 rounded shadow-sm flex items-center justify-between text-left cursor-pointer focus:outline-none w-full">
-                        <div class="flex items-center gap-1.5 overflow-hidden w-full">
+                    <button onclick="spotClipboardTarget('${target.id}')" class="bg-white hover:bg-stone-100 active:scale-95 transition-all border-2 border-stone-800 p-2 rounded-lg shadow-md flex items-center justify-between text-left cursor-pointer focus:outline-none w-full h-full min-h-[50px]">
+                        <div class="flex items-center gap-2 overflow-hidden w-full">
                             ${liveryHTML}
-                            <div class="overflow-hidden flex-1">
-                                <span class="font-mono font-bold text-stone-900 block leading-none text-[11px] truncate">#${target.id}</span>
-                                <span class="text-[8px] text-stone-500 font-sans block leading-tight truncate mt-0.5">${target.name}</span>
-                                <span class="text-[7.5px] text-stone-400 font-sans block leading-none">${target.cars} cars</span>
+                            <div class="overflow-hidden flex-1 leading-tight">
+                                <span class="font-mono font-bold text-stone-900 block text-[35px] sm:text-[40px] md:text-[42px] truncate tracking-wide">
+                                    ${target.id} : ${target.cars}
+                                </span>
+                                <!-- <span class="text-[9px] text-stone-500 font-sans block truncate uppercase tracking-wider">${target.name}</span>
                             </div>
                         </div>
-                        <span class="text-xs text-stone-400 flex-shrink-0 ml-0.5">📋</span>
+                        <span class="text-sm sm:text-base text-stone-600 flex-shrink-0 ml-1">📋</span>
                     </button>
                 `;
             });
         }
 
-        // --- STREAMING_CHUNK: Managing spawn schedules and active track coordination ---
         function triggerTimedSpawns(trackId) {
             if (!gameState.gameActive) return;
 
@@ -780,7 +802,7 @@
             const baseSpeed = 1.8 + Math.random() * 1.0;
 
             // Construct locomotive composition elements
-            const trainWidth = (currentTrain.cars * 50) + 12; // Estimated width
+            const trainWidth = (currentTrain.cars * 62) + 13; // Estimated width
             
             for (let i = 0; i < currentTrain.cars; i++) {
                 const car = document.createElement('div');
@@ -791,7 +813,7 @@
                 if (i === Math.floor(currentTrain.cars / 2)) {
                     const plate = document.createElement('div');
                     plate.className = 'train-id';
-                    plate.textContent = '#' + currentTrain.id;
+                    plate.textContent = '' + currentTrain.id; //previously '' was '#'
                     car.appendChild(plate);
                 }
                 trainNode.appendChild(car);
@@ -827,7 +849,6 @@
             }
         }
 
-        // --- STREAMING_CHUNK: Processing checklist spotting inputs and interactive mechanics ---
         function spotClipboardTarget(trainId) {
             if (!gameState.gameActive) return;
 
@@ -873,7 +894,6 @@
             }, 1800);
         }
 
-        // --- STREAMING_CHUNK: Setting up real-time physics tick loops and state transitions ---
         function gameLoopUpdateTick() {
             if (!gameState.gameActive) return;
 
@@ -988,11 +1008,9 @@
             activeTrains = [];
 
             const earnedRank = getDailyRank(gameState.score);
+            const isDebugMode = localStorage.getItem('spotter_debug_bypass') === 'true';
 
-            // Check if debug lockout bypass is active
-            const isDebugChecked = false; //document.getElementById('debug-bypass-checkbox').checked;
-
-            if (!isDebugChecked) {
+            if (!isDebugMode) {
                 // Lock the system registry for today using local storage keys
                 localStorage.setItem('spotter_last_played', gameState.today);
                 localStorage.setItem('spotter_today_score', gameState.score);
@@ -1002,16 +1020,21 @@
             // Re-render Game End Screen inside unified modal dialog
             document.getElementById('modal-title').textContent = "THERMOS EMPTY";
             document.getElementById('modal-body-content').innerHTML = `
-                The fast lines have gone quiet and you've run out of flask warmth.<br><br>
-                <strong>Final Daily Score:</strong> <span class="text-xl text-green-800">${gameState.score} Cops Registered</span><br>
-                <strong>Gricer Standing:</strong> <span class="text-lg text-amber-900">${earnedRank}</span><br><br>
-                ${isDebugChecked ? '<span class="text-red-600 font-bold">[DEBUG PLAY: Score not locked today]</span><br><br>' : ''}
-                Your notebook is logged! Revisit tomorrow for a completely fresh set of mainline schedules.
+                <strong>Daily Score:</strong> <span class="text-xl text-green-800">${gameState.score}</span><br>
+                <span class="text-lg text-amber-900">${earnedRank}</span><br><br>   
+                ${isDebugMode ? '<span class="text-red-600 font-bold">[DEBUG PLAY: Score not locked today]</span><br><br>' : ''}
+                Your notebook is logged! Revisit tomorrow for more thrills.
             `;
+
+            // Practice Button is only appended if debug mode is active
+            let practiceBtnHTML = '';
+            if (isDebugMode) {
+                practiceBtnHTML = `<button onclick="restartDailyGame()" class="bg-amber-800 text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-amber-900 active:scale-95 transition-all text-sm uppercase mt-2">Practice Again (Debug Mode)</button>`;
+            }
 
             document.getElementById('modal-buttons').innerHTML = `
                 <button onclick="shareLogbook('${gameState.score}', '${earnedRank}')" class="bg-[#1b4332] text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-[#2d6a4f] active:scale-95 transition-all text-sm uppercase">Share Your Gricer Standing</button>
-               <!-- <button onclick="restartDailyGame()" class="bg-amber-800 text-white px-4 py-3 rounded-lg font-bold shadow-md hover:bg-amber-900 active:scale-95 transition-all text-sm uppercase mt-2">Practice Again (Debug Mode)</button> -->
+                ${practiceBtnHTML}
             `;
 
             document.getElementById('overlay-screen').style.display = 'flex';
@@ -1025,7 +1048,8 @@
         }
 
         function shareLogbook(score, rank) {
-            const shareText = `🚂 The Platform End: Daily Gricer Log!\n📅 Date: ${gameState.today}\n🎯 Score: Copped ${score} required traction units!\n🎖️ Gricer Standing: ${rank}\nThink you've got better gen than me? Check today's schedule!`;
+              const gameUrl = window.location.href;
+            const shareText = `🚂 The Platform End: Daily Gricer Log!\n📅 Date: ${gameState.today}\n🎯 Score: Copped ${score} required traction units!\n🎖️ Gricer Standing: ${rank}\nThink you've got better gen than me? Check today's schedule! ${gameUrl}`;
             
             if (navigator.share) {
                 navigator.share({
@@ -1035,7 +1059,7 @@
                     console.log("Web Share canceled or errored: ", err);
                 });
             } else {
-                // Standard copy-paste notification system using DOM execCommand fallback
+                // Standard copy-paste notification system using DOM fallback
                 const tempArea = document.createElement("textarea");
                 tempArea.value = shareText;
                 document.body.appendChild(tempArea);
