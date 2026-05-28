@@ -49,6 +49,12 @@
     <!-- Main Workspace Container -->
     <main class="flex-1 w-full max-w-md mx-auto p-3 flex flex-col items-center justify-start space-y-3.5 relative">
         
+        <!-- Locked / Completed State Banner -->
+        <div id="locked-banner" class="hidden w-full text-center py-2 px-4 rounded-xl text-xs font-bold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 shadow-md">
+            <i class="fa-solid fa-circle-check mr-1.5 text-emerald-400"></i>
+            Today's Daily Challenge Solved! Score: <span id="locked-score-display">--</span>/10
+        </div>
+
         <!-- Floating Success Notification -->
         <div id="toast" class="hidden w-full text-center py-2 px-4 rounded-xl text-xs font-bold bg-indigo-600 border border-indigo-400 text-white shadow-xl animate-bounce">
             🎉 Puzzle Solved! Target date successfully exposed!
@@ -60,7 +66,7 @@
         </div>
 
         <!-- Cleaned Controls Area -->
-        <div class="w-full max-w-[320px] px-1 flex flex-col bg-slate-900/40 p-2 rounded-xl border border-slate-800/80">
+        <div id="controls-panel" class="w-full max-w-[320px] px-1 flex flex-col bg-slate-900/40 p-2 rounded-xl border border-slate-800/80">
             <div class="grid grid-cols-4 gap-2 w-full">
                 <button id="rotate-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-2 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none w-full" disabled title="Rotate Piece">
                     <i class="fa-solid fa-arrows-rotate text-sm"></i>
@@ -78,7 +84,7 @@
         </div>
 
         <!-- Tray Section Moved Up -->
-        <div class="w-full max-w-[320px] flex-shrink-0">
+        <div id="tray-panel" class="w-full max-w-[320px] flex-shrink-0">
             <div id="pieces-tray" class="grid grid-cols-5 gap-1.5 p-2 bg-slate-900 rounded-2xl border border-slate-800 min-h-[125px] flex-shrink-0 shadow-lg"></div>
         </div>
     </main>
@@ -95,16 +101,24 @@
                 <span>Configuration Menu</span>
             </h3>
 
-            <!-- Dynamic Date Picker -->
-            <div id="date-picker-section" class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 mb-4 flex flex-col space-y-1.5">
-                <label for="date-picker" class="text-[9px] font-black tracking-wider text-slate-400 uppercase">Change Puzzle Target</label>
-                <div class="relative bg-slate-800 border border-slate-700 text-slate-200 rounded-lg p-1.5 flex items-center justify-between text-xs font-semibold cursor-pointer">
-                    <div class="flex items-center space-x-2">
-                        <i class="fa-solid fa-calendar-day text-indigo-400"></i>
-                        <span id="picker-label-string">Select Target Date</span>
+            <!-- Dynamic Date Picker / Locked Warning Option -->
+            <div id="date-picker-section" class="mb-4 flex flex-col space-y-1.5">
+                <!-- Selectable Picker Layout (Freeplay) -->
+                <div id="picker-wrapper" class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col space-y-1.5">
+                    <label class="text-[9px] font-black tracking-wider text-slate-400 uppercase">Change Puzzle Target</label>
+                    <div id="custom-picker-btn" class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg p-1.5 flex items-center justify-between text-xs font-semibold cursor-pointer border border-slate-700 transition-all">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-calendar-day text-indigo-400"></i>
+                            <span id="picker-label-string">Select Target Date</span>
+                        </div>
+                        <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
                     </div>
-                    <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-                    <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                </div>
+                <!-- Strictly Locked Banner (Daily Mode) -->
+                <div id="picker-locked-banner" class="hidden bg-slate-950 p-3 rounded-xl border border-slate-800 text-center text-[10px] text-indigo-300 font-bold uppercase tracking-wider">
+                    <i class="fa-solid fa-lock mr-1.5 text-indigo-400"></i>
+                    Strict Daily Mode Active
                 </div>
             </div>
 
@@ -260,21 +274,41 @@
         let piecesPlaced = {};
         let historyStack = [];
         let hintsUsedCount = 0;
+        let isBoardLocked = false;
 
         let targetMonth = 4;   // Default May
         let targetDay = 28;    // Default 28
         let targetWeekday = 4; // Default Thursday
         let cachedFullSolution = null;
+        let isStrictOneADay = true; // Defaults to true unless explicitly bypassed
 
         window.addEventListener('DOMContentLoaded', () => {
-            initTargetDate();
+            initModeAndTargetDate();
             renderBoard();
             renderTray();
             updateControlsState();
 
             // Setup Global Event Routing
             document.getElementById('title-display').addEventListener('click', () => toggleModal('info-modal', true));
-            document.getElementById('date-picker').addEventListener('change', handleDateChange);
+            
+            // Custom trigger for Date Picker anywhere on container click
+            const customPicker = document.getElementById('custom-picker-btn');
+            const nativePicker = document.getElementById('date-picker');
+            customPicker.addEventListener('click', (e) => {
+                if (e.target !== nativePicker) {
+                    try {
+                        if (typeof nativePicker.showPicker === 'function') {
+                            nativePicker.showPicker();
+                        } else {
+                            nativePicker.click();
+                        }
+                    } catch (err) {
+                        nativePicker.click();
+                    }
+                }
+            });
+            nativePicker.addEventListener('change', handleDateChange);
+
             document.getElementById('rotate-btn').addEventListener('click', rotateSelected);
             document.getElementById('fliph-btn').addEventListener('click', flipHSelected);
             document.getElementById('flipv-btn').addEventListener('click', flipVSelected);
@@ -289,13 +323,69 @@
             document.getElementById('share-btn').addEventListener('click', handleShareSystemAction);
         });
 
-        function initTargetDate() {
+        // Generate date string representation for local storage keying (YYYY-MM-DD)
+        function getDateKey(dateObj) {
+            const yyyy = dateObj.getFullYear();
+            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dd = String(dateObj.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function initModeAndTargetDate() {
+            const params = new URLSearchParams(window.location.search);
+            const mode = params.get('mode');
+            const freeplayParam = params.get('freeplay');
+
+            // Set strict one-a-day mode (defaults to true unless freeplay specified)
+            if (mode === 'freeplay' || freeplayParam === 'true') {
+                isStrictOneADay = false;
+            } else {
+                isStrictOneADay = true;
+            }
+
+            // Sync View states
+            const pickerSec = document.getElementById('picker-wrapper');
+            const pickerLock = document.getElementById('picker-locked-banner');
+            if (isStrictOneADay) {
+                pickerSec.classList.add('hidden');
+                pickerLock.classList.remove('hidden');
+            } else {
+                pickerSec.classList.remove('hidden');
+                pickerLock.classList.add('hidden');
+            }
+
             const today = new Date();
             setTargetFromDate(today);
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            document.getElementById('date-picker').value = `${yyyy}-${mm}-${dd}`;
+            
+            const nativePicker = document.getElementById('date-picker');
+            nativePicker.value = getDateKey(today);
+
+            // If in strict mode, check if today's puzzle is already completed
+            if (isStrictOneADay) {
+                const key = "cal_solved_" + getDateKey(today);
+                const savedState = localStorage.getItem(key);
+                if (savedState) {
+                    try {
+                        const parsed = JSON.parse(savedState);
+                        piecesPlaced = parsed.piecesPlaced || {};
+                        pieces = parsed.pieces || ORIGINAL_PIECES;
+                        hintsUsedCount = parsed.hintsUsedCount || 0;
+                        isBoardLocked = true;
+                        
+                        // Show lock banner
+                        const lockBanner = document.getElementById('locked-banner');
+                        const lockScore = document.getElementById('locked-score-display');
+                        lockScore.innerText = Math.max(0, 10 - hintsUsedCount);
+                        lockBanner.classList.remove('hidden');
+                        
+                        // Disable buttons
+                        document.getElementById('hint-btn').setAttribute('disabled', true);
+                        document.getElementById('hint-btn').classList.add('opacity-30');
+                    } catch (e) {
+                        console.error("Error reading saved solution state", e);
+                    }
+                }
+            }
         }
 
         function setTargetFromDate(dateObj) {
@@ -314,6 +404,7 @@
         }
 
         function handleDateChange(e) {
+            if (isStrictOneADay || isBoardLocked) return;
             if (!e.target.value) return;
             const parts = e.target.value.split('-');
             const chosenDate = new Date(parts[0], parts[1] - 1, parts[2]);
@@ -322,6 +413,7 @@
         }
 
         function pushStateToHistory() {
+            if (isBoardLocked) return;
             historyStack.push(JSON.stringify({
                 piecesPlaced: { ...piecesPlaced },
                 pieces: JSON.parse(JSON.stringify(pieces)),
@@ -332,7 +424,7 @@
         }
 
         function handleUndo() {
-            if (historyStack.length === 0) return;
+            if (isBoardLocked || historyStack.length === 0) return;
             const lastState = JSON.parse(historyStack.pop());
             
             piecesPlaced = lastState.piecesPlaced;
@@ -351,6 +443,7 @@
         }
 
         function resetBoardState() {
+            if (isBoardLocked) return;
             historyStack = [];
             piecesPlaced = {};
             hintsUsedCount = 0;
@@ -403,7 +496,7 @@
                 } else if (isTargetCell(cell)) {
                     classes += "bg-indigo-600 text-white border-indigo-400 ring-2 ring-indigo-500/50 shadow-md font-black scale-[1.02] z-10";
                 } else {
-                    classes += "bg-slate-800 hover:bg-slate-700/80 text-slate-400 border-slate-700/40 cursor-pointer";
+                    classes += "bg-slate-800 hover:bg-slate-700/80 text-slate-400 border-slate-700/40 select-none " + (isBoardLocked ? "cursor-default" : "cursor-pointer");
                 }
 
                 cellDiv.className = classes;
@@ -411,7 +504,7 @@
                     cellDiv.innerHTML = `<span>${cell.text}</span>`;
                 }
 
-                if (cell.type !== 'blank' && !isTargetCell(cell)) {
+                if (cell.type !== 'blank' && !isTargetCell(cell) && !isBoardLocked) {
                     cellDiv.addEventListener('click', () => handleGridClick(cell.r, cell.c));
                 }
 
@@ -422,6 +515,7 @@
         }
 
         function handleGridClick(row, col) {
+            if (isBoardLocked) return;
             const clickedPieceId = getPieceAtCell(row, col);
 
             if (!selectedPieceId) {
@@ -491,7 +585,7 @@
                     const el = document.querySelector(`[data-row="${boardR}"][data-col="${boardC}"]`);
                     if (el) {
                         const isSelected = selectedPieceId === pieceId;
-                        el.className = `relative flex items-center justify-center rounded-lg text-xs font-black transition-all border select-none cursor-pointer z-10 ${piece.color} ${isSelected ? 'ring-4 ring-white border-white scale-95 shadow-xl' : 'shadow hover:brightness-110'}`;
+                        el.className = `relative flex items-center justify-center rounded-lg text-xs font-black transition-all border select-none z-10 ${piece.color} ${isSelected && !isBoardLocked ? 'ring-4 ring-white border-white scale-95 shadow-xl' : 'shadow'} ` + (isBoardLocked ? "cursor-default" : "cursor-pointer hover:brightness-110");
                         el.innerHTML = `<span class="opacity-90 select-none">${piece.id}</span>`;
                     }
                 });
@@ -511,8 +605,10 @@
                     pieceCard.className = "flex flex-col items-center justify-center p-1 rounded-xl border border-slate-950 bg-slate-950/40 text-slate-700 opacity-20 pointer-events-none select-none h-12";
                     pieceCard.innerHTML = `<i class="fa-solid fa-circle-check text-xs"></i>`;
                 } else {
-                    pieceCard.className = `flex flex-col items-center justify-center p-1 rounded-xl border transition-all cursor-pointer h-12 ${
-                        isSelected ? 'bg-indigo-600 border-indigo-400 text-white scale-105 shadow-md ring-2 ring-indigo-500/50' : 'bg-slate-800/90 hover:bg-slate-800 border-slate-700/60 text-slate-300'
+                    pieceCard.className = `flex flex-col items-center justify-center p-1 rounded-xl border transition-all h-12 ${
+                        isBoardLocked ? 'pointer-events-none select-none bg-slate-900 border-slate-800 opacity-40' : 'cursor-pointer'
+                    } ${
+                        isSelected && !isBoardLocked ? 'bg-indigo-600 border-indigo-400 text-white scale-105 shadow-md ring-2 ring-indigo-500/50' : 'bg-slate-800/90 hover:bg-slate-800 border-slate-700/60 text-slate-300'
                     }`;
 
                     pieceCard.appendChild(createMiniatureShape(piece));
@@ -521,10 +617,12 @@
                     lbl.innerText = piece.id;
                     pieceCard.appendChild(lbl);
 
-                    pieceCard.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        selectPiece(selectedPieceId === piece.id ? null : piece.id);
-                    });
+                    if (!isBoardLocked) {
+                        pieceCard.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            selectPiece(selectedPieceId === piece.id ? null : piece.id);
+                        });
+                    }
                 }
                 trayContainer.appendChild(pieceCard);
             });
@@ -550,6 +648,7 @@
         }
 
         function selectPiece(pieceId, updateUI = true) {
+            if (isBoardLocked) return;
             selectedPieceId = pieceId;
             updateControlsState();
             if (updateUI) {
@@ -565,7 +664,7 @@
                 document.getElementById('flipv-btn'),
                 document.getElementById('clear-piece-btn')
             ];
-            if (selectedPieceId) {
+            if (selectedPieceId && !isBoardLocked) {
                 btns.forEach(b => b.removeAttribute('disabled'));
             } else {
                 btns.forEach(b => b.setAttribute('disabled', true));
@@ -573,7 +672,7 @@
         }
 
         function rotateSelected() {
-            if (!selectedPieceId) return;
+            if (!selectedPieceId || isBoardLocked) return;
             pushStateToHistory();
             const piece = pieces.find(p => p.id === selectedPieceId);
             let rotated = piece.shape.map(([r, c]) => [c, -r]);
@@ -582,7 +681,7 @@
         }
 
         function flipHSelected() {
-            if (!selectedPieceId) return;
+            if (!selectedPieceId || isBoardLocked) return;
             pushStateToHistory();
             const piece = pieces.find(p => p.id === selectedPieceId);
             let flipped = piece.shape.map(([r, c]) => [r, -c]);
@@ -591,7 +690,7 @@
         }
 
         function flipVSelected() {
-            if (!selectedPieceId) return;
+            if (!selectedPieceId || isBoardLocked) return;
             pushStateToHistory();
             const piece = pieces.find(p => p.id === selectedPieceId);
             let flipped = piece.shape.map(([r, c]) => [-r, c]);
@@ -622,6 +721,7 @@
         }
 
         function clearActiveSelection() {
+            if (isBoardLocked) return;
             if (selectedPieceId && piecesPlaced[selectedPieceId]) {
                 pushStateToHistory();
                 delete piecesPlaced[selectedPieceId];
@@ -642,6 +742,31 @@
                     return getPieceAtCell(cell.r, cell.c) === null;
                 });
                 if (uncovered.length === 3 && uncovered.every(c => isTargetCell(c))) {
+                    isBoardLocked = true;
+                    
+                    // Save solved daily completion layout under strict Daily mode
+                    if (isStrictOneADay) {
+                        const todayKey = "cal_solved_" + getDateKey(new Date());
+                        const statePayload = {
+                            piecesPlaced,
+                            pieces,
+                            hintsUsedCount
+                        };
+                        localStorage.setItem(todayKey, JSON.stringify(statePayload));
+                        
+                        // Show strict daily mode lock banner
+                        const lockBanner = document.getElementById('locked-banner');
+                        const lockScore = document.getElementById('locked-score-display');
+                        lockScore.innerText = Math.max(0, 10 - hintsUsedCount);
+                        lockBanner.classList.remove('hidden');
+
+                        document.getElementById('hint-btn').setAttribute('disabled', true);
+                        document.getElementById('hint-btn').classList.add('opacity-30');
+                    }
+
+                    // Disable Undo / Redo controls
+                    document.getElementById('undo-btn').setAttribute('disabled', true);
+
                     toggleModal('success-modal', true);
                     document.getElementById('toast').classList.remove('hidden');
                 }
@@ -751,6 +876,7 @@
         }
 
         function injectNextDeterministicHint() {
+            if (isBoardLocked) return;
             if (!cachedFullSolution) {
                 document.getElementById('solver-loader').classList.remove('hidden');
                 setTimeout(() => {
