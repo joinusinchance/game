@@ -4,17 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>A Puzzle A Day Calendar Game</title>
-    <!-- Tailwind CSS for modern utility styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Touch device optimizations */
         body {
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Grid gap sizing */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -22,161 +18,119 @@
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-start overflow-y-auto font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-start overflow-y-auto font-sans antialiased selection:bg-indigo-500/30">
 
-    <!-- Unified Ultra-Compact Top Bar -->
-    <header class="bg-slate-900 border-b border-slate-800 px-3 py-2 flex items-center justify-between sticky top-0 z-30 shadow-md">
-        <!-- Logo & Active Target -->
-        <div class="flex items-center space-x-2">
-            <div class="bg-indigo-600 px-2 py-1 rounded text-white flex items-center justify-center">
-                <i class="fa-solid fa-calendar-days text-xs"></i>
-            </div>
-            <div class="flex flex-col">
-                <h1 class="text-xs font-black tracking-wider text-slate-200 uppercase leading-none">Puzzle Calendar</h1>
-                <div class="flex items-center space-x-1.5 mt-0.5">
-                    <span class="text-[9px] text-slate-400">Target:</span>
-                    <span id="target-display" class="text-[10px] font-black text-amber-400 tracking-wide">MAY 28 THU</span>
-                </div>
-            </div>
+    <!-- Header Panel -->
+    <header class="bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between sticky top-0 z-30 shadow-md">
+        <!-- Left: Seeded Hint Button -->
+        <button id="hint-btn" class="bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-amber-400 p-2 rounded-xl transition-all flex items-center justify-center shadow-sm" title="Get Hint">
+            <i class="fa-solid fa-lightbulb text-sm"></i>
+        </button>
+
+        <!-- Center: Game Title & Target Display -->
+        <div class="flex flex-col items-center text-center">
+            <h1 id="title-display" class="text-xs font-black tracking-widest text-slate-200 uppercase leading-none cursor-pointer hover:text-indigo-400 transition-colors">
+                Puzzle Calendar
+            </h1>
+            <span id="target-display" class="text-[11px] font-black text-amber-400 tracking-wide mt-1">THU 28 MAY</span>
         </div>
 
-        <!-- Mode Indicator, Date, Hint, Undo & Help -->
-        <div class="flex items-center space-x-1.5">
-            <!-- Game Mode Badge or Date Selector -->
-            <div id="mode-badge" class="hidden bg-slate-800 border border-slate-700 text-indigo-400 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider">
-                Daily Mode
-            </div>
-            <div id="date-picker-container" class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 rounded px-2 py-1 flex items-center space-x-1 text-[10px] font-semibold cursor-pointer border border-slate-700 transition-all">
-                <i class="fa-solid fa-pen-to-square text-[10px]"></i>
-                <span>Date</span>
-                <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
-            </div>
-
-            <!-- Seeded Hint Button -->
-            <button id="hint-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 p-1.5 rounded transition-all flex items-center space-x-1" title="Get Seeded Hint">
-                <i class="fa-solid fa-lightbulb"></i>
-                <span class="text-[9px] font-bold hidden sm:inline">Hint</span>
-            </button>
-
-            <!-- Incremental Undo Button -->
-            <button id="undo-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all disabled:opacity-30 disabled:pointer-events-none" title="Undo Move" disabled>
+        <!-- Right: Control Buttons -->
+        <div class="flex items-center space-x-2">
+            <button id="undo-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-2 rounded-xl transition-all disabled:opacity-30 disabled:pointer-events-none" title="Undo Move" disabled>
                 <i class="fa-solid fa-rotate-left text-xs"></i>
             </button>
-
-            <!-- Compact Reset Button -->
-            <button id="reset-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all" title="Reset Board">
-                <i class="fa-solid fa-trash-can text-xs"></i>
-            </button>
-
-            <!-- Info Button -->
-            <button id="info-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all" title="Instructions">
+            <button id="info-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-2 rounded-xl transition-all" title="Instructions">
                 <i class="fa-solid fa-circle-question text-xs"></i>
             </button>
         </div>
     </header>
 
-    <!-- Main Scrollable Container containing everything in a cohesive flow -->
-    <main class="flex-1 w-full max-w-md mx-auto p-3 flex flex-col items-center justify-start space-y-3 relative">
+    <!-- Main Workspace Container -->
+    <main class="flex-1 w-full max-w-md mx-auto p-3 flex flex-col items-center justify-start space-y-3.5 relative">
         
-        <!-- Floating Success Toast -->
+        <!-- Floating Success Notification -->
         <div id="toast" class="hidden w-full text-center py-2 px-4 rounded-xl text-xs font-bold bg-indigo-600 border border-indigo-400 text-white shadow-xl animate-bounce">
-            🎉 Puzzle Solved! Only the target date is exposed!
+            🎉 Puzzle Solved! Target date successfully exposed!
         </div>
 
-        <!-- Calendar Board Area -->
-        <div class="w-full aspect-square max-w-[320px] bg-slate-900 p-2 rounded-xl border border-slate-800 shadow-2xl relative">
-            <div id="board-grid" class="calendar-grid w-full h-full">
-                <!-- Grid Cells generated dynamically by JS -->
-            </div>
+        <!-- Board Layout Window -->
+        <div class="w-full aspect-square max-w-[320px] bg-slate-900 p-2.5 rounded-2xl border border-slate-800 shadow-2xl relative">
+            <div id="board-grid" class="calendar-grid w-full h-full"></div>
         </div>
 
-        <!-- Selected Piece Controls (Orientation Controls) -->
-        <div class="w-full max-w-[320px] px-1 flex flex-col space-y-2 bg-slate-900/40 p-2 rounded-lg border border-slate-800/80">
-            <div class="flex items-center justify-between">
-                <div class="flex flex-col">
-                    <span class="text-[8px] uppercase tracking-wider text-slate-500 leading-none">Selected piece</span>
-                    <span id="selected-piece-name" class="text-[11px] font-black text-indigo-400 leading-tight">None</span>
-                </div>
-                <button id="clear-piece-btn" class="bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 border border-rose-900/40 px-2 py-0.5 rounded text-[9px] font-bold transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
-                    Deselect
+        <!-- Cleaned Controls Area -->
+        <div class="w-full max-w-[320px] px-1 flex flex-col bg-slate-900/40 p-2 rounded-xl border border-slate-800/80">
+            <div class="grid grid-cols-4 gap-2 w-full">
+                <button id="rotate-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-2 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none w-full" disabled title="Rotate Piece">
+                    <i class="fa-solid fa-arrows-rotate text-sm"></i>
                 </button>
-            </div>
-            
-            <div class="grid grid-cols-3 gap-1.5">
-                <button id="rotate-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-1 rounded flex items-center justify-center space-x-1.5 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
-                    <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
-                    <span class="text-[9px] font-bold">Rotate</span>
+                <button id="fliph-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-2 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none w-full" disabled title="Flip Horizontally">
+                    <i class="fa-solid fa-arrows-left-right text-sm"></i>
                 </button>
-                <button id="fliph-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-1 rounded flex items-center justify-center space-x-1.5 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
-                    <i class="fa-solid fa-arrows-left-right text-[10px]"></i>
-                    <span class="text-[9px] font-bold">Flip H</span>
+                <button id="flipv-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-2 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none w-full" disabled title="Flip Vertically">
+                    <i class="fa-solid fa-arrows-up-down text-sm"></i>
                 </button>
-                <button id="flipv-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-1 rounded flex items-center justify-center space-x-1.5 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
-                    <i class="fa-solid fa-arrows-up-down text-[10px]"></i>
-                    <span class="text-[9px] font-bold">Flip V</span>
+                <button id="clear-piece-btn" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-900/50 py-2 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none w-full" disabled title="Clear / Deselect Piece">
+                    <i class="fa-solid fa-trash-can text-sm"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Integrated Unused Pieces Drawer directly below previous section -->
+        <!-- Tray Section Moved Up -->
         <div class="w-full max-w-[320px] flex-shrink-0">
-            <div class="flex justify-between items-center mb-1 px-1">
-                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Unused Pieces</span>
-                <span id="pieces-status" class="text-[10px] text-amber-500 font-mono font-bold">0 / 10 placed</span>
-            </div>
-            
-            <!-- Pieces list Container in a 2x5 Grid layout -->
-            <div id="pieces-tray" class="grid grid-cols-5 gap-1.5 p-1.5 bg-slate-900 rounded-xl border border-slate-800 min-h-[125px] flex-shrink-0">
-                <!-- All 10 Pieces placed dynamically here -->
-            </div>
+            <div id="pieces-tray" class="grid grid-cols-5 gap-1.5 p-2 bg-slate-900 rounded-2xl border border-slate-800 min-h-[125px] flex-shrink-0 shadow-lg"></div>
         </div>
-
     </main>
 
-    <!-- Informational Modal / Instructions -->
+    <!-- Global Pop-up Interface Container (Date Switcher & Help Info) -->
     <div id="info-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-5 shadow-2xl relative">
             <button id="close-modal-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white">
                 <i class="fa-solid fa-xmark text-sm"></i>
             </button>
-            <h3 class="text-sm font-black text-white mb-2 flex items-center space-x-2 uppercase tracking-wide">
-                <i class="fa-solid fa-circle-question text-indigo-400"></i>
-                <span>How to Play</span>
+            
+            <h3 class="text-sm font-black text-white mb-3 flex items-center space-x-2 uppercase tracking-wide">
+                <i class="fa-solid fa-sliders text-indigo-400"></i>
+                <span>Configuration Menu</span>
             </h3>
+
+            <!-- Dynamic Date Picker -->
+            <div id="date-picker-section" class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 mb-4 flex flex-col space-y-1.5">
+                <label for="date-picker" class="text-[9px] font-black tracking-wider text-slate-400 uppercase">Change Puzzle Target</label>
+                <div class="relative bg-slate-800 border border-slate-700 text-slate-200 rounded-lg p-1.5 flex items-center justify-between text-xs font-semibold cursor-pointer">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-calendar-day text-indigo-400"></i>
+                        <span id="picker-label-string">Select Target Date</span>
+                    </div>
+                    <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                    <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                </div>
+            </div>
+
+            <!-- Rules Setup Description -->
             <div class="space-y-2 text-slate-300 text-[11px] leading-relaxed">
-                <p>
-                    Cover the calendar grid with the 10 puzzle pieces so that <strong>only today's date</strong> remains exposed:
-                </p>
+                <p>Cover the board grid with the 10 pieces so that only the selected target stays exposed:</p>
                 <ul class="list-disc pl-4 space-y-0.5 text-slate-400 font-bold">
                     <li>The Month (e.g. <span class="text-indigo-300">MAY</span>)</li>
                     <li>The Day (e.g. <span class="text-indigo-300">28</span>)</li>
                     <li>The Day of Week (e.g. <span class="text-indigo-300">THU</span>)</li>
                 </ul>
-                <div class="bg-slate-950 p-2 rounded border border-slate-800 mt-2 space-y-1">
-                    <p class="font-bold text-white text-[9px] uppercase tracking-wider">Controls:</p>
-                    <p>👉 <strong>Tap a piece</strong> in the tray below to select it. Tap it again to deselect.</p>
-                    <p>🔄 Use <strong>Rotate / Flip H / Flip V</strong> to orient your selected piece.</p>
-                    <p>🎯 <strong>Tap any cell on the board</strong> to place it anchored from its top-leftmost block.</p>
-                    <p>🧹 Tap a placed piece on the board to select it, then tap <strong>Deselect</strong> to clear active selection.</p>
+                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 mt-2 space-y-1">
+                    <p class="font-bold text-white text-[9px] uppercase tracking-wider">Gameplay Controls:</p>
+                    <p>👉 <strong>Tap a piece</strong> in the bottom tray to pick it up.</p>
+                    <p>🔄 Use the **4-button row** to Rotate, Flip, or Remove it.</p>
+                    <p>🎯 <strong>Tap any cell on the board</strong> to drop it into position.</p>
                 </div>
             </div>
 
-            <!-- "Show Solution" Container (Hidden in daily mode) -->
-            <div id="solver-container" class="mt-4 pt-4 border-t border-slate-800 flex flex-col space-y-2">
-                <p class="text-[10px] text-slate-400 italic">Stuck? Let our backtracking search solver compute a valid mathematical layout for your current date target.</p>
-                <button id="solve-btn" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-slate-950 font-black py-2 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-all shadow shadow-amber-500/10">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Show Solution</span>
-                </button>
-            </div>
-
-            <button id="close-modal-ok-btn" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded-lg text-xs font-bold transition-all">
+            <button id="close-modal-ok-btn" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-bold transition-all shadow-md">
                 Let's Play!
             </button>
         </div>
     </div>
 
-    <!-- Celebration/Success Modal -->
+    <!-- Celebration/Success Window Modal -->
     <div id="success-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-gradient-to-b from-indigo-950 to-slate-900 border-2 border-indigo-500 rounded-2xl max-w-xs w-full p-5 text-center shadow-2xl relative">
             <div class="w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 animate-bounce shadow-lg">
@@ -184,60 +138,58 @@
             </div>
             
             <h3 class="text-base font-black text-white mb-1 uppercase tracking-wide">Puzzle Solved!</h3>
-            <p class="text-[10px] text-slate-400 mb-3">You completed today's date combination successfully!</p>
+            <p class="text-[10px] text-slate-400 mb-3">You completed the date combination successfully!</p>
             
-            <div class="bg-slate-950 py-2 px-3 rounded-lg mb-4 border border-slate-800">
-                <span class="text-[8px] text-slate-500 block uppercase font-mono tracking-widest">Exposed Date</span>
+            <div class="bg-slate-950 py-2.5 px-3 rounded-xl mb-4 border border-slate-800">
+                <span class="text-[8px] text-slate-500 block uppercase font-mono tracking-widest">Exposed Target</span>
                 <span id="success-date-string" class="text-sm font-black text-amber-400 tracking-wide uppercase">MAY 28 THU</span>
-                <div class="mt-2 text-indigo-400 text-xs font-bold">
-                    Score: <span id="success-score">10/10</span>
+                <div class="mt-1 flex items-center justify-center space-x-1">
+                    <span class="text-[9px] text-slate-400">Score Earned:</span>
+                    <span id="success-score-string" class="text-xs font-black text-emerald-400">10/10</span>
                 </div>
             </div>
             
-            <div class="space-y-2">
-                <!-- Safe Clipboard Share Button -->
-                <button id="share-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-1.5">
+            <!-- Dynamic Actions Panel -->
+            <div class="flex flex-col space-y-2">
+                <button id="share-btn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 py-2.5 rounded-xl text-xs font-black flex items-center justify-center space-x-1.5 transition-all shadow-lg">
                     <i class="fa-solid fa-share-nodes"></i>
-                    <span id="share-btn-text">Share Result</span>
+                    <span>Share Results</span>
                 </button>
-                <button id="success-close-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 rounded-lg text-xs font-bold transition-all">
+                <button id="success-close-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 rounded-xl text-xs font-bold transition-all">
                     Close
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Solution Computation Loader -->
+    <!-- Preloader Engine Canvas Overlay -->
     <div id="solver-loader" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center hidden">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col items-center space-y-3 shadow-2xl max-w-xs text-center">
             <i class="fa-solid fa-gear fa-spin text-3xl text-amber-500"></i>
-            <p class="text-xs font-bold text-white">Searching for solutions...</p>
-            <p class="text-[10px] text-slate-400">Computing target polyomino placements</p>
+            <p class="text-xs font-bold text-white">Analyzing Geometry...</p>
+            <p class="text-[10px] text-slate-400">Calculating target path hints</p>
         </div>
     </div>
 
     <script>
-        // Set up Board Coordinates and Constants
+        // Set up Board Layout Coordinates Map
         const BOARD_CELLS = [
-            // Row 0
             { text: "JAN", type: "month", val: 0, r: 0, c: 0 },
             { text: "FEB", type: "month", val: 1, r: 0, c: 1 },
             { text: "MAR", type: "month", val: 2, r: 0, c: 2 },
             { text: "APR", type: "month", val: 3, r: 0, c: 3 },
             { text: "MAY", type: "month", val: 4, r: 0, c: 4 },
             { text: "JUN", type: "month", val: 5, r: 0, c: 5 },
-            { text: "blank", type: "blank", r: 0, c: 6 }, // blank
+            { text: "blank", type: "blank", r: 0, c: 6 },
 
-            // Row 1
             { text: "JUL", type: "month", val: 6, r: 1, c: 0 },
             { text: "AUG", type: "month", val: 7, r: 1, c: 1 },
             { text: "SEP", type: "month", val: 8, r: 1, c: 2 },
             { text: "OCT", type: "month", val: 9, r: 1, c: 3 },
             { text: "NOV", type: "month", val: 10, r: 1, c: 4 },
             { text: "DEC", type: "month", val: 11, r: 1, c: 5 },
-            { text: "blank", type: "blank", r: 1, c: 6 }, // blank
+            { text: "blank", type: "blank", r: 1, c: 6 },
 
-            // Row 2
             { text: "1", type: "day", val: 1, r: 2, c: 0 },
             { text: "2", type: "day", val: 2, r: 2, c: 1 },
             { text: "3", type: "day", val: 3, r: 2, c: 2 },
@@ -246,7 +198,6 @@
             { text: "6", type: "day", val: 6, r: 2, c: 5 },
             { text: "7", type: "day", val: 7, r: 2, c: 6 },
 
-            // Row 3
             { text: "8", type: "day", val: 8, r: 3, c: 0 },
             { text: "9", type: "day", val: 9, r: 3, c: 1 },
             { text: "10", type: "day", val: 10, r: 3, c: 2 },
@@ -255,7 +206,6 @@
             { text: "13", type: "day", val: 13, r: 3, c: 5 },
             { text: "14", type: "day", val: 14, r: 3, c: 6 },
 
-            // Row 4
             { text: "15", type: "day", val: 15, r: 4, c: 0 },
             { text: "16", type: "day", val: 16, r: 4, c: 1 },
             { text: "17", type: "day", val: 17, r: 4, c: 2 },
@@ -264,7 +214,6 @@
             { text: "20", type: "day", val: 20, r: 4, c: 5 },
             { text: "21", type: "day", val: 21, r: 4, c: 6 },
 
-            // Row 5
             { text: "22", type: "day", val: 22, r: 5, c: 0 },
             { text: "23", type: "day", val: 23, r: 5, c: 1 },
             { text: "24", type: "day", val: 24, r: 5, c: 2 },
@@ -273,7 +222,6 @@
             { text: "27", type: "day", val: 27, r: 5, c: 5 },
             { text: "28", type: "day", val: 28, r: 5, c: 6 },
 
-            // Row 6
             { text: "29", type: "day", val: 29, r: 6, c: 0 },
             { text: "30", type: "day", val: 30, r: 6, c: 1 },
             { text: "31", type: "day", val: 31, r: 6, c: 2 },
@@ -282,262 +230,72 @@
             { text: "WED", type: "weekday", val: 3, r: 6, c: 5 },
             { text: "THU", type: "weekday", val: 4, r: 6, c: 6 },
 
-            // Row 7
-            { text: "blank", type: "blank", r: 7, c: 0 }, // blank
-            { text: "blank", type: "blank", r: 7, c: 1 }, // blank
-            { text: "blank", type: "blank", r: 7, c: 2 }, // blank
-            { text: "blank", type: "blank", r: 7, c: 3 }, // blank
+            { text: "blank", type: "blank", r: 7, c: 0 },
+            { text: "blank", type: "blank", r: 7, c: 1 },
+            { text: "blank", type: "blank", r: 7, c: 2 },
+            { text: "blank", type: "blank", r: 7, c: 3 },
             { text: "FRI", type: "weekday", val: 5, r: 7, c: 4 },
             { text: "SAT", type: "weekday", val: 6, r: 7, c: 5 },
             { text: "SUN", type: "weekday", val: 0, r: 7, c: 6 }
         ];
 
+        // High-Contrast Optimized Authentic 10-Piece Set
         const ORIGINAL_PIECES = [
-            {
-                id: "A",
-                name: "Corner (4)",
-                color: "bg-emerald-500 border-emerald-600",
-                textColor: "text-emerald-100",
-                shape: [
-                    [0, 0], [0, 1],
-                    [1, 0],
-                    [2, 0]
-                ]
-            },
-            {
-                id: "B",
-                name: "L-Shape (4)",
-                color: "bg-sky-500 border-sky-600",
-                textColor: "text-sky-100",
-                shape: [
-                    [0, 0], [0, 1], [0, 2],
-                    [1, 0]
-                ]
-            },
-            {
-                id: "C",
-                name: "Square (4)",
-                color: "bg-indigo-500 border-indigo-600",
-                textColor: "text-indigo-100",
-                shape: [
-                    [0, 0], [0, 1],
-                    [1, 0], [1, 1]
-                ]
-            },
-            {
-                id: "D",
-                name: "T-Pentomino (5)",
-                color: "bg-purple-500 border-purple-600",
-                textColor: "text-purple-100",
-                shape: [
-                    [0, 0], [0, 1], [0, 2],
-                            [1, 1],
-                            [2, 1]
-                ]
-            },
-            {
-                id: "E",
-                name: "Z-Pentomino (5)",
-                color: "bg-pink-500 border-pink-600",
-                textColor: "text-pink-100",
-                shape: [
-                            [0, 1], [0, 2],
-                    [1, 0], [1, 1],
-                    [2, 0]
-                ]
-            },
-            {
-                id: "F",
-                name: "I-Pentomino (5)",
-                color: "bg-amber-500 border-amber-600",
-                textColor: "text-amber-100",
-                shape: [
-                    [0, 0], [0, 1], [0, 2], [0, 3], [0, 4]
-                ]
-            },
-            {
-                id: "G",
-                name: "U-Pentomino (5)",
-                color: "bg-teal-500 border-teal-600",
-                textColor: "text-teal-100",
-                shape: [
-                    [0, 0],         [0, 2],
-                    [1, 0], [1, 1], [1, 2]
-                ]
-            },
-            {
-                id: "H",
-                name: "V-Pentomino (5)",
-                color: "bg-rose-500 border-rose-600",
-                textColor: "text-rose-100",
-                shape: [
-                    [0, 0], [0, 1], [0, 2],
-                    [1, 0],
-                    [2, 0]
-                ]
-            },
-            {
-                id: "I",
-                name: "W-Pentomino (5)",
-                color: "bg-orange-500 border-orange-600",
-                textColor: "text-orange-100",
-                shape: [
-                    [0, 0],
-                    [1, 0], [1, 1],
-                            [2, 1], [2, 2]
-                ]
-            },
-            {
-                id: "J",
-                name: "Long L (5)",
-                color: "bg-lime-500 border-lime-600",
-                textColor: "text-lime-950",
-                shape: [
-                    [0, 0], [0, 1], [0, 2], [0, 3],
-                    [1, 0]
-                ]
-            }
+            { id: "A", name: "Corner (4)", color: "bg-emerald-500 border-emerald-400 text-slate-950", shape: [[0,0],[0,1],[1,0],[2,0]] },
+            { id: "B", name: "L-Shape (4)", color: "bg-cyan-400 border-cyan-300 text-slate-950", shape: [[0,0],[0,1],[0,2],[1,0]] },
+            { id: "C", name: "Square (4)", color: "bg-violet-500 border-violet-400 text-white", shape: [[0,0],[0,1],[1,0],[1,1]] },
+            { id: "D", name: "T-Pentomino (5)", color: "bg-fuchsia-500 border-fuchsia-400 text-white", shape: [[0,0],[0,1],[0,2],[1,1],[2,1]] },
+            { id: "E", name: "Z-Pentomino (5)", color: "bg-pink-500 border-pink-400 text-white", shape: [[0,1],[0,2],[1,0],[1,1],[2,0]] },
+            { id: "F", name: "I-Pentomino (5)", color: "bg-amber-400 border-amber-300 text-slate-950", shape: [[0,0],[0,1],[0,2],[0,3],[0,4]] },
+            { id: "G", name: "U-Pentomino (5)", color: "bg-teal-400 border-teal-300 text-slate-950", shape: [[0,0],[0,2],[1,0],[1,1],[1,2]] },
+            { id: "H", name: "V-Pentomino (5)", color: "bg-rose-500 border-rose-400 text-white", shape: [[0,0],[0,1],[0,2],[1,0],[2,0]] },
+            { id: "I", name: "W-Pentomino (5)", color: "bg-orange-500 border-orange-400 text-slate-950", shape: [[0,0],[1,0],[1,1],[2,1],[2,2]] },
+            { id: "J", name: "Long L (5)", color: "bg-lime-400 border-lime-300 text-slate-950", shape: [[0,0],[0,1],[0,2],[0,3],[1,0]] }
         ];
 
         let pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
 
-        // State values
-        let selectedPieceId = null;
-        let piecesPlaced = {}; 
-        let historyStack = []; 
-        let targetMonth = 4;   // May (0-indexed)
-        let targetDay = 28;    // 1-31
-        let targetWeekday = 4; // Thursday (0-6)
-        let isDailyMode = false;
-        
-        // Hint-related variables
-        let hintsUsed = 0;
-        let cachedSolverSolution = null; // Cache to hold computed placement solution for target date
-        let stableHintSequence = [];     // Shuffled list of piece IDs for current date hint order
+        // State Machine Storage
+        let selectedPieceId = "A"; // Default to piece A as starting active element
+        let piecesPlaced = {};
+        let historyStack = [];
+        let hintsUsedCount = 0;
+
+        let targetMonth = 4;   // Default May
+        let targetDay = 28;    // Default 28
+        let targetWeekday = 4; // Default Thursday
+        let cachedFullSolution = null;
 
         window.addEventListener('DOMContentLoaded', () => {
-            detectModeAndSetupDate();
+            initTargetDate();
             renderBoard();
             renderTray();
+            updateControlsState();
 
-            // Event Listeners
+            // Setup Global Event Routing
+            document.getElementById('title-display').addEventListener('click', () => toggleModal('info-modal', true));
             document.getElementById('date-picker').addEventListener('change', handleDateChange);
             document.getElementById('rotate-btn').addEventListener('click', rotateSelected);
             document.getElementById('fliph-btn').addEventListener('click', flipHSelected);
             document.getElementById('flipv-btn').addEventListener('click', flipVSelected);
             document.getElementById('clear-piece-btn').addEventListener('click', clearActiveSelection);
-            document.getElementById('reset-btn').addEventListener('click', resetBoard);
             document.getElementById('undo-btn').addEventListener('click', handleUndo);
-            document.getElementById('hint-btn').addEventListener('click', triggerDateSeededHint);
+            document.getElementById('hint-btn').addEventListener('click', injectNextDeterministicHint);
+            
             document.getElementById('info-btn').addEventListener('click', () => toggleModal('info-modal', true));
             document.getElementById('close-modal-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('close-modal-ok-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('success-close-btn').addEventListener('click', () => toggleModal('success-modal', false));
-            document.getElementById('solve-btn').addEventListener('click', solveActivePuzzle);
-            document.getElementById('share-btn').addEventListener('click', shareGameResults);
+            document.getElementById('share-btn').addEventListener('click', handleShareSystemAction);
         });
 
-        // Config mode based on URL query parameter (?mode=daily or ?mode=freeplay)
-        function detectModeAndSetupDate() {
-            const params = new URLSearchParams(window.location.search);
-            const mode = params.get('mode');
-
-            if (mode === 'daily' || mode === 'single') {
-                isDailyMode = true;
-                const today = new Date();
-                setTargetFromDate(today);
-                
-                document.getElementById('mode-badge').classList.remove('hidden');
-                document.getElementById('date-picker-container').classList.add('hidden');
-                document.getElementById('solver-container').classList.add('hidden');
-            } else {
-                isDailyMode = false;
-                const initialDate = new Date("2026-05-28");
-                setTargetFromDate(initialDate);
-                document.getElementById('date-picker').value = "2026-05-28";
-                
-                document.getElementById('mode-badge').classList.add('hidden');
-                document.getElementById('date-picker-container').classList.remove('hidden');
-                document.getElementById('solver-container').classList.remove('hidden');
-            }
-        }
-
-        // Seeding Random Generator with stable date key (Mulberry32 generator)
-        function getSeededRandom(seedStr) {
-            let h = 2166136261 >>> 0;
-            for (let i = 0; i < seedStr.length; i++) {
-                h ^= seedStr.charCodeAt(i);
-                h = Math.imul(h, 16777619) >>> 0;
-            }
-            return function() {
-                h += 0xe120fc15;
-                let z = h;
-                z = Math.imul(z ^ (z >>> 16), 0x21f0aa7c);
-                z = Math.imul(z ^ (z >>> 15), 0x735a2d97);
-                z ^= z >>> 15;
-                return (z >>> 0) / 4294967296;
-            };
-        }
-
-        // Establish the deterministic hint sequence order for any target date
-        function initSeededHintSequence() {
-            const targetStr = `${targetMonth + 1}-${targetDay}-${targetWeekday}`;
-            const rng = getSeededRandom(targetStr);
-            const ids = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
-            
-            // Seeded Fisher-Yates shuffle
-            for (let i = ids.length - 1; i > 0; i--) {
-                const j = Math.floor(rng() * (i + 1));
-                const temp = ids[i];
-                ids[i] = ids[j];
-                ids[j] = temp;
-            }
-            stableHintSequence = ids;
-            cachedSolverSolution = null; // Clear cached solutions for new targets
-        }
-
-        function pushStateToHistory() {
-            const snapshot = JSON.stringify({
-                piecesPlaced,
-                pieces,
-                selectedPieceId,
-                hintsUsed
-            });
-            historyStack.push(snapshot);
-            updateUndoButtonState();
-        }
-
-        function handleUndo() {
-            if (historyStack.length === 0) return;
-            const lastState = JSON.parse(historyStack.pop());
-            
-            piecesPlaced = lastState.piecesPlaced;
-            pieces = lastState.pieces;
-            selectedPieceId = lastState.selectedPieceId;
-            hintsUsed = lastState.hintsUsed || 0;
-
-            updateUndoButtonState();
-            selectPiece(selectedPieceId, false);
-            renderBoard();
-            renderTray();
-            document.getElementById('toast').classList.add('hidden');
-        }
-
-        function updateUndoButtonState() {
-            const undoBtn = document.getElementById('undo-btn');
-            if (historyStack.length > 0) {
-                undoBtn.removeAttribute('disabled');
-            } else {
-                undoBtn.setAttribute('disabled', true);
-            }
-        }
-
-        function handleDateChange(e) {
-            if (isDailyMode || !e.target.value) return;
-            const chosenDate = new Date(e.target.value);
-            const userDate = new Date(chosenDate.getTime() + chosenDate.getTimezoneOffset() * 60000);
-            setTargetFromDate(userDate);
-            resetBoard();
+        function initTargetDate() {
+            const today = new Date();
+            setTargetFromDate(today);
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('date-picker').value = `${yyyy}-${mm}-${dd}`;
         }
 
         function setTargetFromDate(dateObj) {
@@ -548,8 +306,61 @@
             const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
             const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
             
-            document.getElementById('target-display').innerText = `${months[targetMonth]} ${targetDay} ${daysOfWeek[targetWeekday]}`;
-            initSeededHintSequence();
+            const label = `${daysOfWeek[targetWeekday]} ${targetDay} ${months[targetMonth]}`;
+            document.getElementById('target-display').innerText = label;
+            document.getElementById('picker-label-string').innerText = label;
+            
+            cachedFullSolution = null; // Flush hint tracking
+        }
+
+        function handleDateChange(e) {
+            if (!e.target.value) return;
+            const parts = e.target.value.split('-');
+            const chosenDate = new Date(parts[0], parts[1] - 1, parts[2]);
+            setTargetFromDate(chosenDate);
+            resetBoardState();
+        }
+
+        function pushStateToHistory() {
+            historyStack.push(JSON.stringify({
+                piecesPlaced: { ...piecesPlaced },
+                pieces: JSON.parse(JSON.stringify(pieces)),
+                selectedPieceId,
+                hintsUsedCount
+            }));
+            document.getElementById('undo-btn').removeAttribute('disabled');
+        }
+
+        function handleUndo() {
+            if (historyStack.length === 0) return;
+            const lastState = JSON.parse(historyStack.pop());
+            
+            piecesPlaced = lastState.piecesPlaced;
+            pieces = lastState.pieces;
+            selectedPieceId = lastState.selectedPieceId;
+            hintsUsedCount = lastState.hintsUsedCount;
+
+            if (historyStack.length === 0) {
+                document.getElementById('undo-btn').setAttribute('disabled', true);
+            }
+            
+            renderBoard();
+            renderTray();
+            updateControlsState();
+            document.getElementById('toast').classList.add('hidden');
+        }
+
+        function resetBoardState() {
+            historyStack = [];
+            piecesPlaced = {};
+            hintsUsedCount = 0;
+            selectedPieceId = "A";
+            pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
+            document.getElementById('undo-btn').setAttribute('disabled', true);
+            document.getElementById('toast').classList.add('hidden');
+            renderBoard();
+            renderTray();
+            updateControlsState();
         }
 
         function toggleModal(id, show) {
@@ -557,12 +368,12 @@
             if (show) {
                 modal.classList.remove('hidden');
                 if (id === 'success-modal') {
-                    const score = Math.max(0, 10 - hintsUsed);
-                    document.getElementById('success-score').innerText = `${score}/10`;
-                    
                     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
                     const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
                     document.getElementById('success-date-string').innerText = `${months[targetMonth]} ${targetDay} ${daysOfWeek[targetWeekday]}`;
+                    
+                    const score = Math.max(0, 10 - hintsUsedCount);
+                    document.getElementById('success-score-string').innerText = `${score}/10`;
                 }
             } else {
                 modal.classList.add('hidden');
@@ -582,24 +393,22 @@
 
             BOARD_CELLS.forEach((cell, idx) => {
                 const cellDiv = document.createElement('div');
-                cellDiv.dataset.index = idx;
                 cellDiv.dataset.row = cell.r;
                 cellDiv.dataset.col = cell.c;
 
-                let cellClasses = "relative flex items-center justify-center rounded text-[9px] font-black transition-all border select-none ";
+                let classes = "relative flex items-center justify-center rounded-lg text-[10px] font-black transition-all border select-none ";
                 
                 if (cell.type === 'blank') {
-                    cellClasses += "bg-slate-950 border-transparent text-slate-800 opacity-10 cursor-default";
+                    classes += "bg-slate-950 border-transparent text-transparent opacity-0 pointer-events-none";
                 } else if (isTargetCell(cell)) {
-                    cellClasses += "bg-indigo-600 text-indigo-100 border-indigo-400 font-extrabold ring-1 ring-indigo-500 shadow-md cursor-default z-10 scale-[1.02]";
+                    classes += "bg-indigo-600 text-white border-indigo-400 ring-2 ring-indigo-500/50 shadow-md font-black scale-[1.02] z-10";
                 } else {
-                    cellClasses += "bg-slate-800 hover:bg-slate-700/80 text-slate-400 border-slate-700/60 cursor-pointer";
+                    classes += "bg-slate-800 hover:bg-slate-700/80 text-slate-400 border-slate-700/40 cursor-pointer";
                 }
 
-                cellDiv.className = cellClasses;
-                
+                cellDiv.className = classes;
                 if (cell.type !== 'blank') {
-                    cellDiv.innerHTML = `<span class="tracking-tighter">${cell.text}</span>`;
+                    cellDiv.innerHTML = `<span>${cell.text}</span>`;
                 }
 
                 if (cell.type !== 'blank' && !isTargetCell(cell)) {
@@ -637,57 +446,41 @@
             if (canPlacePiece(piece, offsetRow, offsetCol)) {
                 pushStateToHistory();
                 piecesPlaced[piece.id] = { r: offsetRow, c: offsetCol };
-                selectPiece(null, false); 
+                
+                // Advance selection automatically to the next available unplaced piece
+                const nextPiece = pieces.find(p => p.id !== piece.id && piecesPlaced[p.id] === undefined);
+                selectPiece(nextPiece ? nextPiece.id : null, false);
+                
                 renderBoard();
                 renderTray();
                 checkWinState();
             } else {
-                flashValidationWarning();
+                flashWarningBorder();
             }
         }
 
         function getPieceAtCell(row, col) {
             for (const [pieceId, pos] of Object.entries(piecesPlaced)) {
                 const piece = pieces.find(p => p.id === pieceId);
-                const blockMatches = piece.shape.some(([pr, pc]) => {
-                    return (pos.r + pr === row) && (pos.c + pc === col);
-                });
-                if (blockMatches) return pieceId;
+                const match = piece.shape.some(([pr, pc]) => (pos.r + pr === row) && (pos.c + pc === col));
+                if (match) return pieceId;
             }
             return null;
         }
 
         function canPlacePiece(piece, offsetRow, offsetCol, ignorePieceId = null) {
             return piece.shape.every(([pr, pc]) => {
-                const targetR = offsetRow + pr;
-                const targetC = offsetCol + pc;
-
-                if (targetR < 0 || targetR >= 8 || targetC < 0 || targetC >= 7) return false;
-
-                const cell = BOARD_CELLS.find(c => c.r === targetR && c.c === targetC);
+                const tr = offsetRow + pr;
+                const tc = offsetCol + pc;
+                if (tr < 0 || tr >= 8 || tc < 0 || tc >= 7) return false;
+                const cell = BOARD_CELLS.find(c => c.r === tr && c.c === tc);
                 if (!cell || cell.type === 'blank' || isTargetCell(cell)) return false;
-
-                const existingPieceId = getPieceAtCell(targetR, targetC);
-                if (existingPieceId && existingPieceId !== piece.id && existingPieceId !== ignorePieceId) {
-                    return false;
-                }
-
-                return true;
+                const existingId = getPieceAtCell(tr, tc);
+                return (!existingId || existingId === piece.id || existingId === ignorePieceId);
             });
         }
 
         function drawPlacedPieces() {
-            document.querySelectorAll('#board-grid > div').forEach(el => {
-                const cellIdx = parseInt(el.dataset.index);
-                const cell = BOARD_CELLS[cellIdx];
-                if (!cell) return;
-
-                if (cell.type !== 'blank' && !isTargetCell(cell)) {
-                    el.className = "relative flex items-center justify-center rounded text-[9px] font-black transition-all border select-none bg-slate-800 hover:bg-slate-700/80 text-slate-400 border-slate-700/60 cursor-pointer";
-                    el.innerHTML = `<span class="tracking-tighter">${cell.text}</span>`;
-                }
-            });
-
             for (const [pieceId, offset] of Object.entries(piecesPlaced)) {
                 const piece = pieces.find(p => p.id === pieceId);
                 if (!piece) continue;
@@ -695,12 +488,11 @@
                 piece.shape.forEach(([pr, pc]) => {
                     const boardR = offset.r + pr;
                     const boardC = offset.c + pc;
-
-                    const cellEl = document.querySelector(`[data-row="${boardR}"][data-col="${boardC}"]`);
-                    if (cellEl) {
+                    const el = document.querySelector(`[data-row="${boardR}"][data-col="${boardC}"]`);
+                    if (el) {
                         const isSelected = selectedPieceId === pieceId;
-                        cellEl.className = `relative flex items-center justify-center rounded text-[10px] font-black transition-all border select-none cursor-pointer z-10 ${piece.color} ${piece.textColor} ${isSelected ? 'ring-2 ring-white border-white scale-95 shadow-lg' : 'shadow hover:brightness-105'}`;
-                        cellEl.innerHTML = `<span class="text-[10px] font-black tracking-tighter opacity-70 select-none">${piece.id}</span>`;
+                        el.className = `relative flex items-center justify-center rounded-lg text-xs font-black transition-all border select-none cursor-pointer z-10 ${piece.color} ${isSelected ? 'ring-4 ring-white border-white scale-95 shadow-xl' : 'shadow hover:brightness-110'}`;
+                        el.innerHTML = `<span class="opacity-90 select-none">${piece.id}</span>`;
                     }
                 });
             }
@@ -710,157 +502,111 @@
             const trayContainer = document.getElementById('pieces-tray');
             trayContainer.innerHTML = '';
 
-            let unusedCount = 0;
-
             pieces.forEach(piece => {
                 const isPlaced = piecesPlaced[piece.id] !== undefined;
                 const pieceCard = document.createElement('div');
                 const isSelected = selectedPieceId === piece.id;
                 
                 if (isPlaced) {
-                    pieceCard.className = "flex flex-col items-center justify-center p-1 rounded-lg border border-slate-900 bg-slate-900/40 text-slate-700 opacity-20 pointer-events-none select-none h-12";
-                    pieceCard.innerHTML = `
-                        <i class="fa-solid fa-circle-check text-xs"></i>
-                        <span class="text-[7px] font-bold mt-0.5">${piece.id} Placed</span>
-                    `;
+                    pieceCard.className = "flex flex-col items-center justify-center p-1 rounded-xl border border-slate-950 bg-slate-950/40 text-slate-700 opacity-20 pointer-events-none select-none h-12";
+                    pieceCard.innerHTML = `<i class="fa-solid fa-circle-check text-xs"></i>`;
                 } else {
-                    unusedCount++;
-                    pieceCard.className = `flex flex-col items-center justify-center p-1.5 rounded-lg border transition-all cursor-pointer h-12 ${
-                        isSelected ? 'bg-indigo-600 border-indigo-400 text-white scale-105 shadow-md ring-1 ring-indigo-500' : 'bg-slate-850 hover:bg-slate-800 border-slate-800 text-slate-300'
+                    pieceCard.className = `flex flex-col items-center justify-center p-1 rounded-xl border transition-all cursor-pointer h-12 ${
+                        isSelected ? 'bg-indigo-600 border-indigo-400 text-white scale-105 shadow-md ring-2 ring-indigo-500/50' : 'bg-slate-800/90 hover:bg-slate-800 border-slate-700/60 text-slate-300'
                     }`;
 
-                    const minishapeGrid = createMinishape(piece);
-                    pieceCard.appendChild(minishapeGrid);
-
-                    const textLabel = document.createElement('span');
-                    textLabel.className = "text-[8px] font-black mt-1 tracking-wider opacity-90 leading-none";
-                    textLabel.innerText = `PIECE ${piece.id}`;
-                    pieceCard.appendChild(textLabel);
+                    pieceCard.appendChild(createMiniatureShape(piece));
+                    const lbl = document.createElement('span');
+                    lbl.className = "text-[9px] font-black mt-1 tracking-tighter opacity-80";
+                    lbl.innerText = piece.id;
+                    pieceCard.appendChild(lbl);
 
                     pieceCard.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        if (selectedPieceId === piece.id) {
-                            selectPiece(null);
-                        } else {
-                            selectPiece(piece.id);
-                        }
+                        selectPiece(selectedPieceId === piece.id ? null : piece.id);
                     });
                 }
-
                 trayContainer.appendChild(pieceCard);
             });
-
-            const placedCount = 10 - unusedCount;
-            document.getElementById('pieces-status').innerText = `${placedCount} / 10 Placed`;
         }
 
-        function createMinishape(piece) {
+        function createMiniatureShape(piece) {
             const maxR = Math.max(...piece.shape.map(p => p[0]));
             const maxC = Math.max(...piece.shape.map(p => p[1]));
-
             const container = document.createElement('div');
-            container.className = "grid gap-[1px] h-5 w-5 flex-shrink-0 items-center justify-center";
+            container.className = "grid gap-[1px] h-4 w-4 items-center justify-center";
             container.style.gridTemplateRows = `repeat(${maxR + 1}, minmax(0, 1fr))`;
             container.style.gridTemplateColumns = `repeat(${maxC + 1}, minmax(0, 1fr))`;
 
             for (let r = 0; r <= maxR; r++) {
                 for (let c = 0; c <= maxC; c++) {
                     const block = document.createElement('div');
-                    const isOccupied = piece.shape.some(([pr, pc]) => pr === r && pc === c);
-                    block.className = `w-1 h-1 rounded-[0.5px] ${isOccupied ? 'bg-amber-400' : 'bg-transparent'}`;
+                    const active = piece.shape.some(([pr, pc]) => pr === r && pc === c);
+                    block.className = `w-[3px] h-[3px] rounded-[0.5px] ${active ? 'bg-amber-400' : 'bg-transparent'}`;
                     container.appendChild(block);
                 }
             }
             return container;
         }
 
-        function selectPiece(pieceId, pushToHistory = true) {
-            if (pushToHistory && pieceId !== selectedPieceId) {
-                pushStateToHistory();
-            }
-
+        function selectPiece(pieceId, updateUI = true) {
             selectedPieceId = pieceId;
+            updateControlsState();
+            if (updateUI) {
+                renderBoard();
+                renderTray();
+            }
+        }
 
-            const controlGroup = [
+        function updateControlsState() {
+            const btns = [
                 document.getElementById('rotate-btn'),
                 document.getElementById('fliph-btn'),
                 document.getElementById('flipv-btn'),
                 document.getElementById('clear-piece-btn')
             ];
-
-            if (pieceId) {
-                const piece = pieces.find(p => p.id === pieceId);
-                document.getElementById('selected-piece-name').innerText = piece.name;
-                controlGroup.forEach(btn => btn.removeAttribute('disabled'));
+            if (selectedPieceId) {
+                btns.forEach(b => b.removeAttribute('disabled'));
             } else {
-                document.getElementById('selected-piece-name').innerText = 'None';
-                controlGroup.forEach(btn => btn.setAttribute('disabled', true));
+                btns.forEach(b => b.setAttribute('disabled', true));
             }
-
-            renderBoard();
-            renderTray();
         }
 
         function rotateSelected() {
             if (!selectedPieceId) return;
             pushStateToHistory();
-            const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
-            const piece = pieces[pieceIndex];
-
-            let rotatedShape = piece.shape.map(([r, c]) => [c, -r]);
-            normalizeShape(rotatedShape, piece);
-
-            const currentPosition = piecesPlaced[piece.id];
-            if (currentPosition) {
-                if (canPlacePiece(piece, currentPosition.r, currentPosition.c, piece.id)) {
-                    renderBoard();
-                    checkWinState();
-                } else {
-                    flashValidationWarning();
-                }
-            } else {
-                renderTray();
-            }
+            const piece = pieces.find(p => p.id === selectedPieceId);
+            let rotated = piece.shape.map(([r, c]) => [c, -r]);
+            normalizeShape(rotated, piece);
+            syncActivePlacementOrRefresh(piece);
         }
 
         function flipHSelected() {
             if (!selectedPieceId) return;
             pushStateToHistory();
-            const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
-            const piece = pieces[pieceIndex];
-
-            let flippedShape = piece.shape.map(([r, c]) => [r, -c]);
-            normalizeShape(flippedShape, piece);
-
-            const currentPosition = piecesPlaced[piece.id];
-            if (currentPosition) {
-                if (canPlacePiece(piece, currentPosition.r, currentPosition.c, piece.id)) {
-                    renderBoard();
-                    checkWinState();
-                } else {
-                    flashValidationWarning();
-                }
-            } else {
-                renderTray();
-            }
+            const piece = pieces.find(p => p.id === selectedPieceId);
+            let flipped = piece.shape.map(([r, c]) => [r, -c]);
+            normalizeShape(flipped, piece);
+            syncActivePlacementOrRefresh(piece);
         }
 
         function flipVSelected() {
             if (!selectedPieceId) return;
             pushStateToHistory();
-            const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
-            const piece = pieces[pieceIndex];
+            const piece = pieces.find(p => p.id === selectedPieceId);
+            let flipped = piece.shape.map(([r, c]) => [-r, c]);
+            normalizeShape(flipped, piece);
+            syncActivePlacementOrRefresh(piece);
+        }
 
-            let flippedShape = piece.shape.map(([r, c]) => [-r, c]);
-            normalizeShape(flippedShape, piece);
-
-            const currentPosition = piecesPlaced[piece.id];
-            if (currentPosition) {
-                if (canPlacePiece(piece, currentPosition.r, currentPosition.c, piece.id)) {
+        function syncActivePlacementOrRefresh(piece) {
+            const pos = piecesPlaced[piece.id];
+            if (pos) {
+                if (canPlacePiece(piece, pos.r, pos.c, piece.id)) {
                     renderBoard();
                     checkWinState();
                 } else {
-                    flashValidationWarning();
+                    flashWarningBorder();
                 }
             } else {
                 renderTray();
@@ -870,16 +616,8 @@
         function normalizeShape(newShape, pieceObj) {
             const minR = Math.min(...newShape.map(p => p[0]));
             const minC = Math.min(...newShape.map(p => p[1]));
-            
             let adjusted = newShape.map(([r, c]) => [r - minR, c - minC]);
-
-            adjusted.sort((a, b) => {
-                if (a[0] !== b[0]) {
-                    return a[0] - b[0];
-                }
-                return a[1] - b[1];
-            });
-
+            adjusted.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
             pieceObj.shape = adjusted;
         }
 
@@ -889,168 +627,119 @@
                 delete piecesPlaced[selectedPieceId];
             }
             selectPiece(null);
-            renderBoard();
-            renderTray();
         }
 
-        function resetBoard() {
-            pushStateToHistory();
-            piecesPlaced = {};
-            hintsUsed = 0;
-            selectPiece(null, false);
-            pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
-            renderBoard();
-            renderTray();
-            document.getElementById('toast').classList.add('hidden');
-        }
-
-        function flashValidationWarning() {
-            const gridContainer = document.getElementById('board-grid');
-            gridContainer.classList.add('ring-2', 'ring-rose-500/80');
-            setTimeout(() => {
-                gridContainer.classList.remove('ring-2', 'ring-rose-500/80');
-            }, 250);
+        function flashWarningBorder() {
+            const grid = document.getElementById('board-grid');
+            grid.classList.add('ring-4', 'ring-rose-500/80');
+            setTimeout(() => grid.classList.remove('ring-4', 'ring-rose-500/80'), 250);
         }
 
         function checkWinState() {
-            const placedCount = Object.keys(piecesPlaced).length;
-            if (placedCount === 10) {
-                let uncoveredCells = BOARD_CELLS.filter(cell => {
+            if (Object.keys(piecesPlaced).length === 10) {
+                let uncovered = BOARD_CELLS.filter(cell => {
                     if (cell.type === 'blank') return false;
-                    const pieceId = getPieceAtCell(cell.r, cell.c);
-                    return pieceId === null;
+                    return getPieceAtCell(cell.r, cell.c) === null;
                 });
-
-                const isCorrect = uncoveredCells.length === 3 && uncoveredCells.every(c => isTargetCell(c));
-                if (isCorrect) {
+                if (uncovered.length === 3 && uncovered.every(c => isTargetCell(c))) {
                     toggleModal('success-modal', true);
-                    const toast = document.getElementById('toast');
-                    toast.classList.remove('hidden');
-                    setTimeout(() => toast.classList.add('hidden'), 5000);
+                    document.getElementById('toast').classList.remove('hidden');
                 }
             }
         }
 
+        // ==========================================
+        // SEEDED DETERMINISTIC HINT / SOLVER SYSTEM
+        // ==========================================
 
-        // ==========================================
-        // STABLE SHAPE ROTATION & FLIP HELPERS (GLOBAL)
-        // ==========================================
         function getShapeVariations(origShape) {
             const variations = [];
             let curr = origShape;
-
             for (let r = 0; r < 4; r++) {
-                // Rotated 90 deg
                 curr = curr.map(([row, col]) => [col, -row]);
                 variations.push(normalizeShapeCoords(curr));
-
-                // Flipped
                 const flipped = curr.map(([row, col]) => [row, -col]);
                 variations.push(normalizeShapeCoords(flipped));
             }
-
-            // Deduplicate matching structures
             const uniques = [];
             variations.forEach(v => {
-                const exists = uniques.some(u => isIdenticalShape(u, v));
-                if (!exists) uniques.push(v);
+                if (!uniques.some(u => u.length === v.length && u.every((pt, i) => pt[0] === v[i][0] && pt[1] === v[i][1]))) {
+                    uniques.push(v);
+                }
             });
-
             return uniques;
         }
 
         function normalizeShapeCoords(coords) {
             const minR = Math.min(...coords.map(p => p[0]));
             const minC = Math.min(...coords.map(p => p[1]));
-            const norm = coords.map(([r, c]) => [r - minR, c - minC]);
-            return norm.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+            return coords.map(([r, c]) => [r - minR, c - minC]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
         }
 
-        function isIdenticalShape(s1, s2) {
-            if (s1.length !== s2.length) return false;
-            return s1.every((pt, idx) => pt[0] === s2[idx][0] && pt[1] === s2[idx][1]);
+        function generateDeterministicSeed() {
+            const str = `${targetMonth}-${targetDay}-${targetWeekday}`;
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return Math.abs(hash);
         }
-
-
-        // ==========================================
-        // STABLE HINT GENERATION & SOLVER INTEGRATION
-        // ==========================================
 
         function computeFullLayoutSolution() {
-            const solverPieces = ORIGINAL_PIECES.map(p => ({
-                id: p.id,
-                variations: getShapeVariations(p.shape)
-            }));
-
             const gridOccupied = Array(8).fill(null).map(() => Array(7).fill(false));
-            
             BOARD_CELLS.forEach(cell => {
                 if (cell.type === 'blank' || isTargetCell(cell)) {
                     gridOccupied[cell.r][cell.c] = true;
                 }
             });
 
+            const solverPieces = ORIGINAL_PIECES.map(p => ({ id: p.id, variations: getShapeVariations(p.shape) }));
             const solutionPositions = {};
             const placedSet = new Set();
 
             function findNextEmpty() {
                 for (let r = 0; r < 8; r++) {
                     for (let c = 0; c < 7; c++) {
-                        if (!gridOccupied[r][c]) {
-                            return { r, c };
-                        }
+                        if (!gridOccupied[r][c]) return { r, c };
                     }
                 }
                 return null;
             }
 
-            function backtrackSolve() {
-                const nextEmpty = findNextEmpty();
-                if (!nextEmpty) return true;
-
-                const targetRow = nextEmpty.r;
-                const targetCol = nextEmpty.c;
+            function backtrack() {
+                const emptyCell = findNextEmpty();
+                if (!emptyCell) return true;
 
                 for (let pIdx = 0; pIdx < solverPieces.length; pIdx++) {
-                    const pieceInfo = solverPieces[pIdx];
-                    if (placedSet.has(pieceInfo.id)) continue;
+                    const pInfo = solverPieces[pIdx];
+                    if (placedSet.has(pInfo.id)) continue;
 
-                    for (let vIdx = 0; vIdx < pieceInfo.variations.length; vIdx++) {
-                        const shape = pieceInfo.variations[vIdx];
-
+                    for (let vIdx = 0; vIdx < pInfo.variations.length; vIdx++) {
+                        const shape = pInfo.variations[vIdx];
                         for (let bIdx = 0; bIdx < shape.length; bIdx++) {
-                            const anchorBlock = shape[bIdx];
-                            const offsetRow = targetRow - anchorBlock[0];
-                            const offsetCol = targetCol - anchorBlock[1];
+                            const offsetRow = emptyCell.r - shape[bIdx][0];
+                            const offsetCol = emptyCell.c - shape[bIdx][1];
 
                             let fits = true;
                             for (let i = 0; i < shape.length; i++) {
-                                const checkR = offsetRow + shape[i][0];
-                                const checkC = offsetCol + shape[i][1];
-
-                                if (checkR < 0 || checkR >= 8 || checkC < 0 || checkC >= 7 || gridOccupied[checkR][checkC]) {
+                                const cr = offsetRow + shape[i][0];
+                                const cc = offsetCol + shape[i][1];
+                                if (cr < 0 || cr >= 8 || cc < 0 || cc >= 7 || gridOccupied[cr][cc]) {
                                     fits = false;
                                     break;
                                 }
                             }
 
                             if (fits) {
-                                shape.forEach(([pr, pc]) => {
-                                    gridOccupied[offsetRow + pr][offsetCol + pc] = true;
-                                });
-                                placedSet.add(pieceInfo.id);
-                                solutionPositions[pieceInfo.id] = {
-                                    offset: { r: offsetRow, c: offsetCol },
-                                    shape: shape
-                                };
+                                shape.forEach(([pr, pc]) => gridOccupied[offsetRow + pr][offsetCol + pc] = true);
+                                placedSet.add(pInfo.id);
+                                solutionPositions[pInfo.id] = { offset: { r: offsetRow, c: offsetCol }, shape };
 
-                                if (backtrackSolve()) return true;
+                                if (backtrack()) return true;
 
-                                shape.forEach(([pr, pc]) => {
-                                    gridOccupied[offsetRow + pr][offsetCol + pc] = false;
-                                });
-                                placedSet.delete(pieceInfo.id);
-                                delete solutionPositions[pieceInfo.id];
+                                shape.forEach(([pr, pc]) => gridOccupied[offsetRow + pr][offsetCol + pc] = false);
+                                placedSet.delete(pInfo.id);
+                                delete solutionPositions[pInfo.id];
                             }
                         }
                     }
@@ -1058,133 +747,96 @@
                 return false;
             }
 
-            if (backtrackSolve()) {
-                return solutionPositions; // returns map: pieceId -> { offset, shape }
-            }
-            return null;
+            return backtrack() ? solutionPositions : null;
         }
 
-        // Trigger seeded hint placement
-        function triggerDateSeededHint() {
-            // Compute solution layout if not cached
-            if (!cachedSolverSolution) {
-                cachedSolverSolution = computeFullLayoutSolution();
+        function injectNextDeterministicHint() {
+            if (!cachedFullSolution) {
+                document.getElementById('solver-loader').classList.remove('hidden');
+                setTimeout(() => {
+                    cachedFullSolution = computeFullLayoutSolution();
+                    document.getElementById('solver-loader').classList.add('hidden');
+                    processHintInjection();
+                }, 50);
+            } else {
+                processHintInjection();
             }
+        }
 
-            if (!cachedSolverSolution) {
-                alert("This target layout cannot be solved currently.");
+        function processHintInjection() {
+            if (!cachedFullSolution) {
+                alert("This layout permutation cannot be resolved safely.");
                 return;
             }
 
-            // Find the next piece in our stable sequence that is NOT currently placed in its correct spot
-            let targetPieceId = null;
-            for (let i = 0; i < stableHintSequence.length; i++) {
-                const id = stableHintSequence[i];
-                const solvedPlacement = cachedSolverSolution[id];
-                const currentPlacement = piecesPlaced[id];
+            const unplacedIds = ORIGINAL_PIECES.map(p => p.id).filter(id => piecesPlaced[id] === undefined);
+            if (unplacedIds.length === 0) return;
 
-                // Check if current board placement matches exact correct solution coordinates
-                if (!currentPlacement || 
-                    currentPlacement.r !== solvedPlacement.offset.r || 
-                    currentPlacement.c !== solvedPlacement.offset.c) {
-                    targetPieceId = id;
-                    break;
-                }
-            }
+            let seed = generateDeterministicSeed() + hintsUsedCount;
+            const chosenId = unplacedIds[seed % unplacedIds.length];
+            const targetSolution = cachedFullSolution[chosenId];
 
-            if (!targetPieceId) {
-                // All pieces are already correctly placed
-                alert("All pieces are already in their correct places!");
-                return;
-            }
-
-            // Place target piece in its solved configuration
             pushStateToHistory();
-            const solved = cachedSolverSolution[targetPieceId];
             
-            // Adjust piece shape rotation & offset
-            const pieceIdx = pieces.findIndex(p => p.id === targetPieceId);
-            pieces[pieceIdx].shape = JSON.parse(JSON.stringify(solved.shape));
-            piecesPlaced[targetPieceId] = { r: solved.offset.r, c: solved.offset.c };
-            
-            // Mark hint usage
-            hintsUsed++;
+            // Clear space collisions
+            targetSolution.shape.forEach(([pr, pc]) => {
+                const tr = targetSolution.offset.r + pr;
+                const tc = targetSolution.offset.c + pc;
+                const collisionId = getPieceAtCell(tr, tc);
+                if (collisionId) delete piecesPlaced[collisionId];
+            });
 
-            // Clear active selection to prevent conflicts
-            if (selectedPieceId === targetPieceId) {
-                selectedPieceId = null;
-            }
+            const pIdx = pieces.findIndex(p => p.id === chosenId);
+            pieces[pIdx].shape = targetSolution.shape;
+            piecesPlaced[chosenId] = targetSolution.offset;
+            hintsUsedCount++;
+
+            // Set default cursor selection to next unplaced element
+            const nextPiece = pieces.find(p => piecesPlaced[p.id] === undefined);
+            selectPiece(nextPiece ? nextPiece.id : null, false);
 
             renderBoard();
             renderTray();
             checkWinState();
         }
 
-        function solveActivePuzzle() {
-            toggleModal('info-modal', false);
-            const loader = document.getElementById('solver-loader');
-            loader.classList.remove('hidden');
+        // ==========================================
+        // UNIFIED SHARING INTERFACE CONTROLLER
+        // ==========================================
 
-            setTimeout(() => {
-                const solution = computeFullLayoutSolution();
-                loader.classList.add('hidden');
-
-                if (solution) {
-                    pushStateToHistory();
-                    
-                    // Mark as full-solve hints used (0 score)
-                    hintsUsed = 10;
-
-                    for (const [id, sol] of Object.entries(solution)) {
-                        const idx = pieces.findIndex(p => p.id === id);
-                        pieces[idx].shape = sol.shape;
-                        piecesPlaced[id] = sol.offset;
-                    }
-
-                    renderBoard();
-                    renderTray();
-                    checkWinState();
-                } else {
-                    alert("No solution found for this date layout.");
-                }
-            }, 100);
-        }
-
-        function shareGameResults() {
+        function handleShareSystemAction() {
             const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
             const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+            const dateStr = `${months[targetMonth]} ${targetDay}, ${daysOfWeek[targetWeekday]}`;
+            const finalScore = Math.max(0, 10 - hintsUsedCount);
             
-            const dateStr = `${months[targetMonth]} ${targetDay} ${daysOfWeek[targetWeekday]}`;
-            const finalScore = Math.max(0, 10 - hintsUsed);
-            
-            // Draw emojis rating
-            let ratingStars = "⭐".repeat(Math.ceil(finalScore / 2)) || "😅";
-            
-            const textToCopy = `🧩 Calendar Puzzle solved!\n📅 Date: ${dateStr}\n🏆 Score: ${finalScore}/10 ${ratingStars}\n💡 Hints used: ${hintsUsed}\n\nPlay the game here:\n${window.location.href}`;
+            const shareText = `🧩 Puzzle Calendar Daily Challenge\n📅 Target: ${dateStr}\n🏆 Score: ${finalScore}/10\n🔗 Play here: ${window.location.href}`;
 
-            // Handle iframe safe clipboard copy
-            const dummyArea = document.createElement("textarea");
-            document.body.appendChild(dummyArea);
-            dummyArea.value = textToCopy;
-            dummyArea.select();
-            
-            try {
-                const successful = document.execCommand('copy');
-                const btnText = document.getElementById('share-btn-text');
-                if (successful) {
-                    btnText.innerText = "Copied to Clipboard!";
-                    setTimeout(() => {
-                        btnText.innerText = "Share Result";
-                    }, 2000);
-                } else {
-                    alert("Unable to copy. Please manually copy the results.");
-                }
-            } catch (err) {
-                alert("Browser configuration blocked clipboard copy.");
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Puzzle Calendar Solved!',
+                    text: shareText,
+                    url: window.location.href
+                }).catch(() => fallbackClipboardCopy(shareText));
+            } else {
+                fallbackClipboardCopy(shareText);
             }
-            document.body.removeChild(dummyArea);
         }
 
+        function fallbackClipboardCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed'; 
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                alert("📋 Performance stats copied to clipboard!");
+            } catch (err) {
+                console.error("Could not write to canvas context", err);
+            }
+            document.body.removeChild(textarea);
+        }
     </script>
 </body>
 </html>
