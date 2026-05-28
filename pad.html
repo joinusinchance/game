@@ -40,18 +40,23 @@
             </div>
         </div>
 
-        <!-- Date Changer, Reset & Help integrated -->
+        <!-- Date Changer, Undo, Reset & Help integrated -->
         <div class="flex items-center space-x-1.5">
-            <!-- Hidden native input styled as a compact icon button -->
-            <div class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 rounded px-2 py-1 flex items-center space-x-1 text-[10px] font-semibold cursor-pointer border border-slate-700 transition-all">
+            <!-- Dynamic Date Picker Container -->
+            <div id="date-picker-container" class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 rounded px-2 py-1 flex items-center space-x-1 text-[10px] font-semibold cursor-pointer border border-slate-700 transition-all">
                 <i class="fa-solid fa-pen-to-square text-[10px]"></i>
                 <span>Date</span>
                 <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
             </div>
 
-            <!-- Compact Reset Button -->
-            <button id="reset-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all" title="Reset Board">
-                <i class="fa-solid fa-arrow-rotate-left text-xs"></i>
+            <!-- Undo Button (Replaces previous mass-reset actions) -->
+            <button id="undo-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all opacity-30 pointer-events-none" title="Undo Last Move" disabled>
+                <i class="fa-solid fa-arrow-rotate-left text-xs text-indigo-400"></i>
+            </button>
+
+            <!-- Reset Button (Mass clear) -->
+            <button id="reset-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all" title="Clear All Pieces">
+                <i class="fa-solid fa-trash-can text-xs text-rose-400"></i>
             </button>
 
             <!-- Info Button -->
@@ -76,24 +81,28 @@
             </div>
         </div>
 
-        <!-- Controls for Selected Piece (Compact row) -->
+        <!-- Controls for Selected Piece (Compact row with split Flips) -->
         <div class="w-full max-w-[320px] mt-2 px-1 flex items-center justify-between bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/80">
             <div class="flex flex-col justify-center">
                 <span class="text-[8px] uppercase tracking-wider text-slate-500 leading-none">Selected</span>
-                <span id="selected-piece-name" class="text-[11px] font-black text-indigo-400 leading-tight truncate max-w-[120px]">None</span>
+                <span id="selected-piece-name" class="text-[10px] font-black text-indigo-400 leading-tight truncate max-w-[70px]">None</span>
             </div>
             <div class="flex items-center space-x-1">
-                <button id="rotate-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-2.5 py-1 rounded flex items-center space-x-1 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
+                <button id="rotate-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-2 py-1 rounded flex flex-col items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
                     <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
-                    <span class="text-[9px] font-bold">Rotate</span>
+                    <span class="text-[8px] font-bold">Rotate</span>
                 </button>
-                <button id="flip-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-2.5 py-1 rounded flex items-center space-x-1 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
-                    <i class="fa-solid fa-arrow-right-left text-[10px]"></i>
-                    <span class="text-[9px] font-bold">Flip</span>
+                <button id="flip-h-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-2 py-1 rounded flex flex-col items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
+                    <i class="fa-solid fa-arrows-left-right text-[10px]"></i>
+                    <span class="text-[8px] font-bold">Flip H</span>
                 </button>
-                <button id="clear-piece-btn" class="bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 border border-rose-900/40 px-2 py-1 rounded flex items-center space-x-1 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
+                <button id="flip-v-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-2 py-1 rounded flex flex-col items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
+                    <i class="fa-solid fa-arrows-up-down text-[10px]"></i>
+                    <span class="text-[8px] font-bold">Flip V</span>
+                </button>
+                <button id="clear-piece-btn" class="bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 border border-rose-900/40 px-2 py-1 rounded flex flex-col items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
                     <i class="fa-solid fa-trash-can text-[10px]"></i>
-                    <span class="text-[9px] font-bold">Remove</span>
+                    <span class="text-[8px] font-bold">Remove</span>
                 </button>
             </div>
         </div>
@@ -137,7 +146,7 @@
                 <div class="bg-slate-950 p-2 rounded border border-slate-800 mt-2 space-y-1">
                     <p class="font-bold text-white text-[9px] uppercase tracking-wider">Controls:</p>
                     <p>👉 <strong>Tap a piece</strong> in the tray below to select it.</p>
-                    <p>🔄 Use <strong>Rotate/Flip</strong> to orient your active piece.</p>
+                    <p>🔄 Use <strong>Rotate/Flip H/Flip V</strong> to orient your active piece.</p>
                     <p>🎯 <strong>Tap any cell on the board</strong> to place it.</p>
                     <p>🧹 Tap a placed board piece to select it, then tap <strong>Remove</strong> to return it to the tray.</p>
                 </div>
@@ -336,33 +345,98 @@
 
         let pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
 
-        // Initial State values based on May 28, 2026
+        // State parameters
         let selectedPieceId = null;
         let piecesPlaced = {}; 
         let targetMonth = 4;   // May (0-indexed)
         let targetDay = 28;    // 1-31
         let targetWeekday = 4; // Thursday (0-6)
 
+        // Undo History Stack Setup
+        let historyStack = [];
+
         window.addEventListener('DOMContentLoaded', () => {
-            // Setup target with May 28, 2026
-            const initialDate = new Date("2026-05-28");
-            setTargetFromDate(initialDate);
-            document.getElementById('date-picker').value = "2026-05-28";
+            // Read URL mode flags
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = (urlParams.get('mode') || 'freeplay').toLowerCase();
+            const isDailyMode = (mode === 'daily' || mode === 'single');
+
+            const today = new Date();
+            setTargetFromDate(today);
+
+            if (isDailyMode) {
+                // Lock the date container and display a badge
+                const datePickerContainer = document.getElementById('date-picker-container');
+                if (datePickerContainer) {
+                    datePickerContainer.className = "relative bg-indigo-950/60 text-indigo-300 rounded px-2 py-1 flex items-center space-x-1 text-[10px] font-black border border-indigo-900/40 select-none cursor-default";
+                    datePickerContainer.innerHTML = `
+                        <i class="fa-solid fa-lock text-[9px]"></i>
+                        <span>Daily Challenge</span>
+                    `;
+                }
+            } else {
+                // Configure reactive freeplay date picker input
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                document.getElementById('date-picker').value = `${yyyy}-${mm}-${dd}`;
+                document.getElementById('date-picker').addEventListener('change', handleDateChange);
+            }
 
             renderBoard();
             renderTray();
 
-            // Set up Event Listeners
-            document.getElementById('date-picker').addEventListener('change', handleDateChange);
+            // Setup button interactions
             document.getElementById('rotate-btn').addEventListener('click', rotateSelected);
-            document.getElementById('flip-btn').addEventListener('click', flipSelected);
+            document.getElementById('flip-h-btn').addEventListener('click', flipSelectedHorizontal);
+            document.getElementById('flip-v-btn').addEventListener('click', flipSelectedVertical);
             document.getElementById('clear-piece-btn').addEventListener('click', removeSelected);
+            document.getElementById('undo-btn').addEventListener('click', undoLastMove);
             document.getElementById('reset-btn').addEventListener('click', resetBoard);
             document.getElementById('info-btn').addEventListener('click', () => toggleModal('info-modal', true));
             document.getElementById('close-modal-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('close-modal-ok-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('success-close-btn').addEventListener('click', () => toggleModal('success-modal', false));
         });
+
+        function saveStateToHistory() {
+            // Push deep copies to stack
+            historyStack.push(JSON.stringify({
+                piecesPlaced: JSON.parse(JSON.stringify(piecesPlaced)),
+                pieces: JSON.parse(JSON.stringify(pieces))
+            }));
+            
+            // Limit undo depth
+            if (historyStack.length > 50) {
+                historyStack.shift();
+            }
+            updateUndoButtonState();
+        }
+
+        function undoLastMove() {
+            if (historyStack.length === 0) return;
+            const lastState = JSON.parse(historyStack.pop());
+            
+            piecesPlaced = lastState.piecesPlaced;
+            pieces = lastState.pieces;
+            
+            selectPiece(null);
+            renderBoard();
+            renderTray();
+            updateUndoButtonState();
+            document.getElementById('toast').classList.add('hidden');
+        }
+
+        function updateUndoButtonState() {
+            const undoBtn = document.getElementById('undo-btn');
+            if (historyStack.length > 0) {
+                undoBtn.removeAttribute('disabled');
+                undoBtn.classList.remove('opacity-30', 'pointer-events-none');
+            } else {
+                undoBtn.setAttribute('disabled', 'true');
+                undoBtn.classList.add('opacity-30', 'pointer-events-none');
+            }
+        }
 
         function handleDateChange(e) {
             if (!e.target.value) return;
@@ -457,6 +531,7 @@
             const offsetCol = col - firstBlock[1];
 
             if (canPlacePiece(piece, offsetRow, offsetCol)) {
+                saveStateToHistory(); // Save snapshot before making modifications
                 piecesPlaced[piece.id] = { r: offsetRow, c: offsetCol };
                 selectPiece(null); 
                 renderBoard();
@@ -542,7 +617,6 @@
                 const pieceCard = document.createElement('div');
                 const isSelected = selectedPieceId === piece.id;
                 
-                // Keep the card visually represented even if placed, but make it look checked/completed
                 if (isPlaced) {
                     pieceCard.className = "flex flex-col items-center justify-center p-1 rounded-lg border border-slate-900 bg-slate-900/40 text-slate-700 opacity-20 pointer-events-none select-none h-11";
                     pieceCard.innerHTML = `
@@ -601,7 +675,8 @@
 
             const controlGroup = [
                 document.getElementById('rotate-btn'),
-                document.getElementById('flip-btn'),
+                document.getElementById('flip-h-btn'),
+                document.getElementById('flip-v-btn'),
                 document.getElementById('clear-piece-btn')
             ];
 
@@ -620,6 +695,8 @@
 
         function rotateSelected() {
             if (!selectedPieceId) return;
+            saveStateToHistory(); // Snapshot rotation transition
+
             const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
             const piece = pieces[pieceIndex];
 
@@ -639,12 +716,37 @@
             }
         }
 
-        function flipSelected() {
+        function flipSelectedHorizontal() {
             if (!selectedPieceId) return;
+            saveStateToHistory(); // Snapshot horizontal flip transition
+
             const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
             const piece = pieces[pieceIndex];
 
             let flippedShape = piece.shape.map(([r, c]) => [r, -c]);
+            normalizeShape(flippedShape, piece);
+
+            const currentPosition = piecesPlaced[piece.id];
+            if (currentPosition) {
+                if (canPlacePiece(piece, currentPosition.r, currentPosition.c, piece.id)) {
+                    renderBoard();
+                    checkWinState();
+                } else {
+                    flashValidationWarning();
+                }
+            } else {
+                renderTray();
+            }
+        }
+
+        function flipSelectedVertical() {
+            if (!selectedPieceId) return;
+            saveStateToHistory(); // Snapshot vertical flip transition
+
+            const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
+            const piece = pieces[pieceIndex];
+
+            let flippedShape = piece.shape.map(([r, c]) => [-r, c]);
             normalizeShape(flippedShape, piece);
 
             const currentPosition = piecesPlaced[piece.id];
@@ -668,6 +770,8 @@
 
         function removeSelected() {
             if (!selectedPieceId) return;
+            saveStateToHistory(); // Snapshot removal action
+
             delete piecesPlaced[selectedPieceId];
             selectPiece(null);
             renderBoard();
@@ -675,9 +779,12 @@
         }
 
         function resetBoard() {
+            // Full sweep
             piecesPlaced = {};
             selectPiece(null);
             pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
+            historyStack = [];
+            updateUndoButtonState();
             renderBoard();
             renderTray();
             document.getElementById('toast').classList.add('hidden');
