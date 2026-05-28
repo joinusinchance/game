@@ -40,7 +40,7 @@
             </div>
         </div>
 
-        <!-- Mode Indicator, Date, Undo & Help -->
+        <!-- Mode Indicator, Date, Hint, Undo & Help -->
         <div class="flex items-center space-x-1.5">
             <!-- Game Mode Badge or Date Selector -->
             <div id="mode-badge" class="hidden bg-slate-800 border border-slate-700 text-indigo-400 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider">
@@ -51,6 +51,12 @@
                 <span>Date</span>
                 <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
             </div>
+
+            <!-- Seeded Hint Button -->
+            <button id="hint-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 p-1.5 rounded transition-all flex items-center space-x-1" title="Get Seeded Hint">
+                <i class="fa-solid fa-lightbulb"></i>
+                <span class="text-[9px] font-bold hidden sm:inline">Hint</span>
+            </button>
 
             <!-- Incremental Undo Button -->
             <button id="undo-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all disabled:opacity-30 disabled:pointer-events-none" title="Undo Move" disabled>
@@ -112,14 +118,14 @@
             </div>
         </div>
 
-        <!-- Integrated Unused Pieces Drawer directly below previous section (2x5 Grid for 10 pieces) -->
+        <!-- Integrated Unused Pieces Drawer directly below previous section -->
         <div class="w-full max-w-[320px] flex-shrink-0">
             <div class="flex justify-between items-center mb-1 px-1">
                 <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Unused Pieces</span>
                 <span id="pieces-status" class="text-[10px] text-amber-500 font-mono font-bold">0 / 10 placed</span>
             </div>
             
-            <!-- Pieces list Container in a 2x5 Grid layout (Visible simultaneously) -->
+            <!-- Pieces list Container in a 2x5 Grid layout -->
             <div id="pieces-tray" class="grid grid-cols-5 gap-1.5 p-1.5 bg-slate-900 rounded-xl border border-slate-800 min-h-[125px] flex-shrink-0">
                 <!-- All 10 Pieces placed dynamically here -->
             </div>
@@ -183,11 +189,21 @@
             <div class="bg-slate-950 py-2 px-3 rounded-lg mb-4 border border-slate-800">
                 <span class="text-[8px] text-slate-500 block uppercase font-mono tracking-widest">Exposed Date</span>
                 <span id="success-date-string" class="text-sm font-black text-amber-400 tracking-wide uppercase">MAY 28 THU</span>
+                <div class="mt-2 text-indigo-400 text-xs font-bold">
+                    Score: <span id="success-score">10/10</span>
+                </div>
             </div>
             
-            <button id="success-close-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 rounded-lg text-xs font-bold transition-all">
-                Close
-            </button>
+            <div class="space-y-2">
+                <!-- Safe Clipboard Share Button -->
+                <button id="share-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span id="share-btn-text">Share Result</span>
+                </button>
+                <button id="success-close-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 rounded-lg text-xs font-bold transition-all">
+                    Close
+                </button>
+            </div>
         </div>
     </div>
 
@@ -276,7 +292,6 @@
             { text: "SUN", type: "weekday", val: 0, r: 7, c: 6 }
         ];
 
-        // Official 10-piece polyomino set totaling exactly 47 blocks
         const ORIGINAL_PIECES = [
             {
                 id: "A",
@@ -287,7 +302,7 @@
                     [0, 0], [0, 1],
                     [1, 0],
                     [2, 0]
-                ] // 4 blocks
+                ]
             },
             {
                 id: "B",
@@ -297,7 +312,7 @@
                 shape: [
                     [0, 0], [0, 1], [0, 2],
                     [1, 0]
-                ] // 4 blocks
+                ]
             },
             {
                 id: "C",
@@ -307,7 +322,7 @@
                 shape: [
                     [0, 0], [0, 1],
                     [1, 0], [1, 1]
-                ] // 4 blocks
+                ]
             },
             {
                 id: "D",
@@ -318,7 +333,7 @@
                     [0, 0], [0, 1], [0, 2],
                             [1, 1],
                             [2, 1]
-                ] // 5 blocks
+                ]
             },
             {
                 id: "E",
@@ -329,7 +344,7 @@
                             [0, 1], [0, 2],
                     [1, 0], [1, 1],
                     [2, 0]
-                ] // 5 blocks
+                ]
             },
             {
                 id: "F",
@@ -338,7 +353,7 @@
                 textColor: "text-amber-100",
                 shape: [
                     [0, 0], [0, 1], [0, 2], [0, 3], [0, 4]
-                ] // 5 blocks
+                ]
             },
             {
                 id: "G",
@@ -348,7 +363,7 @@
                 shape: [
                     [0, 0],         [0, 2],
                     [1, 0], [1, 1], [1, 2]
-                ] // 5 blocks
+                ]
             },
             {
                 id: "H",
@@ -359,7 +374,7 @@
                     [0, 0], [0, 1], [0, 2],
                     [1, 0],
                     [2, 0]
-                ] // 5 blocks
+                ]
             },
             {
                 id: "I",
@@ -370,7 +385,7 @@
                     [0, 0],
                     [1, 0], [1, 1],
                             [2, 1], [2, 2]
-                ] // 5 blocks
+                ]
             },
             {
                 id: "J",
@@ -380,7 +395,7 @@
                 shape: [
                     [0, 0], [0, 1], [0, 2], [0, 3],
                     [1, 0]
-                ] // 5 blocks
+                ]
             }
         ];
 
@@ -394,6 +409,11 @@
         let targetDay = 28;    // 1-31
         let targetWeekday = 4; // Thursday (0-6)
         let isDailyMode = false;
+        
+        // Hint-related variables
+        let hintsUsed = 0;
+        let cachedSolverSolution = null; // Cache to hold computed placement solution for target date
+        let stableHintSequence = [];     // Shuffled list of piece IDs for current date hint order
 
         window.addEventListener('DOMContentLoaded', () => {
             detectModeAndSetupDate();
@@ -408,11 +428,13 @@
             document.getElementById('clear-piece-btn').addEventListener('click', clearActiveSelection);
             document.getElementById('reset-btn').addEventListener('click', resetBoard);
             document.getElementById('undo-btn').addEventListener('click', handleUndo);
+            document.getElementById('hint-btn').addEventListener('click', triggerDateSeededHint);
             document.getElementById('info-btn').addEventListener('click', () => toggleModal('info-modal', true));
             document.getElementById('close-modal-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('close-modal-ok-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('success-close-btn').addEventListener('click', () => toggleModal('success-modal', false));
             document.getElementById('solve-btn').addEventListener('click', solveActivePuzzle);
+            document.getElementById('share-btn').addEventListener('click', shareGameResults);
         });
 
         // Config mode based on URL query parameter (?mode=daily or ?mode=freeplay)
@@ -422,17 +444,14 @@
 
             if (mode === 'daily' || mode === 'single') {
                 isDailyMode = true;
-                // Lock setup to real current date (May 28, 2026)
                 const today = new Date();
                 setTargetFromDate(today);
                 
-                // Toggle mode elements
                 document.getElementById('mode-badge').classList.remove('hidden');
                 document.getElementById('date-picker-container').classList.add('hidden');
                 document.getElementById('solver-container').classList.add('hidden');
             } else {
                 isDailyMode = false;
-                // Default view target to Thursday, May 28, 2026
                 const initialDate = new Date("2026-05-28");
                 setTargetFromDate(initialDate);
                 document.getElementById('date-picker').value = "2026-05-28";
@@ -443,11 +462,46 @@
             }
         }
 
+        // Seeding Random Generator with stable date key (Mulberry32 generator)
+        function getSeededRandom(seedStr) {
+            let h = 2166136261 >>> 0;
+            for (let i = 0; i < seedStr.length; i++) {
+                h ^= seedStr.charCodeAt(i);
+                h = Math.imul(h, 16777619) >>> 0;
+            }
+            return function() {
+                h += 0xe120fc15;
+                let z = h;
+                z = Math.imul(z ^ (z >>> 16), 0x21f0aa7c);
+                z = Math.imul(z ^ (z >>> 15), 0x735a2d97);
+                z ^= z >>> 15;
+                return (z >>> 0) / 4294967296;
+            };
+        }
+
+        // Establish the deterministic hint sequence order for any target date
+        function initSeededHintSequence() {
+            const targetStr = `${targetMonth + 1}-${targetDay}-${targetWeekday}`;
+            const rng = getSeededRandom(targetStr);
+            const ids = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+            
+            // Seeded Fisher-Yates shuffle
+            for (let i = ids.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                const temp = ids[i];
+                ids[i] = ids[j];
+                ids[j] = temp;
+            }
+            stableHintSequence = ids;
+            cachedSolverSolution = null; // Clear cached solutions for new targets
+        }
+
         function pushStateToHistory() {
             const snapshot = JSON.stringify({
                 piecesPlaced,
                 pieces,
-                selectedPieceId
+                selectedPieceId,
+                hintsUsed
             });
             historyStack.push(snapshot);
             updateUndoButtonState();
@@ -460,9 +514,10 @@
             piecesPlaced = lastState.piecesPlaced;
             pieces = lastState.pieces;
             selectedPieceId = lastState.selectedPieceId;
+            hintsUsed = lastState.hintsUsed || 0;
 
             updateUndoButtonState();
-            selectPiece(selectedPieceId, false); // select without pushing to history
+            selectPiece(selectedPieceId, false);
             renderBoard();
             renderTray();
             document.getElementById('toast').classList.add('hidden');
@@ -494,6 +549,7 @@
             const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
             
             document.getElementById('target-display').innerText = `${months[targetMonth]} ${targetDay} ${daysOfWeek[targetWeekday]}`;
+            initSeededHintSequence();
         }
 
         function toggleModal(id, show) {
@@ -501,6 +557,9 @@
             if (show) {
                 modal.classList.remove('hidden');
                 if (id === 'success-modal') {
+                    const score = Math.max(0, 10 - hintsUsed);
+                    document.getElementById('success-score').innerText = `${score}/10`;
+                    
                     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
                     const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
                     document.getElementById('success-date-string').innerText = `${months[targetMonth]} ${targetDay} ${daysOfWeek[targetWeekday]}`;
@@ -556,7 +615,6 @@
         function handleGridClick(row, col) {
             const clickedPieceId = getPieceAtCell(row, col);
 
-            // If tapping a placed tile segment when no other piece is selected:
             if (!selectedPieceId) {
                 if (clickedPieceId) {
                     selectPiece(clickedPieceId);
@@ -564,7 +622,6 @@
                 return;
             }
 
-            // If a piece is selected and we click its *own* placement location, deselect it
             if (selectedPieceId === clickedPieceId) {
                 selectPiece(null);
                 return;
@@ -573,13 +630,12 @@
             const piece = pieces.find(p => p.id === selectedPieceId);
             if (!piece) return;
 
-            // Target positioning anchored from the absolute top-left coordinate (shape[0])
             const firstBlock = piece.shape[0];
             const offsetRow = row - firstBlock[0];
             const offsetCol = col - firstBlock[1];
 
             if (canPlacePiece(piece, offsetRow, offsetCol)) {
-                pushStateToHistory(); // Record state before mutation
+                pushStateToHistory();
                 piecesPlaced[piece.id] = { r: offsetRow, c: offsetCol };
                 selectPiece(null, false); 
                 renderBoard();
@@ -621,7 +677,6 @@
         }
 
         function drawPlacedPieces() {
-            // Restore default text & backgrounds first
             document.querySelectorAll('#board-grid > div').forEach(el => {
                 const cellIdx = parseInt(el.dataset.index);
                 const cell = BOARD_CELLS[cellIdx];
@@ -633,7 +688,6 @@
                 }
             });
 
-            // Paint pieces and mask/hide covered text
             for (const [pieceId, offset] of Object.entries(piecesPlaced)) {
                 const piece = pieces.find(p => p.id === pieceId);
                 if (!piece) continue;
@@ -645,11 +699,7 @@
                     const cellEl = document.querySelector(`[data-row="${boardR}"][data-col="${boardC}"]`);
                     if (cellEl) {
                         const isSelected = selectedPieceId === pieceId;
-                        
-                        // Layout class
                         cellEl.className = `relative flex items-center justify-center rounded text-[10px] font-black transition-all border select-none cursor-pointer z-10 ${piece.color} ${piece.textColor} ${isSelected ? 'ring-2 ring-white border-white scale-95 shadow-lg' : 'shadow hover:brightness-105'}`;
-                        
-                        // Display only piece letter; hide the underlying date text completely
                         cellEl.innerHTML = `<span class="text-[10px] font-black tracking-tighter opacity-70 select-none">${piece.id}</span>`;
                     }
                 });
@@ -675,7 +725,7 @@
                     `;
                 } else {
                     unusedCount++;
-                    pieceCard.className = `flex flex-col items-center justify-center p-1 rounded-lg border transition-all cursor-pointer h-12 ${
+                    pieceCard.className = `flex flex-col items-center justify-center p-1.5 rounded-lg border transition-all cursor-pointer h-12 ${
                         isSelected ? 'bg-indigo-600 border-indigo-400 text-white scale-105 shadow-md ring-1 ring-indigo-500' : 'bg-slate-850 hover:bg-slate-800 border-slate-800 text-slate-300'
                     }`;
 
@@ -689,7 +739,6 @@
 
                     pieceCard.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        // Tapping selected card deselects it
                         if (selectedPieceId === piece.id) {
                             selectPiece(null);
                         } else {
@@ -758,7 +807,6 @@
             const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
             const piece = pieces[pieceIndex];
 
-            // 90 deg clockwise rotation: (r, c) -> (c, -r)
             let rotatedShape = piece.shape.map(([r, c]) => [c, -r]);
             normalizeShape(rotatedShape, piece);
 
@@ -781,7 +829,6 @@
             const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
             const piece = pieces[pieceIndex];
 
-            // Horizontal flip: reflect across vertical center (r, -c)
             let flippedShape = piece.shape.map(([r, c]) => [r, -c]);
             normalizeShape(flippedShape, piece);
 
@@ -804,7 +851,6 @@
             const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
             const piece = pieces[pieceIndex];
 
-            // Vertical flip: reflect across horizontal center (-r, c)
             let flippedShape = piece.shape.map(([r, c]) => [-r, c]);
             normalizeShape(flippedShape, piece);
 
@@ -821,16 +867,12 @@
             }
         }
 
-        // Normalize coordinates and sort to ensure shape[0] is strictly top-leftmost
         function normalizeShape(newShape, pieceObj) {
             const minR = Math.min(...newShape.map(p => p[0]));
             const minC = Math.min(...newShape.map(p => p[1]));
             
-            // Translate coordinates to positive limits starting from 0
             let adjusted = newShape.map(([r, c]) => [r - minR, c - minC]);
 
-            // Sort coordinates so shape[0] is guaranteed to be the top-leftmost block.
-            // Priority: top row first (r ascending), then leftmost column (c ascending).
             adjusted.sort((a, b) => {
                 if (a[0] !== b[0]) {
                     return a[0] - b[0];
@@ -842,7 +884,6 @@
         }
 
         function clearActiveSelection() {
-            // If the selected piece was placed, remove it
             if (selectedPieceId && piecesPlaced[selectedPieceId]) {
                 pushStateToHistory();
                 delete piecesPlaced[selectedPieceId];
@@ -855,6 +896,7 @@
         function resetBoard() {
             pushStateToHistory();
             piecesPlaced = {};
+            hintsUsed = 0;
             selectPiece(null, false);
             pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
             renderBoard();
@@ -891,30 +933,8 @@
 
 
         // ==========================================
-        // HIGH PERFORMANCE RECURSIVE AUTO-SOLVER
+        // STABLE SHAPE ROTATION & FLIP HELPERS (GLOBAL)
         // ==========================================
-
-        function solveActivePuzzle() {
-            toggleModal('info-modal', false);
-            const loader = document.getElementById('solver-loader');
-            loader.classList.remove('hidden');
-
-            // Allow the loader animation to render before calculations begin
-            setTimeout(() => {
-                const solved = runBacktrackingSolver();
-                loader.classList.add('hidden');
-
-                if (solved) {
-                    renderBoard();
-                    renderTray();
-                    checkWinState();
-                } else {
-                    alert("No solution found for this date. (Note: Ensure the target configuration is correct.)");
-                }
-            }, 100);
-        }
-
-        // Return all mathematically unique rotations and reflections for a shape
         function getShapeVariations(origShape) {
             const variations = [];
             let curr = origShape;
@@ -951,20 +971,19 @@
             return s1.every((pt, idx) => pt[0] === s2[idx][0] && pt[1] === s2[idx][1]);
         }
 
-        function runBacktrackingSolver() {
-            // Reset active board positioning
-            piecesPlaced = {};
-            pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
 
+        // ==========================================
+        // STABLE HINT GENERATION & SOLVER INTEGRATION
+        // ==========================================
+
+        function computeFullLayoutSolution() {
             const solverPieces = ORIGINAL_PIECES.map(p => ({
                 id: p.id,
                 variations: getShapeVariations(p.shape)
             }));
 
-            // Track live coverage state
             const gridOccupied = Array(8).fill(null).map(() => Array(7).fill(false));
             
-            // Mark blank/target blocks as pre-occupied
             BOARD_CELLS.forEach(cell => {
                 if (cell.type === 'blank' || isTargetCell(cell)) {
                     gridOccupied[cell.r][cell.c] = true;
@@ -974,7 +993,6 @@
             const solutionPositions = {};
             const placedSet = new Set();
 
-            // Find the top-leftmost available grid slot to fill
             function findNextEmpty() {
                 for (let r = 0; r < 8; r++) {
                     for (let c = 0; c < 7; c++) {
@@ -988,30 +1006,23 @@
 
             function backtrackSolve() {
                 const nextEmpty = findNextEmpty();
-                if (!nextEmpty) {
-                    return true; // All slots covered perfectly!
-                }
+                if (!nextEmpty) return true;
 
                 const targetRow = nextEmpty.r;
                 const targetCol = nextEmpty.c;
 
-                // Try placing an unused piece to cover this first available slot
                 for (let pIdx = 0; pIdx < solverPieces.length; pIdx++) {
                     const pieceInfo = solverPieces[pIdx];
                     if (placedSet.has(pieceInfo.id)) continue;
 
-                    // Try every rotation/flip variation
                     for (let vIdx = 0; vIdx < pieceInfo.variations.length; vIdx++) {
                         const shape = pieceInfo.variations[vIdx];
 
-                        // To cover the (targetRow, targetCol) slot, one of the shape blocks must land on it.
-                        // Try mapping each block of the shape to align with the empty target cell.
                         for (let bIdx = 0; bIdx < shape.length; bIdx++) {
                             const anchorBlock = shape[bIdx];
                             const offsetRow = targetRow - anchorBlock[0];
                             const offsetCol = targetCol - anchorBlock[1];
 
-                            // Validate fit
                             let fits = true;
                             for (let i = 0; i < shape.length; i++) {
                                 const checkR = offsetRow + shape[i][0];
@@ -1024,7 +1035,6 @@
                             }
 
                             if (fits) {
-                                // Commit temporary placement state
                                 shape.forEach(([pr, pc]) => {
                                     gridOccupied[offsetRow + pr][offsetCol + pc] = true;
                                 });
@@ -1034,12 +1044,8 @@
                                     shape: shape
                                 };
 
-                                // Recurse
-                                if (backtrackSolve()) {
-                                    return true;
-                                }
+                                if (backtrackSolve()) return true;
 
-                                // Undo state on failure
                                 shape.forEach(([pr, pc]) => {
                                     gridOccupied[offsetRow + pr][offsetCol + pc] = false;
                                 });
@@ -1049,22 +1055,134 @@
                         }
                     }
                 }
-
                 return false;
             }
 
-            const success = backtrackSolve();
-
-            if (success) {
-                // Apply solution coordinates to live state
-                for (const [id, sol] of Object.entries(solutionPositions)) {
-                    const idx = pieces.findIndex(p => p.id === id);
-                    pieces[idx].shape = sol.shape;
-                    piecesPlaced[id] = sol.offset;
-                }
-                return true;
+            if (backtrackSolve()) {
+                return solutionPositions; // returns map: pieceId -> { offset, shape }
             }
-            return false;
+            return null;
+        }
+
+        // Trigger seeded hint placement
+        function triggerDateSeededHint() {
+            // Compute solution layout if not cached
+            if (!cachedSolverSolution) {
+                cachedSolverSolution = computeFullLayoutSolution();
+            }
+
+            if (!cachedSolverSolution) {
+                alert("This target layout cannot be solved currently.");
+                return;
+            }
+
+            // Find the next piece in our stable sequence that is NOT currently placed in its correct spot
+            let targetPieceId = null;
+            for (let i = 0; i < stableHintSequence.length; i++) {
+                const id = stableHintSequence[i];
+                const solvedPlacement = cachedSolverSolution[id];
+                const currentPlacement = piecesPlaced[id];
+
+                // Check if current board placement matches exact correct solution coordinates
+                if (!currentPlacement || 
+                    currentPlacement.r !== solvedPlacement.offset.r || 
+                    currentPlacement.c !== solvedPlacement.offset.c) {
+                    targetPieceId = id;
+                    break;
+                }
+            }
+
+            if (!targetPieceId) {
+                // All pieces are already correctly placed
+                alert("All pieces are already in their correct places!");
+                return;
+            }
+
+            // Place target piece in its solved configuration
+            pushStateToHistory();
+            const solved = cachedSolverSolution[targetPieceId];
+            
+            // Adjust piece shape rotation & offset
+            const pieceIdx = pieces.findIndex(p => p.id === targetPieceId);
+            pieces[pieceIdx].shape = JSON.parse(JSON.stringify(solved.shape));
+            piecesPlaced[targetPieceId] = { r: solved.offset.r, c: solved.offset.c };
+            
+            // Mark hint usage
+            hintsUsed++;
+
+            // Clear active selection to prevent conflicts
+            if (selectedPieceId === targetPieceId) {
+                selectedPieceId = null;
+            }
+
+            renderBoard();
+            renderTray();
+            checkWinState();
+        }
+
+        function solveActivePuzzle() {
+            toggleModal('info-modal', false);
+            const loader = document.getElementById('solver-loader');
+            loader.classList.remove('hidden');
+
+            setTimeout(() => {
+                const solution = computeFullLayoutSolution();
+                loader.classList.add('hidden');
+
+                if (solution) {
+                    pushStateToHistory();
+                    
+                    // Mark as full-solve hints used (0 score)
+                    hintsUsed = 10;
+
+                    for (const [id, sol] of Object.entries(solution)) {
+                        const idx = pieces.findIndex(p => p.id === id);
+                        pieces[idx].shape = sol.shape;
+                        piecesPlaced[id] = sol.offset;
+                    }
+
+                    renderBoard();
+                    renderTray();
+                    checkWinState();
+                } else {
+                    alert("No solution found for this date layout.");
+                }
+            }, 100);
+        }
+
+        function shareGameResults() {
+            const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+            
+            const dateStr = `${months[targetMonth]} ${targetDay} ${daysOfWeek[targetWeekday]}`;
+            const finalScore = Math.max(0, 10 - hintsUsed);
+            
+            // Draw emojis rating
+            let ratingStars = "⭐".repeat(Math.ceil(finalScore / 2)) || "😅";
+            
+            const textToCopy = `🧩 Calendar Puzzle solved!\n📅 Date: ${dateStr}\n🏆 Score: ${finalScore}/10 ${ratingStars}\n💡 Hints used: ${hintsUsed}\n\nPlay the game here:\n${window.location.href}`;
+
+            // Handle iframe safe clipboard copy
+            const dummyArea = document.createElement("textarea");
+            document.body.appendChild(dummyArea);
+            dummyArea.value = textToCopy;
+            dummyArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                const btnText = document.getElementById('share-btn-text');
+                if (successful) {
+                    btnText.innerText = "Copied to Clipboard!";
+                    setTimeout(() => {
+                        btnText.innerText = "Share Result";
+                    }, 2000);
+                } else {
+                    alert("Unable to copy. Please manually copy the results.");
+                }
+            } catch (err) {
+                alert("Browser configuration blocked clipboard copy.");
+            }
+            document.body.removeChild(dummyArea);
         }
 
     </script>
