@@ -9,187 +9,168 @@
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Modern touch device optimization */
+        /* Touch device optimizations */
         body {
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Custom scrollbar for piece tray */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
-        /* Grid styling */
+        /* Custom board grid sizing for maximum screen fitting */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
-            gap: 4px;
+            gap: 3px;
         }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between overflow-hidden font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-hidden font-sans">
 
-    <!-- Header Section -->
-    <header class="bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center justify-between z-10 shadow-md">
+    <!-- Unified Ultra-Compact Top Bar -->
+    <header class="bg-slate-900 border-b border-slate-800 px-3 py-2 flex items-center justify-between z-20 shadow-md">
+        <!-- Logo & Active Target in one line -->
         <div class="flex items-center space-x-2">
-            <div class="bg-indigo-600 p-2 rounded-lg text-white">
-                <i class="fa-solid fa-calendar-days text-xl"></i>
+            <div class="bg-indigo-600 px-2 py-1 rounded text-white flex items-center justify-center">
+                <i class="fa-solid fa-calendar-days text-xs"></i>
             </div>
-            <div>
-                <h1 class="text-base font-bold text-white tracking-wide">Calendar Puzzle</h1>
-                <p class="text-[10px] text-slate-400">Uncover today's date!</p>
+            <div class="flex flex-col">
+                <h1 class="text-xs font-black tracking-wider text-slate-200 uppercase leading-none">Puzzle Calendar</h1>
+                <div class="flex items-center space-x-1.5 mt-0.5">
+                    <span class="text-[10px] text-slate-400">Target:</span>
+                    <span id="target-display" class="text-[11px] font-black text-amber-400 tracking-wide">MAY 28 THU</span>
+                </div>
             </div>
         </div>
-        <div class="flex items-center space-x-2">
-            <button id="reset-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all">
-                <i class="fa-solid fa-rotate-left"></i>
-                <span>Reset</span>
+
+        <!-- Date Changer, Reset & Help integrated -->
+        <div class="flex items-center space-x-1.5">
+            <!-- Hidden native input styled as a compact icon button -->
+            <div class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 rounded px-2 py-1 flex items-center space-x-1 text-[10px] font-semibold cursor-pointer border border-slate-700 transition-all">
+                <i class="fa-solid fa-pen-to-square text-[10px]"></i>
+                <span>Date</span>
+                <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+            </div>
+
+            <!-- Compact Reset Button -->
+            <button id="reset-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all" title="Reset Board">
+                <i class="fa-solid fa-arrow-rotate-left text-xs"></i>
             </button>
-            <button id="solve-btn" class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 shadow transition-all">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <span>Solve</span>
-            </button>
-            <button id="info-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 p-1.5 rounded-lg text-xs transition-all">
-                <i class="fa-solid fa-circle-info text-base"></i>
+
+            <!-- Info Button -->
+            <button id="info-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all" title="Instructions">
+                <i class="fa-solid fa-circle-question text-xs"></i>
             </button>
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="flex-1 flex flex-col items-center justify-center p-2 md:p-4 overflow-y-auto w-full max-w-md mx-auto">
+    <main class="flex-1 flex flex-col items-center justify-center p-2 overflow-y-auto w-full max-w-md mx-auto relative">
         
-        <!-- Target Date Status & Config -->
-        <div class="w-full flex items-center justify-between px-2 mb-2 bg-slate-800/50 py-1.5 rounded-lg border border-slate-700/50">
-            <div class="text-xs text-slate-400">
-                Target: <span id="target-display" class="font-bold text-indigo-400">-- -- --</span>
-            </div>
-            <div class="flex items-center space-x-1">
-                <label for="date-picker" class="text-[10px] text-slate-400 mr-1">Change Date:</label>
-                <input type="date" id="date-picker" class="bg-slate-700 border border-slate-600 rounded text-xs px-1 py-0.5 text-slate-100 outline-none focus:border-indigo-500">
-            </div>
+        <!-- Floating/Toast Notification (Overlay so it doesn't push down layout) -->
+        <div id="toast" class="hidden absolute top-3 left-1/2 -translate-x-1/2 z-30 w-[90%] text-center py-2 px-4 rounded-xl text-xs font-bold bg-indigo-600 border border-indigo-400 text-white shadow-xl animate-bounce">
+            🎉 Puzzle Solved! Target date exposed perfectly!
         </div>
 
-        <!-- Notification Bar -->
-        <div id="toast" class="hidden w-full text-center py-2 px-4 rounded-lg text-xs font-semibold mb-2 bg-indigo-600/20 border border-indigo-500 text-indigo-200 animate-pulse">
-            Awesome! You left only the target date exposed!
-        </div>
-
-        <!-- Calendar Board Area -->
-        <div class="w-full aspect-square max-w-[360px] bg-slate-950 p-2 rounded-2xl border-2 border-slate-700 shadow-inner relative flex flex-col justify-between">
+        <!-- Calendar Board Area (Scaled dynamically) -->
+        <div class="w-full aspect-square max-w-[320px] bg-slate-900 p-1.5 rounded-xl border border-slate-800 shadow-2xl relative flex flex-col justify-between">
             <div id="board-grid" class="calendar-grid w-full h-full">
                 <!-- Grid Cells generated dynamically by JS -->
             </div>
         </div>
 
-        <!-- Controls for Selected Piece -->
-        <div class="w-full max-w-[360px] mt-3 px-2 flex items-center justify-between bg-slate-800/80 border border-slate-700/80 p-2 rounded-xl shadow">
-            <div class="flex flex-col">
-                <span class="text-[10px] text-slate-400">Selected Piece:</span>
-                <span id="selected-piece-name" class="text-xs font-bold text-amber-400">None</span>
+        <!-- Controls for Selected Piece (Compact row) -->
+        <div class="w-full max-w-[320px] mt-2 px-1 flex items-center justify-between bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/80">
+            <div class="flex flex-col justify-center">
+                <span class="text-[8px] uppercase tracking-wider text-slate-500 leading-none">Selected</span>
+                <span id="selected-piece-name" class="text-[11px] font-black text-indigo-400 leading-tight truncate max-w-[120px]">None</span>
             </div>
-            <div class="flex items-center space-x-2">
-                <button id="rotate-btn" class="bg-slate-700 hover:bg-slate-600 text-white w-10 h-10 rounded-lg flex flex-col items-center justify-center transition-all disabled:opacity-40" disabled>
-                    <i class="fa-solid fa-arrows-rotate text-sm"></i>
-                    <span class="text-[8px] mt-0.5">Rotate</span>
+            <div class="flex items-center space-x-1">
+                <button id="rotate-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-2.5 py-1 rounded flex items-center space-x-1 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
+                    <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
+                    <span class="text-[9px] font-bold">Rotate</span>
                 </button>
-                <button id="flip-btn" class="bg-slate-700 hover:bg-slate-600 text-white w-10 h-10 rounded-lg flex flex-col items-center justify-center transition-all disabled:opacity-40" disabled>
-                    <i class="fa-solid fa-arrow-right-left text-sm"></i>
-                    <span class="text-[8px] mt-0.5">Flip</span>
+                <button id="flip-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-2.5 py-1 rounded flex items-center space-x-1 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
+                    <i class="fa-solid fa-arrow-right-left text-[10px]"></i>
+                    <span class="text-[9px] font-bold">Flip</span>
                 </button>
-                <button id="clear-piece-btn" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 w-10 h-10 rounded-lg flex flex-col items-center justify-center transition-all border border-rose-800/30 disabled:opacity-40" disabled>
-                    <i class="fa-solid fa-trash-can text-sm"></i>
-                    <span class="text-[8px] mt-0.5">Remove</span>
+                <button id="clear-piece-btn" class="bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 border border-rose-900/40 px-2 py-1 rounded flex items-center space-x-1 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
+                    <i class="fa-solid fa-trash-can text-[10px]"></i>
+                    <span class="text-[9px] font-bold">Remove</span>
                 </button>
             </div>
         </div>
 
     </main>
 
-    <!-- Bottom Tray / Pieces Drawer -->
-    <footer class="bg-slate-800 border-t border-slate-700 px-3 py-3 w-full">
+    <!-- Bottom Tray (A neat 2x4 grid to fit all 8 pieces visible simultaneously) -->
+    <footer class="bg-slate-900 border-t border-slate-800 px-3 py-2 w-full">
         <div class="max-w-md mx-auto">
-            <div class="flex justify-between items-center mb-1.5 px-1">
-                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Unused Pieces</span>
-                <span id="pieces-status" class="text-[10px] text-indigo-400 font-mono">0 / 8 placed</span>
+            <div class="flex justify-between items-center mb-1 px-1">
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Unused Pieces Drawer</span>
+                <span id="pieces-status" class="text-[10px] text-amber-500 font-mono font-bold">0 / 8 placed</span>
             </div>
             
-            <!-- Pieces list Container -->
-            <div id="pieces-tray" class="flex overflow-x-auto space-x-3 py-2 px-1 no-scrollbar items-center justify-start h-24 bg-slate-900/60 rounded-xl border border-slate-800">
-                <!-- Pieces generated dynamically here -->
+            <!-- Pieces list Container in a 2-Row Grid layout (No scroll!) -->
+            <div id="pieces-tray" class="grid grid-cols-4 gap-2 p-1.5 bg-slate-950 rounded-xl border border-slate-800 min-h-[110px]">
+                <!-- All 8 Pieces placed dynamically here -->
             </div>
         </div>
     </footer>
 
     <!-- Informational Modal / Instructions -->
-    <div id="info-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+    <div id="info-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-5 shadow-2xl relative">
             <button id="close-modal-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-                <i class="fa-solid fa-xmark text-lg"></i>
+                <i class="fa-solid fa-xmark text-sm"></i>
             </button>
-            <h3 class="text-lg font-bold text-white mb-3 flex items-center space-x-2">
+            <h3 class="text-sm font-black text-white mb-2 flex items-center space-x-2 uppercase tracking-wide">
                 <i class="fa-solid fa-circle-question text-indigo-400"></i>
                 <span>How to Play</span>
             </h3>
-            <div class="space-y-3 text-slate-300 text-xs leading-relaxed">
+            <div class="space-y-2 text-slate-300 text-[11px] leading-relaxed">
                 <p>
-                    The calendar grid shows the 12 months, 31 days, and 7 weekdays.
+                    Cover the calendar grid with the 8 puzzle pieces so that <strong>only today's date</strong> remains exposed:
                 </p>
-                <p>
-                    Your objective is to place all <strong>8 polyomino puzzle pieces</strong> onto the board so that they cover exactly 43 cells, leaving **only 3 cells uncovered**:
-                </p>
-                <ul class="list-disc pl-5 space-y-1 text-slate-400 font-semibold">
-                    <li>The current Month (e.g., <span class="text-indigo-300">MAY</span>)</li>
-                    <li>The current Day of Month (e.g., <span class="text-indigo-300">28</span>)</li>
-                    <li>The current Day of Week (e.g., <span class="text-indigo-300">THU</span>)</li>
+                <ul class="list-disc pl-4 space-y-0.5 text-slate-400 font-bold">
+                    <li>The Month (e.g. <span class="text-indigo-300">MAY</span>)</li>
+                    <li>The Day of Month (e.g. <span class="text-indigo-300">28</span>)</li>
+                    <li>The Day of Week (e.g. <span class="text-indigo-300">THU</span>)</li>
                 </ul>
-                <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700/50 mt-2 space-y-1.5">
-                    <p class="font-bold text-white text-[11px] uppercase tracking-wider">Controls:</p>
-                    <p>👉 <strong>Tap a piece</strong> in the bottom tray to select it.</p>
-                    <p>🔄 Use the <strong>Rotate/Flip</strong> buttons to orient your selected piece.</p>
-                    <p>🎯 <strong>Tap any cell on the board</strong> to place/move the selected piece to that location.</p>
-                    <p>🧹 <strong>Double tap</strong> a piece on the board or use the <strong>Remove</strong> button to put it back in the tray.</p>
+                <div class="bg-slate-950 p-2 rounded border border-slate-800 mt-2 space-y-1">
+                    <p class="font-bold text-white text-[9px] uppercase tracking-wider">Controls:</p>
+                    <p>👉 <strong>Tap a piece</strong> in the tray below to select it.</p>
+                    <p>🔄 Use <strong>Rotate/Flip</strong> to orient your active piece.</p>
+                    <p>🎯 <strong>Tap any cell on the board</strong> to place it.</p>
+                    <p>🧹 Tap a placed board piece to select it, then tap <strong>Remove</strong> to return it to the tray.</p>
                 </div>
             </div>
-            <button id="close-modal-ok-btn" class="w-full mt-5 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-bold transition-all">
-                Got It!
+            <button id="close-modal-ok-btn" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded-lg text-xs font-bold transition-all">
+                Let's Play!
             </button>
         </div>
     </div>
 
     <!-- Celebration/Success Modal -->
-    <div id="success-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-gradient-to-b from-indigo-900 to-slate-900 border-2 border-indigo-500 rounded-3xl max-w-xs w-full p-6 text-center shadow-2xl relative overflow-hidden">
-            <div class="absolute -top-12 -left-12 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl"></div>
-            <div class="absolute -bottom-12 -right-12 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl"></div>
-            
-            <div class="w-16 h-16 bg-indigo-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce shadow-lg shadow-indigo-500/50">
-                <i class="fa-solid fa-trophy text-2xl"></i>
+    <div id="success-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gradient-to-b from-indigo-950 to-slate-900 border-2 border-indigo-500 rounded-2xl max-w-xs w-full p-5 text-center shadow-2xl relative">
+            <div class="w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 animate-bounce shadow-lg">
+                <i class="fa-solid fa-trophy text-xl"></i>
             </div>
             
-            <h3 class="text-xl font-black text-white mb-1">Puzzle Solved!</h3>
-            <p class="text-[11px] text-slate-300 mb-4">You successfully completed today's configuration!</p>
+            <h3 class="text-base font-black text-white mb-1 uppercase tracking-wide">Puzzle Solved!</h3>
+            <p class="text-[10px] text-slate-400 mb-3">You completed today's date combination successfully!</p>
             
-            <div class="bg-slate-950/60 py-3 px-4 rounded-xl mb-5 border border-slate-800">
-                <span class="text-[10px] text-slate-400 block uppercase font-mono tracking-widest">Exposed Date</span>
-                <span id="success-date-string" class="text-lg font-black text-amber-400 tracking-wide uppercase">MAY 28 THU</span>
+            <div class="bg-slate-950 py-2 px-3 rounded-lg mb-4 border border-slate-800">
+                <span class="text-[8px] text-slate-500 block uppercase font-mono tracking-widest">Exposed Date</span>
+                <span id="success-date-string" class="text-sm font-black text-amber-400 tracking-wide uppercase">MAY 28 THU</span>
             </div>
             
-            <button id="success-close-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md">
-                Awesome!
+            <button id="success-close-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 rounded-lg text-xs font-bold transition-all">
+                Close
             </button>
         </div>
     </div>
 
     <script>
         // Set up Board Coordinates and Constants
-        // Grid structure: 8 rows, 7 columns.
-        // Index mapping:
-        // Rows 0-1: Months
-        // Rows 2-5: Days 1-31 (except blank slots)
-        // Rows 6-7: Weekdays (and blank slots)
         const BOARD_CELLS = [
             // Row 0
             { text: "JAN", type: "month", val: 0, r: 0, c: 0 },
@@ -264,9 +245,6 @@
             { text: "SUN", type: "weekday", val: 0, r: 7, c: 6 }
         ];
 
-        // Define puzzle pieces (All 8 polyominos totaling 43 grid blocks)
-        // Each piece is defined with local coordinates relative to an origin (0,0).
-        // Each piece has a unique ID, size, layout color, name, and visual preview layout
         const ORIGINAL_PIECES = [
             {
                 id: "A",
@@ -276,18 +254,18 @@
                 shape: [
                     [0, 0], [0, 1], [0, 2],
                     [1, 0],         [1, 2]
-                ] // U shape (5 blocks)
+                ]
             },
             {
                 id: "B",
-                name: "Corner-Block",
+                name: "Corner Block",
                 color: "bg-sky-500 border-sky-600",
                 textColor: "text-sky-100",
                 shape: [
                     [0, 0], [0, 1], [0, 2],
                     [1, 0],
                     [2, 0]
-                ] // L-like Corner (5 blocks)
+                ]
             },
             {
                 id: "C",
@@ -297,7 +275,7 @@
                 shape: [
                     [0, 0], [0, 1], [0, 2], [0, 3],
                     [1, 0]
-                ] // L-shape (5 blocks)
+                ]
             },
             {
                 id: "D",
@@ -308,7 +286,7 @@
                     [0, 0], [0, 1], [0, 2],
                             [1, 1],
                             [2, 1]
-                ] // T-shape (5 blocks)
+                ]
             },
             {
                 id: "E",
@@ -319,7 +297,7 @@
                             [0, 1], [0, 2],
                     [1, 0], [1, 1],
                     [2, 0]
-                ] // Z/S step shape (5 blocks)
+                ]
             },
             {
                 id: "F",
@@ -330,18 +308,18 @@
                     [0, 0], [0, 1],
                             [1, 1], [1, 2],
                                     [2, 2]
-                ] // W-shape (5 blocks)
+                ]
             },
             {
                 id: "G",
-                name: "Zigzag-Long",
+                name: "Zigzag Block",
                 color: "bg-teal-500 border-teal-600",
                 textColor: "text-teal-100",
                 shape: [
                     [0, 0], [0, 1],
                             [1, 1],
                             [2, 1], [2, 2]
-                ] // Step Z shape (6 blocks)
+                ]
             },
             {
                 id: "H",
@@ -352,79 +330,63 @@
                     [0, 0], [0, 1], [0, 2],
                     [1, 0], [1, 1], [1, 2],
                     [2, 0]
-                ] // Fat L block (7 blocks)
+                ]
             }
         ];
 
-        // Clone shapes to preserve original definitions
         let pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
 
-        // State variables
+        // Initial State values based on May 28, 2026
         let selectedPieceId = null;
-        let piecesPlaced = {}; // Map of piece.id -> { r, c } offset coordinates on grid
+        let piecesPlaced = {}; 
         let targetMonth = 4;   // May (0-indexed)
         let targetDay = 28;    // 1-31
-        let targetWeekday = 4; // Thursday (0-6, Sunday is 0)
+        let targetWeekday = 4; // Thursday (0-6)
 
-        // Initialize App on DOM Load
         window.addEventListener('DOMContentLoaded', () => {
-            // Set current initial date to 2026-05-28
+            // Setup target with May 28, 2026
             const initialDate = new Date("2026-05-28");
             setTargetFromDate(initialDate);
-            
-            // Set date picker value to 2026-05-28
             document.getElementById('date-picker').value = "2026-05-28";
 
-            // Draw Board and Pieces Tray
             renderBoard();
             renderTray();
 
-            // Set up Global Listeners
+            // Set up Event Listeners
             document.getElementById('date-picker').addEventListener('change', handleDateChange);
             document.getElementById('rotate-btn').addEventListener('click', rotateSelected);
             document.getElementById('flip-btn').addEventListener('click', flipSelected);
             document.getElementById('clear-piece-btn').addEventListener('click', removeSelected);
             document.getElementById('reset-btn').addEventListener('click', resetBoard);
-            document.getElementById('solve-btn').addEventListener('click', solvePuzzle);
             document.getElementById('info-btn').addEventListener('click', () => toggleModal('info-modal', true));
             document.getElementById('close-modal-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('close-modal-ok-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('success-close-btn').addEventListener('click', () => toggleModal('success-modal', false));
         });
 
-        // Parse date change
         function handleDateChange(e) {
             if (!e.target.value) return;
             const chosenDate = new Date(e.target.value);
-            // Compensate for local timezone issues to extract correct UTC date details
             const userDate = new Date(chosenDate.getTime() + chosenDate.getTimezoneOffset() * 60000);
             setTargetFromDate(userDate);
             resetBoard();
         }
 
-        // Apply given date targets
         function setTargetFromDate(dateObj) {
             targetMonth = dateObj.getMonth();
             targetDay = dateObj.getDate();
             targetWeekday = dateObj.getDay();
 
-            // Update Target UI Display
             const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
             const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
             
-            const monthStr = months[targetMonth];
-            const dayStr = targetDay;
-            const weekdayStr = daysOfWeek[targetWeekday];
-
-            document.getElementById('target-display').innerText = `${monthStr} ${dayStr} ${weekdayStr}`;
+            document.getElementById('target-display').innerText = `${months[targetMonth]} ${targetDay} ${daysOfWeek[targetWeekday]}`;
         }
 
-        // Toggle modal display
         function toggleModal(id, show) {
             const modal = document.getElementById(id);
             if (show) {
                 modal.classList.remove('hidden');
-                // Fill target string in success modal
                 if (id === 'success-modal') {
                     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
                     const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -435,7 +397,6 @@
             }
         }
 
-        // Helper to check if a grid coordinate matches the target date cell
         function isTargetCell(cell) {
             if (cell.type === 'month' && cell.val === targetMonth) return true;
             if (cell.type === 'day' && cell.val === targetDay) return true;
@@ -443,38 +404,32 @@
             return false;
         }
 
-        // Render Calendar Board Cells
         function renderBoard() {
             const gridContainer = document.getElementById('board-grid');
             gridContainer.innerHTML = '';
 
-            // Generate HTML for each of the 8x7 cells
             BOARD_CELLS.forEach((cell, idx) => {
                 const cellDiv = document.createElement('div');
                 cellDiv.dataset.index = idx;
                 cellDiv.dataset.row = cell.r;
                 cellDiv.dataset.col = cell.c;
 
-                // Default classes for blank, normal or target cells
-                let cellClasses = "relative flex items-center justify-center rounded-lg text-[10px] font-black transition-all border select-none ";
+                let cellClasses = "relative flex items-center justify-center rounded text-[9px] font-black transition-all border select-none ";
                 
                 if (cell.type === 'blank') {
-                    cellClasses += "bg-slate-900 border-transparent text-slate-800 opacity-20 cursor-default";
+                    cellClasses += "bg-slate-950 border-transparent text-slate-800 opacity-10 cursor-default";
                 } else if (isTargetCell(cell)) {
-                    // Highlight target cells
-                    cellClasses += "bg-indigo-600/90 text-indigo-100 border-indigo-400 font-extrabold ring-2 ring-indigo-500/50 shadow-md cursor-default z-10 scale-102";
+                    cellClasses += "bg-indigo-600 text-indigo-100 border-indigo-400 font-extrabold ring-1 ring-indigo-500 shadow-md cursor-default z-10 scale-[1.02]";
                 } else {
                     cellClasses += "bg-slate-800 hover:bg-slate-700/80 text-slate-400 border-slate-700/60 cursor-pointer";
                 }
 
                 cellDiv.className = cellClasses;
                 
-                // Set inner content
                 if (cell.type !== 'blank') {
                     cellDiv.innerHTML = `<span class="tracking-tighter">${cell.text}</span>`;
                 }
 
-                // Add grid item tap handlers
                 if (cell.type !== 'blank' && !isTargetCell(cell)) {
                     cellDiv.addEventListener('click', () => handleGridClick(cell.r, cell.c));
                 }
@@ -482,14 +437,11 @@
                 gridContainer.appendChild(cellDiv);
             });
 
-            // Draw placed pieces on top of the grid elements
             drawPlacedPieces();
         }
 
-        // Highlight cells or place a selected piece when the grid is clicked
         function handleGridClick(row, col) {
             if (!selectedPieceId) {
-                // If a cell with a placed piece is clicked, select that piece
                 const clickedPieceId = getPieceAtCell(row, col);
                 if (clickedPieceId) {
                     selectPiece(clickedPieceId);
@@ -500,25 +452,21 @@
             const piece = pieces.find(p => p.id === selectedPieceId);
             if (!piece) return;
 
-            // Attempt to place selected piece with top-left block offset to clicked cell
-            // Calculate a placement offset. Let's find first block of piece and align it to row, col
             const firstBlock = piece.shape[0];
             const offsetRow = row - firstBlock[0];
             const offsetCol = col - firstBlock[1];
 
             if (canPlacePiece(piece, offsetRow, offsetCol)) {
                 piecesPlaced[piece.id] = { r: offsetRow, c: offsetCol };
-                selectPiece(null); // Deselect
+                selectPiece(null); 
                 renderBoard();
                 renderTray();
                 checkWinState();
             } else {
-                // Flash grid cells with warning
                 flashValidationWarning();
             }
         }
 
-        // Double tap handler / return piece from grid to tray
         function getPieceAtCell(row, col) {
             for (const [pieceId, pos] of Object.entries(piecesPlaced)) {
                 const piece = pieces.find(p => p.id === pieceId);
@@ -530,20 +478,16 @@
             return null;
         }
 
-        // Check if piece placement is valid
         function canPlacePiece(piece, offsetRow, offsetCol, ignorePieceId = null) {
             return piece.shape.every(([pr, pc]) => {
                 const targetR = offsetRow + pr;
                 const targetC = offsetCol + pc;
 
-                // Out of boundaries
                 if (targetR < 0 || targetR >= 8 || targetC < 0 || targetC >= 7) return false;
 
-                // Matches a blank cell or is part of a target cell
                 const cell = BOARD_CELLS.find(c => c.r === targetR && c.c === targetC);
                 if (!cell || cell.type === 'blank' || isTargetCell(cell)) return false;
 
-                // Collides with other placed pieces
                 const existingPieceId = getPieceAtCell(targetR, targetC);
                 if (existingPieceId && existingPieceId !== piece.id && existingPieceId !== ignorePieceId) {
                     return false;
@@ -553,23 +497,18 @@
             });
         }
 
-        // Visually lay out pieces on the board cells
         function drawPlacedPieces() {
-            // Reset overlay classes for board elements
             document.querySelectorAll('#board-grid > div').forEach(el => {
-                // Keep original properties, strip custom colors
                 const cellIdx = parseInt(el.dataset.index);
                 const cell = BOARD_CELLS[cellIdx];
                 if (!cell) return;
 
                 if (cell.type !== 'blank' && !isTargetCell(cell)) {
-                    el.className = "relative flex items-center justify-center rounded-lg text-[10px] font-black transition-all border select-none bg-slate-800 hover:bg-slate-700/80 text-slate-400 border-slate-700/60 cursor-pointer";
-                    // Clear custom content resets
+                    el.className = "relative flex items-center justify-center rounded text-[9px] font-black transition-all border select-none bg-slate-800 hover:bg-slate-700/80 text-slate-400 border-slate-700/60 cursor-pointer";
                     el.innerHTML = `<span class="tracking-tighter">${cell.text}</span>`;
                 }
             });
 
-            // Map styled blocks over the grid cells
             for (const [pieceId, offset] of Object.entries(piecesPlaced)) {
                 const piece = pieces.find(p => p.id === pieceId);
                 if (!piece) continue;
@@ -578,13 +517,12 @@
                     const boardR = offset.r + pr;
                     const boardC = offset.c + pc;
 
-                    // Find corresponding DOM element
                     const cellEl = document.querySelector(`[data-row="${boardR}"][data-col="${boardC}"]`);
                     if (cellEl) {
                         const isSelected = selectedPieceId === pieceId;
-                        cellEl.className = `relative flex items-center justify-center rounded-lg text-xs font-black transition-all border select-none cursor-pointer z-10 ${piece.color} ${piece.textColor} ${isSelected ? 'ring-4 ring-white border-white scale-95 shadow-lg' : 'shadow-md hover:brightness-110'}`;
+                        cellEl.className = `relative flex items-center justify-center rounded text-[10px] font-black transition-all border select-none cursor-pointer z-10 ${piece.color} ${piece.textColor} ${isSelected ? 'ring-2 ring-white border-white scale-95 shadow-lg' : 'shadow hover:brightness-105'}`;
                         cellEl.innerHTML = `
-                            <span class="text-[9px] font-bold opacity-30 absolute top-0.5 left-1">${piece.id}</span>
+                            <span class="text-[8px] font-bold opacity-30 absolute top-0.5 left-1">${piece.id}</span>
                             <span class="text-[9px] tracking-tighter pointer-events-none">${BOARD_CELLS.find(c => c.r === boardR && c.c === boardC)?.text || ''}</span>
                         `;
                     }
@@ -592,7 +530,6 @@
             }
         }
 
-        // Render Pieces in Bottom Drawer
         function renderTray() {
             const trayContainer = document.getElementById('pieces-tray');
             trayContainer.innerHTML = '';
@@ -601,57 +538,50 @@
 
             pieces.forEach(piece => {
                 const isPlaced = piecesPlaced[piece.id] !== undefined;
-                if (isPlaced) return; // Hide placed pieces from tray
 
-                unusedCount++;
-
-                // Create individual piece container
                 const pieceCard = document.createElement('div');
                 const isSelected = selectedPieceId === piece.id;
                 
-                pieceCard.className = `flex-shrink-0 flex flex-col items-center justify-center p-2 rounded-xl border transition-all cursor-pointer w-20 h-20 ${
-                    isSelected ? 'bg-indigo-600 border-indigo-400 text-white scale-105 shadow-md ring-2 ring-indigo-500/50' : 'bg-slate-800/80 border-slate-700 hover:border-slate-600 text-slate-300'
-                }`;
+                // Keep the card visually represented even if placed, but make it look checked/completed
+                if (isPlaced) {
+                    pieceCard.className = "flex flex-col items-center justify-center p-1 rounded-lg border border-slate-900 bg-slate-900/40 text-slate-700 opacity-20 pointer-events-none select-none h-11";
+                    pieceCard.innerHTML = `
+                        <i class="fa-solid fa-circle-check text-xs"></i>
+                        <span class="text-[7px] font-bold mt-0.5">${piece.id} Placed</span>
+                    `;
+                } else {
+                    unusedCount++;
+                    pieceCard.className = `flex flex-col items-center justify-center p-1.5 rounded-lg border transition-all cursor-pointer h-11 ${
+                        isSelected ? 'bg-indigo-600 border-indigo-400 text-white scale-105 shadow-md ring-1 ring-indigo-500' : 'bg-slate-850 hover:bg-slate-800 border-slate-800 text-slate-300'
+                    }`;
 
-                // Create miniature canvas visualizer of the piece's current state/shape
-                const minishapeGrid = createMinishape(piece);
-                pieceCard.appendChild(minishapeGrid);
+                    const minishapeGrid = createMinishape(piece);
+                    pieceCard.appendChild(minishapeGrid);
 
-                // Info text
-                const textLabel = document.createElement('span');
-                textLabel.className = "text-[9px] font-bold mt-1 tracking-widest opacity-85";
-                textLabel.innerText = `PIECE ${piece.id}`;
-                pieceCard.appendChild(textLabel);
+                    const textLabel = document.createElement('span');
+                    textLabel.className = "text-[8px] font-black mt-1 tracking-wider opacity-90 leading-none";
+                    textLabel.innerText = `PIECE ${piece.id}`;
+                    pieceCard.appendChild(textLabel);
 
-                pieceCard.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    selectPiece(piece.id);
-                });
+                    pieceCard.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selectPiece(piece.id);
+                    });
+                }
 
                 trayContainer.appendChild(pieceCard);
             });
 
-            // Update footer status text
             const placedCount = 8 - unusedCount;
             document.getElementById('pieces-status').innerText = `${placedCount} / 8 Placed`;
-
-            if (unusedCount === 0) {
-                trayContainer.innerHTML = `
-                    <div class="w-full text-center py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                        🎉 All pieces placed!
-                    </div>
-                `;
-            }
         }
 
-        // Create miniature shape preview grid
         function createMinishape(piece) {
-            // Find boundaries to pack it snugly
             const maxR = Math.max(...piece.shape.map(p => p[0]));
             const maxC = Math.max(...piece.shape.map(p => p[1]));
 
             const container = document.createElement('div');
-            container.className = "grid gap-0.5 h-10 w-10 flex-shrink-0 items-center justify-center";
+            container.className = "grid gap-[1px] h-5 w-5 flex-shrink-0 items-center justify-center";
             container.style.gridTemplateRows = `repeat(${maxR + 1}, minmax(0, 1fr))`;
             container.style.gridTemplateColumns = `repeat(${maxC + 1}, minmax(0, 1fr))`;
 
@@ -659,18 +589,16 @@
                 for (let c = 0; c <= maxC; c++) {
                     const block = document.createElement('div');
                     const isOccupied = piece.shape.some(([pr, pc]) => pr === r && pc === c);
-                    block.className = `w-1.5 h-1.5 rounded-[1px] ${isOccupied ? 'bg-amber-400' : 'bg-transparent'}`;
+                    block.className = `w-1 h-1 rounded-[0.5px] ${isOccupied ? 'bg-amber-400' : 'bg-transparent'}`;
                     container.appendChild(block);
                 }
             }
             return container;
         }
 
-        // Handle piece selection
         function selectPiece(pieceId) {
             selectedPieceId = pieceId;
 
-            // Toggle panel active status and button states
             const controlGroup = [
                 document.getElementById('rotate-btn'),
                 document.getElementById('flip-btn'),
@@ -679,7 +607,7 @@
 
             if (pieceId) {
                 const piece = pieces.find(p => p.id === pieceId);
-                document.getElementById('selected-piece-name').innerText = `${piece.name} (${piece.id})`;
+                document.getElementById('selected-piece-name').innerText = piece.name;
                 controlGroup.forEach(btn => btn.removeAttribute('disabled'));
             } else {
                 document.getElementById('selected-piece-name').innerText = 'None';
@@ -690,19 +618,14 @@
             renderTray();
         }
 
-        // Perform rotation (90 deg clockwise) of selected piece
         function rotateSelected() {
             if (!selectedPieceId) return;
             const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
             const piece = pieces[pieceIndex];
 
-            // Perform rot calculation: (r, c) -> (c, -r)
             let rotatedShape = piece.shape.map(([r, c]) => [c, -r]);
-
-            // Shift shape coordinate space back to minimum values >= 0
             normalizeShape(rotatedShape, piece);
 
-            // If piece is already placed on board, check if rotation fits
             const currentPosition = piecesPlaced[piece.id];
             if (currentPosition) {
                 if (canPlacePiece(piece, currentPosition.r, currentPosition.c, piece.id)) {
@@ -716,19 +639,14 @@
             }
         }
 
-        // Perform reflecting/flipping along vertical axis
         function flipSelected() {
             if (!selectedPieceId) return;
             const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
             const piece = pieces[pieceIndex];
 
-            // Flip calculation: (r, c) -> (r, -c)
             let flippedShape = piece.shape.map(([r, c]) => [r, -c]);
-
-            // Re-normalize shape limits
             normalizeShape(flippedShape, piece);
 
-            // Fit validation
             const currentPosition = piecesPlaced[piece.id];
             if (currentPosition) {
                 if (canPlacePiece(piece, currentPosition.r, currentPosition.c, piece.id)) {
@@ -742,15 +660,12 @@
             }
         }
 
-        // Normalize coordinates helper
         function normalizeShape(newShape, pieceObj) {
             const minR = Math.min(...newShape.map(p => p[0]));
             const minC = Math.min(...newShape.map(p => p[1]));
-
             pieceObj.shape = newShape.map(([r, c]) => [r - minR, c - minC]);
         }
 
-        // Put placed piece back in the deck
         function removeSelected() {
             if (!selectedPieceId) return;
             delete piecesPlaced[selectedPieceId];
@@ -759,33 +674,26 @@
             renderTray();
         }
 
-        // Reset the active game configuration
         function resetBoard() {
             piecesPlaced = {};
             selectPiece(null);
-            // Also restore original pieces rotation/flip values
             pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
             renderBoard();
             renderTray();
             document.getElementById('toast').classList.add('hidden');
         }
 
-        // Show quick warning border flash when placement/rotation fails
         function flashValidationWarning() {
             const gridContainer = document.getElementById('board-grid');
-            gridContainer.classList.add('ring-4', 'ring-rose-500/50');
+            gridContainer.classList.add('ring-2', 'ring-rose-500/80');
             setTimeout(() => {
-                gridContainer.classList.remove('ring-4', 'ring-rose-500/50');
-            }, 300);
+                gridContainer.classList.remove('ring-2', 'ring-rose-500/80');
+            }, 250);
         }
 
-        // Evaluate if winning configuration reached
         function checkWinState() {
-            // Player wins if all 8 pieces are placed correctly
             const placedCount = Object.keys(piecesPlaced).length;
             if (placedCount === 8) {
-                // Ensure only 3 target dates remain visible
-                // Confirm date correctness
                 let uncoveredCells = BOARD_CELLS.filter(cell => {
                     if (cell.type === 'blank') return false;
                     const pieceId = getPieceAtCell(cell.r, cell.c);
@@ -795,211 +703,12 @@
                 const isCorrect = uncoveredCells.length === 3 && uncoveredCells.every(c => isTargetCell(c));
                 if (isCorrect) {
                     toggleModal('success-modal', true);
-                    document.getElementById('toast').classList.remove('hidden');
+                    const toast = document.getElementById('toast');
+                    toast.classList.remove('hidden');
+                    setTimeout(() => toast.classList.add('hidden'), 5000);
                 }
             }
         }
-
-
-        // ==========================================
-        // AUTO-SOLVER ALGORITHM (Recursive Backtracking)
-        // ==========================================
-        
-        function solvePuzzle() {
-            // Clear current states
-            resetBoard();
-
-            // Run solving routine asynchronously so ui responsive doesn't choke completely
-            const loadingOverlay = document.createElement('div');
-            loadingOverlay.className = "fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex flex-col items-center justify-center z-50";
-            loadingOverlay.innerHTML = `
-                <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl flex flex-col items-center space-y-3 shadow-2xl max-w-xs text-center">
-                    <i class="fa-solid fa-gear fa-spin text-4xl text-indigo-500"></i>
-                    <p class="text-xs font-bold text-white">Calculating valid puzzle solutions...</p>
-                    <p class="text-[10px] text-slate-400">Trying spatial polyomino placements</p>
-                </div>
-            `;
-            document.body.appendChild(loadingOverlay);
-
-            setTimeout(() => {
-                const success = runBacktrackingSolver();
-                document.body.removeChild(loadingOverlay);
-
-                if (success) {
-                    renderBoard();
-                    renderTray();
-                    checkWinState();
-                } else {
-                    alert("A solution could not be generated for this specific date automatically.");
-                }
-            }, 100);
-        }
-
-        // Gather all rotations & flips of a given piece shape
-        function getShapeVariations(originalShape) {
-            const variations = [];
-            let current = originalShape;
-
-            for (let r = 0; r < 4; r++) {
-                // Rotation
-                current = current.map(([row, col]) => [col, -row]);
-                variations.push(normalizeShapeCoords(current));
-
-                // Flip
-                const flipped = current.map(([row, col]) => [row, -col]);
-                variations.push(normalizeShapeCoords(flipped));
-            }
-
-            // Deduplicate shapes
-            const uniqueVariations = [];
-            variations.forEach(v => {
-                const isDup = uniqueVariations.some(u => isSameShape(u, v));
-                if (!isDup) uniqueVariations.push(v);
-            });
-
-            return uniqueVariations;
-        }
-
-        function normalizeShapeCoords(coords) {
-            const minR = Math.min(...coords.map(p => p[0]));
-            const minC = Math.min(...coords.map(p => p[1]));
-            const norm = coords.map(([r, c]) => [r - minR, c - minC]);
-            // Sort to ensure consistency
-            return norm.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-        }
-
-        function isSameShape(s1, s2) {
-            if (s1.length !== s2.length) return false;
-            return s1.every((block, idx) => block[0] === s2[idx][0] && block[1] === s2[idx][1]);
-        }
-
-        // Backtracking implementation
-        function runBacktrackingSolver() {
-            // Find all blank spaces on the board excluding the 3 targets and standard blanks
-            const availableGridCells = BOARD_CELLS.filter(cell => {
-                if (cell.type === 'blank') return false;
-                if (isTargetCell(cell)) return false;
-                return true;
-            });
-
-            // Total squares to cover is exactly 43 (8 pieces total blocks = 5+5+5+5+5+5+6+7 = 43)
-            // Pieces array
-            const piecesToPlace = ORIGINAL_PIECES.map(p => ({
-                id: p.id,
-                variations: getShapeVariations(p.shape),
-                color: p.color,
-                textColor: p.textColor,
-                name: p.name
-            }));
-
-            // Tracks board occupancy
-            // Grid representation: 8x7 matrix (true if blocked/occupied)
-            const gridStatus = Array(8).fill(null).map(() => Array(7).fill(false));
-            
-            // Populate blocked slots
-            BOARD_CELLS.forEach(cell => {
-                if (cell.type === 'blank' || isTargetCell(cell)) {
-                    gridStatus[cell.r][cell.c] = true;
-                }
-            });
-
-            const solutionMap = {};
-
-            // Recursive function
-            function solve(pieceIndex) {
-                if (pieceIndex === piecesToPlace.length) {
-                    return true; // Solved!
-                }
-
-                const currentPiece = piecesToPlace[pieceIndex];
-
-                // Find the first empty grid square to force placement (reduces search space immensely)
-                let targetRow = -1;
-                let targetCol = -1;
-                
-                for (let r = 0; r < 8; r++) {
-                    for (let c = 0; c < 7; c++) {
-                        if (!gridStatus[r][c]) {
-                            targetRow = r;
-                            targetCol = c;
-                            break;
-                        }
-                    }
-                    if (targetRow !== -1) break;
-                }
-
-                // If no empty space, but we have more pieces... mismatch
-                if (targetRow === -1) return false;
-
-                // Try placing the current piece on this cell. Since it must be covered, 
-                // one of the blocks of the piece must occupy this coordinate.
-                for (let v = 0; v < currentPiece.variations.length; v++) {
-                    const shape = currentPiece.variations[v];
-
-                    // Attempt to align each block of the shape to the first empty cell
-                    for (let b = 0; b < shape.length; b++) {
-                        const alignedBlock = shape[b];
-                        const offsetRow = targetRow - alignedBlock[0];
-                        const offsetCol = targetCol - alignedBlock[1];
-
-                        // Validate if whole shape fits
-                        let fits = true;
-                        for (let i = 0; i < shape.length; i++) {
-                            const checkR = offsetRow + shape[i][0];
-                            const checkC = offsetCol + shape[i][1];
-
-                            if (checkR < 0 || checkR >= 8 || checkC < 0 || checkC >= 7 || gridStatus[checkR][checkC]) {
-                                fits = false;
-                                break;
-                            }
-                        }
-
-                        if (fits) {
-                            // Place piece
-                            shape.forEach(([pr, pc]) => {
-                                gridStatus[offsetRow + pr][offsetCol + pc] = true;
-                            });
-
-                            solutionMap[currentPiece.id] = {
-                                shape: shape,
-                                offset: { r: offsetRow, c: offsetCol }
-                            };
-
-                            // Recurse to next piece
-                            if (solve(pieceIndex + 1)) {
-                                return true;
-                            }
-
-                            // Backtrack
-                            shape.forEach(([pr, pc]) => {
-                                gridStatus[offsetRow + pr][offsetCol + pc] = false;
-                            });
-                            delete solutionMap[currentPiece.id];
-                        }
-                    }
-                }
-
-                return false;
-            }
-
-            const foundSolution = solve(0);
-
-            if (foundSolution) {
-                // Commit solutions back to state
-                piecesPlaced = {};
-                for (const [id, sol] of Object.entries(solutionMap)) {
-                    // Update shape structure (since it might have rotated or flipped)
-                    const pieceIdx = pieces.findIndex(p => p.id === id);
-                    pieces[pieceIdx].shape = sol.shape;
-                    // Position offset
-                    piecesPlaced[id] = sol.offset;
-                }
-                return true;
-            }
-
-            return false;
-        }
-
     </script>
 </body>
 </html>
