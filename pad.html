@@ -112,16 +112,16 @@
             </div>
         </div>
 
-        <!-- Integrated Unused Pieces Drawer directly below previous section -->
+        <!-- Integrated Unused Pieces Drawer directly below previous section (2x5 Grid for 10 pieces) -->
         <div class="w-full max-w-[320px] flex-shrink-0">
             <div class="flex justify-between items-center mb-1 px-1">
                 <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Unused Pieces</span>
-                <span id="pieces-status" class="text-[10px] text-amber-500 font-mono font-bold">0 / 8 placed</span>
+                <span id="pieces-status" class="text-[10px] text-amber-500 font-mono font-bold">0 / 10 placed</span>
             </div>
             
-            <!-- Pieces list Container in a 2x4 Grid layout (Visible simultaneously) -->
-            <div id="pieces-tray" class="grid grid-cols-4 gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800 min-h-[125px] flex-shrink-0">
-                <!-- All 8 Pieces placed dynamically here -->
+            <!-- Pieces list Container in a 2x5 Grid layout (Visible simultaneously) -->
+            <div id="pieces-tray" class="grid grid-cols-5 gap-1.5 p-1.5 bg-slate-900 rounded-xl border border-slate-800 min-h-[125px] flex-shrink-0">
+                <!-- All 10 Pieces placed dynamically here -->
             </div>
         </div>
 
@@ -139,7 +139,7 @@
             </h3>
             <div class="space-y-2 text-slate-300 text-[11px] leading-relaxed">
                 <p>
-                    Cover the calendar grid with the 8 puzzle pieces so that <strong>only today's date</strong> remains exposed:
+                    Cover the calendar grid with the 10 puzzle pieces so that <strong>only today's date</strong> remains exposed:
                 </p>
                 <ul class="list-disc pl-4 space-y-0.5 text-slate-400 font-bold">
                     <li>The Month (e.g. <span class="text-indigo-300">MAY</span>)</li>
@@ -151,9 +151,19 @@
                     <p>👉 <strong>Tap a piece</strong> in the tray below to select it. Tap it again to deselect.</p>
                     <p>🔄 Use <strong>Rotate / Flip H / Flip V</strong> to orient your selected piece.</p>
                     <p>🎯 <strong>Tap any cell on the board</strong> to place it anchored from its top-leftmost block.</p>
-                    <p>🧹 Tap a placed piece on the board to select it, then tap <strong>Deselect</strong> to clear active selection, or place it elsewhere!</p>
+                    <p>🧹 Tap a placed piece on the board to select it, then tap <strong>Deselect</strong> to clear active selection.</p>
                 </div>
             </div>
+
+            <!-- "Show Solution" Container (Hidden in daily mode) -->
+            <div id="solver-container" class="mt-4 pt-4 border-t border-slate-800 flex flex-col space-y-2">
+                <p class="text-[10px] text-slate-400 italic">Stuck? Let our backtracking search solver compute a valid mathematical layout for your current date target.</p>
+                <button id="solve-btn" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-slate-950 font-black py-2 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-all shadow shadow-amber-500/10">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Show Solution</span>
+                </button>
+            </div>
+
             <button id="close-modal-ok-btn" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded-lg text-xs font-bold transition-all">
                 Let's Play!
             </button>
@@ -178,6 +188,15 @@
             <button id="success-close-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 rounded-lg text-xs font-bold transition-all">
                 Close
             </button>
+        </div>
+    </div>
+
+    <!-- Solution Computation Loader -->
+    <div id="solver-loader" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col items-center space-y-3 shadow-2xl max-w-xs text-center">
+            <i class="fa-solid fa-gear fa-spin text-3xl text-amber-500"></i>
+            <p class="text-xs font-bold text-white">Searching for solutions...</p>
+            <p class="text-[10px] text-slate-400">Computing target polyomino placements</p>
         </div>
     </div>
 
@@ -257,92 +276,111 @@
             { text: "SUN", type: "weekday", val: 0, r: 7, c: 6 }
         ];
 
+        // Official 10-piece polyomino set totaling exactly 47 blocks
         const ORIGINAL_PIECES = [
             {
                 id: "A",
-                name: "U-Pentomino",
+                name: "Corner (4)",
                 color: "bg-emerald-500 border-emerald-600",
                 textColor: "text-emerald-100",
                 shape: [
-                    [0, 0], [0, 1], [0, 2],
-                    [1, 0],         [1, 2]
-                ]
+                    [0, 0], [0, 1],
+                    [1, 0],
+                    [2, 0]
+                ] // 4 blocks
             },
             {
                 id: "B",
-                name: "Corner Block",
+                name: "L-Shape (4)",
                 color: "bg-sky-500 border-sky-600",
                 textColor: "text-sky-100",
                 shape: [
                     [0, 0], [0, 1], [0, 2],
-                    [1, 0],
-                    [2, 0]
-                ]
+                    [1, 0]
+                ] // 4 blocks
             },
             {
                 id: "C",
-                name: "Long L",
+                name: "Square (4)",
                 color: "bg-indigo-500 border-indigo-600",
                 textColor: "text-indigo-100",
                 shape: [
-                    [0, 0], [0, 1], [0, 2], [0, 3],
-                    [1, 0]
-                ]
+                    [0, 0], [0, 1],
+                    [1, 0], [1, 1]
+                ] // 4 blocks
             },
             {
                 id: "D",
-                name: "T-Block",
+                name: "T-Pentomino (5)",
                 color: "bg-purple-500 border-purple-600",
                 textColor: "text-purple-100",
                 shape: [
                     [0, 0], [0, 1], [0, 2],
                             [1, 1],
                             [2, 1]
-                ]
+                ] // 5 blocks
             },
             {
                 id: "E",
-                name: "S-Block",
+                name: "Z-Pentomino (5)",
                 color: "bg-pink-500 border-pink-600",
                 textColor: "text-pink-100",
                 shape: [
                             [0, 1], [0, 2],
                     [1, 0], [1, 1],
                     [2, 0]
-                ]
+                ] // 5 blocks
             },
             {
                 id: "F",
-                name: "W-Block",
+                name: "I-Pentomino (5)",
                 color: "bg-amber-500 border-amber-600",
                 textColor: "text-amber-100",
                 shape: [
-                    [0, 0], [0, 1],
-                            [1, 1], [1, 2],
-                                    [2, 2]
-                ]
+                    [0, 0], [0, 1], [0, 2], [0, 3], [0, 4]
+                ] // 5 blocks
             },
             {
                 id: "G",
-                name: "Zigzag Block",
+                name: "U-Pentomino (5)",
                 color: "bg-teal-500 border-teal-600",
                 textColor: "text-teal-100",
                 shape: [
-                    [0, 0], [0, 1],
-                            [1, 1],
-                            [2, 1], [2, 2]
-                ]
+                    [0, 0],         [0, 2],
+                    [1, 0], [1, 1], [1, 2]
+                ] // 5 blocks
             },
             {
                 id: "H",
-                name: "Rectangle L",
+                name: "V-Pentomino (5)",
                 color: "bg-rose-500 border-rose-600",
                 textColor: "text-rose-100",
                 shape: [
                     [0, 0], [0, 1], [0, 2],
-                    [1, 0], [1, 1], [1, 2],
+                    [1, 0],
                     [2, 0]
-                ]
+                ] // 5 blocks
+            },
+            {
+                id: "I",
+                name: "W-Pentomino (5)",
+                color: "bg-orange-500 border-orange-600",
+                textColor: "text-orange-100",
+                shape: [
+                    [0, 0],
+                    [1, 0], [1, 1],
+                            [2, 1], [2, 2]
+                ] // 5 blocks
+            },
+            {
+                id: "J",
+                name: "Long L (5)",
+                color: "bg-lime-500 border-lime-600",
+                textColor: "text-lime-950",
+                shape: [
+                    [0, 0], [0, 1], [0, 2], [0, 3],
+                    [1, 0]
+                ] // 5 blocks
             }
         ];
 
@@ -351,7 +389,7 @@
         // State values
         let selectedPieceId = null;
         let piecesPlaced = {}; 
-        let historyStack = []; // Array of snapshot strings: JSON.stringify({ piecesPlaced, pieces, selectedPieceId })
+        let historyStack = []; 
         let targetMonth = 4;   // May (0-indexed)
         let targetDay = 28;    // 1-31
         let targetWeekday = 4; // Thursday (0-6)
@@ -374,6 +412,7 @@
             document.getElementById('close-modal-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('close-modal-ok-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('success-close-btn').addEventListener('click', () => toggleModal('success-modal', false));
+            document.getElementById('solve-btn').addEventListener('click', solveActivePuzzle);
         });
 
         // Config mode based on URL query parameter (?mode=daily or ?mode=freeplay)
@@ -383,13 +422,14 @@
 
             if (mode === 'daily' || mode === 'single') {
                 isDailyMode = true;
-                // Lock setup to real current date
+                // Lock setup to real current date (May 28, 2026)
                 const today = new Date();
                 setTargetFromDate(today);
                 
                 // Toggle mode elements
                 document.getElementById('mode-badge').classList.remove('hidden');
                 document.getElementById('date-picker-container').classList.add('hidden');
+                document.getElementById('solver-container').classList.add('hidden');
             } else {
                 isDailyMode = false;
                 // Default view target to Thursday, May 28, 2026
@@ -399,6 +439,7 @@
                 
                 document.getElementById('mode-badge').classList.add('hidden');
                 document.getElementById('date-picker-container').classList.remove('hidden');
+                document.getElementById('solver-container').classList.remove('hidden');
             }
         }
 
@@ -660,8 +701,8 @@
                 trayContainer.appendChild(pieceCard);
             });
 
-            const placedCount = 8 - unusedCount;
-            document.getElementById('pieces-status').innerText = `${placedCount} / 8 Placed`;
+            const placedCount = 10 - unusedCount;
+            document.getElementById('pieces-status').innerText = `${placedCount} / 10 Placed`;
         }
 
         function createMinishape(piece) {
@@ -831,7 +872,7 @@
 
         function checkWinState() {
             const placedCount = Object.keys(piecesPlaced).length;
-            if (placedCount === 8) {
+            if (placedCount === 10) {
                 let uncoveredCells = BOARD_CELLS.filter(cell => {
                     if (cell.type === 'blank') return false;
                     const pieceId = getPieceAtCell(cell.r, cell.c);
@@ -847,6 +888,185 @@
                 }
             }
         }
+
+
+        // ==========================================
+        // HIGH PERFORMANCE RECURSIVE AUTO-SOLVER
+        // ==========================================
+
+        function solveActivePuzzle() {
+            toggleModal('info-modal', false);
+            const loader = document.getElementById('solver-loader');
+            loader.classList.remove('hidden');
+
+            // Allow the loader animation to render before calculations begin
+            setTimeout(() => {
+                const solved = runBacktrackingSolver();
+                loader.classList.add('hidden');
+
+                if (solved) {
+                    renderBoard();
+                    renderTray();
+                    checkWinState();
+                } else {
+                    alert("No solution found for this date. (Note: Ensure the target configuration is correct.)");
+                }
+            }, 100);
+        }
+
+        // Return all mathematically unique rotations and reflections for a shape
+        function getShapeVariations(origShape) {
+            const variations = [];
+            let curr = origShape;
+
+            for (let r = 0; r < 4; r++) {
+                // Rotated 90 deg
+                curr = curr.map(([row, col]) => [col, -row]);
+                variations.push(normalizeShapeCoords(curr));
+
+                // Flipped
+                const flipped = curr.map(([row, col]) => [row, -col]);
+                variations.push(normalizeShapeCoords(flipped));
+            }
+
+            // Deduplicate matching structures
+            const uniques = [];
+            variations.forEach(v => {
+                const exists = uniques.some(u => isIdenticalShape(u, v));
+                if (!exists) uniques.push(v);
+            });
+
+            return uniques;
+        }
+
+        function normalizeShapeCoords(coords) {
+            const minR = Math.min(...coords.map(p => p[0]));
+            const minC = Math.min(...coords.map(p => p[1]));
+            const norm = coords.map(([r, c]) => [r - minR, c - minC]);
+            return norm.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+        }
+
+        function isIdenticalShape(s1, s2) {
+            if (s1.length !== s2.length) return false;
+            return s1.every((pt, idx) => pt[0] === s2[idx][0] && pt[1] === s2[idx][1]);
+        }
+
+        function runBacktrackingSolver() {
+            // Reset active board positioning
+            piecesPlaced = {};
+            pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
+
+            const solverPieces = ORIGINAL_PIECES.map(p => ({
+                id: p.id,
+                variations: getShapeVariations(p.shape)
+            }));
+
+            // Track live coverage state
+            const gridOccupied = Array(8).fill(null).map(() => Array(7).fill(false));
+            
+            // Mark blank/target blocks as pre-occupied
+            BOARD_CELLS.forEach(cell => {
+                if (cell.type === 'blank' || isTargetCell(cell)) {
+                    gridOccupied[cell.r][cell.c] = true;
+                }
+            });
+
+            const solutionPositions = {};
+            const placedSet = new Set();
+
+            // Find the top-leftmost available grid slot to fill
+            function findNextEmpty() {
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 7; c++) {
+                        if (!gridOccupied[r][c]) {
+                            return { r, c };
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function backtrackSolve() {
+                const nextEmpty = findNextEmpty();
+                if (!nextEmpty) {
+                    return true; // All slots covered perfectly!
+                }
+
+                const targetRow = nextEmpty.r;
+                const targetCol = nextEmpty.c;
+
+                // Try placing an unused piece to cover this first available slot
+                for (let pIdx = 0; pIdx < solverPieces.length; pIdx++) {
+                    const pieceInfo = solverPieces[pIdx];
+                    if (placedSet.has(pieceInfo.id)) continue;
+
+                    // Try every rotation/flip variation
+                    for (let vIdx = 0; vIdx < pieceInfo.variations.length; vIdx++) {
+                        const shape = pieceInfo.variations[vIdx];
+
+                        // To cover the (targetRow, targetCol) slot, one of the shape blocks must land on it.
+                        // Try mapping each block of the shape to align with the empty target cell.
+                        for (let bIdx = 0; bIdx < shape.length; bIdx++) {
+                            const anchorBlock = shape[bIdx];
+                            const offsetRow = targetRow - anchorBlock[0];
+                            const offsetCol = targetCol - anchorBlock[1];
+
+                            // Validate fit
+                            let fits = true;
+                            for (let i = 0; i < shape.length; i++) {
+                                const checkR = offsetRow + shape[i][0];
+                                const checkC = offsetCol + shape[i][1];
+
+                                if (checkR < 0 || checkR >= 8 || checkC < 0 || checkC >= 7 || gridOccupied[checkR][checkC]) {
+                                    fits = false;
+                                    break;
+                                }
+                            }
+
+                            if (fits) {
+                                // Commit temporary placement state
+                                shape.forEach(([pr, pc]) => {
+                                    gridOccupied[offsetRow + pr][offsetCol + pc] = true;
+                                });
+                                placedSet.add(pieceInfo.id);
+                                solutionPositions[pieceInfo.id] = {
+                                    offset: { r: offsetRow, c: offsetCol },
+                                    shape: shape
+                                };
+
+                                // Recurse
+                                if (backtrackSolve()) {
+                                    return true;
+                                }
+
+                                // Undo state on failure
+                                shape.forEach(([pr, pc]) => {
+                                    gridOccupied[offsetRow + pr][offsetCol + pc] = false;
+                                });
+                                placedSet.delete(pieceInfo.id);
+                                delete solutionPositions[pieceInfo.id];
+                            }
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            const success = backtrackSolve();
+
+            if (success) {
+                // Apply solution coordinates to live state
+                for (const [id, sol] of Object.entries(solutionPositions)) {
+                    const idx = pieces.findIndex(p => p.id === id);
+                    pieces[idx].shape = sol.shape;
+                    piecesPlaced[id] = sol.offset;
+                }
+                return true;
+            }
+            return false;
+        }
+
     </script>
 </body>
 </html>
