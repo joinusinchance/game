@@ -14,19 +14,19 @@
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Custom board grid sizing for maximum screen fitting */
+        /* Grid gap sizing */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
-            gap: 3px;
+            gap: 4px;
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-hidden font-sans">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-start overflow-y-auto font-sans">
 
     <!-- Unified Ultra-Compact Top Bar -->
-    <header class="bg-slate-900 border-b border-slate-800 px-3 py-2 flex items-center justify-between z-20 shadow-md flex-shrink-0">
-        <!-- Logo & Active Target in one line -->
+    <header class="bg-slate-900 border-b border-slate-800 px-3 py-2 flex items-center justify-between sticky top-0 z-30 shadow-md">
+        <!-- Logo & Active Target -->
         <div class="flex items-center space-x-2">
             <div class="bg-indigo-600 px-2 py-1 rounded text-white flex items-center justify-center">
                 <i class="fa-solid fa-calendar-days text-xs"></i>
@@ -34,29 +34,32 @@
             <div class="flex flex-col">
                 <h1 class="text-xs font-black tracking-wider text-slate-200 uppercase leading-none">Puzzle Calendar</h1>
                 <div class="flex items-center space-x-1.5 mt-0.5">
-                    <span class="text-[10px] text-slate-400">Target:</span>
-                    <span id="target-display" class="text-[11px] font-black text-amber-400 tracking-wide">MAY 28 THU</span>
+                    <span class="text-[9px] text-slate-400">Target:</span>
+                    <span id="target-display" class="text-[10px] font-black text-amber-400 tracking-wide">MAY 28 THU</span>
                 </div>
             </div>
         </div>
 
-        <!-- Date Changer, Undo, Reset & Help integrated -->
+        <!-- Mode Indicator, Date, Undo & Help -->
         <div class="flex items-center space-x-1.5">
-            <!-- Dynamic Date Picker Container -->
+            <!-- Game Mode Badge or Date Selector -->
+            <div id="mode-badge" class="hidden bg-slate-800 border border-slate-700 text-indigo-400 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider">
+                Daily Mode
+            </div>
             <div id="date-picker-container" class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 rounded px-2 py-1 flex items-center space-x-1 text-[10px] font-semibold cursor-pointer border border-slate-700 transition-all">
                 <i class="fa-solid fa-pen-to-square text-[10px]"></i>
                 <span>Date</span>
                 <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
             </div>
 
-            <!-- Undo Button (Replaces previous mass-reset actions) -->
-            <button id="undo-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all opacity-30 pointer-events-none" title="Undo Last Move" disabled>
-                <i class="fa-solid fa-arrow-rotate-left text-xs text-indigo-400"></i>
+            <!-- Incremental Undo Button -->
+            <button id="undo-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all disabled:opacity-30 disabled:pointer-events-none" title="Undo Move" disabled>
+                <i class="fa-solid fa-rotate-left text-xs"></i>
             </button>
 
-            <!-- Reset Button (Mass clear) -->
-            <button id="reset-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all" title="Clear All Pieces">
-                <i class="fa-solid fa-trash-can text-xs text-rose-400"></i>
+            <!-- Compact Reset Button -->
+            <button id="reset-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-1.5 rounded transition-all" title="Reset Board">
+                <i class="fa-solid fa-trash-can text-xs"></i>
             </button>
 
             <!-- Info Button -->
@@ -66,56 +69,58 @@
         </div>
     </header>
 
-    <!-- Main Container - Everything scrolls inside this to keep layout unified and visible -->
-    <main class="flex-1 min-h-0 flex flex-col items-center p-2.5 overflow-y-auto w-full max-w-md mx-auto relative space-y-2.5">
+    <!-- Main Scrollable Container containing everything in a cohesive flow -->
+    <main class="flex-1 w-full max-w-md mx-auto p-3 flex flex-col items-center justify-start space-y-3 relative">
         
-        <!-- Floating/Toast Notification (Overlay so it doesn't push down layout) -->
-        <div id="toast" class="hidden absolute top-3 left-1/2 -translate-x-1/2 z-30 w-[90%] text-center py-2 px-4 rounded-xl text-xs font-bold bg-indigo-600 border border-indigo-400 text-white shadow-xl animate-bounce">
-            🎉 Puzzle Solved! Target date exposed perfectly!
+        <!-- Floating Success Toast -->
+        <div id="toast" class="hidden w-full text-center py-2 px-4 rounded-xl text-xs font-bold bg-indigo-600 border border-indigo-400 text-white shadow-xl animate-bounce">
+            🎉 Puzzle Solved! Only the target date is exposed!
         </div>
 
-        <!-- Calendar Board Area (Scaled dynamically) -->
-        <div class="w-full aspect-square max-w-[320px] bg-slate-900 p-1.5 rounded-xl border border-slate-800 shadow-2xl relative flex flex-col justify-between flex-shrink-0">
+        <!-- Calendar Board Area -->
+        <div class="w-full aspect-square max-w-[320px] bg-slate-900 p-2 rounded-xl border border-slate-800 shadow-2xl relative">
             <div id="board-grid" class="calendar-grid w-full h-full">
                 <!-- Grid Cells generated dynamically by JS -->
             </div>
         </div>
 
-        <!-- Controls for Selected Piece (Compact row with split Flips) -->
-        <div class="w-full max-w-[320px] px-1 flex items-center justify-between bg-slate-900/40 p-1.5 rounded-lg border border-slate-800/80 flex-shrink-0">
-            <div class="flex flex-col justify-center">
-                <span class="text-[8px] uppercase tracking-wider text-slate-500 leading-none">Selected</span>
-                <span id="selected-piece-name" class="text-[10px] font-black text-indigo-400 leading-tight truncate max-w-[70px]">None</span>
+        <!-- Selected Piece Controls (Orientation Controls) -->
+        <div class="w-full max-w-[320px] px-1 flex flex-col space-y-2 bg-slate-900/40 p-2 rounded-lg border border-slate-800/80">
+            <div class="flex items-center justify-between">
+                <div class="flex flex-col">
+                    <span class="text-[8px] uppercase tracking-wider text-slate-500 leading-none">Selected piece</span>
+                    <span id="selected-piece-name" class="text-[11px] font-black text-indigo-400 leading-tight">None</span>
+                </div>
+                <button id="clear-piece-btn" class="bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 border border-rose-900/40 px-2 py-0.5 rounded text-[9px] font-bold transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
+                    Deselect
+                </button>
             </div>
-            <div class="flex items-center space-x-1">
-                <button id="rotate-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-2 py-1 rounded flex flex-col items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
+            
+            <div class="grid grid-cols-3 gap-1.5">
+                <button id="rotate-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-1 rounded flex items-center justify-center space-x-1.5 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
                     <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
-                    <span class="text-[8px] font-bold">Rotate</span>
+                    <span class="text-[9px] font-bold">Rotate</span>
                 </button>
-                <button id="flip-h-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-2 py-1 rounded flex flex-col items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
+                <button id="fliph-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-1 rounded flex items-center justify-center space-x-1.5 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
                     <i class="fa-solid fa-arrows-left-right text-[10px]"></i>
-                    <span class="text-[8px] font-bold">Flip H</span>
+                    <span class="text-[9px] font-bold">Flip H</span>
                 </button>
-                <button id="flip-v-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white px-2 py-1 rounded flex flex-col items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
+                <button id="flipv-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-1 rounded flex items-center justify-center space-x-1.5 transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
                     <i class="fa-solid fa-arrows-up-down text-[10px]"></i>
-                    <span class="text-[8px] font-bold">Flip V</span>
-                </button>
-                <button id="clear-piece-btn" class="bg-rose-950/20 hover:bg-rose-900/40 text-rose-300 border border-rose-900/40 px-2 py-1 rounded flex flex-col items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none" disabled>
-                    <i class="fa-solid fa-trash-can text-[10px]"></i>
-                    <span class="text-[8px] font-bold">Remove</span>
+                    <span class="text-[9px] font-bold">Flip V</span>
                 </button>
             </div>
         </div>
 
-        <!-- Bottom Drawer Area (Now merged inside Main layout to prevent render clipping) -->
-        <div class="w-full max-w-[320px] bg-slate-900/20 p-2 rounded-xl border border-slate-800/50 flex-shrink-0">
+        <!-- Integrated Unused Pieces Drawer directly below previous section -->
+        <div class="w-full max-w-[320px] flex-shrink-0">
             <div class="flex justify-between items-center mb-1 px-1">
-                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Unused Pieces Drawer</span>
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Unused Pieces</span>
                 <span id="pieces-status" class="text-[10px] text-amber-500 font-mono font-bold">0 / 8 placed</span>
             </div>
             
-            <!-- Pieces list Container in a 2-Row Grid layout (Highly visible!) -->
-            <div id="pieces-tray" class="grid grid-cols-4 gap-2 p-1.5 bg-slate-950 rounded-xl border border-slate-800 min-h-[125px]">
+            <!-- Pieces list Container in a 2x4 Grid layout (Visible simultaneously) -->
+            <div id="pieces-tray" class="grid grid-cols-4 gap-2 p-2 bg-slate-900 rounded-xl border border-slate-800 min-h-[125px] flex-shrink-0">
                 <!-- All 8 Pieces placed dynamically here -->
             </div>
         </div>
@@ -138,15 +143,15 @@
                 </p>
                 <ul class="list-disc pl-4 space-y-0.5 text-slate-400 font-bold">
                     <li>The Month (e.g. <span class="text-indigo-300">MAY</span>)</li>
-                    <li>The Day of Month (e.g. <span class="text-indigo-300">28</span>)</li>
+                    <li>The Day (e.g. <span class="text-indigo-300">28</span>)</li>
                     <li>The Day of Week (e.g. <span class="text-indigo-300">THU</span>)</li>
                 </ul>
                 <div class="bg-slate-950 p-2 rounded border border-slate-800 mt-2 space-y-1">
                     <p class="font-bold text-white text-[9px] uppercase tracking-wider">Controls:</p>
-                    <p>👉 <strong>Tap a piece</strong> in the tray below to select it. Tap again to <strong>deselect</strong>.</p>
-                    <p>🔄 Use <strong>Rotate/Flip H/Flip V</strong> to orient your active piece.</p>
-                    <p>🎯 <strong>Tap any cell on the board</strong> to place it.</p>
-                    <p>🧹 Tap a placed board piece to select it, then tap <strong>Remove</strong> to return it to the tray.</p>
+                    <p>👉 <strong>Tap a piece</strong> in the tray below to select it. Tap it again to deselect.</p>
+                    <p>🔄 Use <strong>Rotate / Flip H / Flip V</strong> to orient your selected piece.</p>
+                    <p>🎯 <strong>Tap any cell on the board</strong> to place it anchored from its top-leftmost block.</p>
+                    <p>🧹 Tap a placed piece on the board to select it, then tap <strong>Deselect</strong> to clear active selection, or place it elsewhere!</p>
                 </div>
             </div>
             <button id="close-modal-ok-btn" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded-lg text-xs font-bold transition-all">
@@ -343,85 +348,82 @@
 
         let pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
 
-        // State parameters
+        // State values
         let selectedPieceId = null;
         let piecesPlaced = {}; 
+        let historyStack = []; // Array of snapshot strings: JSON.stringify({ piecesPlaced, pieces, selectedPieceId })
         let targetMonth = 4;   // May (0-indexed)
         let targetDay = 28;    // 1-31
         let targetWeekday = 4; // Thursday (0-6)
-
-        // Undo History Stack Setup
-        let historyStack = [];
+        let isDailyMode = false;
 
         window.addEventListener('DOMContentLoaded', () => {
-            // Read URL mode flags
-            const urlParams = new URLSearchParams(window.location.search);
-            const mode = (urlParams.get('mode') || 'freeplay').toLowerCase();
-            const isDailyMode = (mode === 'daily' || mode === 'single');
-
-            const today = new Date();
-            setTargetFromDate(today);
-
-            if (isDailyMode) {
-                // Lock the date container and display a badge
-                const datePickerContainer = document.getElementById('date-picker-container');
-                if (datePickerContainer) {
-                    datePickerContainer.className = "relative bg-indigo-950/60 text-indigo-300 rounded px-2 py-1 flex items-center space-x-1 text-[10px] font-black border border-indigo-900/40 select-none cursor-default";
-                    datePickerContainer.innerHTML = `
-                        <i class="fa-solid fa-lock text-[9px]"></i>
-                        <span>Daily Challenge</span>
-                    `;
-                }
-            } else {
-                // Configure reactive freeplay date picker input
-                const yyyy = today.getFullYear();
-                const mm = String(today.getMonth() + 1).padStart(2, '0');
-                const dd = String(today.getDate()).padStart(2, '0');
-                document.getElementById('date-picker').value = `${yyyy}-${mm}-${dd}`;
-                document.getElementById('date-picker').addEventListener('change', handleDateChange);
-            }
-
+            detectModeAndSetupDate();
             renderBoard();
             renderTray();
 
-            // Setup button interactions
+            // Event Listeners
+            document.getElementById('date-picker').addEventListener('change', handleDateChange);
             document.getElementById('rotate-btn').addEventListener('click', rotateSelected);
-            document.getElementById('flip-h-btn').addEventListener('click', flipSelectedHorizontal);
-            document.getElementById('flip-v-btn').addEventListener('click', flipSelectedVertical);
-            document.getElementById('clear-piece-btn').addEventListener('click', removeSelected);
-            document.getElementById('undo-btn').addEventListener('click', undoLastMove);
+            document.getElementById('fliph-btn').addEventListener('click', flipHSelected);
+            document.getElementById('flipv-btn').addEventListener('click', flipVSelected);
+            document.getElementById('clear-piece-btn').addEventListener('click', clearActiveSelection);
             document.getElementById('reset-btn').addEventListener('click', resetBoard);
+            document.getElementById('undo-btn').addEventListener('click', handleUndo);
             document.getElementById('info-btn').addEventListener('click', () => toggleModal('info-modal', true));
             document.getElementById('close-modal-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('close-modal-ok-btn').addEventListener('click', () => toggleModal('info-modal', false));
             document.getElementById('success-close-btn').addEventListener('click', () => toggleModal('success-modal', false));
         });
 
-        function saveStateToHistory() {
-            // Push deep copies to stack
-            historyStack.push(JSON.stringify({
-                piecesPlaced: JSON.parse(JSON.stringify(piecesPlaced)),
-                pieces: JSON.parse(JSON.stringify(pieces))
-            }));
-            
-            // Limit undo depth
-            if (historyStack.length > 50) {
-                historyStack.shift();
+        // Config mode based on URL query parameter (?mode=daily or ?mode=freeplay)
+        function detectModeAndSetupDate() {
+            const params = new URLSearchParams(window.location.search);
+            const mode = params.get('mode');
+
+            if (mode === 'daily' || mode === 'single') {
+                isDailyMode = true;
+                // Lock setup to real current date
+                const today = new Date();
+                setTargetFromDate(today);
+                
+                // Toggle mode elements
+                document.getElementById('mode-badge').classList.remove('hidden');
+                document.getElementById('date-picker-container').classList.add('hidden');
+            } else {
+                isDailyMode = false;
+                // Default view target to Thursday, May 28, 2026
+                const initialDate = new Date("2026-05-28");
+                setTargetFromDate(initialDate);
+                document.getElementById('date-picker').value = "2026-05-28";
+                
+                document.getElementById('mode-badge').classList.add('hidden');
+                document.getElementById('date-picker-container').classList.remove('hidden');
             }
+        }
+
+        function pushStateToHistory() {
+            const snapshot = JSON.stringify({
+                piecesPlaced,
+                pieces,
+                selectedPieceId
+            });
+            historyStack.push(snapshot);
             updateUndoButtonState();
         }
 
-        function undoLastMove() {
+        function handleUndo() {
             if (historyStack.length === 0) return;
             const lastState = JSON.parse(historyStack.pop());
             
             piecesPlaced = lastState.piecesPlaced;
             pieces = lastState.pieces;
-            
-            selectPiece(null);
+            selectedPieceId = lastState.selectedPieceId;
+
+            updateUndoButtonState();
+            selectPiece(selectedPieceId, false); // select without pushing to history
             renderBoard();
             renderTray();
-            updateUndoButtonState();
             document.getElementById('toast').classList.add('hidden');
         }
 
@@ -429,15 +431,13 @@
             const undoBtn = document.getElementById('undo-btn');
             if (historyStack.length > 0) {
                 undoBtn.removeAttribute('disabled');
-                undoBtn.classList.remove('opacity-30', 'pointer-events-none');
             } else {
-                undoBtn.setAttribute('disabled', 'true');
-                undoBtn.classList.add('opacity-30', 'pointer-events-none');
+                undoBtn.setAttribute('disabled', true);
             }
         }
 
         function handleDateChange(e) {
-            if (!e.target.value) return;
+            if (isDailyMode || !e.target.value) return;
             const chosenDate = new Date(e.target.value);
             const userDate = new Date(chosenDate.getTime() + chosenDate.getTimezoneOffset() * 60000);
             setTargetFromDate(userDate);
@@ -515,12 +515,7 @@
         function handleGridClick(row, col) {
             const clickedPieceId = getPieceAtCell(row, col);
 
-            // Double click / Tap selection toggle: if tapping the selected active piece, deselect it
-            if (selectedPieceId && clickedPieceId === selectedPieceId) {
-                selectPiece(null);
-                return;
-            }
-
+            // If tapping a placed tile segment when no other piece is selected:
             if (!selectedPieceId) {
                 if (clickedPieceId) {
                     selectPiece(clickedPieceId);
@@ -528,18 +523,24 @@
                 return;
             }
 
+            // If a piece is selected and we click its *own* placement location, deselect it
+            if (selectedPieceId === clickedPieceId) {
+                selectPiece(null);
+                return;
+            }
+
             const piece = pieces.find(p => p.id === selectedPieceId);
             if (!piece) return;
 
-            // Anchor placement cleanly based on the top-leftmost block (piece.shape[0])
+            // Target positioning anchored from the absolute top-left coordinate (shape[0])
             const firstBlock = piece.shape[0];
             const offsetRow = row - firstBlock[0];
             const offsetCol = col - firstBlock[1];
 
             if (canPlacePiece(piece, offsetRow, offsetCol)) {
-                saveStateToHistory(); // Save snapshot before making modifications
+                pushStateToHistory(); // Record state before mutation
                 piecesPlaced[piece.id] = { r: offsetRow, c: offsetCol };
-                selectPiece(null); 
+                selectPiece(null, false); 
                 renderBoard();
                 renderTray();
                 checkWinState();
@@ -579,6 +580,7 @@
         }
 
         function drawPlacedPieces() {
+            // Restore default text & backgrounds first
             document.querySelectorAll('#board-grid > div').forEach(el => {
                 const cellIdx = parseInt(el.dataset.index);
                 const cell = BOARD_CELLS[cellIdx];
@@ -590,6 +592,7 @@
                 }
             });
 
+            // Paint pieces and mask/hide covered text
             for (const [pieceId, offset] of Object.entries(piecesPlaced)) {
                 const piece = pieces.find(p => p.id === pieceId);
                 if (!piece) continue;
@@ -601,11 +604,12 @@
                     const cellEl = document.querySelector(`[data-row="${boardR}"][data-col="${boardC}"]`);
                     if (cellEl) {
                         const isSelected = selectedPieceId === pieceId;
+                        
+                        // Layout class
                         cellEl.className = `relative flex items-center justify-center rounded text-[10px] font-black transition-all border select-none cursor-pointer z-10 ${piece.color} ${piece.textColor} ${isSelected ? 'ring-2 ring-white border-white scale-95 shadow-lg' : 'shadow hover:brightness-105'}`;
-                        cellEl.innerHTML = `
-                            <span class="text-[8px] font-bold opacity-30 absolute top-0.5 left-1">${piece.id}</span>
-                            <span class="text-[9px] tracking-tighter pointer-events-none">${BOARD_CELLS.find(c => c.r === boardR && c.c === boardC)?.text || ''}</span>
-                        `;
+                        
+                        // Display only piece letter; hide the underlying date text completely
+                        cellEl.innerHTML = `<span class="text-[10px] font-black tracking-tighter opacity-70 select-none">${piece.id}</span>`;
                     }
                 });
             }
@@ -619,11 +623,9 @@
 
             pieces.forEach(piece => {
                 const isPlaced = piecesPlaced[piece.id] !== undefined;
-
                 const pieceCard = document.createElement('div');
                 const isSelected = selectedPieceId === piece.id;
                 
-                // Keep the card visually represented even if placed, but make it look checked/completed
                 if (isPlaced) {
                     pieceCard.className = "flex flex-col items-center justify-center p-1 rounded-lg border border-slate-900 bg-slate-900/40 text-slate-700 opacity-20 pointer-events-none select-none h-12";
                     pieceCard.innerHTML = `
@@ -632,7 +634,7 @@
                     `;
                 } else {
                     unusedCount++;
-                    pieceCard.className = `flex flex-col items-center justify-center p-1.5 rounded-lg border transition-all cursor-pointer h-12 ${
+                    pieceCard.className = `flex flex-col items-center justify-center p-1 rounded-lg border transition-all cursor-pointer h-12 ${
                         isSelected ? 'bg-indigo-600 border-indigo-400 text-white scale-105 shadow-md ring-1 ring-indigo-500' : 'bg-slate-850 hover:bg-slate-800 border-slate-800 text-slate-300'
                     }`;
 
@@ -644,11 +646,11 @@
                     textLabel.innerText = `PIECE ${piece.id}`;
                     pieceCard.appendChild(textLabel);
 
-                    // Add dynamic selection and deselection listener
                     pieceCard.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        // Tapping selected card deselects it
                         if (selectedPieceId === piece.id) {
-                            selectPiece(null); // Click selected piece again to deselect
+                            selectPiece(null);
                         } else {
                             selectPiece(piece.id);
                         }
@@ -682,13 +684,17 @@
             return container;
         }
 
-        function selectPiece(pieceId) {
+        function selectPiece(pieceId, pushToHistory = true) {
+            if (pushToHistory && pieceId !== selectedPieceId) {
+                pushStateToHistory();
+            }
+
             selectedPieceId = pieceId;
 
             const controlGroup = [
                 document.getElementById('rotate-btn'),
-                document.getElementById('flip-h-btn'),
-                document.getElementById('flip-v-btn'),
+                document.getElementById('fliph-btn'),
+                document.getElementById('flipv-btn'),
                 document.getElementById('clear-piece-btn')
             ];
 
@@ -707,11 +713,11 @@
 
         function rotateSelected() {
             if (!selectedPieceId) return;
-            saveStateToHistory(); // Snapshot rotation transition
-
+            pushStateToHistory();
             const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
             const piece = pieces[pieceIndex];
 
+            // 90 deg clockwise rotation: (r, c) -> (c, -r)
             let rotatedShape = piece.shape.map(([r, c]) => [c, -r]);
             normalizeShape(rotatedShape, piece);
 
@@ -728,13 +734,13 @@
             }
         }
 
-        function flipSelectedHorizontal() {
+        function flipHSelected() {
             if (!selectedPieceId) return;
-            saveStateToHistory(); // Snapshot horizontal flip transition
-
+            pushStateToHistory();
             const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
             const piece = pieces[pieceIndex];
 
+            // Horizontal flip: reflect across vertical center (r, -c)
             let flippedShape = piece.shape.map(([r, c]) => [r, -c]);
             normalizeShape(flippedShape, piece);
 
@@ -751,13 +757,13 @@
             }
         }
 
-        function flipSelectedVertical() {
+        function flipVSelected() {
             if (!selectedPieceId) return;
-            saveStateToHistory(); // Snapshot vertical flip transition
-
+            pushStateToHistory();
             const pieceIndex = pieces.findIndex(p => p.id === selectedPieceId);
             const piece = pieces[pieceIndex];
 
+            // Vertical flip: reflect across horizontal center (-r, c)
             let flippedShape = piece.shape.map(([r, c]) => [-r, c]);
             normalizeShape(flippedShape, piece);
 
@@ -774,34 +780,42 @@
             }
         }
 
-        // Normalizes layout coordinates and ALWAYS sorts them so shape[0] is strictly top-leftmost
+        // Normalize coordinates and sort to ensure shape[0] is strictly top-leftmost
         function normalizeShape(newShape, pieceObj) {
             const minR = Math.min(...newShape.map(p => p[0]));
             const minC = Math.min(...newShape.map(p => p[1]));
-            let normalized = newShape.map(([r, c]) => [r - minR, c - minC]);
             
-            // Sort to ensure absolute top-left boundary consistency
-            normalized.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-            pieceObj.shape = normalized;
+            // Translate coordinates to positive limits starting from 0
+            let adjusted = newShape.map(([r, c]) => [r - minR, c - minC]);
+
+            // Sort coordinates so shape[0] is guaranteed to be the top-leftmost block.
+            // Priority: top row first (r ascending), then leftmost column (c ascending).
+            adjusted.sort((a, b) => {
+                if (a[0] !== b[0]) {
+                    return a[0] - b[0];
+                }
+                return a[1] - b[1];
+            });
+
+            pieceObj.shape = adjusted;
         }
 
-        function removeSelected() {
-            if (!selectedPieceId) return;
-            saveStateToHistory(); // Snapshot removal action
-
-            delete piecesPlaced[selectedPieceId];
+        function clearActiveSelection() {
+            // If the selected piece was placed, remove it
+            if (selectedPieceId && piecesPlaced[selectedPieceId]) {
+                pushStateToHistory();
+                delete piecesPlaced[selectedPieceId];
+            }
             selectPiece(null);
             renderBoard();
             renderTray();
         }
 
         function resetBoard() {
-            // Full sweep
+            pushStateToHistory();
             piecesPlaced = {};
-            selectPiece(null);
+            selectPiece(null, false);
             pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
-            historyStack = [];
-            updateUndoButtonState();
             renderBoard();
             renderTray();
             document.getElementById('toast').classList.add('hidden');
