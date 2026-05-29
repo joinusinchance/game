@@ -107,12 +107,13 @@
                 <!-- Selectable Picker Layout (Freeplay) -->
                 <div id="picker-wrapper" class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col space-y-1.5">
                     <label class="text-[9px] font-black tracking-wider text-slate-400 uppercase">Change Puzzle Target</label>
-                    <div id="custom-picker-btn" class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg p-1.5 flex items-center justify-between text-xs font-semibold cursor-pointer border border-slate-700 transition-all">
+                    <div id="custom-picker-btn" class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg p-1.5 flex items-center justify-between text-xs font-semibold border border-slate-700 transition-all">
                         <div class="flex items-center space-x-2">
                             <i class="fa-solid fa-calendar-day text-indigo-400"></i>
                             <span id="picker-label-string">Select Target Date</span>
                         </div>
-                        <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                        <!-- Absolute date input overlay on top with pointer events z-10 index to prevent jamming -->
+                        <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
                         <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
                     </div>
                 </div>
@@ -301,21 +302,8 @@
 
             document.getElementById('title-display').addEventListener('click', () => toggleModal('info-modal', true));
             
-            const customPicker = document.getElementById('custom-picker-btn');
+            // Replaced buggy custom click event redirect wrapper to prevent date picker jamming issues
             const nativePicker = document.getElementById('date-picker');
-            customPicker.addEventListener('click', (e) => {
-                if (e.target !== nativePicker) {
-                    try {
-                        if (typeof nativePicker.showPicker === 'function') {
-                            nativePicker.showPicker();
-                        } else {
-                            nativePicker.click();
-                        }
-                    } catch (err) {
-                        nativePicker.click();
-                    }
-                }
-            });
             nativePicker.addEventListener('change', handleDateChange);
 
             document.getElementById('rotate-btn').addEventListener('click', rotateSelected);
@@ -332,7 +320,7 @@
             document.getElementById('share-btn').addEventListener('click', handleShareSystemAction);
         });
 
-        // Safe Custom Toast function replacing the native alert dialogs
+        // Safe Custom Toast function replacing native alerts
         function showToast(text, duration = 3000, isSuccess = true) {
             const toast = document.getElementById('toast');
             const toastText = document.getElementById('toast-text');
@@ -425,12 +413,16 @@
         }
 
         function handleDateChange(e) {
-            if (isStrictOneADay || isBoardLocked) return;
+            // Strict One-A-Day locks manual navigation, Freeplay is free to change dates unlimited times
+            if (isStrictOneADay) return;
             if (!e.target.value) return;
+            
             const parts = e.target.value.split('-');
             const chosenDate = new Date(parts[0], parts[1] - 1, parts[2]);
+            
             setTargetFromDate(chosenDate);
-            resetBoardState();
+            // Reset state and force complete unlock on navigation away
+            resetBoardState(true);
         }
 
         function pushStateToHistory() {
@@ -462,8 +454,15 @@
             updateControlsState();
         }
 
-        function resetBoardState() {
+        function resetBoardState(forceUnlock = false) {
+            if (forceUnlock) {
+                isBoardLocked = false;
+                document.getElementById('locked-banner').classList.add('hidden');
+                document.getElementById('hint-btn').removeAttribute('disabled');
+                document.getElementById('hint-btn').classList.remove('opacity-30');
+            }
             if (isBoardLocked) return;
+            
             historyStack = [];
             piecesPlaced = {};
             hintsUsedCount = 0;
