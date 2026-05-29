@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>A Puzzle A Day Calendar Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            grid-template-rows: repeat(8, minmax(0, 1fr));
+            gap: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-start overflow-y-auto font-sans antialiased selection:bg-indigo-500/30">
+
+    <!-- Header Panel -->
+    <header class="bg-slate-900 border-b border-slate-800 px-3 py-1.5 flex items-center justify-between sticky top-0 z-30 shadow-md">
+        <!-- Left: Seeded Hint Button (Double Width: w-16 h-10) -->
+        <button id="hint-btn" class="bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-amber-400 w-16 h-10 rounded-xl transition-all flex items-center justify-center shadow-sm flex-shrink-0" title="Get Hint">
+            <i class="fa-solid fa-lightbulb text-sm"></i>
+        </button>
+
+        <!-- Center: Game Title & Target Display -->
+        <div class="flex flex-col items-center text-center px-2 min-w-0">
+            <h1 id="title-display" class="text-xs font-black tracking-widest text-slate-200 uppercase leading-none cursor-pointer hover:text-indigo-400 transition-colors truncate">
+                Puzzle Calendar
+            </h1>
+            <span id="target-display" class="text-[11px] font-black text-amber-400 tracking-wide mt-1 truncate">MON 28 MAY</span>
+        </div>
+
+        <!-- Right: Control Buttons (Double Width: w-16 h-10) -->
+        <div class="flex items-center space-x-1.5 flex-shrink-0">
+            <button id="undo-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 w-16 h-10 rounded-xl transition-all flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none" title="Undo Move" disabled>
+                <i class="fa-solid fa-rotate-left text-xs"></i>
+            </button>
+            <button id="info-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 w-16 h-10 rounded-xl transition-all flex items-center justify-center" title="Instructions">
+                <i class="fa-solid fa-circle-question text-xs"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="flex-1 w-full max-w-md mx-auto p-3 flex flex-col items-center justify-start space-y-3 relative">
+        
+        <!-- Locked / Completed State Banner -->
+        <div id="locked-banner" class="hidden w-full text-center py-1.5 px-3 rounded-lg text-xs font-bold bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 shadow-md">
+            <i class="fa-solid fa-circle-check mr-1.5 text-emerald-400"></i>
+            Today's Challenge Solved! Score: <span id="locked-score-display">--</span>/10
+        </div>
+
+        <!-- Floating Custom Toast Notification System -->
+        <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-xs text-center py-2 px-4 rounded-xl text-xs font-bold shadow-2xl transition-all duration-300">
+            <span id="toast-text"></span>
+        </div>
+
+        <!-- Expanded Board Layout Window (Aspect 7:8 ratio matches 7x8 layout) -->
+        <div class="w-full aspect-[7/8] bg-slate-900 p-2.5 rounded-xl border border-slate-800 shadow-2xl relative">
+            <div id="board-grid" class="calendar-grid w-full h-full"></div>
+        </div>
+
+        <!-- Cleaned Controls Area -->
+        <div id="controls-panel" class="w-full px-1 flex flex-col bg-slate-900/40 p-1.5 rounded-xl border border-slate-800/80">
+            <div class="grid grid-cols-4 gap-1.5 w-full">
+                <button id="rotate-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-2 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none w-full" disabled title="Rotate Piece">
+                    <i class="fa-solid fa-arrows-rotate text-sm"></i>
+                </button>
+                <button id="fliph-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-2 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none w-full" disabled title="Flip Horizontally">
+                    <i class="fa-solid fa-arrows-left-right text-sm"></i>
+                </button>
+                <button id="flipv-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white py-2 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none w-full" disabled title="Flip Vertically">
+                    <i class="fa-solid fa-arrows-up-down text-sm"></i>
+                </button>
+                <button id="clear-piece-btn" class="bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-900/50 py-2 rounded-lg flex items-center justify-center transition-all disabled:opacity-30 disabled:pointer-events-none w-full" disabled title="Clear / Deselect Piece">
+                    <i class="fa-solid fa-trash-can text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tray Section -->
+        <div id="tray-panel" class="w-full flex-shrink-0">
+            <div id="pieces-tray" class="grid grid-cols-5 gap-1.5 p-1.5 bg-slate-900 rounded-xl border border-slate-800 min-h-[110px] flex-shrink-0 shadow-lg"></div>
+        </div>
+    </main>
+
+    <!-- Global Pop-up Interface Container -->
+    <div id="info-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-5 shadow-2xl relative">
+            <button id="close-modal-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+            
+            <h3 class="text-sm font-black text-white mb-3 flex items-center space-x-2 uppercase tracking-wide">
+                <i class="fa-solid fa-sliders text-indigo-400"></i>
+                <span>Configuration Menu</span>
+            </h3>
+
+            <!-- Dynamic Date Picker -->
+            <div id="date-picker-section" class="mb-4 flex flex-col space-y-1.5">
+                <!-- Selectable Picker Layout (Freeplay) -->
+                <div id="picker-wrapper" class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col space-y-1.5">
+                    <label class="text-[9px] font-black tracking-wider text-slate-400 uppercase">Change Puzzle Target</label>
+                    <div id="custom-picker-btn" class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg p-1.5 flex items-center justify-between text-xs font-semibold cursor-pointer border border-slate-700 transition-all">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-calendar-day text-indigo-400"></i>
+                            <span id="picker-label-string">Select Target Date</span>
+                        </div>
+                        <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                    </div>
+                </div>
+                <!-- Strictly Locked Banner (Daily Mode) -->
+                <div id="picker-locked-banner" class="hidden bg-slate-950 p-3 rounded-xl border border-slate-800 text-center text-[10px] text-indigo-300 font-bold uppercase tracking-wider">
+                    <i class="fa-solid fa-lock mr-1.5 text-indigo-400"></i>
+                    Strict Daily Mode Active
+                </div>
+            </div>
+
+            <!-- Rules Setup Description -->
+            <div class="space-y-2 text-slate-300 text-[11px] leading-relaxed">
+                <p>Cover the board grid with the 10 pieces so that only the selected target stays exposed:</p>
+                <ul class="list-disc pl-4 space-y-0.5 text-slate-400 font-bold">
+                    <li>The Weekday (e.g. <span class="text-indigo-300">THU</span>)</li>
+                    <li>The Day (e.g. <span class="text-indigo-300">28</span>)</li>
+                    <li>The Month (e.g. <span class="text-indigo-300">MAY</span>)</li>
+                </ul>
+                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 mt-2 space-y-1">
+                    <p class="font-bold text-white text-[9px] uppercase tracking-wider">Gameplay Controls:</p>
+                    <p>👉 <strong>Tap a piece</strong> in the bottom tray to pick it up.</p>
+                    <p>🔄 Use the **4-button row** to Rotate, Flip, or Remove it.</p>
+                    <p>🎯 <strong>Tap any cell on the board</strong> to drop it into position.</p>
+                </div>
+            </div>
+
+            <button id="close-modal-ok-btn" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-bold transition-all shadow-md">
+                Let's Play!
+            </button>
+        </div>
+    </div>
+
+    <!-- Celebration/Success Window Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-gradient-to-b from-indigo-950 to-slate-900 border-2 border-indigo-500 rounded-2xl max-w-xs w-full p-5 text-center shadow-2xl relative">
+            <div class="w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center mx-auto mb-3 animate-bounce shadow-lg">
+                <i class="fa-solid fa-trophy text-xl"></i>
+            </div>
+            
+            <h3 class="text-base font-black text-white mb-1 uppercase tracking-wide">Puzzle Solved!</h3>
+            <p class="text-[10px] text-slate-400 mb-3">You completed the date combination successfully!</p>
+            
+            <div class="bg-slate-950 py-2.5 px-3 rounded-xl mb-4 border border-slate-800">
+                <span class="text-[8px] text-slate-500 block uppercase font-mono tracking-widest">Exposed Target</span>
+                <span id="success-date-string" class="text-sm font-black text-amber-400 tracking-wide uppercase">MAY 28 THU</span>
+                <div class="mt-1 flex items-center justify-center space-x-1">
+                    <span class="text-[9px] text-slate-400">Score Earned:</span>
+                    <span id="success-score-string" class="text-xs font-black text-emerald-400">10/10</span>
+                </div>
+            </div>
+            
+            <!-- Dynamic Actions Panel -->
+            <div class="flex flex-col space-y-2">
+                <button id="share-btn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 py-2.5 rounded-xl text-xs font-black flex items-center justify-center space-x-1.5 transition-all shadow-lg">
+                    <i class="fa-solid fa-share-nodes"></i>
+                    <span>Share Results</span>
+                </button>
+                <button id="success-close-btn" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 rounded-xl text-xs font-bold transition-all">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Solution Computation Loader -->
+    <div id="solver-loader" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center hidden">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col items-center space-y-3 shadow-2xl max-w-xs text-center">
+            <i class="fa-solid fa-gear fa-spin text-3xl text-amber-500"></i>
+            <p class="text-xs font-bold text-white">Analyzing Geometry...</p>
+            <p class="text-[10px] text-slate-400">Calculating target path hints</p>
+        </div>
+    </div>
+
+    <script>
+        // Left-aligned last two rows (Months MAY-SEP and OCT-DEC on the left, blanks on the right)
+        const BOARD_CELLS = [
+            // Row 0: Weekdays (MON-SUN)
+            { text: "MON", type: "weekday", val: 1, r: 0, c: 0 },
+            { text: "TUE", type: "weekday", val: 2, r: 0, c: 1 },
+            { text: "WED", type: "weekday", val: 3, r: 0, c: 2 },
+            { text: "THU", type: "weekday", val: 4, r: 0, c: 3 },
+            { text: "FRI", type: "weekday", val: 5, r: 0, c: 4 },
+            { text: "SAT", type: "weekday", val: 6, r: 0, c: 5 },
+            { text: "SUN", type: "weekday", val: 0, r: 0, c: 6 },
+
+            // Row 1: Days 1-7
+            { text: "1", type: "day", val: 1, r: 1, c: 0 },
+            { text: "2", type: "day", val: 2, r: 1, c: 1 },
+            { text: "3", type: "day", val: 3, r: 1, c: 2 },
+            { text: "4", type: "day", val: 4, r: 1, c: 3 },
+            { text: "5", type: "day", val: 5, r: 1, c: 4 },
+            { text: "6", type: "day", val: 6, r: 1, c: 5 },
+            { text: "7", type: "day", val: 7, r: 1, c: 6 },
+
+            // Row 2: Days 8-14
+            { text: "8", type: "day", val: 8, r: 2, c: 0 },
+            { text: "9", type: "day", val: 9, r: 2, c: 1 },
+            { text: "10", type: "day", val: 10, r: 2, c: 2 },
+            { text: "11", type: "day", val: 11, r: 2, c: 3 },
+            { text: "12", type: "day", val: 12, r: 2, c: 4 },
+            { text: "13", type: "day", val: 13, r: 2, c: 5 },
+            { text: "14", type: "day", val: 14, r: 2, c: 6 },
+
+            // Row 3: Days 15-21
+            { text: "15", type: "day", val: 15, r: 3, c: 0 },
+            { text: "16", type: "day", val: 16, r: 3, c: 1 },
+            { text: "17", type: "day", val: 17, r: 3, c: 2 },
+            { text: "18", type: "day", val: 18, r: 3, c: 3 },
+            { text: "19", type: "day", val: 19, r: 3, c: 4 },
+            { text: "20", type: "day", val: 20, r: 3, c: 5 },
+            { text: "21", type: "day", val: 21, r: 3, c: 6 },
+
+            // Row 4: Days 22-28
+            { text: "22", type: "day", val: 22, r: 4, c: 0 },
+            { text: "23", type: "day", val: 23, r: 4, c: 1 },
+            { text: "24", type: "day", val: 24, r: 4, c: 3 },
+            { text: "25", type: "day", val: 25, r: 4, c: 3 },
+            { text: "26", type: "day", val: 26, r: 4, c: 4 },
+            { text: "27", type: "day", val: 27, r: 4, c: 5 },
+            { text: "28", type: "day", val: 28, r: 4, c: 6 },
+
+            // Row 5: Days 29-31 + Months JAN-APR
+            { text: "29", type: "day", val: 29, r: 5, c: 0 },
+            { text: "30", type: "day", val: 30, r: 5, c: 1 },
+            { text: "31", type: "day", val: 31, r: 5, c: 2 },
+            { text: "JAN", type: "month", val: 0, r: 5, c: 3 },
+            { text: "FEB", type: "month", val: 1, r: 5, c: 4 },
+            { text: "MAR", type: "month", val: 2, r: 5, c: 5 },
+            { text: "APR", type: "month", val: 3, r: 5, c: 6 },
+
+            // Row 6: Months MAY-SEP + Blanks (Left Aligned Month Cells)
+            { text: "MAY", type: "month", val: 4, r: 6, c: 0 },
+            { text: "JUN", type: "month", val: 5, r: 6, c: 1 },
+            { text: "JUL", type: "month", val: 6, r: 6, c: 2 },
+            { text: "AUG", type: "month", val: 7, r: 6, c: 3 },
+            { text: "SEP", type: "month", val: 8, r: 6, c: 4 },
+            { text: "blank", type: "blank", r: 6, c: 5 },
+            { text: "blank", type: "blank", r: 6, c: 6 },
+
+            // Row 7: Months OCT-DEC + Blanks (Left Aligned Month Cells)
+            { text: "OCT", type: "month", val: 9, r: 7, c: 0 },
+            { text: "NOV", type: "month", val: 10, r: 7, c: 1 },
+            { text: "DEC", type: "month", val: 11, r: 7, c: 2 },
+            { text: "blank", type: "blank", r: 7, c: 3 },
+            { text: "blank", type: "blank", r: 7, c: 4 },
+            { text: "blank", type: "blank", r: 7, c: 5 },
+            { text: "blank", type: "blank", r: 7, c: 6 }
+        ];
+
+        // Fixed duplicate day cells from original mapping
+        BOARD_CELLS[28] = { text: "24", type: "day", val: 24, r: 4, c: 2 };
+
+        const ORIGINAL_PIECES = [
+            { id: "A", name: "Corner (4)", color: "bg-emerald-500 border-emerald-400 text-slate-950", shape: [[0,0],[0,1],[1,0],[2,0]] },
+            { id: "B", name: "L-Shape (4)", color: "bg-cyan-400 border-cyan-300 text-slate-950", shape: [[0,0],[0,1],[0,2],[1,0]] },
+            { id: "C", name: "Square (4)", color: "bg-violet-500 border-violet-400 text-white", shape: [[0,0],[0,1],[1,0],[1,1]] },
+            { id: "D", name: "T-Pentomino (5)", color: "bg-fuchsia-500 border-fuchsia-400 text-white", shape: [[0,0],[0,1],[0,2],[1,1],[2,1]] },
+            { id: "E", name: "Z-Pentomino (5)", color: "bg-pink-500 border-pink-400 text-white", shape: [[0,1],[0,2],[1,0],[1,1],[2,0]] },
+            { id: "F", name: "I-Pentomino (5)", color: "bg-amber-400 border-amber-300 text-slate-950", shape: [[0,0],[0,1],[0,2],[0,3],[0,4]] },
+            { id: "G", name: "U-Pentomino (5)", color: "bg-teal-400 border-teal-300 text-slate-950", shape: [[0,0],[0,2],[1,0],[1,1],[1,2]] },
+            { id: "H", name: "V-Pentomino (5)", color: "bg-rose-500 border-rose-400 text-white", shape: [[0,0],[0,1],[0,2],[1,0],[2,0]] },
+            { id: "I", name: "W-Pentomino (5)", color: "bg-orange-500 border-orange-400 text-slate-950", shape: [[0,0],[1,0],[1,1],[2,1],[2,2]] },
+            { id: "J", name: "Long L (5)", color: "bg-lime-400 border-lime-300 text-slate-950", shape: [[0,0],[0,1],[0,2],[0,3],[1,0]] }
+        ];
+
+        let pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
+
+        // Start with null so no shape is pre-selected
+        let selectedPieceId = null; 
+        let piecesPlaced = {};
+        let historyStack = [];
+        let hintsUsedCount = 0;
+        let isBoardLocked = false;
+
+        let targetMonth = 4;   // Default May
+        let targetDay = 28;    // Default 28
+        let targetWeekday = 4; // Default Thursday
+        let cachedFullSolution = null;
+        let isStrictOneADay = true; 
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initModeAndTargetDate();
+            renderBoard();
+            renderTray();
+            updateControlsState();
+
+            document.getElementById('title-display').addEventListener('click', () => toggleModal('info-modal', true));
+            
+            const customPicker = document.getElementById('custom-picker-btn');
+            const nativePicker = document.getElementById('date-picker');
+            customPicker.addEventListener('click', (e) => {
+                if (e.target !== nativePicker) {
+                    try {
+                        if (typeof nativePicker.showPicker === 'function') {
+                            nativePicker.showPicker();
+                        } else {
+                            nativePicker.click();
+                        }
+                    } catch (err) {
+                        nativePicker.click();
+                    }
+                }
+            });
+            nativePicker.addEventListener('change', handleDateChange);
+
+            document.getElementById('rotate-btn').addEventListener('click', rotateSelected);
+            document.getElementById('fliph-btn').addEventListener('click', flipHSelected);
+            document.getElementById('flipv-btn').addEventListener('click', flipVSelected);
+            document.getElementById('clear-piece-btn').addEventListener('click', clearActiveSelection);
+            document.getElementById('undo-btn').addEventListener('click', handleUndo);
+            document.getElementById('hint-btn').addEventListener('click', injectNextDeterministicHint);
+            
+            document.getElementById('info-btn').addEventListener('click', () => toggleModal('info-modal', true));
+            document.getElementById('close-modal-btn').addEventListener('click', () => toggleModal('info-modal', false));
+            document.getElementById('close-modal-ok-btn').addEventListener('click', () => toggleModal('info-modal', false));
+            document.getElementById('success-close-btn').addEventListener('click', () => toggleModal('success-modal', false));
+            document.getElementById('share-btn').addEventListener('click', handleShareSystemAction);
+        });
+
+        // Safe Custom Toast function replacing the native alert dialogs
+        function showToast(text, duration = 3000, isSuccess = true) {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            
+            toastText.innerText = text;
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-xs text-center py-2.5 px-4 rounded-xl text-xs font-bold shadow-2xl transition-all duration-300 animate-bounce ${
+                isSuccess 
+                ? 'bg-indigo-600 border border-indigo-400 text-white' 
+                : 'bg-rose-900 border border-rose-500 text-rose-100'
+            }`;
+            
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, duration);
+        }
+
+        function getDateKey(dateObj) {
+            const yyyy = dateObj.getFullYear();
+            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dd = String(dateObj.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function initModeAndTargetDate() {
+            const params = new URLSearchParams(window.location.search);
+            const mode = params.get('mode');
+            const freeplayParam = params.get('freeplay');
+
+            if (mode === 'freeplay' || freeplayParam === 'true') {
+                isStrictOneADay = false;
+            } else {
+                isStrictOneADay = true;
+            }
+
+            const pickerSec = document.getElementById('picker-wrapper');
+            const pickerLock = document.getElementById('picker-locked-banner');
+            if (isStrictOneADay) {
+                pickerSec.classList.add('hidden');
+                pickerLock.classList.remove('hidden');
+            } else {
+                pickerSec.classList.remove('hidden');
+                pickerLock.classList.add('hidden');
+            }
+
+            const today = new Date();
+            setTargetFromDate(today);
+            
+            const nativePicker = document.getElementById('date-picker');
+            nativePicker.value = getDateKey(today);
+
+            if (isStrictOneADay) {
+                const key = "cal_solved_" + getDateKey(today);
+                const savedState = localStorage.getItem(key);
+                if (savedState) {
+                    try {
+                        const parsed = JSON.parse(savedState);
+                        piecesPlaced = parsed.piecesPlaced || {};
+                        pieces = parsed.pieces || ORIGINAL_PIECES;
+                        hintsUsedCount = parsed.hintsUsedCount || 0;
+                        isBoardLocked = true;
+                        
+                        const lockBanner = document.getElementById('locked-banner');
+                        const lockScore = document.getElementById('locked-score-display');
+                        lockScore.innerText = Math.max(0, 10 - hintsUsedCount);
+                        lockBanner.classList.remove('hidden');
+                        
+                        document.getElementById('hint-btn').setAttribute('disabled', true);
+                        document.getElementById('hint-btn').classList.add('opacity-30');
+                    } catch (e) {
+                        console.error("Error reading saved solution state", e);
+                    }
+                }
+            }
+        }
+
+        function setTargetFromDate(dateObj) {
+            targetMonth = dateObj.getMonth();
+            targetDay = dateObj.getDate();
+            targetWeekday = dateObj.getDay();
+
+            const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+            
+            const label = `${daysOfWeek[targetWeekday]} ${targetDay} ${months[targetMonth]}`;
+            document.getElementById('target-display').innerText = label;
+            document.getElementById('picker-label-string').innerText = label;
+            
+            cachedFullSolution = null; 
+        }
+
+        function handleDateChange(e) {
+            if (isStrictOneADay || isBoardLocked) return;
+            if (!e.target.value) return;
+            const parts = e.target.value.split('-');
+            const chosenDate = new Date(parts[0], parts[1] - 1, parts[2]);
+            setTargetFromDate(chosenDate);
+            resetBoardState();
+        }
+
+        function pushStateToHistory() {
+            if (isBoardLocked) return;
+            historyStack.push(JSON.stringify({
+                piecesPlaced: { ...piecesPlaced },
+                pieces: JSON.parse(JSON.stringify(pieces)),
+                selectedPieceId,
+                hintsUsedCount
+            }));
+            document.getElementById('undo-btn').removeAttribute('disabled');
+        }
+
+        function handleUndo() {
+            if (isBoardLocked || historyStack.length === 0) return;
+            const lastState = JSON.parse(historyStack.pop());
+            
+            piecesPlaced = lastState.piecesPlaced;
+            pieces = lastState.pieces;
+            selectedPieceId = lastState.selectedPieceId;
+            hintsUsedCount = lastState.hintsUsedCount;
+
+            if (historyStack.length === 0) {
+                document.getElementById('undo-btn').setAttribute('disabled', true);
+            }
+            
+            renderBoard();
+            renderTray();
+            updateControlsState();
+        }
+
+        function resetBoardState() {
+            if (isBoardLocked) return;
+            historyStack = [];
+            piecesPlaced = {};
+            hintsUsedCount = 0;
+            selectedPieceId = null;
+            pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
+            document.getElementById('undo-btn').setAttribute('disabled', true);
+            renderBoard();
+            renderTray();
+            updateControlsState();
+        }
+
+        function toggleModal(id, show) {
+            const modal = document.getElementById(id);
+            if (show) {
+                modal.classList.remove('hidden');
+                if (id === 'success-modal') {
+                    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                    const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+                    document.getElementById('success-date-string').innerText = `${months[targetMonth]} ${targetDay} ${daysOfWeek[targetWeekday]}`;
+                    
+                    const score = Math.max(0, 10 - hintsUsedCount);
+                    document.getElementById('success-score-string').innerText = `${score}/10`;
+                }
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function isTargetCell(cell) {
+            if (cell.type === 'month' && cell.val === targetMonth) return true;
+            if (cell.type === 'day' && cell.val === targetDay) return true;
+            if (cell.type === 'weekday' && cell.val === targetWeekday) return true;
+            return false;
+        }
+
+        function renderBoard() {
+            const gridContainer = document.getElementById('board-grid');
+            gridContainer.innerHTML = '';
+
+            BOARD_CELLS.forEach((cell, idx) => {
+                const cellDiv = document.createElement('div');
+                cellDiv.dataset.row = cell.r;
+                cellDiv.dataset.col = cell.c;
+
+                let classes = "relative flex items-center justify-center rounded-lg text-[10px] font-black transition-all border select-none ";
+                
+                if (cell.type === 'blank') {
+                    classes += "bg-slate-950 border-transparent text-transparent opacity-0 pointer-events-none";
+                } else if (isTargetCell(cell)) {
+                    classes += "bg-indigo-600 text-white border-indigo-400 ring-2 ring-indigo-500/50 shadow-md font-black scale-[1.02] z-10";
+                } else {
+                    classes += "bg-slate-800 hover:bg-slate-700/80 text-slate-400 border-slate-700/40 select-none " + (isBoardLocked ? "cursor-default" : "cursor-pointer");
+                }
+
+                cellDiv.className = classes;
+                if (cell.type !== 'blank') {
+                    cellDiv.innerHTML = `<span>${cell.text}</span>`;
+                }
+
+                if (cell.type !== 'blank' && !isTargetCell(cell) && !isBoardLocked) {
+                    cellDiv.addEventListener('click', () => handleGridClick(cell.r, cell.c));
+                }
+
+                gridContainer.appendChild(cellDiv);
+            });
+
+            drawPlacedPieces();
+        }
+
+        function handleGridClick(row, col) {
+            if (isBoardLocked) return;
+            const clickedPieceId = getPieceAtCell(row, col);
+
+            if (!selectedPieceId) {
+                if (clickedPieceId) {
+                    selectPiece(clickedPieceId);
+                }
+                return;
+            }
+
+            if (selectedPieceId === clickedPieceId) {
+                selectPiece(null);
+                return;
+            }
+
+            const piece = pieces.find(p => p.id === selectedPieceId);
+            if (!piece) return;
+
+            const firstBlock = piece.shape[0];
+            const offsetRow = row - firstBlock[0];
+            const offsetCol = col - firstBlock[1];
+
+            if (canPlacePiece(piece, offsetRow, offsetCol)) {
+                pushStateToHistory();
+                piecesPlaced[piece.id] = { r: offsetRow, c: offsetCol };
+                
+                const nextPiece = pieces.find(p => p.id !== piece.id && piecesPlaced[p.id] === undefined);
+                selectPiece(nextPiece ? nextPiece.id : null, false);
+                
+                renderBoard();
+                renderTray();
+                checkWinState();
+            } else {
+                flashWarningBorder();
+            }
+        }
+
+        function getPieceAtCell(row, col) {
+            for (const [pieceId, pos] of Object.entries(piecesPlaced)) {
+                const piece = pieces.find(p => p.id === pieceId);
+                const match = piece.shape.some(([pr, pc]) => (pos.r + pr === row) && (pos.c + pc === col));
+                if (match) return pieceId;
+            }
+            return null;
+        }
+
+        function canPlacePiece(piece, offsetRow, offsetCol, ignorePieceId = null) {
+            return piece.shape.every(([pr, pc]) => {
+                const tr = offsetRow + pr;
+                const tc = offsetCol + pc;
+                if (tr < 0 || tr >= 8 || tc < 0 || tc >= 7) return false;
+                const cell = BOARD_CELLS.find(c => c.r === tr && c.c === tc);
+                if (!cell || cell.type === 'blank' || isTargetCell(cell)) return false;
+                const existingId = getPieceAtCell(tr, tc);
+                return (!existingId || existingId === piece.id || existingId === ignorePieceId);
+            });
+        }
+
+        function drawPlacedPieces() {
+            for (const [pieceId, offset] of Object.entries(piecesPlaced)) {
+                const piece = pieces.find(p => p.id === pieceId);
+                if (!piece) continue;
+
+                piece.shape.forEach(([pr, pc]) => {
+                    const boardR = offset.r + pr;
+                    const boardC = offset.c + pc;
+                    const el = document.querySelector(`[data-row="${boardR}"][data-col="${boardC}"]`);
+                    if (el) {
+                        const isSelected = selectedPieceId === pieceId;
+                        el.className = `relative flex items-center justify-center rounded-lg text-xs font-black transition-all border select-none z-10 ${piece.color} ${isSelected && !isBoardLocked ? 'ring-4 ring-white border-white scale-95 shadow-xl' : 'shadow'} ` + (isBoardLocked ? "cursor-default" : "cursor-pointer hover:brightness-110");
+                        el.innerHTML = `<span class="opacity-90 select-none">${piece.id}</span>`;
+                    }
+                });
+            }
+        }
+
+        function renderTray() {
+            const trayContainer = document.getElementById('pieces-tray');
+            trayContainer.innerHTML = '';
+
+            pieces.forEach(piece => {
+                const isPlaced = piecesPlaced[piece.id] !== undefined;
+                const pieceCard = document.createElement('div');
+                const isSelected = selectedPieceId === piece.id;
+                
+                if (isPlaced) {
+                    pieceCard.className = "flex flex-col items-center justify-center p-1 rounded-xl border border-slate-955 bg-slate-955/40 text-slate-700 opacity-20 pointer-events-none select-none h-12";
+                    pieceCard.innerHTML = `<i class="fa-solid fa-circle-check text-xs"></i>`;
+                } else {
+                    pieceCard.className = `flex flex-col items-center justify-center p-1 rounded-xl border transition-all h-12 ${
+                        isBoardLocked ? 'pointer-events-none select-none bg-slate-900 border-slate-800 opacity-40' : 'cursor-pointer'
+                    } ${
+                        isSelected && !isBoardLocked ? 'bg-indigo-600 border-indigo-400 text-white scale-105 shadow-md ring-2 ring-indigo-500/50' : 'bg-slate-800/90 hover:bg-slate-800 border-slate-700/60 text-slate-300'
+                    }`;
+
+                    pieceCard.appendChild(createMiniatureShape(piece));
+                    const lbl = document.createElement('span');
+                    lbl.className = "text-[9px] font-black mt-1 tracking-tighter opacity-80";
+                    lbl.innerText = piece.id;
+                    pieceCard.appendChild(lbl);
+
+                    if (!isBoardLocked) {
+                        pieceCard.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            selectPiece(selectedPieceId === piece.id ? null : piece.id);
+                        });
+                    }
+                }
+                trayContainer.appendChild(pieceCard);
+            });
+        }
+
+        function createMiniatureShape(piece) {
+            const maxR = Math.max(...piece.shape.map(p => p[0]));
+            const maxC = Math.max(...piece.shape.map(p => p[1]));
+            const container = document.createElement('div');
+            container.className = "grid gap-[1px] h-4 w-4 items-center justify-center";
+            container.style.gridTemplateRows = `repeat(${maxR + 1}, minmax(0, 1fr))`;
+            container.style.gridTemplateColumns = `repeat(${maxC + 1}, minmax(0, 1fr))`;
+
+            for (let r = 0; r <= maxR; r++) {
+                for (let c = 0; c <= maxC; c++) {
+                    const block = document.createElement('div');
+                    const active = piece.shape.some(([pr, pc]) => pr === r && pc === c);
+                    block.className = `w-[3px] h-[3px] rounded-[0.5px] ${active ? 'bg-amber-400' : 'bg-transparent'}`;
+                    container.appendChild(block);
+                }
+            }
+            return container;
+        }
+
+        function selectPiece(pieceId, updateUI = true) {
+            if (isBoardLocked) return;
+            selectedPieceId = pieceId;
+            updateControlsState();
+            if (updateUI) {
+                renderBoard();
+                renderTray();
+            }
+        }
+
+        function updateControlsState() {
+            const btns = [
+                document.getElementById('rotate-btn'),
+                document.getElementById('fliph-btn'),
+                document.getElementById('flipv-btn'),
+                document.getElementById('clear-piece-btn')
+            ];
+            if (selectedPieceId && !isBoardLocked) {
+                btns.forEach(b => b.removeAttribute('disabled'));
+            } else {
+                btns.forEach(b => b.setAttribute('disabled', true));
+            }
+        }
+
+        function rotateSelected() {
+            if (!selectedPieceId || isBoardLocked) return;
+            pushStateToHistory();
+            const piece = pieces.find(p => p.id === selectedPieceId);
+            let rotated = piece.shape.map(([r, c]) => [c, -r]);
+            normalizeShape(rotated, piece);
+            syncActivePlacementOrRefresh(piece);
+        }
+
+        function flipHSelected() {
+            if (!selectedPieceId || isBoardLocked) return;
+            pushStateToHistory();
+            const piece = pieces.find(p => p.id === selectedPieceId);
+            let flipped = piece.shape.map(([r, c]) => [r, -c]);
+            normalizeShape(flipped, piece);
+            syncActivePlacementOrRefresh(piece);
+        }
+
+        function flipVSelected() {
+            if (!selectedPieceId || isBoardLocked) return;
+            pushStateToHistory();
+            const piece = pieces.find(p => p.id === selectedPieceId);
+            let flipped = piece.shape.map(([r, c]) => [-r, c]);
+            normalizeShape(flipped, piece);
+            syncActivePlacementOrRefresh(piece);
+        }
+
+        function syncActivePlacementOrRefresh(piece) {
+            const pos = piecesPlaced[piece.id];
+            if (pos) {
+                if (canPlacePiece(piece, pos.r, pos.c, piece.id)) {
+                    renderBoard();
+                    checkWinState();
+                } else {
+                    flashWarningBorder();
+                }
+            } else {
+                renderTray();
+            }
+        }
+
+        function normalizeShape(newShape, pieceObj) {
+            const minR = Math.min(...newShape.map(p => p[0]));
+            const minC = Math.min(...newShape.map(p => p[1]));
+            let adjusted = newShape.map(([r, c]) => [r - minR, c - minC]);
+            adjusted.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+            pieceObj.shape = adjusted;
+        }
+
+        function clearActiveSelection() {
+            if (isBoardLocked) return;
+            if (selectedPieceId && piecesPlaced[selectedPieceId]) {
+                pushStateToHistory();
+                delete piecesPlaced[selectedPieceId];
+            }
+            selectPiece(null);
+        }
+
+        function flashWarningBorder() {
+            const grid = document.getElementById('board-grid');
+            grid.classList.add('ring-4', 'ring-rose-500/80');
+            setTimeout(() => grid.classList.remove('ring-4', 'ring-rose-500/80'), 250);
+        }
+
+        function checkWinState() {
+            if (Object.keys(piecesPlaced).length === 10) {
+                let uncovered = BOARD_CELLS.filter(cell => {
+                    if (cell.type === 'blank') return false;
+                    return getPieceAtCell(cell.r, cell.c) === null;
+                });
+                if (uncovered.length === 3 && uncovered.every(c => isTargetCell(c))) {
+                    isBoardLocked = true;
+                    
+                    if (isStrictOneADay) {
+                        const todayKey = "cal_solved_" + getDateKey(new Date());
+                        const statePayload = {
+                            piecesPlaced,
+                            pieces,
+                            hintsUsedCount
+                        };
+                        localStorage.setItem(todayKey, JSON.stringify(statePayload));
+                        
+                        const lockBanner = document.getElementById('locked-banner');
+                        const lockScore = document.getElementById('locked-score-display');
+                        lockScore.innerText = Math.max(0, 10 - hintsUsedCount);
+                        lockBanner.classList.remove('hidden');
+
+                        document.getElementById('hint-btn').setAttribute('disabled', true);
+                        document.getElementById('hint-btn').classList.add('opacity-30');
+                    }
+
+                    document.getElementById('undo-btn').setAttribute('disabled', true);
+
+                    toggleModal('success-modal', true);
+                    showToast("🎉 Puzzle Solved! Target date successfully exposed!", 4000, true);
+                }
+            }
+        }
+
+        // ==========================================
+        // SEEDED DETERMINISTIC HINT / SOLVER SYSTEM
+        // ==========================================
+
+        function getShapeVariations(origShape) {
+            const variations = [];
+            let curr = origShape;
+            for (let r = 0; r < 4; r++) {
+                curr = curr.map(([row, col]) => [col, -row]);
+                variations.push(normalizeShapeCoords(curr));
+                const flipped = curr.map(([row, col]) => [row, -col]);
+                variations.push(normalizeShapeCoords(flipped));
+            }
+            const uniques = [];
+            variations.forEach(v => {
+                if (!uniques.some(u => u.length === v.length && u.every((pt, i) => pt[0] === v[i][0] && pt[1] === v[i][1]))) {
+                    uniques.push(v);
+                }
+            });
+            return uniques;
+        }
+
+        function normalizeShapeCoords(coords) {
+            const minR = Math.min(...coords.map(p => p[0]));
+            const minC = Math.min(...coords.map(p => p[1]));
+            return coords.map(([r, c]) => [r - minR, c - minC]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+        }
+
+        function generateDeterministicSeed() {
+            const str = `${targetMonth}-${targetDay}-${targetWeekday}`;
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return Math.abs(hash);
+        }
+
+        function computeFullLayoutSolution() {
+            const gridOccupied = Array(8).fill(null).map(() => Array(7).fill(false));
+            BOARD_CELLS.forEach(cell => {
+                if (cell.type === 'blank' || isTargetCell(cell)) {
+                    gridOccupied[cell.r][cell.c] = true;
+                }
+            });
+
+            const solverPieces = ORIGINAL_PIECES.map(p => ({ id: p.id, variations: getShapeVariations(p.shape) }));
+            const solutionPositions = {};
+            const placedSet = new Set();
+
+            function findNextEmpty() {
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 7; c++) {
+                        if (!gridOccupied[r][c]) return { r, c };
+                    }
+                }
+                return null;
+            }
+
+            function backtrack() {
+                const emptyCell = findNextEmpty();
+                if (!emptyCell) return true;
+
+                for (let pIdx = 0; pIdx < solverPieces.length; pIdx++) {
+                    const pInfo = solverPieces[pIdx];
+                    if (placedSet.has(pInfo.id)) continue;
+
+                    for (let vIdx = 0; vIdx < pInfo.variations.length; vIdx++) {
+                        const shape = pInfo.variations[vIdx];
+                        for (let bIdx = 0; bIdx < shape.length; bIdx++) {
+                            const offsetRow = emptyCell.r - shape[bIdx][0];
+                            const offsetCol = emptyCell.c - shape[bIdx][1];
+
+                            let fits = true;
+                            for (let i = 0; i < shape.length; i++) {
+                                const cr = offsetRow + shape[i][0];
+                                const cc = offsetCol + shape[i][1];
+                                if (cr < 0 || cr >= 8 || cc < 0 || cc >= 7 || gridOccupied[cr][cc]) {
+                                    fits = false;
+                                    break;
+                                }
+                            }
+
+                            if (fits) {
+                                shape.forEach(([pr, pc]) => gridOccupied[offsetRow + pr][offsetCol + pc] = true);
+                                placedSet.add(pInfo.id);
+                                solutionPositions[pInfo.id] = { offset: { r: offsetRow, c: offsetCol }, shape };
+
+                                if (backtrack()) return true;
+
+                                shape.forEach(([pr, pc]) => gridOccupied[offsetRow + pr][offsetCol + pc] = false);
+                                placedSet.delete(pInfo.id);
+                                delete solutionPositions[pInfo.id];
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+
+            return backtrack() ? solutionPositions : null;
+        }
+
+        function injectNextDeterministicHint() {
+            if (isBoardLocked) return;
+            if (!cachedFullSolution) {
+                document.getElementById('solver-loader').classList.remove('hidden');
+                setTimeout(() => {
+                    cachedFullSolution = computeFullLayoutSolution();
+                    document.getElementById('solver-loader').classList.add('hidden');
+                    processHintInjection();
+                }, 50);
+            } else {
+                processHintInjection();
+            }
+        }
+
+        function processHintInjection() {
+            if (!cachedFullSolution) {
+                showToast("This target is mathematically unreachable.", 3500, false);
+                return;
+            }
+
+            const unplacedIds = ORIGINAL_PIECES.map(p => p.id).filter(id => piecesPlaced[id] === undefined);
+            if (unplacedIds.length === 0) return;
+
+            let seed = generateDeterministicSeed() + hintsUsedCount;
+            const chosenId = unplacedIds[seed % unplacedIds.length];
+            const targetSolution = cachedFullSolution[chosenId];
+
+            pushStateToHistory();
+            
+            targetSolution.shape.forEach(([pr, pc]) => {
+                const tr = targetSolution.offset.r + pr;
+                const tc = targetSolution.offset.c + pc;
+                const collisionId = getPieceAtCell(tr, tc);
+                if (collisionId) delete piecesPlaced[collisionId];
+            });
+
+            const pIdx = pieces.findIndex(p => p.id === chosenId);
+            pieces[pIdx].shape = targetSolution.shape;
+            piecesPlaced[chosenId] = targetSolution.offset;
+            hintsUsedCount++;
+
+            const nextPiece = pieces.find(p => piecesPlaced[p.id] === undefined);
+            selectPiece(nextPiece ? nextPiece.id : null, false);
+
+            renderBoard();
+            renderTray();
+            checkWinState();
+        }
+
+        function handleShareSystemAction() {
+            const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+            const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+            const dateStr = `${daysOfWeek[targetWeekday]} ${targetDay} ${months[targetMonth]}`;
+            const finalScore = Math.max(0, 10 - hintsUsedCount);
+            
+            const shareText = `🧩 Puzzle Calendar Daily Challenge\n📅 Target: ${dateStr}\n🏆 Score: ${finalScore}/10\n🔗 Play here: ${window.location.href}`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Puzzle Calendar Solved!',
+                    text: shareText,
+                    url: window.location.href
+                }).catch(() => fallbackClipboardCopy(shareText));
+            } else {
+                fallbackClipboardCopy(shareText);
+            }
+        }
+
+        function fallbackClipboardCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed'; 
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast("📋 Challenge stats copied to clipboard!", 2500, true);
+            } catch (err) {
+                console.error("Could not write to canvas context", err);
+            }
+            document.body.removeChild(textarea);
+        }
+    </script>
+</body>
+</html>
