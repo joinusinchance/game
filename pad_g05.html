@@ -107,13 +107,12 @@
                 <!-- Selectable Picker Layout (Freeplay) -->
                 <div id="picker-wrapper" class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col space-y-1.5">
                     <label class="text-[9px] font-black tracking-wider text-slate-400 uppercase">Change Puzzle Target</label>
-                    <div id="custom-picker-btn" class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg p-1.5 flex items-center justify-between text-xs font-semibold border border-slate-700 transition-all">
+                    <div id="custom-picker-btn" class="relative bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg p-1.5 flex items-center justify-between text-xs font-semibold cursor-pointer border border-slate-700 transition-all">
                         <div class="flex items-center space-x-2">
                             <i class="fa-solid fa-calendar-day text-indigo-400"></i>
                             <span id="picker-label-string">Select Target Date</span>
                         </div>
-                        <!-- Absolute date input overlay on top with pointer events z-10 index to prevent jamming -->
-                        <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+                        <input type="date" id="date-picker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
                         <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
                     </div>
                 </div>
@@ -188,7 +187,7 @@
     </div>
 
     <script>
-        // Left-aligned last two rows (Months MAY-SEP and OCT-DEC on the left, blanks on the right)
+        // Exact 1:1 layout mapping with correct grid coordinate dimensions
         const BOARD_CELLS = [
             // Row 0: Weekdays (MON-SUN)
             { text: "MON", type: "weekday", val: 1, r: 0, c: 0 },
@@ -226,10 +225,10 @@
             { text: "20", type: "day", val: 20, r: 3, c: 5 },
             { text: "21", type: "day", val: 21, r: 3, c: 6 },
 
-            // Row 4: Days 22-28
+            // Row 4: Days 22-28 (Fixed layout misalignment and overlapping coordinates)
             { text: "22", type: "day", val: 22, r: 4, c: 0 },
             { text: "23", type: "day", val: 23, r: 4, c: 1 },
-            { text: "24", type: "day", val: 24, r: 4, c: 3 },
+            { text: "24", type: "day", val: 24, r: 4, c: 2 },
             { text: "25", type: "day", val: 25, r: 4, c: 3 },
             { text: "26", type: "day", val: 26, r: 4, c: 4 },
             { text: "27", type: "day", val: 27, r: 4, c: 5 },
@@ -244,7 +243,7 @@
             { text: "MAR", type: "month", val: 2, r: 5, c: 5 },
             { text: "APR", type: "month", val: 3, r: 5, c: 6 },
 
-            // Row 6: Months MAY-SEP + Blanks (Left Aligned Month Cells)
+            // Row 6: Months MAY-SEP + Blanks
             { text: "MAY", type: "month", val: 4, r: 6, c: 0 },
             { text: "JUN", type: "month", val: 5, r: 6, c: 1 },
             { text: "JUL", type: "month", val: 6, r: 6, c: 2 },
@@ -253,7 +252,7 @@
             { text: "blank", type: "blank", r: 6, c: 5 },
             { text: "blank", type: "blank", r: 6, c: 6 },
 
-            // Row 7: Months OCT-DEC + Blanks (Left Aligned Month Cells)
+            // Row 7: Months OCT-DEC + Blanks
             { text: "OCT", type: "month", val: 9, r: 7, c: 0 },
             { text: "NOV", type: "month", val: 10, r: 7, c: 1 },
             { text: "DEC", type: "month", val: 11, r: 7, c: 2 },
@@ -262,9 +261,6 @@
             { text: "blank", type: "blank", r: 7, c: 5 },
             { text: "blank", type: "blank", r: 7, c: 6 }
         ];
-
-        // Fixed duplicate day cells from original mapping
-        BOARD_CELLS[28] = { text: "24", type: "day", val: 24, r: 4, c: 2 };
 
         const ORIGINAL_PIECES = [
             { id: "A", name: "Corner (4)", color: "bg-emerald-500 border-emerald-400 text-slate-950", shape: [[0,0],[0,1],[1,0],[2,0]] },
@@ -302,8 +298,21 @@
 
             document.getElementById('title-display').addEventListener('click', () => toggleModal('info-modal', true));
             
-            // Replaced buggy custom click event redirect wrapper to prevent date picker jamming issues
+            const customPicker = document.getElementById('custom-picker-btn');
             const nativePicker = document.getElementById('date-picker');
+            customPicker.addEventListener('click', (e) => {
+                if (e.target !== nativePicker) {
+                    try {
+                        if (typeof nativePicker.showPicker === 'function') {
+                            nativePicker.showPicker();
+                        } else {
+                            nativePicker.click();
+                        }
+                    } catch (err) {
+                        nativePicker.click();
+                    }
+                }
+            });
             nativePicker.addEventListener('change', handleDateChange);
 
             document.getElementById('rotate-btn').addEventListener('click', rotateSelected);
@@ -320,15 +329,15 @@
             document.getElementById('share-btn').addEventListener('click', handleShareSystemAction);
         });
 
-        // Safe Custom Toast function replacing native alerts
+        // Safe Custom Toast function replacing the native alert dialogs
         function showToast(text, duration = 3000, isSuccess = true) {
             const toast = document.getElementById('toast');
             const toastText = document.getElementById('toast-text');
             
             toastText.innerText = text;
-            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-xs text-center py-2.5 px-4 rounded-xl text-xs font-bold shadow-2xl transition-all duration-300 animate-bounce ${
+            toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-xs text-center py-2.5 px-4 rounded-xl text-xs font-bold shadow-2xl transition-all duration-300 ${
                 isSuccess 
-                ? 'bg-indigo-600 border border-indigo-400 text-white' 
+                ? 'bg-indigo-600 border border-indigo-400 text-white animate-bounce' 
                 : 'bg-rose-900 border border-rose-500 text-rose-100'
             }`;
             
@@ -413,7 +422,6 @@
         }
 
         function handleDateChange(e) {
-            // Strict One-A-Day locks manual navigation, Freeplay is free to change dates unlimited times
             if (isStrictOneADay) return;
             if (!e.target.value) return;
             
@@ -421,7 +429,7 @@
             const chosenDate = new Date(parts[0], parts[1] - 1, parts[2]);
             
             setTargetFromDate(chosenDate);
-            // Reset state and force complete unlock on navigation away
+            // Reset board layout and selections when navigating away to a new date in freeplay
             resetBoardState(true);
         }
 
@@ -466,7 +474,7 @@
             historyStack = [];
             piecesPlaced = {};
             hintsUsedCount = 0;
-            selectedPieceId = null;
+            selectedPieceId = null; // Ensuring no piece is automatically selected
             pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
             document.getElementById('undo-btn').setAttribute('disabled', true);
             renderBoard();
@@ -559,8 +567,8 @@
                 pushStateToHistory();
                 piecesPlaced[piece.id] = { r: offsetRow, c: offsetCol };
                 
-                const nextPiece = pieces.find(p => p.id !== piece.id && piecesPlaced[p.id] === undefined);
-                selectPiece(nextPiece ? nextPiece.id : null, false);
+                // Fixed: Do NOT select another piece automatically upon dropping!
+                selectPiece(null, false);
                 
                 renderBoard();
                 renderTray();
@@ -690,42 +698,74 @@
 
         function rotateSelected() {
             if (!selectedPieceId || isBoardLocked) return;
-            pushStateToHistory();
             const piece = pieces.find(p => p.id === selectedPieceId);
+            const prevShape = JSON.parse(JSON.stringify(piece.shape));
+
+            pushStateToHistory();
             let rotated = piece.shape.map(([r, c]) => [c, -r]);
             normalizeShape(rotated, piece);
-            syncActivePlacementOrRefresh(piece);
+            
+            if (!syncActivePlacementOrRefresh(piece, prevShape)) {
+                // Revert history state on placement block
+                historyStack.pop();
+                if (historyStack.length === 0) {
+                    document.getElementById('undo-btn').setAttribute('disabled', true);
+                }
+            }
         }
 
         function flipHSelected() {
             if (!selectedPieceId || isBoardLocked) return;
-            pushStateToHistory();
             const piece = pieces.find(p => p.id === selectedPieceId);
+            const prevShape = JSON.parse(JSON.stringify(piece.shape));
+
+            pushStateToHistory();
             let flipped = piece.shape.map(([r, c]) => [r, -c]);
             normalizeShape(flipped, piece);
-            syncActivePlacementOrRefresh(piece);
+            
+            if (!syncActivePlacementOrRefresh(piece, prevShape)) {
+                // Revert history state on placement block
+                historyStack.pop();
+                if (historyStack.length === 0) {
+                    document.getElementById('undo-btn').setAttribute('disabled', true);
+                }
+            }
         }
 
         function flipVSelected() {
             if (!selectedPieceId || isBoardLocked) return;
-            pushStateToHistory();
             const piece = pieces.find(p => p.id === selectedPieceId);
+            const prevShape = JSON.parse(JSON.stringify(piece.shape));
+
+            pushStateToHistory();
             let flipped = piece.shape.map(([r, c]) => [-r, c]);
             normalizeShape(flipped, piece);
-            syncActivePlacementOrRefresh(piece);
+            
+            if (!syncActivePlacementOrRefresh(piece, prevShape)) {
+                // Revert history state on placement block
+                historyStack.pop();
+                if (historyStack.length === 0) {
+                    document.getElementById('undo-btn').setAttribute('disabled', true);
+                }
+            }
         }
 
-        function syncActivePlacementOrRefresh(piece) {
+        function syncActivePlacementOrRefresh(piece, prevShape) {
             const pos = piecesPlaced[piece.id];
             if (pos) {
                 if (canPlacePiece(piece, pos.r, pos.c, piece.id)) {
                     renderBoard();
                     checkWinState();
+                    return true;
                 } else {
+                    // Safe Reversion: Reject translation changes to block disjointed grid rendering
+                    piece.shape = prevShape;
                     flashWarningBorder();
+                    return false;
                 }
             } else {
                 renderTray();
+                return true;
             }
         }
 
@@ -930,8 +970,8 @@
             piecesPlaced[chosenId] = targetSolution.offset;
             hintsUsedCount++;
 
-            const nextPiece = pieces.find(p => piecesPlaced[p.id] === undefined);
-            selectPiece(nextPiece ? nextPiece.id : null, false);
+            // Fixed: Hint injection should never force select any pieces automatically!
+            selectPiece(null, false);
 
             renderBoard();
             renderTray();
