@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shape the Day: Calendar Puzzle</title>
+    <title>Days Shapes: Calendar Puzzle Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -21,30 +21,34 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-start overflow-y-auto font-sans antialiased selection:bg-indigo-500/30">
 
-    <!-- Header Panel -->
-    <header class="bg-slate-900 border-b border-slate-800 px-3 py-1.5 flex items-center justify-between sticky top-0 z-30 shadow-md">
-        <!-- Left: Seeded Hint Button (Double Width: w-16 h-10) -->
-        <button id="hint-btn" class="bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-amber-400 w-16 h-10 rounded-xl transition-all flex items-center justify-center shadow-sm flex-shrink-0" title="Get Hint">
-            <i class="fa-solid fa-lightbulb text-sm"></i>
-        </button>
+    <!-- Header Panel: Set to match calendar's max-w-md profile with identical padding -->
+    <header class="bg-slate-900 border-b border-slate-800 py-2.5 sticky top-0 z-30 shadow-md">
+        <div class="max-w-md mx-auto w-full px-3 grid grid-cols-7 gap-1 items-center">
+            <!-- Col 1: Seeded Hint Button (Square, matching grid cell) -->
+            <button id="hint-btn" class="bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-amber-400 w-full aspect-square rounded-xl transition-all flex items-center justify-center shadow-sm" title="Get Hint">
+                <i class="fa-solid fa-lightbulb text-sm"></i>
+            </button>
 
-        <!-- Center: Game Title & Target Display -->
-        <div class="flex flex-col items-center text-center px-2 min-w-0">
-            <h1 id="title-display" class="text-xs font-black tracking-widest text-slate-200 uppercase leading-none cursor-pointer hover:text-indigo-400 transition-colors truncate">
-                Shape the Day
-            </h1>
-            <span id="target-display" class="text-[11px] font-black text-amber-400 tracking-wide mt-1 truncate">MON 28 MAY</span>
-        </div>
+            <!-- Cols 2, 3, 4: Game Title & Target Display (Centered across 3 columns) -->
+            <div class="col-span-3 flex flex-col items-center text-center px-1 min-w-0">
+                <h1 id="title-display" class="text-xs font-black tracking-widest text-slate-200 uppercase leading-none cursor-pointer hover:text-indigo-400 transition-colors truncate">
+                    Days Shapes
+                </h1>
+                <span id="target-display" class="text-[11px] font-black text-amber-400 tracking-wide mt-1 truncate">MON 28 MAY</span>
+            </div>
 
-        <!-- Right: Control Buttons (Double Width: w-16 h-10) configured in Undo | Info | Clear sequence -->
-        <div class="flex items-center space-x-1.5 flex-shrink-0">
-            <button id="undo-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 w-16 h-10 rounded-xl transition-all flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none" title="Undo Move" disabled>
+            <!-- Col 5: Undo Button (Square) -->
+            <button id="undo-btn" class="bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-200 w-full aspect-square rounded-xl transition-all flex items-center justify-center disabled:opacity-30 disabled:pointer-events-none" title="Undo Move" disabled>
                 <i class="fa-solid fa-rotate-left text-xs"></i>
             </button>
-            <button id="info-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 w-16 h-10 rounded-xl transition-all flex items-center justify-center" title="Instructions & Settings">
+
+            <!-- Col 6: Info Button (Square) -->
+            <button id="info-btn" class="bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-200 w-full aspect-square rounded-xl transition-all flex items-center justify-center" title="Instructions & Settings">
                 <i class="fa-solid fa-circle-question text-xs"></i>
             </button>
-            <button id="clear-grid-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-rose-400 w-16 h-10 rounded-xl transition-all flex items-center justify-center" title="Clear Grid">
+
+            <!-- Col 7: Clear Grid Button (Square) -->
+            <button id="clear-grid-btn" class="bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-rose-400 w-full aspect-square rounded-xl transition-all flex items-center justify-center" title="Clear Grid">
                 <i class="fa-solid fa-broom text-xs"></i>
             </button>
         </div>
@@ -159,7 +163,7 @@
             </div>
 
             <button id="close-modal-ok-btn" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-bold transition-all shadow-md">
-                Let's Play Shape the Day!
+                Let's Play Days Shapes!
             </button>
         </div>
     </div>
@@ -407,7 +411,7 @@
             { text: "31", type: "day", val: 31, r: 7, c: 6 }
         ];
 
-        // Set Default active grid configuration
+        // Set Default active grid configuration (Initially Layout 1)
         let BOARD_CELLS = LAYOUT_1_CELLS;
 
         const ORIGINAL_PIECES = [
@@ -645,7 +649,7 @@
             historyStack = [];
             piecesPlaced = {};
             hintsUsedCount = 0;
-            selectedPieceId = null; // No piece is ever selected automatically
+            selectedPieceId = null; // No piece is automatically selected
             pieces = JSON.parse(JSON.stringify(ORIGINAL_PIECES));
             document.getElementById('undo-btn').setAttribute('disabled', true);
             cachedFullSolution = null; // Clear cached solutions for new positions
@@ -990,7 +994,7 @@
                     document.getElementById('undo-btn').setAttribute('disabled', true);
 
                     toggleModal('success-modal', true);
-                    showToast("🎉 Shape the Day Solved! Target date successfully exposed!", 4000, true);
+                    showToast("🎉 Days Shapes Solved! Target date successfully exposed!", 4000, true);
                 }
             }
         }
@@ -1152,11 +1156,11 @@
             const dateStr = `${daysOfWeek[targetWeekday]} ${targetDay} ${months[targetMonth]}`;
             const finalScore = Math.max(0, 10 - hintsUsedCount);
             
-            const shareText = `🧩 Shape the Day Daily Challenge\n📅 Target: ${dateStr}\n🏆 Score: ${finalScore}/10\n🔗 Play here: ${window.location.href}`;
+            const shareText = `🧩 Days Shapes Daily Challenge\n📅 Target: ${dateStr}\n🏆 Score: ${finalScore}/10\n🔗 Play here: ${window.location.href}`;
 
             if (navigator.share) {
                 navigator.share({
-                    title: 'Shape the Day Solved!',
+                    title: 'Days Shapes Solved!',
                     text: shareText,
                     url: window.location.href
                 }).catch(() => fallbackClipboardCopy(shareText));
