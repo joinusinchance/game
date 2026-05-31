@@ -486,6 +486,10 @@
             
             // Wire Clear Grid Event
             document.getElementById('clear-grid-btn').addEventListener('click', () => {
+                if (isStrictOneADay && isBoardLocked) {
+                    showToast("🔒 Today's challenge is solved! Clear disabled.", 2500, false);
+                    return;
+                }
                 resetBoardState(true); // Resets and forces unlock instantly
                 showToast("🧹 Grid cleared successfully!", 2000, true);
             });
@@ -575,6 +579,10 @@
                         
                         document.getElementById('hint-btn').setAttribute('disabled', true);
                         document.getElementById('hint-btn').classList.add('opacity-30');
+
+                        // Disable clear button visually and functionally
+                        document.getElementById('clear-grid-btn').setAttribute('disabled', true);
+                        document.getElementById('clear-grid-btn').classList.add('opacity-30', 'pointer-events-none');
                     } catch (e) {
                         console.error("Error reading saved solution state", e);
                     }
@@ -643,6 +651,10 @@
                 document.getElementById('locked-banner').classList.add('hidden');
                 document.getElementById('hint-btn').removeAttribute('disabled');
                 document.getElementById('hint-btn').classList.remove('opacity-30');
+
+                // Enable clear grid button visually and functionally
+                document.getElementById('clear-grid-btn').removeAttribute('disabled');
+                document.getElementById('clear-grid-btn').classList.remove('opacity-30', 'pointer-events-none');
             }
             if (isBoardLocked) return;
             
@@ -989,6 +1001,10 @@
 
                         document.getElementById('hint-btn').setAttribute('disabled', true);
                         document.getElementById('hint-btn').classList.add('opacity-30');
+
+                        // Disable clear button visually and functionally on solve
+                        document.getElementById('clear-grid-btn').setAttribute('disabled', true);
+                        document.getElementById('clear-grid-btn').classList.add('opacity-30', 'pointer-events-none');
                     }
 
                     document.getElementById('undo-btn').setAttribute('disabled', true);
