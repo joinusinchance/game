@@ -217,9 +217,9 @@
             </button>
         </div>
 
-        <!-- Capture / Boarding Tactical Prompt (Contextual) -->
+        <!-- Capture / Boarding Tactical Prompt (Contextual) - Note: Removed animate-bounce as requested -->
         <div id="capture-prompt" class="hidden absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2">
-            <div class="bg-red-950 border-4 border-red-600 p-4 rounded-xl shadow-2xl text-center max-w-xs animate-bounce border-double">
+            <div class="bg-red-950 border-4 border-red-600 p-4 rounded-xl shadow-2xl text-center max-w-xs border-double">
                 <h3 class="text-lg font-bold text-red-400 parchment-title mb-1">⚔️ BOARD HOSTILE</h3>
                 <p id="capture-enemy-desc" class="text-xs text-amber-200 mb-3">Target is disabled! Order your crew to board?</p>
                 <button onclick="openBoardingScreen()" class="bg-red-600 hover:bg-red-500 text-amber-100 font-extrabold px-6 py-2 rounded-lg text-sm border-2 border-red-400 transition active:scale-95">
@@ -332,6 +332,17 @@
 
                     <!-- Tab: SHIPYARD PANEL -->
                     <div id="panel-shipyard" class="space-y-4 hidden">
+                        <!-- Sell Prize Ship Section (New Module) -->
+                        <div id="shipyard-prize-section" class="hidden bg-amber-900/25 p-3 rounded-lg border-2 border-emerald-700/60 flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-emerald-400 text-sm">💰 Prize Ship for Sale!</h3>
+                                <p class="text-xs text-amber-300/90" id="shipyard-prize-status">Towing Prize: Galleon (+25 Cargo)</p>
+                            </div>
+                            <button onclick="sellPrizeShip()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-4 py-2 rounded text-xs transition uppercase tracking-wider shadow">
+                                Sell Ship <br> <span class="text-[10px] text-amber-200">🪙 <span id="prize-sell-value">350</span> Gold</span>
+                            </button>
+                        </div>
+
                         <!-- Repair Ship Section -->
                         <div class="bg-amber-900/20 p-3 rounded-lg border border-amber-800/50 flex justify-between items-center">
                             <div>
@@ -421,7 +432,7 @@
             </div>
         </div>
 
-        <!-- CAPTURE / BOARDING ACTION MODAL -->
+        <!-- CAPTURE / BOARDING ACTION MODAL (New Commandeer Option Included) -->
         <div id="boarding-modal" class="hidden absolute inset-0 bg-black/80 backdrop-blur-md z-40 flex items-center justify-center p-4">
             <div class="bg-red-950 border-4 border-amber-600 rounded-xl shadow-2xl max-w-md w-full p-5 text-center border-double text-amber-100 space-y-4">
                 <h2 class="parchment-title text-2xl font-bold tracking-wider text-amber-400">BOARDING SUCCESS!</h2>
@@ -431,6 +442,16 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-3">
+                    <!-- Option 1: Commandeer and Tow (Requested Feature) -->
+                    <button id="board-option-keep" onclick="resolveCapture('keep')" class="bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between">
+                        <div>
+                            <span class="font-bold block text-amber-100">Commandeer & Tow Ship</span>
+                            <span class="text-xs text-amber-300">Keep it to expand hold cargo capacity, then sail to any port and sell it!</span>
+                        </div>
+                        <span class="text-xl">⛵</span>
+                    </button>
+
+                    <!-- Option 2: Plunder Hold -->
                     <button onclick="resolveCapture('plunder')" class="bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between">
                         <div>
                             <span class="font-bold block text-amber-100">Plunder Hold & Chests</span>
@@ -439,6 +460,7 @@
                         <span class="text-xl">🪙</span>
                     </button>
 
+                    <!-- Option 3: Draft Crew -->
                     <button onclick="resolveCapture('pressgang')" class="bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between">
                         <div>
                             <span class="font-bold block text-amber-100">Press-Gang Surviving Crew</span>
@@ -447,6 +469,7 @@
                         <span class="text-xl">🙋</span>
                     </button>
 
+                    <!-- Option 4: Scuttle -->
                     <button onclick="resolveCapture('scuttle')" class="bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between">
                         <div>
                             <span class="font-bold block text-amber-100">Strip Timbers & Scuttle</span>
@@ -743,7 +766,9 @@
             speedUpgradeLevel: 1,
             cannonCount: 2,
             hasGameStarted: false,
-            timeAccumulator: 0 // Used to run fixed-rate physics steps independently of time multiplier
+            timeAccumulator: 0, // Used to run fixed-rate physics steps independently of time multiplier
+            hasPrizeShip: false, // New property for prize towing logic
+            prizeShipType: null  // Remembers towed class (Sloop, Brigantine, Galleon)
         };
 
         // LAND EXPLORATION STATE MODULE
@@ -1288,6 +1313,7 @@
             }
 
             renderMarket();
+            renderShipyardPrizeSection(); // New module load
             updateHUD();
 
             document.getElementById('port-modal').classList.remove('hidden');
@@ -1443,6 +1469,48 @@
             document.getElementById('panel-tavern').classList.add('hidden');
 
             document.getElementById(`panel-${tab}`).classList.remove('hidden');
+
+            if (tab === 'shipyard') {
+                renderShipyardPrizeSection();
+            }
+        }
+
+        // Toggles and loads the prize ship details within the shipyard menu
+        function renderShipyardPrizeSection() {
+            const section = document.getElementById('shipyard-prize-section');
+            if (gameState.hasPrizeShip) {
+                section.classList.remove('hidden');
+                const val = gameState.prizeShipType === 'Galleon' ? 350 : gameState.prizeShipType === 'Brigantine' ? 200 : 100;
+                const bonus = gameState.prizeShipType === 'Galleon' ? 25 : gameState.prizeShipType === 'Brigantine' ? 15 : 10;
+                document.getElementById('shipyard-prize-status').innerText = `Towing Prize: ${gameState.prizeShipType} (+${bonus} Cargo capacity)`;
+                document.getElementById('prize-sell-value').innerText = val;
+            } else {
+                section.classList.add('hidden');
+            }
+        }
+
+        // Resolves the cargo reduction and gold generation of selling prize ships
+        function sellPrizeShip() {
+            if (!gameState.hasPrizeShip) return;
+
+            const value = gameState.prizeShipType === 'Galleon' ? 350 : gameState.prizeShipType === 'Brigantine' ? 200 : 100;
+            const capacityReduction = gameState.prizeShipType === 'Galleon' ? 25 : gameState.prizeShipType === 'Brigantine' ? 15 : 10;
+
+            gameState.gold += value;
+            gameState.cargoCapacity = Math.max(10, gameState.cargoCapacity - capacityReduction);
+            gameState.hasPrizeShip = false;
+            gameState.prizeShipType = null;
+
+            addLogMessage(`🪙 Prize vessel sold at dock for ${value} Gold!`, 'success');
+            playSound('gold');
+
+            const currentCargoCount = getCargoCount();
+            if (currentCargoCount > gameState.cargoCapacity) {
+                addLogMessage(`⚠️ Your cargo exceeds capacity! Sell off excess goods at market.`, 'warning');
+            }
+
+            renderShipyardPrizeSection();
+            updateHUD();
         }
 
         function buyRepair() {
@@ -1540,13 +1608,39 @@
 
             document.getElementById('capture-prompt').classList.add('hidden');
             document.getElementById('board-success-desc').innerText = `Your crew of ${gameState.activeCrew} seasoned sailors storms the decks of the disabled ${currentBoardingTarget.type}! The hostile crew surrenders.`;
+            
+            // Toggle Commandeer button based on active prize towing state
+            const keepBtn = document.getElementById('board-option-keep');
+            if (gameState.hasPrizeShip) {
+                keepBtn.disabled = true;
+                keepBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                keepBtn.querySelector('.text-xs').innerText = `Already towing a prize ship (${gameState.prizeShipType})! Sell it first.`;
+            } else {
+                keepBtn.disabled = false;
+                keepBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                const bonus = currentBoardingTarget.type === 'Galleon' ? 25 : currentBoardingTarget.type === 'Brigantine' ? 15 : 10;
+                keepBtn.querySelector('.text-xs').innerText = `Convert the ship to a prize vessel to expand cargo capacity by +${bonus} barrels. Can be sold at any harbor Shipyard!`;
+            }
+
             document.getElementById('boarding-modal').classList.remove('hidden');
         }
 
         function resolveCapture(decision) {
             if (!currentBoardingTarget) return;
 
-            if (decision === 'plunder') {
+            if (decision === 'keep') {
+                if (gameState.hasPrizeShip) {
+                    addLogMessage("⚠️ Already towing a prize ship!", "warning");
+                    return;
+                }
+                gameState.hasPrizeShip = true;
+                gameState.prizeShipType = currentBoardingTarget.type;
+                const bonusCapacity = currentBoardingTarget.type === 'Galleon' ? 25 : currentBoardingTarget.type === 'Brigantine' ? 15 : 10;
+                gameState.cargoCapacity += bonusCapacity;
+                addLogMessage(`⛵ Commandeered enemy ${currentBoardingTarget.type}! Towing prize increases capacity by +${bonusCapacity}!`, 'success');
+                playSound('port');
+            }
+            else if (decision === 'plunder') {
                 const goldStolen = currentBoardingTarget.type === 'Galleon' ? 350 : currentBoardingTarget.type === 'Brigantine' ? 200 : 100;
                 gameState.gold += goldStolen;
                 
@@ -1605,6 +1699,29 @@
             setSailState('furled');
 
             document.getElementById('grounding-modal').classList.remove('hidden');
+        }
+
+        // Rigid body collision to prevent sailing over ports (Requested Feature)
+        function handlePortCollision(port) {
+            const dx = ship.x - port.x;
+            const dy = ship.y - port.y;
+            const angle = Math.atan2(dx, -dy);
+
+            // Relocate ship immediately out of port collision core
+            const safeDistance = 48 + 18 + 5; // port radius + ship visual radius + cushion buffer
+            ship.x = port.x + Math.sin(angle) * safeDistance;
+            ship.y = port.y - Math.cos(angle) * safeDistance;
+
+            ship.speed = -ship.speed * 0.5;
+            playSound('impact');
+
+            gameState.hull = Math.max(1, gameState.hull - 5);
+            updateHUD();
+
+            addLogMessage(`💥 Collided with harbor structures at ${port.name}! -5 Hull HP`, "combat");
+            if (gameState.hull <= 0) {
+                triggerGameOver(`Your vessel was wrecked by colliding with the stone fortresses of ${port.name}.`);
+            }
         }
 
         function startExploring() {
@@ -1815,6 +1932,7 @@
             const shipVisualRadius = 18; 
             let groundedOnIsland = false;
 
+            // Island shoal collision verification
             for (let island of ISLANDS_DATA) {
                 const dx = nextX - island.x;
                 const dy = nextY - island.y;
@@ -1825,6 +1943,22 @@
                     groundedOnIsland = true;
                     handleIslandCollision(island);
                     break;
+                }
+            }
+
+            // Port structures collision verification (Requested Feature)
+            if (!groundedOnIsland) {
+                for (let port of PORTS_DATA) {
+                    const dx = nextX - port.x;
+                    const dy = nextY - port.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    const minDist = 48 + shipVisualRadius; // port base radius + ship visual
+
+                    if (dist < minDist) {
+                        groundedOnIsland = true;
+                        handlePortCollision(port);
+                        break;
+                    }
                 }
             }
 
@@ -2091,6 +2225,8 @@
             gameState.hull = gameState.hullMax;
             gameState.gold = 300;
             gameState.cargo = { sugar: 0, rum: 0, tobacco: 0, spices: 0, wood: 0 };
+            gameState.hasPrizeShip = false;
+            gameState.prizeShipType = null;
             ship.x = 1800;
             ship.y = 1500;
             ship.speed = 0;
@@ -2786,6 +2922,44 @@ Format the output strictly as a JSON object matching this schema:
             // Draw player ship (always render at its actual grounded coordinates)
             const playerScrX = ship.x - camX;
             const playerScrY = ship.y - camY;
+
+            // Render towed prize ship behind the player ship (Requested Visual Feedback)
+            if (gameState.hasPrizeShip && !explorer.active) {
+                ctx.save();
+                const towDist = 38;
+                const towX = playerScrX - Math.sin(ship.angle) * towDist;
+                const towY = playerScrY + Math.cos(ship.angle) * towDist;
+                
+                ctx.translate(towX, towY);
+                ctx.rotate(ship.angle);
+                
+                // Tow line
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(0, -towDist);
+                ctx.lineTo(0, -10);
+                ctx.stroke();
+
+                // Prize ship miniature structure
+                ctx.fillStyle = "#3e2723";
+                ctx.strokeStyle = "#8b5a2b";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(0, -14);
+                ctx.bezierCurveTo(7, -8, 7, 6, 5, 14);
+                ctx.lineTo(-5, 14);
+                ctx.bezierCurveTo(-7, 6, -7, -8, 0, -14);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                
+                // Furled sail banner
+                ctx.fillStyle = "rgba(220, 220, 220, 0.8)";
+                ctx.fillRect(-4, -2, 8, 3);
+                
+                ctx.restore();
+            }
 
             // Hide aiming guides in exploration mode
             if (!explorer.active && !portModalOpen && !boardingModalOpen && !groundingModalOpen) {
