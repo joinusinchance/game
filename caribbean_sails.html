@@ -124,7 +124,7 @@
         <!-- Top Status Bar -->
         <div class="absolute top-2 left-2 right-2 flex justify-between gap-2 pointer-events-none z-10 text-xs md:text-sm">
             <!-- Left Info Panel -->
-            <div class="bg-amber-950/95 border border-amber-700/80 px-3 py-2 rounded-lg shadow-md flex gap-4 pointer-events-auto backdrop-blur-sm">
+            <div class="bg-amber-950/95 border border-amber-700/80 px-3 py-2 rounded-lg shadow-md flex gap-4 pointer-events-auto backdrop-blur-sm items-center">
                 <div>
                     <span class="text-amber-400 block uppercase font-bold text-[10px] tracking-wide">Ship Status</span>
                     <div class="flex items-center gap-2">
@@ -137,12 +137,19 @@
                     <span class="font-bold text-amber-200 flex items-center gap-1">🪙 <span id="hud-gold">500</span></span>
                 </div>
                 <div>
+                    <span class="text-amber-400 block uppercase font-bold text-[10px] tracking-wide">Food rations</span>
+                    <span class="font-bold text-amber-200 flex items-center gap-1">🍖 <span id="hud-food">5</span></span>
+                </div>
+                <div>
                     <span class="text-amber-400 block uppercase font-bold text-[10px] tracking-wide">Cargo</span>
                     <span class="font-bold text-amber-200"><span id="hud-cargo-used">0</span>/<span id="hud-cargo-max">10</span></span>
                 </div>
-                <!-- Interactive AI First Mate Log Launcher -->
+                <!-- Interactive Action Drawer Launchers -->
                 <button onclick="toggleFirstMateDrawer()" class="bg-amber-900/90 hover:bg-amber-800 border border-amber-700/60 px-2 py-1 rounded flex items-center gap-1.5 transition text-[10px] font-bold text-amber-200 active:scale-95">
                     <span>👨‍✈️</span> <span>First Mate</span>
+                </button>
+                <button onclick="toggleMapModal()" class="bg-emerald-900/90 hover:bg-emerald-800 border border-emerald-700/60 px-2 py-1 rounded flex items-center gap-1.5 transition text-[10px] font-bold text-emerald-200 active:scale-95">
+                    <span>🗺️</span> <span>Chart (M)</span>
                 </button>
             </div>
 
@@ -201,7 +208,7 @@
             </div>
         </div>
 
-        <!-- Center-Bottom Dock / Anchor Prompt (Contextual & Translucent Glassmorphic Style) -->
+        <!-- Center-Bottom Dock / Anchor Prompt -->
         <div id="dock-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
             <button onclick="dockAtPort()" class="pulse-dock-btn bg-emerald-600/70 hover:bg-emerald-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-emerald-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
                 <span class="flex items-center gap-2">⚓ ENTER <span id="dock-port-name">PORT ROYAL</span></span>
@@ -217,13 +224,13 @@
             </button>
         </div>
 
-        <!-- Capture / Boarding Tactical Prompt (Contextual) - Note: Removed animate-bounce as requested -->
+        <!-- Capture / Boarding Tactical Prompt (Contextual) - Note: Removed animation bounce -->
         <div id="capture-prompt" class="hidden absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2">
             <div class="bg-red-950 border-4 border-red-600 p-4 rounded-xl shadow-2xl text-center max-w-xs border-double">
                 <h3 class="text-lg font-bold text-red-400 parchment-title mb-1">⚔️ BOARD HOSTILE</h3>
                 <p id="capture-enemy-desc" class="text-xs text-amber-200 mb-3">Target is disabled! Order your crew to board?</p>
                 <button onclick="openBoardingScreen()" class="bg-red-600 hover:bg-red-500 text-amber-100 font-extrabold px-6 py-2 rounded-lg text-sm border-2 border-red-400 transition active:scale-95">
-                    🏴‍☠️ BOARD SHIP
+                    🏴‍☠️ BOARD SHIP (B)
                 </button>
             </div>
         </div>
@@ -332,15 +339,10 @@
 
                     <!-- Tab: SHIPYARD PANEL -->
                     <div id="panel-shipyard" class="space-y-4 hidden">
-                        <!-- Sell Prize Ship Section (New Module) -->
-                        <div id="shipyard-prize-section" class="hidden bg-amber-900/25 p-3 rounded-lg border-2 border-emerald-700/60 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-bold text-emerald-400 text-sm">💰 Prize Ship for Sale!</h3>
-                                <p class="text-xs text-amber-300/90" id="shipyard-prize-status">Towing Prize: Galleon (+25 Cargo)</p>
-                            </div>
-                            <button onclick="sellPrizeShip()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-4 py-2 rounded text-xs transition uppercase tracking-wider shadow">
-                                Sell Ship <br> <span class="text-[10px] text-amber-200">🪙 <span id="prize-sell-value">350</span> Gold</span>
-                            </button>
+                        <!-- Sell Prize Ship Section -->
+                        <div id="shipyard-prize-section" class="hidden bg-amber-900/25 p-3 rounded-lg border-2 border-emerald-700/60 flex flex-col gap-2">
+                            <h3 class="font-bold text-emerald-400 text-sm">💰 Prize Ships for Sale!</h3>
+                            <div id="prize-ships-list" class="space-y-2"></div>
                         </div>
 
                         <!-- Repair Ship Section -->
@@ -432,7 +434,7 @@
             </div>
         </div>
 
-        <!-- CAPTURE / BOARDING ACTION MODAL (New Commandeer Option Included) -->
+        <!-- CAPTURE / BOARDING ACTION MODAL -->
         <div id="boarding-modal" class="hidden absolute inset-0 bg-black/80 backdrop-blur-md z-40 flex items-center justify-center p-4">
             <div class="bg-red-950 border-4 border-amber-600 rounded-xl shadow-2xl max-w-md w-full p-5 text-center border-double text-amber-100 space-y-4">
                 <h2 class="parchment-title text-2xl font-bold tracking-wider text-amber-400">BOARDING SUCCESS!</h2>
@@ -441,42 +443,8 @@
                     <p class="text-xs text-amber-400 font-bold">Select the fate of the captured vessel:</p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-3">
-                    <!-- Option 1: Commandeer and Tow (Requested Feature) -->
-                    <button id="board-option-keep" onclick="resolveCapture('keep')" class="bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between">
-                        <div>
-                            <span class="font-bold block text-amber-100">Commandeer & Tow Ship</span>
-                            <span class="text-xs text-amber-300">Keep it to expand hold cargo capacity, then sail to any port and sell it!</span>
-                        </div>
-                        <span class="text-xl">⛵</span>
-                    </button>
-
-                    <!-- Option 2: Plunder Hold -->
-                    <button onclick="resolveCapture('plunder')" class="bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between">
-                        <div>
-                            <span class="font-bold block text-amber-100">Plunder Hold & Chests</span>
-                            <span class="text-xs text-amber-300">Seize remaining cargo & gold</span>
-                        </div>
-                        <span class="text-xl">🪙</span>
-                    </button>
-
-                    <!-- Option 3: Draft Crew -->
-                    <button onclick="resolveCapture('pressgang')" class="bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between">
-                        <div>
-                            <span class="font-bold block text-amber-100">Press-Gang Surviving Crew</span>
-                            <span class="text-xs text-amber-300">Draft able-bodied men to your deck</span>
-                        </div>
-                        <span class="text-xl">🙋</span>
-                    </button>
-
-                    <!-- Option 4: Scuttle -->
-                    <button onclick="resolveCapture('scuttle')" class="bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between">
-                        <div>
-                            <span class="font-bold block text-amber-100">Strip Timbers & Scuttle</span>
-                            <span class="text-xs text-amber-300">Patch up your hull with timber logs</span>
-                        </div>
-                        <span class="text-xl">🛠️</span>
-                    </button>
+                <div class="grid grid-cols-1 gap-2.5 max-h-[45vh] overflow-y-auto pr-1" id="boarding-options-container">
+                    <!-- Dynamic rendering of options goes here based on crew size -->
                 </div>
 
                 <div class="pt-2">
@@ -598,6 +566,23 @@
             </div>
         </div>
 
+        <!-- MAP OVERLAY MODAL -->
+        <div id="map-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-40 flex flex-col items-center justify-center p-4">
+            <div class="bg-amber-950 border-4 border-amber-800 rounded-xl shadow-2xl max-w-2xl w-full p-4 border-double text-amber-100 space-y-4">
+                <div class="flex justify-between items-center border-b border-amber-800 pb-2">
+                    <h2 class="parchment-title text-2xl font-bold tracking-wider text-amber-400">🗺️ CARIBBEAN WORLD CHART</h2>
+                    <button onclick="toggleMapModal()" class="text-amber-400 hover:text-amber-200 font-black text-xl p-1.5 active:scale-95">&times;</button>
+                </div>
+                <div class="flex justify-center bg-[#113043] rounded-lg p-2 border border-amber-900/60 relative overflow-hidden">
+                    <canvas id="large-map-canvas" width="550" height="550" class="max-w-full h-auto bg-[#113043] block"></canvas>
+                </div>
+                <div class="flex justify-between text-xs text-amber-300">
+                    <span>Press <kbd class="px-1.5 py-0.5 bg-amber-900 rounded border border-amber-700">M</kbd> to toggle chart</span>
+                    <span class="italic font-sans">Navigate with W, A, S, D or Helms wheel to update course live!</span>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -710,13 +695,14 @@
             'Independent Rogue': { speed: 1.0, damage: 1.0, armor: 1.0, tradeDiscount: 0.85 }
         };
 
-        // Trade commodities configurations
+        // Trade commodities configurations (added food as consumable)
         const COMMODITIES = {
             sugar: { name: 'Raw Sugar', basePrice: 15, weight: 1 },
             rum: { name: 'Jamaica Rum', basePrice: 28, weight: 1 },
             tobacco: { name: 'Leaf Tobacco', basePrice: 42, weight: 1 },
             spices: { name: 'Exotic Spices', basePrice: 65, weight: 1 },
-            wood: { name: 'Mahogany Logs', basePrice: 10, weight: 1 }
+            wood: { name: 'Mahogany Logs', basePrice: 10, weight: 1 },
+            food: { name: 'Hard Tack (Food)', basePrice: 8, weight: 1 }
         };
 
         // Ports details
@@ -743,8 +729,8 @@
             "Patrolling ships are peaceful now—unless you fire upon them repeatedly!",
             "They say Tortuga has the sweetest prices for raw sugar barrels right now.",
             "San Juan is starved of Mahogany logs to rebuild their harbor fort!",
-            "Be careful out in the deep blue. Island shoals are hazardous, though local salvagers can rescue aground ships!",
-            "Our cannon batteries will automatically focus and direct broadside fire directly at the single closest vessel."
+            "Keep your crew fed! If food rations run dry, crew desertions happen rapidly.",
+            "Tow captured vessels to shipyards to sell them off! Each ship requires 4 crew to handle."
         ];
 
         let gameState = {
@@ -758,17 +744,19 @@
                 rum: 0,
                 tobacco: 0,
                 spices: 0,
-                wood: 0
+                wood: 0,
+                food: 5
             },
+            baseCargoCapacity: 10,
             cargoCapacity: 10,
             hullMax: 100,
             hull: 100,
             speedUpgradeLevel: 1,
             cannonCount: 2,
             hasGameStarted: false,
-            timeAccumulator: 0, // Used to run fixed-rate physics steps independently of time multiplier
-            hasPrizeShip: false, // New property for prize towing logic
-            prizeShipType: null  // Remembers towed class (Sloop, Brigantine, Galleon)
+            timeAccumulator: 0,
+            towedShips: [], // Array representing types of currently towed vessels (e.g. ['Sloop', 'Galleon'])
+            foodTimer: 0
         };
 
         // LAND EXPLORATION STATE MODULE
@@ -823,6 +811,7 @@
         let portModalOpen = false;
         let boardingModalOpen = false;
         let groundingModalOpen = false;
+        let isMapOpen = false;
         let currentModalTab = 'market';
         let activeSteeringDir = 0;
 
@@ -889,6 +878,18 @@
                     fireCannons('left');
                     fireCannons('right');
                 }
+            }
+
+            // Keyboard shortcut 'B' for boarding
+            if (key === 'b') {
+                if (!document.getElementById('capture-prompt').classList.contains('hidden')) {
+                    openBoardingScreen();
+                }
+            }
+
+            // Keyboard shortcut 'M' to toggle map
+            if (key === 'm') {
+                toggleMapModal();
             }
 
             // Key equivalents to touch: Pressing E or Enter docks at the port when near, or boards ship when near
@@ -1043,24 +1044,65 @@
             });
         }
 
+        function recalculateCargoCapacity() {
+            let extra = 0;
+            gameState.towedShips.forEach(type => {
+                if (type === 'Galleon') extra += 25;
+                else if (type === 'Brigantine') extra += 15;
+                else if (type === 'Schooner') extra += 18;
+                else extra += 10; // Sloop
+            });
+            gameState.cargoCapacity = gameState.baseCargoCapacity + extra;
+        }
+
+        function setFlagshipType(type) {
+            const oldMax = gameState.hullMax;
+            const hpRatio = gameState.hull / oldMax;
+
+            gameState.shipType = type;
+            if (type === 'Sloop') {
+                gameState.hullMax = 100;
+                gameState.cannonCount = 2;
+                ship.maxBaseSpeed = 5.2;
+            } else if (type === 'Schooner') {
+                gameState.hullMax = 150;
+                gameState.cannonCount = 4;
+                ship.maxBaseSpeed = 4.2;
+            } else if (type === 'Brigantine') {
+                gameState.hullMax = 150;
+                gameState.cannonCount = 4;
+                ship.maxBaseSpeed = 4.8;
+            } else if (type === 'Galleon') {
+                gameState.hullMax = 200;
+                gameState.cannonCount = 6;
+                ship.maxBaseSpeed = 4.0;
+            }
+            gameState.hull = Math.max(1, Math.min(gameState.hullMax, Math.round(hpRatio * gameState.hullMax)));
+            document.getElementById('vessel-name').innerText = type;
+        }
+
         function startGame() {
             initAudio();
 
             document.getElementById('intro-screen').classList.add('hidden');
             
             if (gameState.shipType === 'Sloop') {
-                gameState.cargoCapacity = 10;
+                gameState.baseCargoCapacity = 10;
                 gameState.hullMax = 100;
                 gameState.hull = 100;
                 gameState.cannonCount = 2;
                 ship.maxBaseSpeed = 5.2;
             } else if (gameState.shipType === 'Schooner') {
-                gameState.cargoCapacity = 22;
+                gameState.baseCargoCapacity = 22;
                 gameState.hullMax = 150;
                 gameState.hull = 150;
                 gameState.cannonCount = 4;
                 ship.maxBaseSpeed = 4.2;
             }
+
+            gameState.cargo.food = 5; // Start with rations
+            gameState.towedShips = [];
+            recalculateCargoCapacity();
 
             document.getElementById('vessel-name').innerText = gameState.shipType;
             document.getElementById('faction-badge').innerText = `(${gameState.faction})`;
@@ -1078,7 +1120,8 @@
             addLogMessage("🔱 Welcome Captain! Sail with WASD/Arrows or the Touch Steering wheel!");
             addLogMessage("🍃 Tip: Watch the Wind Indicator to optimize sail trims!");
             addLogMessage("⛰️ Warning: Navigate carefully to avoid grounding on island reefs!");
-            addLogMessage("🍾 Notice: Glowing Bottles drift on the waves. Sail into them for AI Encounters!");
+            addLogMessage("🍖 Note: Feed your crew with Food barrels. Buy them at ports to avoid starvation!");
+            addLogMessage("🗺️ Press M or click the Chart button to view the full World Chart!");
             
             window.requestAnimationFrame(gameLoop);
         }
@@ -1135,6 +1178,7 @@
         function updateHUD() {
             document.getElementById('hud-gold').innerText = Math.floor(gameState.gold);
             document.getElementById('port-gold-display').innerText = Math.floor(gameState.gold);
+            document.getElementById('hud-food').innerText = gameState.cargo.food || 0;
             document.getElementById('hud-cargo-used').innerText = getCargoCount();
             document.getElementById('hud-cargo-max').innerText = gameState.cargoCapacity;
             document.getElementById('market-cargo-info').innerText = `${getCargoCount()} / ${gameState.cargoCapacity}`;
@@ -1313,7 +1357,7 @@
             }
 
             renderMarket();
-            renderShipyardPrizeSection(); // New module load
+            renderShipyardPrizeSection();
             updateHUD();
 
             document.getElementById('port-modal').classList.remove('hidden');
@@ -1475,33 +1519,46 @@
             }
         }
 
-        // Toggles and loads the prize ship details within the shipyard menu
         function renderShipyardPrizeSection() {
             const section = document.getElementById('shipyard-prize-section');
-            if (gameState.hasPrizeShip) {
+            const listContainer = document.getElementById('prize-ships-list');
+            listContainer.innerHTML = '';
+
+            if (gameState.towedShips && gameState.towedShips.length > 0) {
                 section.classList.remove('hidden');
-                const val = gameState.prizeShipType === 'Galleon' ? 350 : gameState.prizeShipType === 'Brigantine' ? 200 : 100;
-                const bonus = gameState.prizeShipType === 'Galleon' ? 25 : gameState.prizeShipType === 'Brigantine' ? 15 : 10;
-                document.getElementById('shipyard-prize-status').innerText = `Towing Prize: ${gameState.prizeShipType} (+${bonus} Cargo capacity)`;
-                document.getElementById('prize-sell-value').innerText = val;
+                gameState.towedShips.forEach((towedType, index) => {
+                    const val = towedType === 'Galleon' ? 350 : towedType === 'Brigantine' ? 200 : 100;
+                    const bonus = towedType === 'Galleon' ? 25 : towedType === 'Brigantine' ? 15 : 10;
+                    
+                    const row = document.createElement('div');
+                    row.className = "flex justify-between items-center bg-amber-950/60 p-2 rounded border border-amber-800";
+                    row.innerHTML = `
+                        <div>
+                            <p class="text-xs text-amber-100 font-bold">Towing Prize: ${towedType} (+${bonus} Cargo)</p>
+                            <span class="text-[10px] text-amber-400">Value: 🪙 ${val} Gold</span>
+                        </div>
+                        <button onclick="sellPrizeShip(${index})" class="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-3 py-1.5 rounded text-xs transition uppercase tracking-wider shadow active:scale-95">
+                            Sell Ship
+                        </button>
+                    `;
+                    listContainer.appendChild(row);
+                });
             } else {
                 section.classList.add('hidden');
             }
         }
 
-        // Resolves the cargo reduction and gold generation of selling prize ships
-        function sellPrizeShip() {
-            if (!gameState.hasPrizeShip) return;
+        function sellPrizeShip(index) {
+            if (!gameState.towedShips || gameState.towedShips.length <= index) return;
 
-            const value = gameState.prizeShipType === 'Galleon' ? 350 : gameState.prizeShipType === 'Brigantine' ? 200 : 100;
-            const capacityReduction = gameState.prizeShipType === 'Galleon' ? 25 : gameState.prizeShipType === 'Brigantine' ? 15 : 10;
+            const towedType = gameState.towedShips[index];
+            const value = towedType === 'Galleon' ? 350 : towedType === 'Brigantine' ? 200 : 100;
 
             gameState.gold += value;
-            gameState.cargoCapacity = Math.max(10, gameState.cargoCapacity - capacityReduction);
-            gameState.hasPrizeShip = false;
-            gameState.prizeShipType = null;
+            gameState.towedShips.splice(index, 1);
+            recalculateCargoCapacity();
 
-            addLogMessage(`🪙 Prize vessel sold at dock for ${value} Gold!`, 'success');
+            addLogMessage(`🪙 Prize ${towedType} sold at dock for ${value} Gold!`, 'success');
             playSound('gold');
 
             const currentCargoCount = getCargoCount();
@@ -1549,10 +1606,11 @@
                 addLogMessage("⛵ Installed high efficiency broadcloth sails!");
                 playSound('port');
             } else if (type === 'cargo') {
-                cost = 120 + (gameState.cargoCapacity - 10) * 10;
+                cost = 120 + (gameState.baseCargoCapacity - 10) * 10;
                 if (gameState.gold < cost) { addLogMessage("⚠️ Lacking funds!"); return; }
                 gameState.gold -= cost;
-                gameState.cargoCapacity += 6;
+                gameState.baseCargoCapacity += 6;
+                recalculateCargoCapacity();
                 addLogMessage("📦 Reinforced bottom hold for massive trading runs!");
                 playSound('port');
             }
@@ -1609,42 +1667,143 @@
             document.getElementById('capture-prompt').classList.add('hidden');
             document.getElementById('board-success-desc').innerText = `Your crew of ${gameState.activeCrew} seasoned sailors storms the decks of the disabled ${currentBoardingTarget.type}! The hostile crew surrenders.`;
             
-            // Toggle Commandeer button based on active prize towing state
-            const keepBtn = document.getElementById('board-option-keep');
-            if (gameState.hasPrizeShip) {
-                keepBtn.disabled = true;
-                keepBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                keepBtn.querySelector('.text-xs').innerText = `Already towing a prize ship (${gameState.prizeShipType})! Sell it first.`;
-            } else {
-                keepBtn.disabled = false;
-                keepBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                const bonus = currentBoardingTarget.type === 'Galleon' ? 25 : currentBoardingTarget.type === 'Brigantine' ? 15 : 10;
-                keepBtn.querySelector('.text-xs').innerText = `Convert the ship to a prize vessel to expand cargo capacity by +${bonus} barrels. Can be sold at any harbor Shipyard!`;
-            }
-
+            renderBoardingScreenOptions();
             document.getElementById('boarding-modal').classList.remove('hidden');
+        }
+
+        function renderBoardingScreenOptions() {
+            const container = document.getElementById('boarding-options-container');
+            container.innerHTML = '';
+
+            const target = currentBoardingTarget;
+            const currentTowedCount = gameState.towedShips.length;
+            const crewNeededForTow = (currentTowedCount + 2) * 4; // flagship + current towed + new target
+            const canTow = gameState.activeCrew >= crewNeededForTow;
+
+            const extraCapacity = target.type === 'Galleon' ? 25 : target.type === 'Brigantine' ? 15 : target.type === 'Schooner' ? 18 : 10;
+
+            // Option 1: Commandeer & Tow
+            const towBtn = document.createElement('button');
+            towBtn.className = `p-3 rounded-lg border text-left transition flex items-center justify-between ${
+                canTow ? 'bg-amber-800 hover:bg-amber-700 border-amber-500 cursor-pointer' : 'bg-amber-950/40 border-amber-900/40 opacity-50 cursor-not-allowed'
+            }`;
+            towBtn.onclick = canTow ? () => resolveCapture('keep') : null;
+            towBtn.innerHTML = `
+                <div>
+                    <span class="font-bold block text-amber-100">Commandeer & Tow Ship</span>
+                    <span class="text-xs text-amber-300">Tows ship to expand cargo capacity by +${extraCapacity}. Requires ${crewNeededForTow} crew (Have: ${gameState.activeCrew}).</span>
+                </div>
+                <span class="text-xl">⛵</span>
+            `;
+            container.appendChild(towBtn);
+
+            // Option 2: Swap Flagships & Tow Old One
+            const swapTowBtn = document.createElement('button');
+            swapTowBtn.className = `p-3 rounded-lg border text-left transition flex items-center justify-between ${
+                canTow ? 'bg-amber-800 hover:bg-amber-700 border-amber-500 cursor-pointer' : 'bg-amber-950/40 border-amber-900/40 opacity-50 cursor-not-allowed'
+            }`;
+            swapTowBtn.onclick = canTow ? () => resolveCapture('swap_tow') : null;
+            swapTowBtn.innerHTML = `
+                <div>
+                    <span class="font-bold block text-amber-100">Swap Flagship & Tow Old Ship</span>
+                    <span class="text-xs text-amber-300">Set the captured ${target.type} as your active Flagship, and tow your old ${gameState.shipType} (+${getCapacityVal(gameState.shipType)} Cargo). Requires ${crewNeededForTow} crew.</span>
+                </div>
+                <span class="text-xl">🔄</span>
+            `;
+            container.appendChild(swapTowBtn);
+
+            // Option 3: Swap Flagships & Scuttle Old One
+            const swapScuttleBtn = document.createElement('button');
+            swapScuttleBtn.className = "bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between cursor-pointer";
+            swapScuttleBtn.onclick = () => resolveCapture('swap_scuttle');
+            swapScuttleBtn.innerHTML = `
+                <div>
+                    <span class="font-bold block text-amber-100">Swap Flagship & Scuttle Old Ship</span>
+                    <span class="text-xs text-amber-300">Set the captured ${target.type} as your Flagship. Scuttle your current ${gameState.shipType} for hull repair materials.</span>
+                </div>
+                <span class="text-xl">👑</span>
+            `;
+            container.appendChild(swapScuttleBtn);
+
+            // Option 4: Plunder
+            const plunderBtn = document.createElement('button');
+            plunderBtn.className = "bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between cursor-pointer";
+            plunderBtn.onclick = () => resolveCapture('plunder');
+            plunderBtn.innerHTML = `
+                <div>
+                    <span class="font-bold block text-amber-100">Plunder Hold & Chests</span>
+                    <span class="text-xs text-amber-300">Seize remaining cargo & gold</span>
+                </div>
+                <span class="text-xl">🪙</span>
+            `;
+            container.appendChild(plunderBtn);
+
+            // Option 5: Press-gang
+            const pressBtn = document.createElement('button');
+            pressBtn.className = "bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between cursor-pointer";
+            pressBtn.onclick = () => resolveCapture('pressgang');
+            pressBtn.innerHTML = `
+                <div>
+                    <span class="font-bold block text-amber-100">Press-Gang Surviving Crew</span>
+                    <span class="text-xs text-amber-300">Draft able-bodied survivors to join your deck.</span>
+                </div>
+                <span class="text-xl">🙋</span>
+            `;
+            container.appendChild(pressBtn);
+
+            // Option 6: Scuttle
+            const scuttleBtn = document.createElement('button');
+            scuttleBtn.className = "bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between cursor-pointer";
+            scuttleBtn.onclick = () => resolveCapture('scuttle');
+            scuttleBtn.innerHTML = `
+                <div>
+                    <span class="font-bold block text-amber-100">Strip Timbers & Scuttle</span>
+                    <span class="text-xs text-amber-300">Strip planks to repair your hull.</span>
+                </div>
+                <span class="text-xl">🛠️</span>
+            `;
+            container.appendChild(scuttleBtn);
+        }
+
+        function getCapacityVal(type) {
+            if (type === 'Galleon') return 25;
+            if (type === 'Brigantine') return 15;
+            if (type === 'Schooner') return 18;
+            return 10; // Sloop
         }
 
         function resolveCapture(decision) {
             if (!currentBoardingTarget) return;
 
+            const target = currentBoardingTarget;
+
             if (decision === 'keep') {
-                if (gameState.hasPrizeShip) {
-                    addLogMessage("⚠️ Already towing a prize ship!", "warning");
-                    return;
-                }
-                gameState.hasPrizeShip = true;
-                gameState.prizeShipType = currentBoardingTarget.type;
-                const bonusCapacity = currentBoardingTarget.type === 'Galleon' ? 25 : currentBoardingTarget.type === 'Brigantine' ? 15 : 10;
-                gameState.cargoCapacity += bonusCapacity;
-                addLogMessage(`⛵ Commandeered enemy ${currentBoardingTarget.type}! Towing prize increases capacity by +${bonusCapacity}!`, 'success');
+                gameState.towedShips.push(target.type);
+                recalculateCargoCapacity();
+                addLogMessage(`⛵ Commandeered ${target.type} as a towed prize ship! Capacity increased!`, 'success');
                 playSound('port');
             }
+            else if (decision === 'swap_tow') {
+                const oldFlagship = gameState.shipType;
+                setFlagshipType(target.type);
+                gameState.towedShips.push(oldFlagship);
+                recalculateCargoCapacity();
+                addLogMessage(`👑 Set captured ${target.type} as Flagship! Towing old ${oldFlagship}.`, 'success');
+                playSound('port');
+            }
+            else if (decision === 'swap_scuttle') {
+                const oldFlagship = gameState.shipType;
+                setFlagshipType(target.type);
+                const scrapAmt = oldFlagship === 'Galleon' ? 60 : oldFlagship === 'Brigantine' ? 40 : 25;
+                gameState.hull = Math.min(gameState.hullMax, gameState.hull + scrapAmt);
+                addLogMessage(`👑 Set captured ${target.type} as Flagship! Old ${oldFlagship} was scuttled for +${scrapAmt} HP!`, 'success');
+                playSound('impact');
+            }
             else if (decision === 'plunder') {
-                const goldStolen = currentBoardingTarget.type === 'Galleon' ? 350 : currentBoardingTarget.type === 'Brigantine' ? 200 : 100;
+                const goldStolen = target.type === 'Galleon' ? 350 : target.type === 'Brigantine' ? 200 : 100;
                 gameState.gold += goldStolen;
                 
-                const commoditiesList = Object.keys(COMMODITIES);
+                const commoditiesList = Object.keys(COMMODITIES).filter(c => c !== 'food');
                 const lootedGood = commoditiesList[Math.floor(Math.random() * commoditiesList.length)];
                 
                 if (getCargoCount() < gameState.cargoCapacity) {
@@ -1656,21 +1815,21 @@
                 playSound('gold');
             } 
             else if (decision === 'pressgang') {
-                const recruits = currentBoardingTarget.type === 'Galleon' ? 2 : 1;
+                const recruits = target.type === 'Galleon' ? 2 : 1;
                 gameState.activeCrew += recruits;
                 addLogMessage(`🙋 Press-ganged +${recruits} surviving sailor(s) into your crew!`, 'success');
                 playSound('port');
             } 
             else if (decision === 'scuttle') {
-                const repairAmt = currentBoardingTarget.type === 'Galleon' ? 60 : currentBoardingTarget.type === 'Brigantine' ? 40 : 25;
+                const repairAmt = target.type === 'Galleon' ? 60 : target.type === 'Brigantine' ? 40 : 25;
                 gameState.hull = Math.min(gameState.hullMax, gameState.hull + repairAmt);
                 addLogMessage(`🛠️ Scuttled ship timber logs! Repaired +${repairAmt} Hull integrity!`, 'success');
                 playSound('impact');
             }
 
-            spawnExplosionParticles(currentBoardingTarget.x, currentBoardingTarget.y);
+            spawnExplosionParticles(target.x, target.y);
             
-            const targetIndex = enemies.findIndex(e => e.id === currentBoardingTarget.id);
+            const targetIndex = enemies.findIndex(e => e.id === target.id);
             if (targetIndex !== -1) {
                 enemies.splice(targetIndex, 1);
             }
@@ -1701,7 +1860,6 @@
             document.getElementById('grounding-modal').classList.remove('hidden');
         }
 
-        // Rigid body collision to prevent sailing over ports (Requested Feature)
         function handlePortCollision(port) {
             const dx = ship.x - port.x;
             const dy = ship.y - port.y;
@@ -1808,6 +1966,25 @@
             ship.speed = 1.2; // Minor speed impulse out
             setSailState('half');
             addLogMessage("⛵ Pushed off reefs safely directly out to sea! Steer carefully.");
+        }
+
+        function consumeFood() {
+            const currentCrew = gameState.activeCrew;
+            const foodNeeded = Math.ceil(currentCrew / 4);
+
+            if ((gameState.cargo.food || 0) >= foodNeeded) {
+                gameState.cargo.food -= foodNeeded;
+                addLogMessage(`🍖 Your crew of ${currentCrew} consumed ${foodNeeded} barrel(s) of food.`, 'info');
+            } else {
+                const consumed = gameState.cargo.food || 0;
+                gameState.cargo.food = 0;
+                
+                // Starvation consequence
+                gameState.activeCrew = Math.max(4, gameState.activeCrew - 1);
+                addLogMessage(`⚠️ Starvation! Lacking food rations. Desertion or death has occurred! Minimum crew is 4.`, 'combat');
+                playSound('impact');
+            }
+            updateHUD();
         }
 
         function updateExplorerPhysics() {
@@ -1946,7 +2123,7 @@
                 }
             }
 
-            // Port structures collision verification (Requested Feature)
+            // Port structures collision verification (Rigid barrier check)
             if (!groundedOnIsland) {
                 for (let port of PORTS_DATA) {
                     const dx = nextX - port.x;
@@ -2224,9 +2401,8 @@
         function restartGame() {
             gameState.hull = gameState.hullMax;
             gameState.gold = 300;
-            gameState.cargo = { sugar: 0, rum: 0, tobacco: 0, spices: 0, wood: 0 };
-            gameState.hasPrizeShip = false;
-            gameState.prizeShipType = null;
+            gameState.cargo = { sugar: 0, rum: 0, tobacco: 0, spices: 0, wood: 0, food: 5 };
+            gameState.towedShips = [];
             ship.x = 1800;
             ship.y = 1500;
             ship.speed = 0;
@@ -2252,6 +2428,18 @@
                 updateFirstMatePersonalityLabel();
             } else {
                 drawer.classList.add('hidden');
+            }
+        }
+
+        function toggleMapModal() {
+            const modal = document.getElementById('map-modal');
+            isMapOpen = !isMapOpen;
+            if (isMapOpen) {
+                initAudio();
+                modal.classList.remove('hidden');
+                drawLargeMap();
+            } else {
+                modal.classList.add('hidden');
             }
         }
 
@@ -2302,10 +2490,12 @@ You are fully aware of the ship's current live state:
 - Gold reserves: ${gameState.gold} doubloons
 - Current Hull strength: ${gameState.hull}/${gameState.hullMax} HP
 - Crew hands: ${gameState.activeCrew} seasoned sailors
-- Current cargo inventory: ${JSON.stringify(gameState.cargo)} (sugar, rum, tobacco, spices, wood)
+- Current cargo inventory: ${JSON.stringify(gameState.cargo)} (sugar, rum, tobacco, spices, wood, food)
+- Towed fleet: ${JSON.stringify(gameState.towedShips)}
+- Food supply: ${gameState.cargo.food} barrels remaining.
 - Nearby Caribbean Ports: Havana (Spanish), Port Royal (English), Tortuga (Rogue), Nassau (Rogue), San Juan (Spanish).
 
-Respond to the Captain in character. Keep answers short, vivid, atmospheric, and strategically helpful. Give accurate advice based on current cargo (e.g. if they have sugar, suggest selling at Tortuga or Port Royal; if hull is damaged, advise stopping at a local dock shipyard). Maximum length: 3 sentences. Do not mention system rules.`;
+Respond to the Captain in character. Keep answers short, vivid, atmospheric, and strategically helpful. Give accurate advice based on current cargo (e.g. if they have sugar, suggest selling at Tortuga or Port Royal; if hull is damaged, advise stopping at a local shipyard). Maximum length: 3 sentences. Do not mention system rules.`;
 
             const apiKey = ""; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -2923,42 +3113,44 @@ Format the output strictly as a JSON object matching this schema:
             const playerScrX = ship.x - camX;
             const playerScrY = ship.y - camY;
 
-            // Render towed prize ship behind the player ship (Requested Visual Feedback)
-            if (gameState.hasPrizeShip && !explorer.active) {
-                ctx.save();
-                const towDist = 38;
-                const towX = playerScrX - Math.sin(ship.angle) * towDist;
-                const towY = playerScrY + Math.cos(ship.angle) * towDist;
-                
-                ctx.translate(towX, towY);
-                ctx.rotate(ship.angle);
-                
-                // Tow line
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(0, -towDist);
-                ctx.lineTo(0, -10);
-                ctx.stroke();
+            // Render multiple towed prize ships behind flagship
+            if (gameState.towedShips && gameState.towedShips.length > 0 && !explorer.active) {
+                gameState.towedShips.forEach((towedType, index) => {
+                    ctx.save();
+                    const towDist = 38 + index * 26; // Stack trailing behind flagship
+                    const towX = playerScrX - Math.sin(ship.angle) * towDist;
+                    const towY = playerScrY + Math.cos(ship.angle) * towDist;
+                    
+                    ctx.translate(towX, towY);
+                    ctx.rotate(ship.angle);
+                    
+                    // Draw tow line from previous segment
+                    ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -towDist + (index > 0 ? 38 + (index - 1) * 26 : 0));
+                    ctx.lineTo(0, -10);
+                    ctx.stroke();
 
-                // Prize ship miniature structure
-                ctx.fillStyle = "#3e2723";
-                ctx.strokeStyle = "#8b5a2b";
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(0, -14);
-                ctx.bezierCurveTo(7, -8, 7, 6, 5, 14);
-                ctx.lineTo(-5, 14);
-                ctx.bezierCurveTo(-7, 6, -7, -8, 0, -14);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-                
-                // Furled sail banner
-                ctx.fillStyle = "rgba(220, 220, 220, 0.8)";
-                ctx.fillRect(-4, -2, 8, 3);
-                
-                ctx.restore();
+                    // Prize ship hull structure
+                    ctx.fillStyle = towedType === 'Galleon' ? "#3e2723" : towedType === 'Brigantine' ? "#4e342e" : "#5d4037";
+                    ctx.strokeStyle = "#8b5a2b";
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -14);
+                    ctx.bezierCurveTo(7, -8, 7, 6, 5, 14);
+                    ctx.lineTo(-5, 14);
+                    ctx.bezierCurveTo(-7, 6, -7, -8, 0, -14);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                    
+                    // Furled canvas sails banner
+                    ctx.fillStyle = "rgba(220, 220, 220, 0.8)";
+                    ctx.fillRect(-4, -2, 8, 3);
+                    
+                    ctx.restore();
+                });
             }
 
             // Hide aiming guides in exploration mode
@@ -3119,6 +3311,111 @@ Format the output strictly as a JSON object matching this schema:
             renderMiniMap();
         }
 
+        function drawLargeMap() {
+            const mapCanvas = document.getElementById('large-map-canvas');
+            if (!mapCanvas) return;
+            const mctx = mapCanvas.getContext('2d');
+            const w = mapCanvas.width;
+            const h = mapCanvas.height;
+
+            mctx.clearRect(0, 0, w, h);
+
+            // Water background
+            mctx.fillStyle = "#113043";
+            mctx.fillRect(0, 0, w, h);
+
+            // Chart coordinate grids
+            mctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+            mctx.lineWidth = 1;
+            for (let i = 50; i < w; i += 100) {
+                mctx.beginPath();
+                mctx.moveTo(i, 0); mctx.lineTo(i, h);
+                mctx.moveTo(0, i); mctx.lineTo(w, i);
+                mctx.stroke();
+            }
+
+            // Draw Islands on chart
+            ISLANDS_DATA.forEach(island => {
+                const ix = (island.x / WORLD_WIDTH) * w;
+                const iy = (island.y / WORLD_HEIGHT) * h;
+                const r = (island.radius / WORLD_WIDTH) * w;
+
+                mctx.fillStyle = "rgba(46, 125, 50, 0.65)";
+                mctx.beginPath();
+                mctx.arc(ix, iy, r, 0, Math.PI * 2);
+                mctx.fill();
+
+                mctx.strokeStyle = "#ebd6b0";
+                mctx.lineWidth = 1;
+                mctx.stroke();
+
+                mctx.fillStyle = "rgba(255, 228, 181, 0.75)";
+                mctx.font = "8px 'Cinzel Decorative', sans-serif";
+                mctx.textAlign = "center";
+                mctx.fillText(island.name.split(' ')[0], ix, iy);
+            });
+
+            // Draw Ports on chart
+            PORTS_DATA.forEach(p => {
+                const px = (p.x / WORLD_WIDTH) * w;
+                const py = (p.y / WORLD_HEIGHT) * h;
+
+                mctx.fillStyle = p.color;
+                mctx.beginPath();
+                mctx.arc(px, py, 6, 0, Math.PI * 2);
+                mctx.fill();
+
+                mctx.strokeStyle = "#ffffff";
+                mctx.lineWidth = 1;
+                mctx.stroke();
+
+                mctx.fillStyle = "#ffe4b5";
+                mctx.font = "bold 9px 'Cinzel Decorative', sans-serif";
+                mctx.textAlign = "center";
+                mctx.fillText(p.name, px, py - 10);
+            });
+
+            // Draw Bottles on chart
+            bottles.forEach(b => {
+                const bx = (b.x / WORLD_WIDTH) * w;
+                const by = (b.y / WORLD_HEIGHT) * h;
+                mctx.fillStyle = "#10b981";
+                mctx.beginPath();
+                mctx.arc(bx, by, 3, 0, Math.PI * 2);
+                mctx.fill();
+            });
+
+            // Draw Enemies on chart
+            enemies.forEach(e => {
+                const ex = (e.x / WORLD_WIDTH) * w;
+                const ey = (e.y / WORLD_HEIGHT) * h;
+                mctx.fillStyle = e.status === 'disabled' ? "#ffffff" : "#e74c3c";
+                mctx.fillRect(ex - 2, ey - 2, 4, 4);
+            });
+
+            // Draw Player Flagship position and direction
+            const sx = (ship.x / WORLD_WIDTH) * w;
+            const sy = (ship.y / WORLD_HEIGHT) * h;
+
+            mctx.save();
+            mctx.translate(sx, sy);
+            mctx.rotate(ship.angle);
+
+            mctx.fillStyle = "#ffe4b5";
+            mctx.beginPath();
+            mctx.moveTo(0, -8);
+            mctx.lineTo(4, 4);
+            mctx.lineTo(-4, 4);
+            mctx.closePath();
+            mctx.fill();
+            mctx.restore();
+
+            mctx.fillStyle = "#ffe4b5";
+            mctx.font = "bold 9px sans-serif";
+            mctx.textAlign = "left";
+            mctx.fillText("⛵ Flagship", sx + 10, sy + 3);
+        }
+
         function renderMiniMap() {
             const mapSize = 100;
             const margin = 10;
@@ -3211,11 +3508,22 @@ Format the output strictly as a JSON object matching this schema:
                 checkCaptureProximity();
                 checkShipBoardingProximity();
                 updateWindShifts(physicsStepSize);
+
+                // Incremental food consumption timer
+                gameState.foodTimer = (gameState.foodTimer || 0) + physicsStepSize;
+                if (gameState.foodTimer >= 15000) { // Consumes rations every 15 seconds
+                    gameState.foodTimer = 0;
+                    consumeFood();
+                }
+
                 gameState.timeAccumulator -= physicsStepSize;
                 loops++;
             }
 
             renderScene();
+            if (isMapOpen) {
+                drawLargeMap();
+            }
 
             window.requestAnimationFrame(gameLoop);
         }
