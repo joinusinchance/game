@@ -44,8 +44,8 @@
             animation: pulse-glow 2s infinite ease-in-out;
         }
         @keyframes dock-pulse {
-            0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.7); transform: translate(-50%, -50%) scale(1); }
-            50% { box-shadow: 0 0 40px rgba(16, 185, 129, 1); transform: translate(-50%, -50%) scale(1.08); }
+            0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.5); transform: translate(-50%, -50%) scale(1); }
+            50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.85); transform: translate(-50%, -50%) scale(1.05); }
         }
         .pulse-dock-btn {
             animation: dock-pulse 1.5s infinite ease-in-out;
@@ -201,11 +201,19 @@
             </div>
         </div>
 
-        <!-- Center-Bottom Dock / Anchor Prompt (Contextual & Highly Visible) -->
+        <!-- Center-Bottom Dock / Anchor Prompt (Contextual & Translucent Glassmorphic Style) -->
         <div id="dock-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
-            <button onclick="dockAtPort()" class="pulse-dock-btn bg-emerald-600 hover:bg-emerald-500 text-amber-950 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-emerald-300 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap">
+            <button onclick="dockAtPort()" class="pulse-dock-btn bg-emerald-600/70 hover:bg-emerald-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-emerald-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
                 <span class="flex items-center gap-2">⚓ ENTER <span id="dock-port-name">PORT ROYAL</span></span>
                 <span class="text-[10px] text-emerald-100/90 font-semibold font-mono tracking-wider">(PRESS 'E' OR 'ENTER')</span>
+            </button>
+        </div>
+
+        <!-- Board Ship Prompt (Translucent, visible only when explorer is near ship) -->
+        <div id="board-ship-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
+            <button onclick="boardShipAndPushOff()" class="pulse-dock-btn bg-blue-600/70 hover:bg-blue-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-blue-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
+                <span class="flex items-center gap-2">⛵ BOARD SHIP & PUSH OFF</span>
+                <span class="text-[10px] text-blue-100/90 font-semibold font-mono tracking-wider">(PRESS 'E' OR 'ENTER')</span>
             </button>
         </div>
 
@@ -454,18 +462,18 @@
             </div>
         </div>
 
-        <!-- NEW REEF COLLISION & WALK TO PORT SELECTION MODAL -->
+        <!-- REEF COLLISION & LAND EXPLORATION MODAL -->
         <div id="grounding-modal" class="hidden absolute inset-0 bg-black/85 backdrop-blur-md z-40 flex items-center justify-center p-4">
             <div class="bg-amber-950 border-4 border-amber-800 rounded-xl shadow-2xl max-w-sm w-full p-5 text-center border-double text-amber-100 space-y-4">
                 <h2 class="parchment-title text-2xl font-bold tracking-wider text-amber-400 text-red-400">🚨 RUN AGROUND!</h2>
                 <p id="grounding-desc" class="text-xs text-amber-200 leading-relaxed italic">
-                    Your vessel has struck the shallow reefs. The hull has sustained damage, but you can safely hire local salvagers to walk to port or attempt to push off.
+                    Your vessel has struck the shallow reefs. The hull has sustained damage, but you can choose to deploy your crew ashore to explore the island on foot or attempt to push the ship off.
                 </p>
                 <div class="space-y-2">
-                    <button onclick="walkToPort()" class="w-full bg-emerald-700 hover:bg-emerald-600 p-3 rounded-lg border border-emerald-500 text-left transition flex items-center justify-between active:scale-95">
+                    <button onclick="startExploring()" class="w-full bg-emerald-700 hover:bg-emerald-600 p-3 rounded-lg border border-emerald-500 text-left transition flex items-center justify-between active:scale-95">
                         <div>
-                            <span class="font-bold block text-amber-100">Walk to Nearest Port</span>
-                            <span class="text-xs text-emerald-300" id="grounding-port-cost">Travel to Port Royal (Salvage fee: 50 🪙)</span>
+                            <span class="font-bold block text-amber-100">Explore Island On Foot</span>
+                            <span class="text-xs text-emerald-300">Deploy landing party of stick figures to search the island!</span>
                         </div>
                         <span class="text-xl">🚶</span>
                     </button>
@@ -738,6 +746,17 @@
             timeAccumulator: 0 // Used to run fixed-rate physics steps independently of time multiplier
         };
 
+        // LAND EXPLORATION STATE MODULE
+        let explorer = {
+            active: false,
+            x: 0,
+            y: 0,
+            angle: 0,
+            speed: 2.2,
+            walkTime: 0,
+            isWalking: false
+        };
+
         let wind = {
             angle: Math.PI / 4,
             speed: 14,
@@ -841,13 +860,19 @@
             keysPressed[key] = true;
 
             if (e.key === ' ' || e.code === 'Space') {
-                fireCannons('left');
-                fireCannons('right');
+                if (!explorer.active) {
+                    fireCannons('left');
+                    fireCannons('right');
+                }
             }
 
-            // Key equivalents to touch: Pressing E or Enter docks at the port when near
-            if ((key === 'e' || e.key === 'Enter') && !document.getElementById('dock-prompt').classList.contains('hidden')) {
-                dockAtPort();
+            // Key equivalents to touch: Pressing E or Enter docks at the port when near, or boards ship when near
+            if (key === 'e' || e.key === 'Enter') {
+                if (!document.getElementById('dock-prompt').classList.contains('hidden')) {
+                    dockAtPort();
+                } else if (!document.getElementById('board-ship-prompt').classList.contains('hidden')) {
+                    boardShipAndPushOff();
+                }
             }
         });
         window.addEventListener('keyup', (e) => {
@@ -1210,9 +1235,12 @@
 
         function checkPortProximity() {
             let closeToPort = null;
+            const px_coord = explorer.active ? explorer.x : ship.x;
+            const py_coord = explorer.active ? explorer.y : ship.y;
+
             PORTS_DATA.forEach(p => {
-                const dx = ship.x - p.x;
-                const dy = ship.y - p.y;
+                const dx = px_coord - p.x;
+                const dy = py_coord - p.y;
                 const dist = Math.sqrt(dx*dx + dy*dy);
                 if (dist < 160) {
                     closeToPort = p;
@@ -1225,7 +1253,7 @@
                 document.getElementById('dock-port-name').innerText = closeToPort.name.toUpperCase();
                 gameState.currentPort = closeToPort;
 
-                if (ship.speed > 1.2) {
+                if (!explorer.active && ship.speed > 1.2) {
                     ship.speed *= 0.93;
                 }
             } else {
@@ -1269,8 +1297,12 @@
             portModalOpen = false;
             document.getElementById('port-modal').classList.add('hidden');
             addLogMessage(`⛵ Sailing away from ${gameState.currentPort.name}. Safe winds!`, 'success');
-            ship.speed = 0.5;
-            setSailState('half');
+            if (explorer.active) {
+                addLogMessage(`🚶 Exploring on foot outside ${gameState.currentPort.name}.`);
+            } else {
+                ship.speed = 0.5;
+                setSailState('half');
+            }
         }
 
         // Expanded market items list featuring "Buy Max" and "Sell All" bulk options
@@ -1568,26 +1600,6 @@
             gameState.hull = Math.max(1, gameState.hull - 8); 
             updateHUD();
 
-            let nearestPort = PORTS_DATA[0];
-            let minDist = Infinity;
-            PORTS_DATA.forEach(p => {
-                const dx = ship.x - p.x;
-                const dy = ship.y - p.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < minDist) {
-                    minDist = dist;
-                    nearestPort = p;
-                }
-            });
-
-            const walkCost = Math.min(60, Math.floor(gameState.gold * 0.15));
-
-            window.nearestSalvagePort = nearestPort;
-            window.salvageCost = walkCost;
-
-            document.getElementById('grounding-desc').innerText = `Your vessel has struck the reefs of ${island.name}. The hull has sustained minor damage, but you are aground. You can hire local salvagers to safely walk to port, or push back into deep water.`;
-            document.getElementById('grounding-port-cost').innerText = `Walk to ${nearestPort.name} (Salvage fee: 🪙 ${walkCost})`;
-
             groundingModalOpen = true;
             ship.speed = 0;
             setSailState('furled');
@@ -1595,28 +1607,65 @@
             document.getElementById('grounding-modal').classList.remove('hidden');
         }
 
-        function walkToPort() {
-            const targetPort = window.nearestSalvagePort;
-            const cost = window.salvageCost || 0;
-
-            if (gameState.gold >= cost) {
-                gameState.gold -= cost;
-            } else {
-                gameState.gold = 0; 
-            }
-
-            ship.x = targetPort.x;
-            ship.y = targetPort.y;
-            ship.speed = 0;
-
-            gameState.hull = Math.max(gameState.hull, Math.floor(gameState.hullMax * 0.5));
-
+        function startExploring() {
             groundingModalOpen = false;
             document.getElementById('grounding-modal').classList.add('hidden');
 
-            gameState.currentPort = targetPort;
-            dockAtPort();
-            addLogMessage(`🚶 Walked to safety! Salvage crew towed your ship to ${targetPort.name}!`, "success");
+            explorer.active = true;
+
+            // Place explorer right next to the ship, but on land
+            if (groundedIsland) {
+                // Vector pointing directly towards the island center from the ship
+                const dx = groundedIsland.x - ship.x;
+                const dy = groundedIsland.y - ship.y;
+                const angleToCenter = Math.atan2(dx, -dy);
+                
+                // Position explorer 12 pixels closer to island center than the ship
+                explorer.x = ship.x + Math.sin(angleToCenter) * 12;
+                explorer.y = ship.y - Math.cos(angleToCenter) * 12;
+                explorer.angle = angleToCenter;
+            } else {
+                explorer.x = ship.x;
+                explorer.y = ship.y;
+                explorer.angle = ship.angle;
+            }
+
+            explorer.walkTime = 0;
+            explorer.isWalking = false;
+
+            addLogMessage("🚶 Landing party deployed! You are now exploring the island on foot as stick figures.", "success");
+            
+            ship.speed = 0;
+            setSailState('furled');
+        }
+
+        function checkShipBoardingProximity() {
+            const prompt = document.getElementById('board-ship-prompt');
+            if (!explorer.active) {
+                prompt.classList.add('hidden');
+                return;
+            }
+
+            // Distance from explorer to grounded ship
+            const dx = explorer.x - ship.x;
+            const dy = explorer.y - ship.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (dist < 60 && !portModalOpen && !boardingModalOpen && !groundingModalOpen) {
+                prompt.classList.remove('hidden');
+            } else {
+                prompt.classList.add('hidden');
+            }
+        }
+
+        function boardShipAndPushOff() {
+            explorer.active = false;
+            document.getElementById('board-ship-prompt').classList.add('hidden');
+            
+            // Push off from the reef using safety course correction logic
+            pushOffReef();
+            
+            addLogMessage("⛵ Boarded the ship! Sails trimmed and pushing clear of reefs!", "success");
         }
 
         // Safe Course Correcting Push Off: Relocates ship safely clear and heading away from the reef
@@ -1644,7 +1693,86 @@
             addLogMessage("⛵ Pushed off reefs safely directly out to sea! Steer carefully.");
         }
 
+        function updateExplorerPhysics() {
+            if (portModalOpen || boardingModalOpen || groundingModalOpen) return;
+
+            let isMoving = false;
+            let moveDir = 0; // 1 for forward, -1 for backward
+
+            // Steer Left / Right to rotate walking angle
+            if (activeSteeringDir === -1 || keysPressed['a'] || keysPressed['arrowleft']) {
+                explorer.angle -= 0.05;
+                steerWheel.style.transform = `rotate(-45deg)`;
+            } else if (activeSteeringDir === 1 || keysPressed['d'] || keysPressed['arrowright']) {
+                explorer.angle += 0.05;
+                steerWheel.style.transform = `rotate(45deg)`;
+            } else {
+                steerWheel.style.transform = `rotate(0deg)`;
+            }
+
+            // Keyboard walk triggers (reusing WASD and Arrow controls)
+            if (keysPressed['w'] || keysPressed['arrowup']) {
+                isMoving = true;
+                moveDir = 1;
+            } else if (keysPressed['s'] || keysPressed['arrowdown']) {
+                isMoving = true;
+                moveDir = -1;
+            }
+
+            // Support touch levers too! If sailState is set to full/half, they walk forward automatically.
+            if (ship.sailState === 'full' || ship.sailState === 'half') {
+                isMoving = true;
+                moveDir = 1;
+            }
+
+            let nextX = explorer.x;
+            let nextY = explorer.y;
+
+            if (isMoving) {
+                nextX += Math.sin(explorer.angle) * explorer.speed * moveDir;
+                nextY -= Math.cos(explorer.angle) * explorer.speed * moveDir;
+                explorer.walkTime += 0.15;
+                explorer.isWalking = true;
+            } else {
+                explorer.isWalking = false;
+            }
+
+            // Constraint check: Must stay "on land" (within any island radius + walking shoreline buffer of 35px)
+            let onLand = false;
+            for (let island of ISLANDS_DATA) {
+                const dx = nextX - island.x;
+                const dy = nextY - island.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < island.radius + 35) { // 35px shoreline buffer
+                    onLand = true;
+                    break;
+                }
+            }
+
+            if (onLand) {
+                explorer.x = nextX;
+                explorer.y = nextY;
+            }
+
+            explorer.x = Math.max(50, Math.min(WORLD_WIDTH - 50, explorer.x));
+            explorer.y = Math.max(50, Math.min(WORLD_HEIGHT - 50, explorer.y));
+
+            document.getElementById('hud-speed').innerText = isMoving ? "2.2" : "0.0";
+            
+            // Keep wind arrow rotating relative to explorer's looking direction
+            const relativeAngle = normalizeAngle(wind.angle - explorer.angle);
+            document.getElementById('wind-arrow').style.transform = `rotate(${relativeAngle}rad)`;
+            const sailingEffText = document.getElementById('sailing-efficiency');
+            sailingEffText.innerText = "Sailing on foot";
+            sailingEffText.className = "font-semibold block text-amber-400";
+        }
+
         function updateSailingPhysics() {
+            if (explorer.active) {
+                updateExplorerPhysics();
+                return;
+            }
+
             if (portModalOpen || boardingModalOpen || groundingModalOpen) return;
 
             let actualTurnSpeed = ship.turnSpeed;
@@ -1900,10 +2028,13 @@
         function checkCargoCollections() {
             if (portModalOpen || boardingModalOpen || groundingModalOpen) return;
 
+            const px_coord = explorer.active ? explorer.x : ship.x;
+            const py_coord = explorer.active ? explorer.y : ship.y;
+
             for (let i = cargoLoot.length - 1; i >= 0; i--) {
                 const loot = cargoLoot[i];
-                const dx = loot.x - ship.x;
-                const dy = loot.y - ship.y;
+                const dx = loot.x - px_coord;
+                const dy = loot.y - py_coord;
                 const dist = Math.sqrt(dx*dx + dy*dy);
 
                 if (dist < 25) {
@@ -1922,8 +2053,8 @@
 
             for (let i = bottles.length - 1; i >= 0; i--) {
                 const bot = bottles[i];
-                const dx = bot.x - ship.x;
-                const dy = bot.y - ship.y;
+                const dx = bot.x - px_coord;
+                const dy = bot.y - py_coord;
                 const dist = Math.sqrt(dx*dx + dy*dy);
 
                 if (dist < 30) {
@@ -1965,6 +2096,10 @@
             ship.speed = 0;
             ship.sailState = 'furled';
             setSailState('furled');
+
+            explorer.active = false;
+            explorer.x = 0;
+            explorer.y = 0;
 
             document.getElementById('game-over-screen').classList.add('hidden');
             document.getElementById('intro-screen').classList.remove('hidden');
@@ -2299,11 +2434,54 @@ Format the output strictly as a JSON object matching this schema:
             setSailState('half');
         }
 
+        function drawStickFigure(ctx, x, y, angle, walkCycle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle); 
+            
+            ctx.strokeStyle = "#ffe4b5";
+            ctx.lineWidth = 1.5;
+            ctx.fillStyle = "#ffe4b5";
+
+            // Head
+            ctx.beginPath();
+            ctx.arc(0, -10, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Spine / Body Trunk
+            ctx.beginPath();
+            ctx.moveTo(0, -7);
+            ctx.lineTo(0, 0);
+            ctx.stroke();
+
+            // Arms (animated swing)
+            const armSwing = Math.sin(walkCycle) * 5;
+            ctx.beginPath();
+            ctx.moveTo(0, -5);
+            ctx.lineTo(-4, -2 + armSwing);
+            ctx.moveTo(0, -5);
+            ctx.lineTo(4, -2 - armSwing);
+            ctx.stroke();
+
+            // Legs (animated stride swing)
+            const legSwing = Math.sin(walkCycle) * 6;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-3, 8 + legSwing);
+            ctx.moveTo(0, 0);
+            ctx.lineTo(3, 8 - legSwing);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
         function renderScene() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            const camX = ship.x - canvas.width / 2;
-            const camY = ship.y - canvas.height / 2;
+            const focusX = explorer.active ? explorer.x : ship.x;
+            const focusY = explorer.active ? explorer.y : ship.y;
+            const camX = focusX - canvas.width / 2;
+            const camY = focusY - canvas.height / 2;
 
             ctx.save();
             ctx.fillStyle = "#113043"; 
@@ -2605,10 +2783,12 @@ Format the output strictly as a JSON object matching this schema:
                 }
             });
 
+            // Draw player ship (always render at its actual grounded coordinates)
             const playerScrX = ship.x - camX;
             const playerScrY = ship.y - camY;
 
-            if (!portModalOpen && !boardingModalOpen && !groundingModalOpen) {
+            // Hide aiming guides in exploration mode
+            if (!explorer.active && !portModalOpen && !boardingModalOpen && !groundingModalOpen) {
                 const targetInfo = getClosestVessel();
                 if (targetInfo.vessel && targetInfo.dist <= 550) {
                     ctx.save();
@@ -2722,6 +2902,16 @@ Format the output strictly as a JSON object matching this schema:
 
             ctx.restore();
 
+            // Render Explorer stick figures on foot (3 small stick figures walking in formation)
+            if (explorer.active) {
+                const expScrX = explorer.x - camX;
+                const expScrY = explorer.y - camY;
+
+                drawStickFigure(ctx, expScrX, expScrY, explorer.angle, explorer.isWalking ? explorer.walkTime : 0);
+                drawStickFigure(ctx, expScrX - 12, expScrY + 8, explorer.angle, explorer.isWalking ? explorer.walkTime + 1.2 : 0);
+                drawStickFigure(ctx, expScrX + 12, expScrY + 8, explorer.angle, explorer.isWalking ? explorer.walkTime + 2.4 : 0);
+            }
+
             cannonballs.forEach(b => {
                 ctx.save();
                 ctx.fillStyle = "#2c3e50";
@@ -2777,12 +2967,23 @@ Format the output strictly as a JSON object matching this schema:
                 ctx.fill();
             });
 
+            // Stranded Ship on minimap (faded when exploring)
             const px = mapX + (ship.x / WORLD_WIDTH) * mapSize;
             const py = mapY + (ship.y / WORLD_HEIGHT) * mapSize;
-            ctx.fillStyle = "#ffffff";
+            ctx.fillStyle = explorer.active ? "rgba(255, 255, 255, 0.4)" : "#ffffff";
             ctx.beginPath();
             ctx.arc(px, py, 3.5, 0, Math.PI*2);
             ctx.fill();
+
+            // Explorer location on minimap
+            if (explorer.active) {
+                const ex_map = mapX + (explorer.x / WORLD_WIDTH) * mapSize;
+                const ey_map = mapY + (explorer.y / WORLD_HEIGHT) * mapSize;
+                ctx.fillStyle = "#ffe4b5";
+                ctx.beginPath();
+                ctx.arc(ex_map, ey_map, 2.5, 0, Math.PI*2);
+                ctx.fill();
+            }
 
             PORTS_DATA.forEach(p => {
                 const portX = mapX + (p.x / WORLD_WIDTH) * mapSize;
@@ -2834,6 +3035,7 @@ Format the output strictly as a JSON object matching this schema:
                 checkCargoCollections();
                 checkPortProximity();
                 checkCaptureProximity();
+                checkShipBoardingProximity();
                 updateWindShifts(physicsStepSize);
                 gameState.timeAccumulator -= physicsStepSize;
                 loops++;
