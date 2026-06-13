@@ -209,33 +209,33 @@
         </div>
 
         <!-- Center-Bottom Dock / Anchor Prompt -->
-        <div id="dock-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
-            <button onclick="dockAtPort()" class="pulse-dock-btn bg-emerald-600/70 hover:bg-emerald-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-emerald-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
-                <span class="flex items-center gap-2">⚓ ENTER <span id="dock-port-name">PORT ROYAL</span></span>
-                <span class="text-[10px] text-emerald-100/90 font-semibold font-mono tracking-wider">(PRESS 'E' OR 'ENTER')</span>
+    <div id="dock-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
+        <button onclick="dockAtPort()" class="pulse-dock-btn bg-emerald-600/70 hover:bg-emerald-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-emerald-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
+            <span class="flex items-center gap-2">⚓ ENTER <span id="dock-port-name">PORT ROYAL</span></span>
+            <span class="text-[10px] text-emerald-100/90 font-semibold font-mono tracking-wider">(PRESS 'E' OR 'ENTER')</span>
+        </button>
+    </div>
+
+    <!-- Board Ship Prompt (Translucent, visible only when explorer is near ship) -->
+    <div id="board-ship-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
+        <button onclick="boardShipAndPushOff()" class="pulse-dock-btn bg-blue-600/70 hover:bg-blue-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-blue-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
+            <span class="flex items-center gap-2">⛵ BOARD SHIP & PUSH OFF</span>
+            <span class="text-[10px] text-blue-100/90 font-semibold font-mono tracking-wider">(PRESS 'E' OR 'ENTER')</span>
+        </button>
+    </div>
+
+    <!-- Capture / Boarding Tactical Prompt (Contextual) - Note: Removed animation bounce -->
+    <div id="capture-prompt" class="hidden absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2">
+        <div class="bg-red-950 border-4 border-red-600 p-4 rounded-xl shadow-2xl text-center max-w-xs border-double">
+            <h3 class="text-lg font-bold text-red-400 parchment-title mb-1">⚔️ BOARD HOSTILE</h3>
+            <p id="capture-enemy-desc" class="text-xs text-amber-200 mb-3">Target is disabled! Order your crew to board?</p>
+            <button onclick="initDuel()" class="bg-red-600 hover:bg-red-500 text-amber-100 font-extrabold px-6 py-2 rounded-lg text-sm border-2 border-red-400 transition active:scale-95">
+                🏴‍☠️ BOARD SHIP (B)
             </button>
         </div>
+    </div>
 
-        <!-- Board Ship Prompt (Translucent, visible only when explorer is near ship) -->
-        <div id="board-ship-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
-            <button onclick="boardShipAndPushOff()" class="pulse-dock-btn bg-blue-600/70 hover:bg-blue-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-blue-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
-                <span class="flex items-center gap-2">⛵ BOARD SHIP & PUSH OFF</span>
-                <span class="text-[10px] text-blue-100/90 font-semibold font-mono tracking-wider">(PRESS 'E' OR 'ENTER')</span>
-            </button>
-        </div>
-
-        <!-- Capture / Boarding Tactical Prompt (Contextual) - Note: Removed animation bounce -->
-        <div id="capture-prompt" class="hidden absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2">
-            <div class="bg-red-950 border-4 border-red-600 p-4 rounded-xl shadow-2xl text-center max-w-xs border-double">
-                <h3 class="text-lg font-bold text-red-400 parchment-title mb-1">⚔️ BOARD HOSTILE</h3>
-                <p id="capture-enemy-desc" class="text-xs text-amber-200 mb-3">Target is disabled! Order your crew to board?</p>
-                <button onclick="openBoardingScreen()" class="bg-red-600 hover:bg-red-500 text-amber-100 font-extrabold px-6 py-2 rounded-lg text-sm border-2 border-red-400 transition active:scale-95">
-                    🏴‍☠️ BOARD SHIP (B)
-                </button>
-            </div>
-        </div>
-
-        <!-- DEBUG MODE OVERLAY CONTROL PANEL -->
+    <!-- DEBUG MODE OVERLAY CONTROL PANEL -->
         <div id="debug-panel" class="hidden fixed bottom-28 left-2 z-30 bg-red-950/95 border border-red-500/50 p-2.5 rounded-xl shadow-lg text-xs w-48 text-center backdrop-blur-sm pointer-events-auto">
             <span class="font-bold text-red-400 block uppercase tracking-wider mb-1">🛠️ DEBUG CONSOLE</span>
             <div class="flex flex-col gap-1.5">
@@ -273,29 +273,19 @@
             <div class="hidden md:flex flex-col items-center gap-1">
                 <span class="text-[10px] text-amber-400 font-bold bg-amber-950/90 px-2 py-1 rounded border border-amber-800/40">Broadside Recharge</span>
                 <div class="flex gap-2">
-                    <div class="w-20 bg-amber-950/90 h-2 rounded-full overflow-hidden border border-amber-800 relative">
+                    <div class="w-40 bg-amber-950/90 h-3 rounded-full overflow-hidden border border-amber-800 relative">
                         <div id="port-cooldown-bar" class="h-full bg-cyan-400 w-full transition-all"></div>
-                        <div class="absolute inset-0 text-[8px] font-bold flex items-center justify-center">PORT</div>
-                    </div>
-                    <div class="w-20 bg-amber-950/90 h-2 rounded-full overflow-hidden border border-amber-800 relative">
-                        <div id="starboard-cooldown-bar" class="h-full bg-cyan-400 w-full transition-all"></div>
-                        <div class="absolute inset-0 text-[8px] font-bold flex items-center justify-center">STARBOARD</div>
+                        <div class="absolute inset-0 text-[8px] font-bold flex items-center justify-center">CANON COOLDOWN</div>
                     </div>
                 </div>
             </div>
 
             <!-- Right Side: ENLARGED, HIGH-VISIBILITY COMBAT BUTTONS -->
             <div class="pointer-events-auto flex gap-3">
-                <!-- Port Broadside (Fire Left) -->
-                <button id="btn-fire-left" class="pulse-fire-btn w-18 h-18 md:w-20 md:h-20 bg-gradient-to-br from-red-600 to-red-950 border-3 border-red-400 hover:from-red-500 hover:to-red-900 text-white rounded-2xl flex flex-col items-center justify-center shadow-2xl text-center select-none cursor-pointer active:scale-95 transition-all duration-150" style="-webkit-tap-highlight-color: transparent;">
-                    <span class="text-xs font-extrabold uppercase tracking-widest text-red-100">💥 Port</span>
-                    <span class="text-[14px] font-black">◄ FIRE</span>
-                    <span class="text-[8px] text-red-300 font-bold">CLOSEST TARGET</span>
-                </button>
-                <!-- Starboard Broadside (Fire Right) -->
-                <button id="btn-fire-right" class="pulse-fire-btn w-18 h-18 md:w-20 md:h-20 bg-gradient-to-br from-red-600 to-red-950 border-3 border-red-400 hover:from-red-500 hover:to-red-900 text-white rounded-2xl flex flex-col items-center justify-center shadow-2xl text-center select-none cursor-pointer active:scale-95 transition-all duration-150" style="-webkit-tap-highlight-color: transparent;">
-                    <span class="text-xs font-extrabold uppercase tracking-widest text-red-100">💥 Stbd</span>
-                    <span class="text-[14px] font-black">FIRE ►</span>
+                <!-- Single Fire Button -->
+                <button id="btn-fire" class="pulse-fire-btn w-36 h-18 md:w-40 md:h-20 bg-gradient-to-br from-red-600 to-red-950 border-3 border-red-400 hover:from-red-500 hover:to-red-900 text-white rounded-2xl flex flex-col items-center justify-center shadow-2xl text-center select-none cursor-pointer active:scale-95 transition-all duration-150" style="-webkit-tap-highlight-color: transparent;">
+                    <span class="text-xs font-extrabold uppercase tracking-widest text-red-100">💥 FIRE CANNONS</span>
+                    <span class="text-[12px] font-black">BROADSIDE (SPACE)</span>
                     <span class="text-[8px] text-red-300 font-bold">CLOSEST TARGET</span>
                 </button>
             </div>
@@ -316,11 +306,12 @@
                     </button>
                 </div>
 
-                <!-- Tabs (Market, Tavern, Shipyard) -->
+                <!-- Tabs (Market, Shipyard, Tavern, Governor) -->
                 <div class="flex border-b border-amber-800 bg-amber-900/30 text-sm">
                     <button onclick="switchTab('market')" id="tab-btn-market" class="flex-1 py-2 font-bold text-amber-300 border-b-2 border-amber-400 bg-amber-950/60 uppercase tracking-wider">Market</button>
                     <button onclick="switchTab('shipyard')" id="tab-btn-shipyard" class="flex-1 py-2 font-bold text-amber-500 hover:text-amber-300 uppercase tracking-wider">Shipyard</button>
                     <button onclick="switchTab('tavern')" id="tab-btn-tavern" class="flex-1 py-2 font-bold text-amber-500 hover:text-amber-300 uppercase tracking-wider">Tavern</button>
+                    <button onclick="switchTab('governor')" id="tab-btn-governor" class="flex-1 py-2 font-bold text-amber-500 hover:text-amber-300 uppercase tracking-wider">Governor</button>
                 </div>
 
                 <!-- Tab Panels Area (Scrollable) -->
@@ -422,6 +413,56 @@
                         </div>
                     </div>
 
+                    <!-- Tab: GOVERNOR PANEL -->
+                    <div id="panel-governor" class="space-y-4 hidden">
+                        <div class="bg-amber-950 p-3 rounded-lg border border-amber-800 text-center">
+                            <h3 class="parchment-text text-xl text-amber-400 italic mb-2">"His Excellency's Audience Chamber"</h3>
+                            <p class="text-xs text-amber-300 leading-relaxed mb-4">
+                                Secure royal letters of marque, pay off your outstanding standing bounties, swear allegiance to foreign crowns, or accept high-value state missions.
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-amber-900/10 p-3 rounded-lg border border-amber-800/40">
+                                <span class="font-bold text-amber-400 text-xs uppercase block mb-1">Current Standing</span>
+                                <div class="space-y-1 text-xs">
+                                    <p class="truncate">Allegiance: <span id="gov-standing-faction" class="font-bold text-amber-200">English Privateer</span></p>
+                                    <p>Reputation Rank: <span id="gov-standing-rank" class="font-bold text-amber-300">Lieutenant</span></p>
+                                </div>
+                            </div>
+
+                            <div class="bg-amber-900/10 p-3 rounded-lg border border-amber-800/40 flex flex-col justify-between">
+                                <div>
+                                    <span class="font-bold text-amber-400 text-xs uppercase block mb-1">Request Promotion</span>
+                                    <p class="text-[10px] text-amber-300">Elevate your standing under current allegiance.</p>
+                                </div>
+                                <button onclick="requestGovPromotion()" class="mt-2 w-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-1.5 rounded text-xs transition">
+                                    Promote <br> <span class="text-[9px] text-amber-300">🪙 <span id="promo-cost-text">400</span> Gold</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Allegiance Swearing -->
+                        <div class="bg-amber-900/20 p-3 rounded-lg border border-amber-800/40">
+                            <h4 class="text-xs uppercase text-amber-400 font-bold tracking-wider mb-2">Change Allegiances / Swear Fealty</h4>
+                            <p class="text-[10px] text-amber-300 mb-3">Pay a privateer clearance fee to secure a pardon and swear fealty to a new crown.</p>
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <button onclick="changeGovAllegiance('English Privateer')" class="bg-blue-900 hover:bg-blue-800 p-2 rounded text-center font-bold">🇬🇧 English <span class="block text-[9px] text-amber-400">🪙 250 Gold</span></button>
+                                <button onclick="changeGovAllegiance('French Buccaneer')" class="bg-purple-900 hover:bg-purple-800 p-2 rounded text-center font-bold">🇫🇷 Buccaneer <span class="block text-[9px] text-amber-400">🪙 250 Gold</span></button>
+                                <button onclick="changeGovAllegiance('Spanish Guardacosta')" class="bg-red-950 hover:bg-red-900 p-2 rounded text-center font-bold">🇪🇸 Spanish <span class="block text-[9px] text-amber-400">🪙 250 Gold</span></button>
+                                <button onclick="changeGovAllegiance('Independent Rogue')" class="bg-amber-900/60 hover:bg-amber-800 p-2 rounded text-center font-bold">🏴‍☠️ Independent <span class="block text-[9px] text-amber-400">🪙 250 Gold</span></button>
+                            </div>
+                        </div>
+
+                        <!-- Active Missions Panel -->
+                        <div class="p-3 bg-amber-900/30 rounded border border-amber-800">
+                            <h4 class="text-xs uppercase text-amber-400 font-bold tracking-wider mb-2">Colonial Missions Board</h4>
+                            <div id="missions-board-container" class="space-y-2 text-xs text-amber-200">
+                                <!-- Procedural Missions Rendered Here -->
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Gold and Status Footer in Modal -->
@@ -450,6 +491,73 @@
                 <div class="pt-2">
                     <p class="text-[10px] text-amber-400 italic">"Mercy or efficiency, Captain. Choose well."</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- SWORD FIGHT MINI-GAME MODAL -->
+        <div id="sword-fight-modal" class="hidden fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
+            <div class="bg-amber-950 border-4 border-amber-700 rounded-xl shadow-2xl max-w-md w-full p-5 text-center border-double text-amber-100 space-y-4">
+                <h2 class="parchment-title text-2xl font-bold tracking-wider text-amber-400">⚔️ CAPTAIN'S DUEL</h2>
+                <p class="text-[11px] text-amber-300 leading-relaxed font-sans">
+                    Fend off the enemy Captain's strikes! Press the key or button matching the color when the sword emoji enters the golden <span class="text-amber-400 font-bold">HIT zone</span>!
+                </p>
+                
+                <!-- Visual Arena Battle Ground (Rhythm Track) -->
+                <div class="h-24 bg-[#091a24] rounded-lg border border-amber-900/40 relative overflow-hidden flex items-center">
+                    <!-- Target Zone Marker -->
+                    <div class="absolute left-[12%] top-0 bottom-0 w-[12%] bg-amber-500/20 border-l border-r border-amber-400/40 flex items-center justify-center text-[10px] font-black text-amber-300 tracking-wider">
+                        HIT
+                    </div>
+                    <!-- Player Emoji Avatar -->
+                    <div id="duel-player-avatar" class="absolute left-2 text-3xl transition-transform duration-100 z-10">🤺</div>
+                    <!-- Projectile Container -->
+                    <div id="duel-projectiles-container" class="absolute inset-0 pointer-events-none"></div>
+                    <!-- Enemy Emoji Avatar -->
+                    <div id="duel-enemy-avatar" class="absolute right-2 text-3xl transition-transform duration-100 scale-x-[-1] z-10">🤺</div>
+                </div>
+
+                <!-- HP Bars -->
+                <div class="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                        <span class="block font-bold text-amber-300">Your HP</span>
+                        <div class="w-full bg-red-950 h-3 rounded-full overflow-hidden border border-red-900">
+                            <div id="duel-player-hp-bar" class="bg-green-500 h-full w-full transition-all"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="block font-bold text-red-400">Enemy HP</span>
+                        <div class="w-full bg-red-950 h-3 rounded-full overflow-hidden border border-red-900">
+                            <div id="duel-enemy-hp-bar" class="bg-green-500 h-full w-full transition-all"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Intent telegrapher box -->
+                <div class="p-2 bg-amber-900/25 rounded border border-amber-800 text-[11px]">
+                    <p id="duel-combat-log" class="text-amber-200 italic font-mono">The duel begins! Ready your guard...</p>
+                    <p id="duel-enemy-intent" class="text-yellow-400 font-bold mt-1">Keep your fingers on keys A, S, D!</p>
+                </div>
+
+                <!-- Action selection cards -->
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="handleDuelAction('slash')" class="bg-red-950 hover:bg-red-900 p-2 rounded-lg border border-red-700 text-xs flex flex-col items-center justify-center transition active:scale-95">
+                        <span class="text-lg">🔴 ⚔️</span>
+                        <span class="font-bold text-amber-200">SLASH [A]</span>
+                        <span class="text-[9px] text-red-300">Matches Red 🔴</span>
+                    </button>
+                    <button onclick="handleDuelAction('parry')" class="bg-blue-950 hover:bg-blue-900 p-2 rounded-lg border border-blue-700 text-xs flex flex-col items-center justify-center transition active:scale-95">
+                        <span class="text-lg">🔵 🛡️</span>
+                        <span class="font-bold text-amber-200">PARRY [S]</span>
+                        <span class="text-[9px] text-blue-300">Matches Blue 🔵</span>
+                    </button>
+                    <button onclick="handleDuelAction('thrust')" class="bg-emerald-950 hover:bg-emerald-900 p-2 rounded-lg border border-emerald-700 text-xs flex flex-col items-center justify-center transition active:scale-95">
+                        <span class="text-lg">🟢 ⚡</span>
+                        <span class="font-bold text-amber-200">THRUST [D]</span>
+                        <span class="text-[9px] text-emerald-300">Matches Green 🟢</span>
+                    </button>
+                </div>
+
+                <p class="text-[9px] text-amber-400/80">Slash (Red/A) matches Red 🔴 | Parry (Blue/S) matches Blue 🔵 | Thrust (Green/D) matches Green 🟢</p>
             </div>
         </div>
 
@@ -759,6 +867,18 @@
             foodTimer: 0
         };
 
+        let currentMission = null; // { id, type, commodity, targetQuantity, description, reward, status }
+        let playerRankIndex = 0;
+        const GOV_RANKS = ["Cadet", "Lieutenant", "Captain", "Commodore", "Admiral"];
+
+        // Duel mechanics variables
+        let duelPlayerHp = 100;
+        let duelEnemyHp = 100;
+        let isDuelActive = false;
+        let duelProjectiles = [];
+        let duelLastSpawn = 0;
+        let duelTimerId = null;
+
         // LAND EXPLORATION STATE MODULE
         let explorer = {
             active: false,
@@ -802,7 +922,7 @@
         let cooldowns = {
             left: 0,
             right: 0,
-            max: 2000
+            max: 1500
         };
 
         const canvas = document.getElementById('game-canvas');
@@ -859,31 +979,48 @@
         rightBtn.addEventListener('mouseup', () => startSteer(0));
         rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); startSteer(0); }, {passive: false});
 
-        const fireLeftBtn = document.getElementById('btn-fire-left');
-        const fireRightBtn = document.getElementById('btn-fire-right');
+        // Combined Single Fire Button Listener
+        const fireBtn = document.getElementById('btn-fire');
 
-        fireLeftBtn.addEventListener('mousedown', (e) => { initAudio(); fireCannons('left'); });
-        fireLeftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); fireCannons('left'); }, {passive: false});
-
-        fireRightBtn.addEventListener('mousedown', (e) => { initAudio(); fireCannons('right'); });
-        fireRightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); fireCannons('right'); }, {passive: false});
+        fireBtn.addEventListener('mousedown', (e) => { initAudio(); fireCannons(); });
+        fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); fireCannons(); }, {passive: false});
 
         window.addEventListener('keydown', (e) => {
             initAudio();
             const key = e.key.toLowerCase();
+
+            // Intercept controls during live sword duels
+            if (typeof isDuelActive !== 'undefined' && isDuelActive) {
+                if (key === 'a') {
+                    e.preventDefault();
+                    handleDuelAction('slash');
+                    return;
+                }
+                if (key === 's') {
+                    e.preventDefault();
+                    handleDuelAction('parry');
+                    return;
+                }
+                if (key === 'd') {
+                    e.preventDefault();
+                    handleDuelAction('thrust');
+                    return;
+                }
+            }
+
             keysPressed[key] = true;
 
             if (e.key === ' ' || e.code === 'Space') {
                 if (!explorer.active) {
-                    fireCannons('left');
-                    fireCannons('right');
+                    e.preventDefault();
+                    fireCannons();
                 }
             }
 
-            // Keyboard shortcut 'B' for boarding
+            // Keyboard shortcut 'B' for boarding duel
             if (key === 'b') {
                 if (!document.getElementById('capture-prompt').classList.contains('hidden')) {
-                    openBoardingScreen();
+                    initDuel();
                 }
             }
 
@@ -1187,10 +1324,8 @@
             document.getElementById('hull-bar').style.width = `${hpPct}%`;
             document.getElementById('hull-text').innerText = `${Math.floor(gameState.hull)} / ${gameState.hullMax}`;
 
-            const leftPct = Math.max(0, 100 - (cooldowns.left / cooldowns.max) * 100);
-            const rightPct = Math.max(0, 100 - (cooldowns.right / cooldowns.max) * 100);
-            document.getElementById('port-cooldown-bar').style.width = `${leftPct}%`;
-            document.getElementById('starboard-cooldown-bar').style.width = `${rightPct}%`;
+            const globalPct = Math.max(0, 100 - (cooldowns.left / cooldowns.max) * 100);
+            document.getElementById('port-cooldown-bar').style.width = `${globalPct}%`;
 
             document.getElementById('shipyard-repair-status').innerText = `Hull: ${Math.floor(gameState.hull)} / ${gameState.hullMax} HP`;
             document.getElementById('shipyard-cannon-count').innerText = `Current Cannons: ${gameState.cannonCount} batteries`;
@@ -1205,6 +1340,8 @@
 
         function addLogMessage(msg, type = 'info') {
             const overlay = document.getElementById('log-overlay');
+            overlay.innerHTML = ''; // Keep notifications clean: one at a time!
+
             const item = document.createElement('div');
             item.className = `px-3 py-1.5 rounded-md text-xs font-semibold shadow-md backdrop-blur-md transform transition-all duration-300 translate-y-2 opacity-0 text-amber-100 ${
                 type === 'combat' ? 'bg-red-950/90 border border-red-700/60' : 
@@ -1224,39 +1361,49 @@
             }, 4000);
         }
 
-        function fireCannons(side) {
+        function fireCannons() {
             if (!gameState.hasGameStarted || portModalOpen || boardingModalOpen || groundingModalOpen) return;
 
-            // Locked trajectory target restriction check
+            // Target lock restriction
             const targetInfo = getClosestVessel();
             if (!targetInfo.vessel || targetInfo.dist > 550) {
-                addLogMessage("⚠️ No enemy vessels close enough to target! Keep exploring.", "warning");
+                addLogMessage("⚠️ No target close enough! Align broadsides perpendicular to enemies.", "warning");
                 return;
             }
 
-            if (side === 'left' && cooldowns.left > 0) return;
-            if (side === 'right' && cooldowns.right > 0) return;
-
-            if (side === 'left') cooldowns.left = cooldowns.max;
-            if (side === 'right') cooldowns.right = cooldowns.max;
+            if (cooldowns.left > 0) return; // Port cooldown represents global battery charge
+            cooldowns.left = cooldowns.max;
 
             playSound('cannon');
 
-            addLogMessage(`💥 Battery lock! Firing broadsides directly at closest ${targetInfo.vessel.type}!`, 'combat');
-
+            // Find perpendicular angle relative to current ship orientation
             const targetVessel = targetInfo.vessel;
-            const fireAngle = Math.atan2(targetVessel.x - ship.x, -(targetVessel.y - ship.y));
+            const angleToTarget = Math.atan2(targetVessel.x - ship.x, -(targetVessel.y - ship.y));
+            let relativeAngle = normalizeAngle(angleToTarget - ship.angle);
+            
+            let fireAngle;
+            let sideLabel;
+            if (relativeAngle < 0) {
+                // Left side (Port)
+                fireAngle = ship.angle - Math.PI / 2;
+                sideLabel = "PORT";
+            } else {
+                // Right side (Starboard)
+                fireAngle = ship.angle + Math.PI / 2;
+                sideLabel = "STARBOARD";
+            }
+
+            addLogMessage(`💥 Firing ${sideLabel} broadside perpendicular to flagship hull!`, 'combat');
 
             const damageMult = FACTION_BONUSES[gameState.faction].damage;
-            const ballCount = gameState.cannonCount; 
-            const offsetDir = side === 'left' ? -Math.PI / 2 : Math.PI / 2;
+            const ballCount = gameState.cannonCount;
 
             for (let i = 0; i < ballCount; i++) {
                 const spread = (Math.random() - 0.5) * 0.12; 
                 const ballSpeed = 8 + Math.random() * 2.5;
                 
-                const startX = ship.x + Math.sin(ship.angle + offsetDir) * 12;
-                const startY = ship.y - Math.cos(ship.angle + offsetDir) * 12;
+                const startX = ship.x + Math.sin(fireAngle) * 12;
+                const startY = ship.y - Math.cos(fireAngle) * 12;
 
                 cannonballs.push({
                     x: startX,
@@ -1358,6 +1505,7 @@
 
             renderMarket();
             renderShipyardPrizeSection();
+            renderGovernorMansion();
             updateHUD();
 
             document.getElementById('port-modal').classList.remove('hidden');
@@ -1505,17 +1653,338 @@
                 }
             });
 
-            document.getElementById(`tab-btn-${tab}`).classList.add('text-amber-300', 'border-b-2', 'border-amber-400', 'bg-amber-950/60');
-            document.getElementById(`tab-btn-${tab}`).classList.remove('text-amber-500');
+            const targetBtn = document.getElementById(`tab-btn-${tab}`);
+            if (targetBtn) {
+                targetBtn.classList.add('text-amber-300', 'border-b-2', 'border-amber-400', 'bg-amber-950/60');
+                targetBtn.classList.remove('text-amber-500');
+            }
 
             document.getElementById('panel-market').classList.add('hidden');
             document.getElementById('panel-shipyard').classList.add('hidden');
             document.getElementById('panel-tavern').classList.add('hidden');
+            document.getElementById('panel-governor').classList.add('hidden');
 
-            document.getElementById(`panel-${tab}`).classList.remove('hidden');
+            const targetPanel = document.getElementById(`panel-${tab}`);
+            if (targetPanel) {
+                targetPanel.classList.remove('hidden');
+            }
 
             if (tab === 'shipyard') {
                 renderShipyardPrizeSection();
+            } else if (tab === 'governor') {
+                renderGovernorMansion();
+            }
+        }
+
+        function renderGovernorMansion() {
+            document.getElementById('gov-standing-faction').innerText = gameState.faction;
+            document.getElementById('gov-standing-rank').innerText = GOV_RANKS[playerRankIndex || 0];
+            
+            const promoCost = 400 + (playerRankIndex || 0) * 300;
+            document.getElementById('promo-cost-text').innerText = promoCost;
+            
+            renderMissionsBoard();
+        }
+
+        function requestGovPromotion() {
+            const promoCost = 400 + (playerRankIndex || 0) * 300;
+            if (playerRankIndex >= GOV_RANKS.length - 1) {
+                addLogMessage("🏆 You have attained the highest rank of Admiral!");
+                return;
+            }
+            if (gameState.gold < promoCost) {
+                addLogMessage("⚠️ Lacking gold coins to secure governor commission!");
+                return;
+            }
+            gameState.gold -= promoCost;
+            playerRankIndex++;
+            playSound('gold');
+            addLogMessage(`🎖️ Stand to attention! Promoted to ${GOV_RANKS[playerRankIndex]}!`, 'success');
+            renderGovernorMansion();
+            updateHUD();
+        }
+
+        function changeGovAllegiance(newFaction) {
+            const cost = 250;
+            if (gameState.faction === newFaction) {
+                addLogMessage("⚠️ You are already commissioned under this allegiance!");
+                return;
+            }
+            if (gameState.gold < cost) {
+                addLogMessage("⚠️ Lacking gold to purchase new Letter of Marque!");
+                return;
+            }
+            gameState.gold -= cost;
+            gameState.faction = newFaction;
+            playerRankIndex = 0; // reset rank upon conversion
+            playSound('gold');
+            addLogMessage(`📜 Swore oaths to new governor! Standings cleared. Serves ${newFaction}.`, 'success');
+            
+            document.getElementById('faction-badge').innerText = `(${newFaction})`;
+            renderGovernorMansion();
+            updateHUD();
+        }
+
+        function generateNewMission() {
+            const targetGoods = ["sugar", "rum", "tobacco", "spices", "wood"];
+            const chosenGood = targetGoods[Math.floor(Math.random() * targetGoods.length)];
+            const quantity = Math.floor(Math.random() * 4) + 3;
+            const reward = quantity * 100;
+
+            currentMission = {
+                id: Math.random().toString(36).substring(2, 9),
+                type: 'delivery',
+                commodity: chosenGood,
+                targetQuantity: quantity,
+                description: `Deliver ${quantity} barrels of ${COMMODITIES[chosenGood].name} to secure crown favor.`,
+                reward: reward,
+                status: 'active'
+            };
+            renderMissionsBoard();
+        }
+
+        function renderMissionsBoard() {
+            const container = document.getElementById('missions-board-container');
+            container.innerHTML = '';
+
+            if (!currentMission) {
+                container.innerHTML = `
+                    <div class="text-center py-2">
+                        <p class="text-amber-300 italic mb-2">No active royal commissions drafted.</p>
+                        <button onclick="generateNewMission()" class="bg-amber-700 hover:bg-amber-600 px-3 py-1.5 rounded text-amber-100 font-bold active:scale-95 transition">
+                            📜 Draft Royal Commission
+                        </button>
+                    </div>
+                `;
+            } else {
+                const haveCount = gameState.cargo[currentMission.commodity] || 0;
+                const isReady = haveCount >= currentMission.targetQuantity;
+
+                container.innerHTML = `
+                    <div class="bg-amber-950/80 p-3 rounded border border-amber-800/60 flex flex-col gap-2">
+                        <p class="font-bold text-amber-400">Royal Favor Assignment</p>
+                        <p class="text-amber-200 italic">"${currentMission.description}"</p>
+                        <div class="flex justify-between items-center text-xs mt-1">
+                            <span>Inventory: <span class="font-bold ${isReady ? 'text-emerald-400' : 'text-yellow-400'}">${haveCount}/${currentMission.targetQuantity} Barrels</span></span>
+                            <span class="text-amber-300 font-bold">Payout: 🪙 ${currentMission.reward} Gold</span>
+                        </div>
+                        <div class="flex gap-2 mt-2">
+                            ${isReady ? 
+                            `<button onclick="completeCurrentMission()" class="flex-1 bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-1 px-2 rounded">
+                                Handover Goods
+                            </button>` : 
+                            `<button class="flex-1 bg-amber-950 text-amber-600 font-bold py-1 px-2 rounded border border-amber-800 cursor-not-allowed" disabled>
+                                Missing Cargo...
+                            </button>`}
+                            <button onclick="abandonCurrentMission()" class="bg-red-950 text-red-400 border border-red-900/60 hover:bg-red-900 px-2 py-1 rounded">
+                                Abandon
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function completeCurrentMission() {
+            if (!currentMission) return;
+            const haveCount = gameState.cargo[currentMission.commodity] || 0;
+            if (haveCount < currentMission.targetQuantity) return;
+
+            gameState.cargo[currentMission.commodity] -= currentMission.targetQuantity;
+            gameState.gold += currentMission.reward;
+            playSound('gold');
+            addLogMessage(`🎖️ Mission Complete! Payout of 🪙 ${currentMission.reward} Gold added!`, 'success');
+            currentMission = null;
+            renderGovernorMansion();
+            updateHUD();
+        }
+
+        function abandonCurrentMission() {
+            currentMission = null;
+            addLogMessage("❌ Mission abandoned.");
+            renderGovernorMansion();
+        }
+
+        function initDuel() {
+            duelPlayerHp = 100;
+            duelEnemyHp = 100;
+            isDuelActive = true;
+            duelProjectiles = [];
+            duelLastSpawn = Date.now();
+            updateDuelUI();
+            
+            document.getElementById('duel-combat-log').innerText = "⚔️ FENCE! Fend off incoming colored strikes when they enter the HIT zone!";
+            document.getElementById('duel-enemy-intent').innerText = "Keys: A = Red (Slash) | S = Blue (Parry) | D = Green (Thrust)";
+            
+            document.getElementById('sword-fight-modal').classList.remove('hidden');
+
+            // Clear previous projectiles DOM
+            document.getElementById('duel-projectiles-container').innerHTML = '';
+
+            // Run rhythm game animation loop
+            if (duelTimerId) cancelAnimationFrame(duelTimerId);
+            duelTimerId = requestAnimationFrame(updateDuelLoop);
+        }
+
+        function updateDuelUI() {
+            document.getElementById('duel-player-hp-bar').style.width = `${duelPlayerHp}%`;
+            document.getElementById('duel-enemy-hp-bar').style.width = `${duelEnemyHp}%`;
+        }
+
+        function spawnDuelProjectile() {
+            const actions = ['slash', 'parry', 'thrust'];
+            const action = actions[Math.floor(Math.random() * actions.length)];
+            duelProjectiles.push({
+                action: action,
+                progress: 0,
+                speed: 1.1 + Math.random() * 0.4
+            });
+        }
+
+        function updateDuelLoop() {
+            if (!isDuelActive) return;
+
+            const now = Date.now();
+            
+            // Periodically spawn new sword strikes
+            if (now - duelLastSpawn > 1800) {
+                spawnDuelProjectile();
+                duelLastSpawn = now;
+            }
+
+            // Update existing projects positions
+            const container = document.getElementById('duel-projectiles-container');
+            container.innerHTML = '';
+
+            for (let i = duelProjectiles.length - 1; i >= 0; i--) {
+                const p = duelProjectiles[i];
+                p.progress += p.speed; // Glide from right to left
+
+                if (p.progress >= 95) {
+                    // Missed completely!
+                    triggerDuelDamage('player', p.action);
+                    duelProjectiles.splice(i, 1);
+                    continue;
+                }
+
+                // Render gliding projectile
+                const el = document.createElement('div');
+                el.className = `absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold shadow-lg transition-transform duration-75 ${
+                    p.action === 'slash' ? 'border-red-500 bg-red-950 text-red-200' :
+                    p.action === 'parry' ? 'border-blue-500 bg-blue-950 text-blue-200' :
+                    'border-green-500 bg-emerald-950 text-emerald-200'
+                }`;
+                el.style.left = `${100 - p.progress}%`;
+                
+                let emoji = p.action === 'slash' ? '🔴' : p.action === 'parry' ? '🔵' : '🟢';
+                el.innerText = emoji;
+
+                container.appendChild(el);
+            }
+
+            if (duelPlayerHp <= 0) {
+                resolveDuelOutcome(false);
+                return;
+            }
+            if (duelEnemyHp <= 0) {
+                resolveDuelOutcome(true);
+                return;
+            }
+
+            duelTimerId = requestAnimationFrame(updateDuelLoop);
+        }
+
+        function handleDuelAction(action) {
+            if (!isDuelActive) return;
+
+            // Find if there is any projectile in the hit zone (left percent between 12% and 24%)
+            let hitIndex = -1;
+            for (let i = 0; i < duelProjectiles.length; i++) {
+                const p = duelProjectiles[i];
+                const leftPercent = 100 - p.progress;
+                if (leftPercent >= 12 && leftPercent <= 24) {
+                    hitIndex = i;
+                    break;
+                }
+            }
+
+            const playerAv = document.getElementById('duel-player-avatar');
+            playerAv.style.transform = "translateX(15px) scale(1.15)";
+            playSound('impact');
+            setTimeout(() => {
+                playerAv.style.transform = "translateX(0) scale(1)";
+            }, 100);
+
+            if (hitIndex !== -1) {
+                const matchedProj = duelProjectiles[hitIndex];
+                if (matchedProj.action === action) {
+                    // Success! Correct parry/strike
+                    triggerDuelDamage('enemy', action);
+                    duelProjectiles.splice(hitIndex, 1);
+                } else {
+                    // Blocked with the wrong guard
+                    triggerDuelDamage('player_wrong', matchedProj.action);
+                    duelProjectiles.splice(hitIndex, 1);
+                }
+            } else {
+                // Out of target zone timing whiff
+                document.getElementById('duel-combat-log').innerText = "⚠️ Swing and a miss! Watch the timing of incoming strikes!";
+            }
+            updateDuelUI();
+        }
+
+        function triggerDuelDamage(target, action) {
+            const logText = document.getElementById('duel-combat-log');
+            const enemyAv = document.getElementById('duel-enemy-avatar');
+
+            if (target === 'enemy') {
+                const dmg = 25 + Math.floor(Math.random() * 10);
+                duelEnemyHp = Math.max(0, duelEnemyHp - dmg);
+                logText.innerText = `💥 CRITICAL! You countered their ${action.toUpperCase()} strike perfectly! -${dmg} HP`;
+                playSound('gold');
+
+                enemyAv.style.transform = "scale-x(-1) translateX(15px)";
+                setTimeout(() => { enemyAv.style.transform = "scale-x(-1) translateX(0)"; }, 120);
+            } 
+            else if (target === 'player') {
+                const dmg = 20 + Math.floor(Math.random() * 8);
+                duelPlayerHp = Math.max(0, duelPlayerHp - dmg);
+                logText.innerText = `🩸 HIT! You failed to block their incoming ${action.toUpperCase()} strike! -${dmg} HP`;
+                playSound('impact');
+            }
+            else if (target === 'player_wrong') {
+                const dmg = 15 + Math.floor(Math.random() * 5);
+                duelPlayerHp = Math.max(0, duelPlayerHp - dmg);
+                logText.innerText = `🩸 BLOCKED WRONG! You used the wrong guard style against their ${action.toUpperCase()}! -${dmg} HP`;
+                playSound('impact');
+            }
+            updateDuelUI();
+        }
+
+        function resolveDuelOutcome(playerWon) {
+            isDuelActive = false;
+            if (duelTimerId) {
+                cancelAnimationFrame(duelTimerId);
+                duelTimerId = null;
+            }
+
+            if (playerWon) {
+                setTimeout(() => {
+                    document.getElementById('sword-fight-modal').classList.add('hidden');
+                    addLogMessage("🏆 VICTORY! The Enemy Captain yields control!", "success");
+                    openBoardingScreen();
+                }, 800);
+            } else {
+                setTimeout(() => {
+                    document.getElementById('sword-fight-modal').classList.add('hidden');
+                    gameState.activeCrew = Math.max(4, gameState.activeCrew - 1);
+                    gameState.hull = Math.max(1, gameState.hull - 15);
+                    addLogMessage("❌ RETREAT! Boarders repelled with crew losses!", "combat");
+                    updateHUD();
+                    
+                    ship.speed = 0.5;
+                    setSailState('half');
+                }, 800);
             }
         }
 
@@ -1873,13 +2342,8 @@
             ship.speed = -ship.speed * 0.5;
             playSound('impact');
 
-            gameState.hull = Math.max(1, gameState.hull - 5);
-            updateHUD();
-
-            addLogMessage(`💥 Collided with harbor structures at ${port.name}! -5 Hull HP`, "combat");
-            if (gameState.hull <= 0) {
-                triggerGameOver(`Your vessel was wrecked by colliding with the stone fortresses of ${port.name}.`);
-            }
+            // No damage subtraction! Ports no longer damage the vessel.
+            addLogMessage(`⚓ Safe Harbor! Anchored near ${port.name}. Enter to walk into town.`, "success");
         }
 
         function startExploring() {
@@ -2148,7 +2612,6 @@
             ship.y = Math.max(50, Math.min(WORLD_HEIGHT - 50, ship.y));
 
             if (cooldowns.left > 0) cooldowns.left -= 16.66; 
-            if (cooldowns.right > 0) cooldowns.right -= 16.66;
 
             document.getElementById('hud-speed').innerText = Math.abs(ship.speed).toFixed(1);
             const relativeAngle = normalizeAngle(wind.angle - ship.angle);
@@ -2223,11 +2686,11 @@
 
                             enemy.hitsTaken = (enemy.hitsTaken || 0) + 1;
                             if (enemy.hitsTaken === 1) {
-                                addLogMessage(`⚠️ Hostile ${enemy.type} has been hit once! They are alarmed but not attacking yet.`, "info");
+                                addLogMessage(`⚠️ Hostile ${enemy.type} has been hit once! Stand ready for combat.`, "info");
                             } else if (enemy.hitsTaken >= 2) {
                                 if (enemy.state !== 'pursue') {
                                     enemy.state = 'pursue';
-                                    addLogMessage(`🏴‍☠️ Hostile ${enemy.type} is fully provoked and opening fire!`, "combat");
+                                    addLogMessage(`🏴‍☠️ Hostile ${enemy.type} is opening retaliatory fire!`, "combat");
                                 }
                             }
 
@@ -3109,7 +3572,7 @@ Format the output strictly as a JSON object matching this schema:
                 }
             });
 
-            // Draw player ship (always render at its actual grounded coordinates)
+            // Draw player ship (always render at its actual coordinates)
             const playerScrX = ship.x - camX;
             const playerScrY = ship.y - camY;
 
