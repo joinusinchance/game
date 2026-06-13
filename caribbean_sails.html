@@ -24,7 +24,7 @@
         .parchment-title {
             font-family: 'Cinzel Decorative', serif;
         }
-        /* Custom scrollbar for trade panels */
+        /* Custom scrollbars */
         ::-webkit-scrollbar {
             width: 6px;
         }
@@ -219,7 +219,7 @@
             </button>
         </div>
 
-        <!-- Board Ship Prompt (Translucent, visible only when explorer is near ship) -->
+        <!-- Board Ship Prompt -->
         <div id="board-ship-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
             <button onclick="boardShipAndPushOff()" class="pulse-dock-btn bg-blue-600/70 hover:bg-blue-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-blue-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
                 <span class="flex items-center gap-2">⛵ BOARD SHIP & PUSH OFF</span>
@@ -227,7 +227,7 @@
             </button>
         </div>
 
-        <!-- Capture / Boarding Tactical Prompt (Contextual) - Note: Removed animation bounce -->
+        <!-- Capture / Boarding Tactical Prompt -->
         <div id="capture-prompt" class="hidden absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2">
             <div class="bg-red-950 border-4 border-red-600 p-4 rounded-xl shadow-2xl text-center max-w-xs border-double">
                 <h3 class="text-lg font-bold text-red-400 parchment-title mb-1">⚔️ BOARD HOSTILE</h3>
@@ -256,7 +256,6 @@
 
         <!-- BOTTOM TOUCH CONTROLS (Steering & High-Visibility Cannons) -->
         <div class="absolute bottom-4 left-2 right-2 flex justify-between items-end pointer-events-none z-10 gap-2">
-            
             <!-- Left Side: Interactive Virtual Steering Wheel -->
             <div class="pointer-events-auto flex flex-col items-center gap-1 bg-amber-950/90 p-2.5 rounded-2xl border border-amber-800/60 backdrop-blur-sm">
                 <span class="text-[9px] font-bold tracking-wider uppercase text-amber-400">Helm (Steer)</span>
@@ -292,7 +291,6 @@
                     <span class="text-[8px] text-red-300 font-bold">CLOSEST TARGET</span>
                 </button>
             </div>
-
         </div>
 
         <!-- PORT MODAL LAYOUT (DOCKING INTERACTIVE SCREENS) -->
@@ -309,7 +307,7 @@
                     </button>
                 </div>
 
-                <!-- Tabs (Market, Shipyard, Tavern, Governor) -->
+                <!-- Tabs -->
                 <div class="flex border-b border-amber-800 bg-amber-900/30 text-sm">
                     <button onclick="switchTab('market')" id="tab-btn-market" class="flex-1 py-2 font-bold text-amber-300 border-b-2 border-amber-400 bg-amber-950/60 uppercase tracking-wider">Market</button>
                     <button onclick="switchTab('shipyard')" id="tab-btn-shipyard" class="flex-1 py-2 font-bold text-amber-500 hover:text-amber-300 uppercase tracking-wider">Shipyard</button>
@@ -319,27 +317,21 @@
 
                 <!-- Tab Panels Area (Scrollable) -->
                 <div class="flex-1 overflow-y-auto p-3 md:p-4 space-y-4 bg-amber-950/40">
-
                     <!-- Tab: MARKET PANEL -->
                     <div id="panel-market" class="space-y-3">
                         <div class="bg-amber-900/20 p-2 rounded border border-amber-800/40 flex justify-between text-xs text-amber-200">
                             <span>Prices vary dynamically based on local supply and demand!</span>
                             <span class="font-bold text-amber-400">Your Cargo: <span id="market-cargo-info">0 / 10</span></span>
                         </div>
-
-                        <!-- Commodity List -->
                         <div class="space-y-2" id="commodity-list-container"></div>
                     </div>
 
                     <!-- Tab: SHIPYARD PANEL -->
                     <div id="panel-shipyard" class="space-y-4 hidden">
-                        <!-- Sell Prize Ship Section -->
                         <div id="shipyard-prize-section" class="hidden bg-amber-900/25 p-3 rounded-lg border-2 border-emerald-700/60 flex flex-col gap-2">
                             <h3 class="font-bold text-emerald-400 text-sm">💰 Prize Ships for Sale!</h3>
                             <div id="prize-ships-list" class="space-y-2"></div>
                         </div>
-
-                        <!-- Repair Ship Section -->
                         <div class="bg-amber-900/20 p-3 rounded-lg border border-amber-800/50 flex justify-between items-center">
                             <div>
                                 <h3 class="font-bold text-amber-300 text-sm">Repair Ship Hull</h3>
@@ -349,12 +341,8 @@
                                 Repair (+25 HP) <br> <span class="text-[10px] text-amber-300">🪙 <span id="repair-cost-text">20</span> Gold</span>
                             </button>
                         </div>
-
-                        <!-- Upgrades Section -->
                         <div class="space-y-2">
                             <h3 class="font-bold text-amber-400 text-xs uppercase tracking-wider border-b border-amber-800 pb-1">Vessel Upgrades</h3>
-
-                            <!-- Upgrade Item: Cannons -->
                             <div class="bg-amber-900/10 p-2 rounded border border-amber-800/40 flex justify-between items-center">
                                 <div>
                                     <span class="font-bold block text-sm text-amber-100">Add Cannons</span>
@@ -364,8 +352,6 @@
                                     Upgrade <br> <span class="text-[10px] text-amber-300">🪙 <span id="upgrade-cannon-cost">150</span> Gold</span>
                                 </button>
                             </div>
-
-                            <!-- Upgrade Item: Sails -->
                             <div class="bg-amber-900/10 p-2 rounded border border-amber-800/40 flex justify-between items-center">
                                 <div>
                                     <span class="font-bold block text-sm text-amber-100">Premium Canvas Sails</span>
@@ -375,8 +361,6 @@
                                     Upgrade <br> <span class="text-[10px] text-amber-300">🪙 <span id="upgrade-sails-cost">100</span> Gold</span>
                                 </button>
                             </div>
-
-                            <!-- Upgrade Item: Cargo hold -->
                             <div class="bg-amber-900/10 p-2 rounded border border-amber-800/40 flex justify-between items-center">
                                 <div>
                                     <span class="font-bold block text-sm text-amber-100">Expand Hold Capacity</span>
@@ -397,8 +381,6 @@
                                 Gather rumors of rich galleons, hire sailors to man your batteries, and prepare to capture disabled hostile vessels.
                             </p>
                         </div>
-
-                        <!-- Tavern Crew Recruitment -->
                         <div class="bg-amber-900/10 p-3 rounded-lg border border-amber-800/40 flex justify-between items-center">
                             <div>
                                 <span class="font-bold text-amber-200 block text-sm">Hire Experienced Sailors</span>
@@ -408,8 +390,6 @@
                                 Recruit +1 Sailor <br> <span class="text-[10px] text-amber-300">🪙 40 Gold</span>
                             </button>
                         </div>
-
-                        <!-- Local Rumors Box -->
                         <div class="p-3 bg-amber-900/30 rounded border border-amber-800">
                             <h4 class="text-xs uppercase text-amber-400 font-bold tracking-wider mb-2">Sea Gossip & Rumors</h4>
                             <ul id="rumors-list" class="space-y-2 text-xs text-amber-200 list-disc list-inside"></ul>
@@ -424,7 +404,6 @@
                                 Secure royal letters of marque, pay off your outstanding standing bounties, swear allegiance to foreign crowns, or accept high-value state missions.
                             </p>
                         </div>
-
                         <div class="grid grid-cols-2 gap-3">
                             <div class="bg-amber-900/10 p-3 rounded-lg border border-amber-800/40">
                                 <span class="font-bold text-amber-400 text-xs uppercase block mb-1">Current Standing</span>
@@ -433,7 +412,6 @@
                                     <p>Reputation Rank: <span id="gov-standing-rank" class="font-bold text-amber-300">Lieutenant</span></p>
                                 </div>
                             </div>
-
                             <div class="bg-amber-900/10 p-3 rounded-lg border border-amber-800/40 flex flex-col justify-between">
                                 <div>
                                     <span class="font-bold text-amber-400 text-xs uppercase block mb-1">Request Promotion</span>
@@ -444,8 +422,6 @@
                                 </button>
                             </div>
                         </div>
-
-                        <!-- Allegiance Swearing -->
                         <div class="bg-amber-900/20 p-3 rounded-lg border border-amber-800/40">
                             <h4 class="text-xs uppercase text-amber-400 font-bold tracking-wider mb-2">Change Allegiances / Swear Fealty</h4>
                             <p class="text-[10px] text-amber-300 mb-3">Pay a privateer clearance fee to secure a pardon and swear fealty to a new crown.</p>
@@ -456,16 +432,11 @@
                                 <button onclick="changeGovAllegiance('Independent Rogue')" class="bg-amber-900/60 hover:bg-amber-800 p-2 rounded text-center font-bold">🏴‍☠️ Independent <span class="block text-[9px] text-amber-400">🪙 250 Gold</span></button>
                             </div>
                         </div>
-
-                        <!-- Active Missions Panel -->
                         <div class="p-3 bg-amber-900/30 rounded border border-amber-800">
                             <h4 class="text-xs uppercase text-amber-400 font-bold tracking-wider mb-2">Colonial Missions Board</h4>
-                            <div id="missions-board-container" class="space-y-2 text-xs text-amber-200">
-                                <!-- Procedural Missions Rendered Here -->
-                            </div>
+                            <div id="missions-board-container" class="space-y-2 text-xs text-amber-200"></div>
                         </div>
                     </div>
-
                 </div>
 
                 <!-- Gold and Status Footer in Modal -->
@@ -486,11 +457,7 @@
                     <p class="text-amber-200" id="board-success-desc">The enemy warship strikes her colors and surrenders. Your crew holds the decks!</p>
                     <p class="text-xs text-amber-400 font-bold">Select the fate of the captured vessel:</p>
                 </div>
-
-                <div class="grid grid-cols-1 gap-2.5 max-h-[45vh] overflow-y-auto pr-1" id="boarding-options-container">
-                    <!-- Dynamic rendering of options goes here based on crew size -->
-                </div>
-
+                <div class="grid grid-cols-1 gap-2.5 max-h-[45vh] overflow-y-auto pr-1" id="boarding-options-container"></div>
                 <div class="pt-2">
                     <p class="text-[10px] text-amber-400 italic">"Mercy or efficiency, Captain. Choose well."</p>
                 </div>
@@ -508,15 +475,15 @@
                     Read the enemy Captain's physical stance and counter immediately! When the enemy preparing to act glows a color, counter before the timer runs out!
                 </p>
                 
-                <!-- New Close-up Duel Arena visual box layout -->
+                <!-- Duel Arena visual box layout -->
                 <div class="h-36 bg-gradient-to-b from-[#091a24] to-[#040c11] rounded-lg border border-amber-900/40 relative overflow-hidden flex items-center justify-center">
                     <div class="absolute inset-y-0 w-0.5 bg-amber-800/20"></div>
                     
-                    <!-- Player Emoji Avatar (Large & Close) -->
-                    <div id="duel-player-avatar" class="absolute left-[20%] text-6xl transition-all duration-200 z-10 select-none transform" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">🤺</div>
+                    <!-- Player Emoji Avatar (Flipped scale-x-[-1] to point sword to the right) -->
+                    <div id="duel-player-avatar" class="absolute left-[20%] text-6xl transition-all duration-200 z-10 select-none transform scale-x-[-1]" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">🤺</div>
                     
-                    <!-- Enemy Emoji Avatar (Large, Close & Facing Player) -->
-                    <div id="duel-enemy-avatar" class="absolute right-[20%] text-6xl transition-all duration-200 z-10 select-none transform scale-x-[-1]" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">🤺</div>
+                    <!-- Enemy Emoji Avatar (Normal scaleX(1) to point sword to the left) -->
+                    <div id="duel-enemy-avatar" class="absolute right-[20%] text-6xl transition-all duration-200 z-10 select-none transform" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">🤺</div>
 
                     <!-- Active Strike Alert Overlay -->
                     <div id="duel-strike-alert" class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber-950/90 border border-amber-600 text-[10px] px-3 py-1 rounded-full text-amber-300 font-bold tracking-widest uppercase hidden animate-pulse">
@@ -576,15 +543,14 @@
                         🚪 Exit Duel Practice
                     </button>
                 </div>
-
                 <p class="text-[9px] text-amber-400/80">Slash counters Red 🔴 | Parry counters Blue 🔵 | Thrust counters Green 🟢</p>
             </div>
         </div>
 
         <!-- REEF COLLISION & LAND EXPLORATION MODAL -->
         <div id="grounding-modal" class="hidden absolute inset-0 bg-black/85 backdrop-blur-md z-40 flex items-center justify-center p-4">
-            <div class="bg-amber-950 border-4 border-amber-800 rounded-xl shadow-2xl max-w-sm w-full p-5 text-center border-double text-amber-100 space-y-4">
-                <h2 class="parchment-title text-2xl font-bold tracking-wider text-amber-400 text-red-400">🚨 RUN AGROUND!</h2>
+            <div class="bg-amber-950 border-4 border-amber-800 rounded-xl shadow-2xl max-sm w-full p-5 text-center border-double text-amber-100 space-y-4">
+                <h2 class="parchment-title text-2xl font-bold tracking-wider text-red-400">🚨 RUN AGROUND!</h2>
                 <p id="grounding-desc" class="text-xs text-amber-200 leading-relaxed italic">
                     Your vessel has struck the shallow reefs. The hull has sustained damage, but you can choose to deploy your crew ashore to explore the island on foot or attempt to push the ship off.
                 </p>
@@ -619,23 +585,17 @@
                 </div>
                 <button onclick="toggleFirstMateDrawer()" class="text-amber-400 hover:text-amber-200 font-black text-lg p-1.5 active:scale-95">&times;</button>
             </div>
-            
-            <!-- Chat Log Scroll View -->
             <div id="first-mate-chat-log" class="flex-1 p-3 overflow-y-auto space-y-3 bg-amber-950/20 text-xs flex flex-col">
                 <div class="bg-amber-900/35 border border-amber-800 p-2.5 rounded-lg text-amber-200">
                     <p class="font-bold mb-1">👨‍✈️ First Mate:</p>
                     <p class="italic">"We are geared up and ready, Captain! Ask me anything about our tactical standing, trade routes, or local history!"</p>
                 </div>
             </div>
-
-            <!-- Quick Action Suggestion Chips -->
             <div class="p-2 bg-amber-950/80 border-t border-amber-900/50 flex flex-wrap gap-1.5">
                 <button onclick="sendQuickMatePrompt('Check our trading inventory and give profit advice')" class="text-[10px] bg-amber-900 hover:bg-amber-800 border border-amber-700/60 text-amber-200 px-2 py-1 rounded">💰 Profit Plan</button>
                 <button onclick="sendQuickMatePrompt('Report on our current vessel and crew status')" class="text-[10px] bg-amber-900 hover:bg-amber-800 border border-amber-700/60 text-amber-200 px-2 py-1 rounded">🛡️ Vessel Report</button>
                 <button onclick="sendQuickMatePrompt('Tell me a legendary 1600s pirate story')" class="text-[10px] bg-amber-900 hover:bg-amber-800 border border-amber-700/60 text-amber-200 px-2 py-1 rounded">🗺️ Pirate Legend</button>
             </div>
-
-            <!-- Input Box -->
             <div class="p-3 border-t-2 border-amber-800 bg-amber-900/20 flex gap-2">
                 <input id="first-mate-input" type="text" placeholder="Speak to your mate..." class="flex-1 bg-amber-950/80 border border-amber-700 rounded-lg px-3 py-2 text-xs text-amber-100 placeholder-amber-600/60 focus:outline-none focus:border-amber-400">
                 <button onclick="sendFirstMateMessage()" class="bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold px-4 py-2 rounded-lg text-xs active:scale-95">Send</button>
@@ -645,23 +605,18 @@
         <!-- GENERATIVE AI SEA ENCOUNTER MODAL (CHOOSE YOUR OWN ADVENTURE) -->
         <div id="encounter-modal" class="hidden absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
             <div class="bg-amber-950 border-4 border-amber-700 rounded-2xl shadow-2xl max-w-lg w-full p-6 text-center border-double text-amber-100 space-y-4 relative overflow-hidden">
-                <!-- Golden compass card graphic background -->
                 <div class="absolute -right-16 -bottom-16 w-48 h-48 border border-amber-800/10 rounded-full opacity-10 pointer-events-none"></div>
-
                 <div id="encounter-loading" class="py-12 flex flex-col items-center gap-3 animate-pulse">
                     <span class="text-3xl animate-bounce">🍾</span>
                     <h3 class="parchment-title text-xl text-amber-400">Uncorking Bottle...</h3>
                     <p class="text-xs text-amber-300 italic">"Whispers of the deep sea are being decoded..."</p>
                 </div>
-
                 <div id="encounter-content" class="hidden space-y-4">
                     <div class="flex items-center justify-center gap-2">
                         <span class="text-2xl">📜</span>
                         <h2 id="encounter-title" class="parchment-title text-2xl font-bold tracking-wider text-amber-400">MESSAGE IN A BOTTLE</h2>
                     </div>
-
                     <p id="encounter-desc" class="parchment-text text-sm text-amber-100 leading-relaxed italic border-t border-b border-amber-800/50 py-3 my-2"></p>
-
                     <div class="space-y-2.5 pt-2">
                         <button id="encounter-btn-a" onclick="selectEncounterOption('A')" class="w-full bg-amber-900/50 hover:bg-amber-900 border border-amber-600/60 p-3 rounded-lg text-left text-xs text-amber-200 transition active:scale-95 flex items-center justify-between">
                             <span id="encounter-text-a">Investigate</span> <span class="text-[10px] text-amber-400">Option A</span>
@@ -674,19 +629,14 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- RESOLUTION CARD -->
                 <div id="encounter-resolution" class="hidden space-y-4">
                     <h3 class="parchment-title text-lg text-amber-400 font-bold" id="res-heading">Event Resolved</h3>
                     <p id="encounter-res-text" class="text-xs text-amber-200 italic leading-relaxed"></p>
-                    
-                    <!-- Reward Stat Badge Overlay -->
                     <div class="flex justify-center gap-4 text-xs font-bold font-mono">
                         <span id="res-badge-gold" class="hidden text-amber-400">🪙 <span id="res-gold-val"></span></span>
                         <span id="res-badge-hull" class="hidden text-red-400">🛠️ <span id="res-hull-val"></span> HP</span>
                         <span id="res-badge-crew" class="hidden text-emerald-400">🙋 <span id="res-crew-val"></span> Crew</span>
                     </div>
-
                     <button onclick="closeEncounterModal()" class="w-full bg-amber-600 hover:bg-amber-500 text-amber-950 font-black text-xs py-2.5 rounded-lg tracking-wider transition uppercase">
                         Resume Captaincy
                     </button>
@@ -706,17 +656,13 @@
                 </div>
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-amber-300">
                     <span class="font-semibold text-amber-400/90">Press <kbd class="px-1.5 py-0.5 bg-amber-900 rounded border border-amber-700">M</kbd> to toggle chart</span>
-                    
-                    <!-- Dynamic direct-dock prompt button shown inside Map Modal -->
                     <button id="map-direct-dock-btn" onclick="dockFromMapDirectly()" class="hidden bg-emerald-600 hover:bg-emerald-500 text-amber-950 font-black px-5 py-2 rounded shadow transition duration-150 active:scale-95 uppercase tracking-wider animate-pulse border-2 border-emerald-300">
                         ⚓ DOCK AT PORT ROYAL DIRECTLY
                     </button>
-
                     <span class="italic text-center sm:text-right">Click nearby harbor on chart to enter!</span>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
@@ -816,12 +762,10 @@
         const WORLD_WIDTH = 4000;
         const WORLD_HEIGHT = 4000;
 
-        // Read dynamic URL Parameters to check if debug mode is active
         const urlParams = new URLSearchParams(window.location.search);
         const gameMode = urlParams.get('mode') === 'debug' ? 'debug' : 'fullgame';
-        let timeMultiplier = 1.0; // Dynamic time scaling variable
+        let timeMultiplier = 1.0; 
 
-        // Faction configurations
         const FACTION_BONUSES = {
             'English Privateer': { speed: 1.15, damage: 1.0, armor: 1.0, tradeDiscount: 1.0 },
             'French Buccaneer': { speed: 1.0, damage: 1.25, armor: 1.0, tradeDiscount: 1.0 },
@@ -829,7 +773,6 @@
             'Independent Rogue': { speed: 1.0, damage: 1.0, armor: 1.0, tradeDiscount: 0.85 }
         };
 
-        // Trade commodities configurations (added food as consumable)
         const COMMODITIES = {
             sugar: { name: 'Raw Sugar', basePrice: 15, weight: 1 },
             rum: { name: 'Jamaica Rum', basePrice: 28, weight: 1 },
@@ -839,7 +782,6 @@
             food: { name: 'Hard Tack (Food)', basePrice: 8, weight: 1 }
         };
 
-        // Ports details
         const PORTS_DATA = [
             { id: 'havana', name: 'Havana', x: 600, y: 800, color: '#f39c12', allegiance: 'Spanish Guardacosta', produce: 'tobacco', demand: 'rum' },
             { id: 'port_royal', name: 'Port Royal', x: 2100, y: 1900, color: '#3498db', allegiance: 'English Privateer', produce: 'rum', demand: 'sugar' },
@@ -848,7 +790,6 @@
             { id: 'san_juan', name: 'San Juan', x: 3400, y: 2200, color: '#e74c3c', allegiance: 'Spanish Guardacosta', produce: 'spices', demand: 'wood' }
         ];
 
-        // Safe Land Masses configurations
         const ISLANDS_DATA = [
             { id: 'cay_romano', name: 'Cayo Romano Reefs', x: 950, y: 1100, radius: 160 },
             { id: 'blue_mtn', name: 'Blue Mountain Shoals', x: 1650, y: 2150, radius: 180 },
@@ -873,14 +814,7 @@
             gold: 500,
             activeCrew: 4,
             currentPort: null,
-            cargo: {
-                sugar: 0,
-                rum: 0,
-                tobacco: 0,
-                spices: 0,
-                wood: 0,
-                food: 5
-            },
+            cargo: { sugar: 0, rum: 0, tobacco: 0, spices: 0, wood: 0, food: 5 },
             baseCargoCapacity: 10,
             cargoCapacity: 10,
             hullMax: 100,
@@ -889,11 +823,11 @@
             cannonCount: 2,
             hasGameStarted: false,
             timeAccumulator: 0,
-            towedShips: [], // Array representing types of currently towed vessels (e.g. ['Sloop', 'Galleon'])
+            towedShips: [], 
             foodTimer: 0
         };
 
-        let currentMission = null; // { id, type, commodity, targetQuantity, description, reward, status }
+        let currentMission = null; 
         let playerRankIndex = 0;
         const GOV_RANKS = ["Cadet", "Lieutenant", "Captain", "Commodore", "Admiral"];
 
@@ -901,11 +835,11 @@
         let duelPlayerHp = 100;
         let duelEnemyHp = 100;
         let isDuelActive = false;
-        let isPracticeDuel = false; // Flag representing practice sessions
-        let duelEnemyState = 'idle'; // 'idle', 'slash_prep', 'parry_prep', 'thrust_prep'
+        let isPracticeDuel = false; 
+        let duelEnemyState = 'idle'; 
         let duelPrepStartTime = 0;
-        let duelPrepDuration = 1200; // reaction window in ms (decreased over time for difficulty)
-        let duelHasActed = false; // prevents multiple responses in same window
+        let duelPrepDuration = 1200; 
+        let duelHasActed = false; 
         let duelTimerId = null;
 
         // LAND EXPLORATION STATE MODULE
@@ -943,7 +877,7 @@
         let cargoLoot = [];
         let waveLines = [];
         let currentBoardingTarget = null;
-        let groundedIsland = null; // Remembers current collided landmass to direct safe course push-off
+        let groundedIsland = null; 
 
         let bottles = [];
         let currentActiveEncounter = null;
@@ -991,7 +925,7 @@
         function startSteer(dir) {
             initAudio();
             activeSteeringDir = dir;
-            if(dir !== 0) {
+            if (dir !== 0) {
                 steerWheel.style.transform = `rotate(${dir * 45}deg)`;
             } else {
                 steerWheel.style.transform = `rotate(0deg)`;
@@ -1008,9 +942,7 @@
         rightBtn.addEventListener('mouseup', () => startSteer(0));
         rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); startSteer(0); }, {passive: false});
 
-        // Combined Single Fire Button Listener
         const fireBtn = document.getElementById('btn-fire');
-
         fireBtn.addEventListener('mousedown', (e) => { initAudio(); fireCannons(); });
         fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); initAudio(); fireCannons(); }, {passive: false});
 
@@ -1018,7 +950,6 @@
             initAudio();
             const key = e.key.toLowerCase();
 
-            // Intercept controls during live sword duels
             if (typeof isDuelActive !== 'undefined' && isDuelActive) {
                 if (key === 'a') {
                     e.preventDefault();
@@ -1046,19 +977,16 @@
                 }
             }
 
-            // Keyboard shortcut 'B' for boarding duel
             if (key === 'b') {
                 if (!document.getElementById('capture-prompt').classList.contains('hidden')) {
                     initDuel();
                 }
             }
 
-            // Keyboard shortcut 'M' to toggle map
             if (key === 'm') {
                 toggleMapModal();
             }
 
-            // Key equivalents to touch: Pressing E or Enter docks at the port when near, or boards ship when near
             if (key === 'e' || e.key === 'Enter') {
                 if (!document.getElementById('dock-prompt').classList.contains('hidden')) {
                     dockAtPort();
@@ -1071,7 +999,6 @@
             keysPressed[e.key.toLowerCase()] = false;
         });
 
-        // Add large-map-canvas click interaction to dock when near a harbor
         const largeMapCanvas = document.getElementById('large-map-canvas');
         if (largeMapCanvas) {
             largeMapCanvas.addEventListener('click', (e) => {
@@ -1084,11 +1011,9 @@
                 const scaleW = largeMapCanvas.width;
                 const scaleH = largeMapCanvas.height;
 
-                // Click translates to actual game coordinates
                 const worldX = (clickX / scaleW) * WORLD_WIDTH;
                 const worldY = (clickY / scaleH) * WORLD_HEIGHT;
 
-                // Find if clicked on any nearby port which we are close to (< 160 units)
                 const flagshipX = ship.x;
                 const flagshipY = ship.y;
 
@@ -1097,8 +1022,7 @@
                     const dy = worldY - p.y;
                     const distToPort = Math.sqrt(dx*dx + dy*dy);
 
-                    if (distToPort < 80) { // clicked on harbor node
-                        // Check if flagship is near enough to dock
+                    if (distToPort < 80) { 
                         const flagDx = flagshipX - p.x;
                         const flagDy = flagshipY - p.y;
                         const flagDist = Math.sqrt(flagDx*flagDx + flagDy*flagDy);
@@ -1113,13 +1037,12 @@
             });
         }
 
-        // Docks smoothly when map button is clicked
         function dockFromMapDirectly(portObj) {
             const activePort = portObj || gameState.currentPort;
             if (!activePort) return;
             
             gameState.currentPort = activePort;
-            toggleMapModal(); // close map modal
+            toggleMapModal(); 
             dockAtPort();
         }
 
@@ -1158,7 +1081,6 @@
         selectFaction('English Privateer');
         selectShip('Sloop');
 
-        // Debug mode handler methods
         function changeGameSpeed(val) {
             timeMultiplier = parseFloat(val);
             document.getElementById('speed-multiplier-text').innerText = timeMultiplier.toFixed(1) + 'x';
@@ -1186,17 +1108,9 @@
             particles = [];
             bottles = [];
 
-            for (let i = 0; i < 14; i++) {
-                spawnPirateShip();
-            }
-
-            for (let i = 0; i < 15; i++) {
-                spawnFloatingLoot();
-            }
-
-            for (let i = 0; i < 3; i++) {
-                spawnMessageInBottle();
-            }
+            for (let i = 0; i < 14; i++) spawnPirateShip();
+            for (let i = 0; i < 15; i++) spawnFloatingLoot();
+            for (let i = 0; i < 3; i++) spawnMessageInBottle();
         }
 
         function spawnPirateShip() {
@@ -1268,7 +1182,7 @@
                 if (type === 'Galleon') extra += 25;
                 else if (type === 'Brigantine') extra += 15;
                 else if (type === 'Schooner') extra += 18;
-                else extra += 10; // Sloop
+                else extra += 10; 
             });
             gameState.cargoCapacity = gameState.baseCargoCapacity + extra;
         }
@@ -1301,7 +1215,6 @@
 
         function startGame() {
             initAudio();
-
             document.getElementById('intro-screen').classList.add('hidden');
             
             if (gameState.shipType === 'Sloop') {
@@ -1318,14 +1231,13 @@
                 ship.maxBaseSpeed = 4.2;
             }
 
-            gameState.cargo.food = 5; // Start with rations
+            gameState.cargo.food = 5; 
             gameState.towedShips = [];
             recalculateCargoCapacity();
 
             document.getElementById('vessel-name').innerText = gameState.shipType;
             document.getElementById('faction-badge').innerText = `(${gameState.faction})`;
             
-            // Activate Debug panel if mode param is active
             if (gameMode === 'debug') {
                 document.getElementById('debug-panel').classList.remove('hidden');
             }
@@ -1344,7 +1256,6 @@
             window.requestAnimationFrame(gameLoop);
         }
 
-        // Targeted focus - Only fire at absolute closest active ship
         function getClosestVessel() {
             let closest = null;
             let minDist = Infinity;
@@ -1421,7 +1332,7 @@
 
         function addLogMessage(msg, type = 'info') {
             const overlay = document.getElementById('log-overlay');
-            overlay.innerHTML = ''; // Keep notifications clean: one at a time!
+            overlay.innerHTML = ''; 
 
             const item = document.createElement('div');
             item.className = `px-3 py-1.5 rounded-md text-xs font-semibold shadow-md backdrop-blur-md transform transition-all duration-300 translate-y-2 opacity-0 text-amber-100 ${
@@ -1445,19 +1356,17 @@
         function fireCannons() {
             if (!gameState.hasGameStarted || portModalOpen || boardingModalOpen || groundingModalOpen) return;
 
-            // Target lock restriction
             const targetInfo = getClosestVessel();
             if (!targetInfo.vessel || targetInfo.dist > 550) {
                 addLogMessage("⚠️ No target close enough! Align broadsides perpendicular to enemies.", "warning");
                 return;
             }
 
-            if (cooldowns.left > 0) return; // Port cooldown represents global battery charge
+            if (cooldowns.left > 0) return; 
             cooldowns.left = cooldowns.max;
 
             playSound('cannon');
 
-            // Find perpendicular angle relative to current ship orientation
             const targetVessel = targetInfo.vessel;
             const angleToTarget = Math.atan2(targetVessel.x - ship.x, -(targetVessel.y - ship.y));
             let relativeAngle = normalizeAngle(angleToTarget - ship.angle);
@@ -1465,11 +1374,9 @@
             let fireAngle;
             let sideLabel;
             if (relativeAngle < 0) {
-                // Left side (Port)
                 fireAngle = ship.angle - Math.PI / 2;
                 sideLabel = "PORT";
             } else {
-                // Right side (Starboard)
                 fireAngle = ship.angle + Math.PI / 2;
                 sideLabel = "STARBOARD";
             }
@@ -1555,7 +1462,7 @@
                 }
             } else {
                 prompt.classList.add('hidden');
-                if(!portModalOpen) {
+                if (!portModalOpen) {
                     gameState.currentPort = null;
                 }
             }
@@ -1604,13 +1511,12 @@
             }
         }
 
-        // Expanded market items list featuring "Buy Max" and "Sell All" bulk options
         function renderMarket() {
             const container = document.getElementById('commodity-list-container');
             container.innerHTML = '';
 
             const port = gameState.currentPort;
-            if(!port) return;
+            if (!port) return;
 
             Object.keys(COMMODITIES).forEach(cid => {
                 const com = COMMODITIES[cid];
@@ -1628,7 +1534,6 @@
                     </div>
 
                     <div class="flex flex-wrap items-center justify-center gap-2">
-                        <!-- Buy Trigger Buttons -->
                         <div class="flex flex-col gap-1">
                             <button onclick="tradeItem('${cid}', 'buy', ${buyPrice})" class="bg-amber-800 hover:bg-amber-700 active:scale-95 text-amber-100 font-bold px-3 py-1 rounded text-xs flex flex-col items-center min-w-[70px]">
                                 <span>Buy +1</span>
@@ -1639,7 +1544,6 @@
                             </button>
                         </div>
 
-                        <!-- Sell Trigger Buttons -->
                         <div class="flex flex-col gap-1">
                             <button onclick="tradeItem('${cid}', 'sell', ${sellPrice})" class="bg-amber-950 hover:bg-amber-900 active:scale-95 text-amber-400 border border-amber-800/60 font-bold px-3 py-1 rounded text-xs flex flex-col items-center min-w-[70px]">
                                 <span>Sell -1</span>
@@ -1686,7 +1590,6 @@
             updateHUD();
         }
 
-        // Processes "Buy Max" or "Sell All" calculations
         function tradeItemBulk(commodityId, type, price) {
             const currentCargoCount = getCargoCount();
 
@@ -1797,7 +1700,7 @@
             }
             gameState.gold -= cost;
             gameState.faction = newFaction;
-            playerRankIndex = 0; // reset rank upon conversion
+            playerRankIndex = 0; 
             playSound('gold');
             addLogMessage(`📜 Swore oaths to new governor! Standings cleared. Serves ${newFaction}.`, 'success');
             
@@ -1913,7 +1816,7 @@
             duelHasActed = false;
             duelEnemyState = 'idle';
             duelPrepStartTime = Date.now();
-            duelPrepDuration = isPracticeDuel ? 1400 : 1200; // slightly more generous in practice
+            duelPrepDuration = isPracticeDuel ? 1400 : 1200; 
 
             updateDuelUI();
             setDuelEnemyState('idle');
@@ -1939,10 +1842,9 @@
             const enemyEl = document.getElementById('duel-enemy-avatar');
             if (!enemyEl) return;
 
-            // Reset transitions and filter glows
             enemyEl.style.transition = "all 0.25s ease-out";
             enemyEl.style.filter = "drop-shadow(0 4px 6px rgba(0,0,0,0.4))";
-            enemyEl.style.transform = "scaleX(-1)";
+            enemyEl.style.transform = "scaleX(1)"; // Default face-left stance points toward player on iOS/Chrome/Safari/Windows
 
             const intentText = document.getElementById('duel-enemy-intent');
 
@@ -1950,21 +1852,21 @@
                 intentText.innerText = "Stance: Readying...";
             } 
             else if (state === 'slash_prep') {
-                // RED GLOW - Rotate up pivoting backward for massive slash down
+                // RED GLOW - Tilt back clock-wise (positive rotate)
                 enemyEl.style.filter = "drop-shadow(0 0 18px #ef4444) drop-shadow(0 4px 6px rgba(0,0,0,0.4))";
-                enemyEl.style.transform = "scaleX(-1) rotate(-35deg) translateY(-8px)";
+                enemyEl.style.transform = "scaleX(1) rotate(35deg) translateY(-8px)";
                 intentText.innerText = "Stance: Glowing RED! (SLASH coming!)";
             } 
             else if (state === 'parry_prep') {
-                // BLUE GLOW - Stay still but glow brightly demanding fast action
+                // BLUE GLOW - Defensive pull back
                 enemyEl.style.filter = "drop-shadow(0 0 18px #3b82f6) drop-shadow(0 4px 6px rgba(0,0,0,0.4))";
-                enemyEl.style.transform = "scaleX(-1) scale(0.95)";
+                enemyEl.style.transform = "scaleX(1) scale(0.95)";
                 intentText.innerText = "Stance: Glowing BLUE! (PARRY active!)";
             } 
             else if (state === 'thrust_prep') {
-                // GREEN GLOW - Slide backward, preparing quick spring thrust charge
+                // GREEN GLOW - Slide back (positive translateX is to the right, away from player)
                 enemyEl.style.filter = "drop-shadow(0 0 18px #10b981) drop-shadow(0 4px 6px rgba(0,0,0,0.4))";
-                enemyEl.style.transform = "scaleX(-1) translateX(-30px)";
+                enemyEl.style.transform = "scaleX(1) translateX(30px)";
                 intentText.innerText = "Stance: Glowing GREEN! (THRUST loading!)";
             }
         }
@@ -1974,7 +1876,7 @@
             if (!playerEl) return;
             playerEl.style.transition = "all 0.25s ease-out";
             playerEl.style.filter = "drop-shadow(0 4px 6px rgba(0,0,0,0.4))";
-            playerEl.style.transform = "rotate(0deg) translateX(0) scale(1)";
+            playerEl.style.transform = "scaleX(-1) rotate(0deg) translateX(0) scale(1)"; // Flipped so it points to the right (toward enemy)
         }
 
         function triggerDuelPlayerStrikeVisual(action) {
@@ -1984,13 +1886,13 @@
             playerEl.style.transition = "all 0.1s ease-in-out";
             if (action === 'slash') {
                 playerEl.style.filter = "drop-shadow(0 0 12px #ef4444)";
-                playerEl.style.transform = "rotate(25deg) translateX(20px)";
+                playerEl.style.transform = "scaleX(-1) rotate(-25deg) translateX(-20px)"; // rotates down towards right fencer
             } else if (action === 'parry') {
                 playerEl.style.filter = "drop-shadow(0 0 12px #3b82f6)";
-                playerEl.style.transform = "scale(1.1) rotate(-15deg)";
+                playerEl.style.transform = "scaleX(-1) scale(1.1) rotate(15deg)";
             } else if (action === 'thrust') {
                 playerEl.style.filter = "drop-shadow(0 0 12px #10b981)";
-                playerEl.style.transform = "translateX(35px) scale(1.15)";
+                playerEl.style.transform = "scaleX(-1) translateX(-35px) scale(1.15)"; // lunges forward right
             }
 
             setTimeout(() => {
@@ -2004,11 +1906,11 @@
 
             enemyEl.style.transition = "all 0.15s ease-in-out";
             if (action === 'slash') {
-                enemyEl.style.transform = "scaleX(-1) rotate(40deg) translateX(25px) translateY(8px)";
+                enemyEl.style.transform = "scaleX(1) rotate(-40deg) translateX(-25px) translateY(8px)"; // rotates down towards left player
             } else if (action === 'thrust') {
-                enemyEl.style.transform = "scaleX(-1) translateX(50px) scale(1.15)";
+                enemyEl.style.transform = "scaleX(1) translateX(-50px) scale(1.15)"; // lunges left towards player
             } else if (action === 'parry') {
-                enemyEl.style.transform = "scaleX(-1) scale(1.05)";
+                enemyEl.style.transform = "scaleX(1) scale(1.05)";
             }
 
             setTimeout(() => {
@@ -2031,9 +1933,7 @@
                 alertOverlay.classList.add('hidden');
                 progressEl.style.width = "0%";
                 
-                // Pause briefly between attacks
                 if (elapsed > 1100) {
-                    // Spawn new fencer attack stance
                     const moves = ['slash', 'parry', 'thrust'];
                     const chosen = moves[Math.floor(Math.random() * moves.length)];
                     duelHasActed = false;
@@ -2042,20 +1942,17 @@
                     playSound('impact');
                 }
             } else {
-                // In active counter prep state
                 alertOverlay.classList.remove('hidden');
                 const remainingPct = Math.max(0, 100 - (elapsed / duelPrepDuration) * 100);
                 progressEl.style.width = `${remainingPct}%`;
 
                 if (elapsed >= duelPrepDuration) {
-                    // Time is up! Enemy strikes flagship crew
                     alertOverlay.classList.add('hidden');
                     const strikeAction = duelEnemyState.split('_')[0];
                     setDuelEnemyState('idle');
                     duelPrepStartTime = now;
 
                     if (!duelHasActed) {
-                        // User missed the timing window completely
                         const dmg = 20 + Math.floor(Math.random() * 8);
                         duelPlayerHp = Math.max(0, duelPlayerHp - dmg);
                         document.getElementById('duel-combat-log').innerText = `🩸 LATE! The enemy hit you with a rapid ${strikeAction.toUpperCase()}! -${dmg} HP`;
@@ -2088,14 +1985,12 @@
             triggerDuelPlayerStrikeVisual(action);
 
             if (action === targetAction) {
-                // Counters perfectly!
                 const dmg = 25 + Math.floor(Math.random() * 10);
                 duelEnemyHp = Math.max(0, duelEnemyHp - dmg);
                 document.getElementById('duel-combat-log').innerText = `💥 SUCCESS! You countered their ${targetAction.toUpperCase()} stance beautifully! -${dmg} HP`;
                 playSound('gold');
                 updateDuelUI();
             } else {
-                // Counters with wrong defense
                 const dmg = 15 + Math.floor(Math.random() * 5);
                 duelPlayerHp = Math.max(0, duelPlayerHp - dmg);
                 document.getElementById('duel-combat-log').innerText = `🩸 WRONG STYLE! Your ${action.toUpperCase()} failed against their ${targetAction.toUpperCase()}! -${dmg} HP`;
@@ -2104,7 +1999,6 @@
                 updateDuelUI();
             }
 
-            // Immediately clear prep state
             setTimeout(() => {
                 if (isDuelActive) {
                     setDuelEnemyState('idle');
@@ -2252,7 +2146,7 @@
 
         function hireCrew() {
             const cost = 40;
-            if(gameState.gold < cost) {
+            if (gameState.gold < cost) {
                 addLogMessage("⚠️ Lacking gold to recruit crewmen!");
                 return;
             }
@@ -2310,12 +2204,11 @@
 
             const target = currentBoardingTarget;
             const currentTowedCount = gameState.towedShips.length;
-            const crewNeededForTow = (currentTowedCount + 2) * 4; // flagship + current towed + new target
+            const crewNeededForTow = (currentTowedCount + 2) * 4; 
             const canTow = gameState.activeCrew >= crewNeededForTow;
 
             const extraCapacity = target.type === 'Galleon' ? 25 : target.type === 'Brigantine' ? 15 : target.type === 'Schooner' ? 18 : 10;
 
-            // Option 1: Commandeer & Tow
             const towBtn = document.createElement('button');
             towBtn.className = `p-3 rounded-lg border text-left transition flex items-center justify-between ${
                 canTow ? 'bg-amber-800 hover:bg-amber-700 border-amber-500 cursor-pointer' : 'bg-amber-950/40 border-amber-900/40 opacity-50 cursor-not-allowed'
@@ -2330,7 +2223,6 @@
             `;
             container.appendChild(towBtn);
 
-            // Option 2: Swap Flagships & Tow Old One
             const swapTowBtn = document.createElement('button');
             swapTowBtn.className = `p-3 rounded-lg border text-left transition flex items-center justify-between ${
                 canTow ? 'bg-amber-800 hover:bg-amber-700 border-amber-500 cursor-pointer' : 'bg-amber-950/40 border-amber-900/40 opacity-50 cursor-not-allowed'
@@ -2345,7 +2237,6 @@
             `;
             container.appendChild(swapTowBtn);
 
-            // Option 3: Swap Flagships & Scuttle Old One
             const swapScuttleBtn = document.createElement('button');
             swapScuttleBtn.className = "bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between cursor-pointer";
             swapScuttleBtn.onclick = () => resolveCapture('swap_scuttle');
@@ -2358,7 +2249,6 @@
             `;
             container.appendChild(swapScuttleBtn);
 
-            // Option 4: Plunder
             const plunderBtn = document.createElement('button');
             plunderBtn.className = "bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between cursor-pointer";
             plunderBtn.onclick = () => resolveCapture('plunder');
@@ -2371,7 +2261,6 @@
             `;
             container.appendChild(plunderBtn);
 
-            // Option 5: Press-gang
             const pressBtn = document.createElement('button');
             pressBtn.className = "bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between cursor-pointer";
             pressBtn.onclick = () => resolveCapture('pressgang');
@@ -2384,7 +2273,6 @@
             `;
             container.appendChild(pressBtn);
 
-            // Option 6: Scuttle
             const scuttleBtn = document.createElement('button');
             scuttleBtn.className = "bg-amber-800 hover:bg-amber-700 p-3 rounded-lg border border-amber-500 text-left transition flex items-center justify-between cursor-pointer";
             scuttleBtn.onclick = () => resolveCapture('scuttle');
@@ -2402,7 +2290,7 @@
             if (type === 'Galleon') return 25;
             if (type === 'Brigantine') return 15;
             if (type === 'Schooner') return 18;
-            return 10; // Sloop
+            return 10; 
         }
 
         function resolveCapture(decision) {
@@ -2479,7 +2367,7 @@
         }
 
         function handleIslandCollision(island) {
-            groundedIsland = island; // Cache the collided island to orient a clean push-off angle later
+            groundedIsland = island; 
             ship.speed = -ship.speed * 0.3; 
             playSound('impact');
 
@@ -2498,15 +2386,12 @@
             const dy = ship.y - port.y;
             const angle = Math.atan2(dx, -dy);
 
-            // Relocate ship immediately out of port collision core
-            const safeDistance = 48 + 18 + 5; // port radius + ship visual radius + cushion buffer
+            const safeDistance = 48 + 18 + 5; 
             ship.x = port.x + Math.sin(angle) * safeDistance;
             ship.y = port.y - Math.cos(angle) * safeDistance;
 
             ship.speed = -ship.speed * 0.5;
             playSound('impact');
-
-            // No damage subtraction! Ports no longer damage the vessel.
             addLogMessage(`⚓ Safe Harbor! Anchored near ${port.name}. Enter to walk into town.`, "success");
         }
 
@@ -2516,14 +2401,11 @@
 
             explorer.active = true;
 
-            // Place explorer right next to the ship, but on land
             if (groundedIsland) {
-                // Vector pointing directly towards the island center from the ship
                 const dx = groundedIsland.x - ship.x;
                 const dy = groundedIsland.y - ship.y;
                 const angleToCenter = Math.atan2(dx, -dy);
                 
-                // Position explorer 12 pixels closer to island center than the ship
                 explorer.x = ship.x + Math.sin(angleToCenter) * 12;
                 explorer.y = ship.y - Math.cos(angleToCenter) * 12;
                 explorer.angle = angleToCenter;
@@ -2549,7 +2431,6 @@
                 return;
             }
 
-            // Distance from explorer to grounded ship
             const dx = explorer.x - ship.x;
             const dy = explorer.y - ship.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
@@ -2564,34 +2445,27 @@
         function boardShipAndPushOff() {
             explorer.active = false;
             document.getElementById('board-ship-prompt').classList.add('hidden');
-            
-            // Push off from the reef using safety course correction logic
             pushOffReef();
-            
             addLogMessage("⛵ Boarded the ship! Sails trimmed and pushing clear of reefs!", "success");
         }
 
-        // Safe Course Correcting Push Off: Relocates ship safely clear and heading away from the reef
         function pushOffReef() {
             groundingModalOpen = false;
             document.getElementById('grounding-modal').classList.add('hidden');
             
             if (groundedIsland) {
-                // Vector pointing directly away from the island center out to safe waters
                 const dx = ship.x - groundedIsland.x;
                 const dy = ship.y - groundedIsland.y;
                 const escapeAngle = Math.atan2(dx, -dy);
                 
-                // Set course pointing out to sea
                 ship.angle = escapeAngle;
 
-                // Move ship just outside the hazard collision zone radius + extra buffer
                 const safeDistance = groundedIsland.radius + 35;
                 ship.x = groundedIsland.x + Math.sin(escapeAngle) * safeDistance;
                 ship.y = groundedIsland.y - Math.cos(escapeAngle) * safeDistance;
             }
 
-            ship.speed = 1.2; // Minor speed impulse out
+            ship.speed = 1.2; 
             setSailState('half');
             addLogMessage("⛵ Pushed off reefs safely directly out to sea! Steer carefully.");
         }
@@ -2607,7 +2481,6 @@
                 const consumed = gameState.cargo.food || 0;
                 gameState.cargo.food = 0;
                 
-                // Starvation consequence
                 gameState.activeCrew = Math.max(4, gameState.activeCrew - 1);
                 addLogMessage(`⚠️ Starvation! Lacking food rations. Desertion or death has occurred! Minimum crew is 4.`, 'combat');
                 playSound('impact');
@@ -2619,9 +2492,8 @@
             if (portModalOpen || boardingModalOpen || groundingModalOpen) return;
 
             let isMoving = false;
-            let moveDir = 0; // 1 for forward, -1 for backward
+            let moveDir = 0; 
 
-            // Steer Left / Right to rotate walking angle
             if (activeSteeringDir === -1 || keysPressed['a'] || keysPressed['arrowleft']) {
                 explorer.angle -= 0.05;
                 steerWheel.style.transform = `rotate(-45deg)`;
@@ -2632,7 +2504,6 @@
                 steerWheel.style.transform = `rotate(0deg)`;
             }
 
-            // Keyboard walk triggers (reusing WASD and Arrow controls)
             if (keysPressed['w'] || keysPressed['arrowup']) {
                 isMoving = true;
                 moveDir = 1;
@@ -2641,7 +2512,6 @@
                 moveDir = -1;
             }
 
-            // Support touch levers too! If sailState is set to full/half, they walk forward automatically.
             if (ship.sailState === 'full' || ship.sailState === 'half') {
                 isMoving = true;
                 moveDir = 1;
@@ -2659,13 +2529,12 @@
                 explorer.isWalking = false;
             }
 
-            // Constraint check: Must stay "on land" (within any island radius + walking shoreline buffer of 35px)
             let onLand = false;
             for (let island of ISLANDS_DATA) {
                 const dx = nextX - island.x;
                 const dy = nextY - island.y;
                 const dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < island.radius + 35) { // 35px shoreline buffer
+                if (dist < island.radius + 35) { 
                     onLand = true;
                     break;
                 }
@@ -2681,7 +2550,6 @@
 
             document.getElementById('hud-speed').innerText = isMoving ? "2.2" : "0.0";
             
-            // Keep wind arrow rotating relative to explorer's looking direction
             const relativeAngle = normalizeAngle(wind.angle - explorer.angle);
             document.getElementById('wind-arrow').style.transform = `rotate(${relativeAngle}rad)`;
             const sailingEffText = document.getElementById('sailing-efficiency');
@@ -2737,7 +2605,6 @@
             const shipVisualRadius = 18; 
             let groundedOnIsland = false;
 
-            // Island shoal collision verification
             for (let island of ISLANDS_DATA) {
                 const dx = nextX - island.x;
                 const dy = nextY - island.y;
@@ -2751,13 +2618,12 @@
                 }
             }
 
-            // Port structures collision verification (Rigid barrier check)
             if (!groundedOnIsland) {
                 for (let port of PORTS_DATA) {
                     const dx = nextX - port.x;
                     const dy = nextY - port.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
-                    const minDist = 48 + shipVisualRadius; // port base radius + ship visual
+                    const minDist = 48 + shipVisualRadius; 
 
                     if (dist < minDist) {
                         groundedOnIsland = true;
@@ -2835,7 +2701,6 @@
                 if (b.isPlayer) {
                     for (let j = enemies.length - 1; j >= 0; j--) {
                         const enemy = enemies[j];
-                        
                         if (enemy.status === 'disabled') continue;
 
                         const edx = b.x - enemy.x;
@@ -3362,18 +3227,15 @@ Format the output strictly as a JSON object matching this schema:
             ctx.lineWidth = 1.5;
             ctx.fillStyle = "#ffe4b5";
 
-            // Head
             ctx.beginPath();
             ctx.arc(0, -10, 3, 0, Math.PI * 2);
             ctx.fill();
 
-            // Spine / Body Trunk
             ctx.beginPath();
             ctx.moveTo(0, -7);
             ctx.lineTo(0, 0);
             ctx.stroke();
 
-            // Arms (animated swing)
             const armSwing = Math.sin(walkCycle) * 5;
             ctx.beginPath();
             ctx.moveTo(0, -5);
@@ -3382,7 +3244,6 @@ Format the output strictly as a JSON object matching this schema:
             ctx.lineTo(4, -2 - armSwing);
             ctx.stroke();
 
-            // Legs (animated stride swing)
             const legSwing = Math.sin(walkCycle) * 6;
             ctx.beginPath();
             ctx.moveTo(0, 0);
@@ -3705,18 +3566,16 @@ Format the output strictly as a JSON object matching this schema:
             const playerScrX = ship.x - camX;
             const playerScrY = ship.y - camY;
 
-            // Render multiple towed prize ships behind flagship
             if (gameState.towedShips && gameState.towedShips.length > 0 && !explorer.active) {
                 gameState.towedShips.forEach((towedType, index) => {
                     ctx.save();
-                    const towDist = 38 + index * 26; // Stack trailing behind flagship
+                    const towDist = 38 + index * 26; 
                     const towX = playerScrX - Math.sin(ship.angle) * towDist;
                     const towY = playerScrY + Math.cos(ship.angle) * towDist;
                     
                     ctx.translate(towX, towY);
                     ctx.rotate(ship.angle);
                     
-                    // Draw tow line from previous segment
                     ctx.strokeStyle = "rgba(255, 255, 255, 0.45)";
                     ctx.lineWidth = 1.5;
                     ctx.beginPath();
@@ -3724,7 +3583,6 @@ Format the output strictly as a JSON object matching this schema:
                     ctx.lineTo(0, -10);
                     ctx.stroke();
 
-                    // Prize ship hull structure
                     ctx.fillStyle = towedType === 'Galleon' ? "#3e2723" : towedType === 'Brigantine' ? "#4e342e" : "#5d4037";
                     ctx.strokeStyle = "#8b5a2b";
                     ctx.lineWidth = 1.5;
@@ -3737,7 +3595,6 @@ Format the output strictly as a JSON object matching this schema:
                     ctx.fill();
                     ctx.stroke();
                     
-                    // Furled canvas sails banner
                     ctx.fillStyle = "rgba(220, 220, 220, 0.8)";
                     ctx.fillRect(-4, -2, 8, 3);
                     
@@ -3745,7 +3602,6 @@ Format the output strictly as a JSON object matching this schema:
                 });
             }
 
-            // Hide aiming guides in exploration mode
             if (!explorer.active && !portModalOpen && !boardingModalOpen && !groundingModalOpen) {
                 const targetInfo = getClosestVessel();
                 if (targetInfo.vessel && targetInfo.dist <= 550) {
@@ -3860,7 +3716,6 @@ Format the output strictly as a JSON object matching this schema:
 
             ctx.restore();
 
-            // Render Explorer stick figures on foot (3 small stick figures walking in formation)
             if (explorer.active) {
                 const expScrX = explorer.x - camX;
                 const expScrY = explorer.y - camY;
@@ -3912,11 +3767,9 @@ Format the output strictly as a JSON object matching this schema:
 
             mctx.clearRect(0, 0, w, h);
 
-            // Water background
             mctx.fillStyle = "#113043";
             mctx.fillRect(0, 0, w, h);
 
-            // Chart coordinate grids
             mctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
             mctx.lineWidth = 1;
             for (let i = 50; i < w; i += 100) {
@@ -3926,7 +3779,6 @@ Format the output strictly as a JSON object matching this schema:
                 mctx.stroke();
             }
 
-            // Draw Islands on chart
             ISLANDS_DATA.forEach(island => {
                 const ix = (island.x / WORLD_WIDTH) * w;
                 const iy = (island.y / WORLD_HEIGHT) * h;
@@ -3951,7 +3803,6 @@ Format the output strictly as a JSON object matching this schema:
             const flagshipX = ship.x;
             const flagshipY = ship.y;
 
-            // Draw Ports on chart
             PORTS_DATA.forEach(p => {
                 const px = (p.x / WORLD_WIDTH) * w;
                 const py = (p.y / WORLD_HEIGHT) * h;
@@ -3965,14 +3816,12 @@ Format the output strictly as a JSON object matching this schema:
                 mctx.lineWidth = 1;
                 mctx.stroke();
 
-                // Proximity docking checker
                 const flagDx = flagshipX - p.x;
                 const flagDy = flagshipY - p.y;
                 const flagDist = Math.sqrt(flagDx*flagDx + flagDy*flagDy);
 
                 if (flagDist < 160) {
                     nearbyPort = p;
-                    // Draw a flashing border indicator around this port
                     mctx.strokeStyle = "rgba(16, 185, 129, 0.8)";
                     mctx.lineWidth = 2.5;
                     mctx.beginPath();
@@ -3995,7 +3844,6 @@ Format the output strictly as a JSON object matching this schema:
                 directDockBtn.classList.add('hidden');
             }
 
-            // Draw Bottles on chart
             bottles.forEach(b => {
                 const bx = (b.x / WORLD_WIDTH) * w;
                 const by = (b.y / WORLD_HEIGHT) * h;
@@ -4005,7 +3853,6 @@ Format the output strictly as a JSON object matching this schema:
                 mctx.fill();
             });
 
-            // Draw Enemies on chart
             enemies.forEach(e => {
                 const ex = (e.x / WORLD_WIDTH) * w;
                 const ey = (e.y / WORLD_HEIGHT) * h;
@@ -4013,7 +3860,6 @@ Format the output strictly as a JSON object matching this schema:
                 mctx.fillRect(ex - 2, ey - 2, 4, 4);
             });
 
-            // Draw Player Flagship position and direction
             const sx = (ship.x / WORLD_WIDTH) * w;
             const sy = (ship.y / WORLD_HEIGHT) * h;
 
@@ -4058,7 +3904,6 @@ Format the output strictly as a JSON object matching this schema:
                 ctx.fill();
             });
 
-            // Stranded Ship on minimap (faded when exploring)
             const px = mapX + (ship.x / WORLD_WIDTH) * mapSize;
             const py = mapY + (ship.y / WORLD_HEIGHT) * mapSize;
             ctx.fillStyle = explorer.active ? "rgba(255, 255, 255, 0.4)" : "#ffffff";
@@ -4066,7 +3911,6 @@ Format the output strictly as a JSON object matching this schema:
             ctx.arc(px, py, 3.5, 0, Math.PI*2);
             ctx.fill();
 
-            // Explorer location on minimap
             if (explorer.active) {
                 const ex_map = mapX + (explorer.x / WORLD_WIDTH) * mapSize;
                 const ey_map = mapY + (explorer.y / WORLD_HEIGHT) * mapSize;
@@ -4113,13 +3957,10 @@ Format the output strictly as a JSON object matching this schema:
             lastTime = timestamp;
 
             const baseDt = Math.min(32, dt || 16.6);
-            
-            // Fixed timestep accumulator - Safely handles multipliers without breaking physics
             gameState.timeAccumulator = (gameState.timeAccumulator || 0) + (baseDt * timeMultiplier);
             const physicsStepSize = 16.66;
             let loops = 0;
 
-            // Execute sub-steps to process precise frames
             while (gameState.timeAccumulator >= physicsStepSize && loops < 12) {
                 updateSailingPhysics();
                 updateEnemiesAndCombat();
@@ -4129,9 +3970,8 @@ Format the output strictly as a JSON object matching this schema:
                 checkShipBoardingProximity();
                 updateWindShifts(physicsStepSize);
 
-                // Incremental food consumption timer
                 gameState.foodTimer = (gameState.foodTimer || 0) + physicsStepSize;
-                if (gameState.foodTimer >= 15000) { // Consumes rations every 15 seconds
+                if (gameState.foodTimer >= 15000) { 
                     gameState.foodTimer = 0;
                     consumeFood();
                 }
