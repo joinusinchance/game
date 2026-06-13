@@ -99,8 +99,11 @@
                 </div>
             </div>
 
-            <button onclick="startGame()" class="w-full bg-amber-600 hover:bg-amber-500 text-amber-950 font-extrabold text-lg py-3.5 px-6 rounded-lg shadow-lg border-2 border-amber-300 transition uppercase tracking-widest mt-2 active:scale-95">
+            <button onclick="startGame()" class="w-full bg-amber-600 hover:bg-amber-500 text-amber-950 font-extrabold text-lg py-3 px-6 rounded-lg shadow-lg border-2 border-amber-300 transition uppercase tracking-widest mt-2 active:scale-95">
                 Set Sail!
+            </button>
+            <button onclick="startPracticeDuel()" class="w-full bg-amber-950 hover:bg-amber-900 text-amber-300 font-bold text-xs py-2 px-6 rounded-lg border border-amber-800 transition uppercase tracking-wider active:scale-95">
+                ⚔️ Practice Captain's Duel
             </button>
         </div>
     </div>
@@ -209,33 +212,33 @@
         </div>
 
         <!-- Center-Bottom Dock / Anchor Prompt -->
-    <div id="dock-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
-        <button onclick="dockAtPort()" class="pulse-dock-btn bg-emerald-600/70 hover:bg-emerald-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-emerald-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
-            <span class="flex items-center gap-2">⚓ ENTER <span id="dock-port-name">PORT ROYAL</span></span>
-            <span class="text-[10px] text-emerald-100/90 font-semibold font-mono tracking-wider">(PRESS 'E' OR 'ENTER')</span>
-        </button>
-    </div>
-
-    <!-- Board Ship Prompt (Translucent, visible only when explorer is near ship) -->
-    <div id="board-ship-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
-        <button onclick="boardShipAndPushOff()" class="pulse-dock-btn bg-blue-600/70 hover:bg-blue-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-blue-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
-            <span class="flex items-center gap-2">⛵ BOARD SHIP & PUSH OFF</span>
-            <span class="text-[10px] text-blue-100/90 font-semibold font-mono tracking-wider">(PRESS 'E' OR 'ENTER')</span>
-        </button>
-    </div>
-
-    <!-- Capture / Boarding Tactical Prompt (Contextual) - Note: Removed animation bounce -->
-    <div id="capture-prompt" class="hidden absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2">
-        <div class="bg-red-950 border-4 border-red-600 p-4 rounded-xl shadow-2xl text-center max-w-xs border-double">
-            <h3 class="text-lg font-bold text-red-400 parchment-title mb-1">⚔️ BOARD HOSTILE</h3>
-            <p id="capture-enemy-desc" class="text-xs text-amber-200 mb-3">Target is disabled! Order your crew to board?</p>
-            <button onclick="initDuel()" class="bg-red-600 hover:bg-red-500 text-amber-100 font-extrabold px-6 py-2 rounded-lg text-sm border-2 border-red-400 transition active:scale-95">
-                🏴‍☠️ BOARD SHIP (B)
+        <div id="dock-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
+            <button onclick="dockAtPort()" class="pulse-dock-btn bg-emerald-600/70 hover:bg-emerald-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-emerald-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
+                <span class="flex items-center gap-2">⚓ ENTER <span id="dock-port-name">PORT ROYAL</span></span>
+                <span class="text-[10px] text-emerald-100/90 font-semibold font-mono tracking-wider">(PRESS 'E' OR 'ENTER')</span>
             </button>
         </div>
-    </div>
 
-    <!-- DEBUG MODE OVERLAY CONTROL PANEL -->
+        <!-- Board Ship Prompt (Translucent, visible only when explorer is near ship) -->
+        <div id="board-ship-prompt" class="hidden absolute left-1/2 top-1/2 z-20 pointer-events-auto">
+            <button onclick="boardShipAndPushOff()" class="pulse-dock-btn bg-blue-600/70 hover:bg-blue-500/95 text-amber-100 font-extrabold text-sm md:text-base py-4 px-8 rounded-full border-4 border-blue-300/60 shadow-2xl transition duration-200 active:scale-95 flex flex-col items-center gap-1 whitespace-nowrap backdrop-blur-md opacity-90 hover:opacity-100 transition-all">
+                <span class="flex items-center gap-2">⛵ BOARD SHIP & PUSH OFF</span>
+                <span class="text-[10px] text-blue-100/90 font-semibold font-mono tracking-wider">(PRESS 'E' OR 'ENTER')</span>
+            </button>
+        </div>
+
+        <!-- Capture / Boarding Tactical Prompt (Contextual) - Note: Removed animation bounce -->
+        <div id="capture-prompt" class="hidden absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2">
+            <div class="bg-red-950 border-4 border-red-600 p-4 rounded-xl shadow-2xl text-center max-w-xs border-double">
+                <h3 class="text-lg font-bold text-red-400 parchment-title mb-1">⚔️ BOARD HOSTILE</h3>
+                <p id="capture-enemy-desc" class="text-xs text-amber-200 mb-3">Target is disabled! Order your crew to board?</p>
+                <button onclick="initDuel()" class="bg-red-600 hover:bg-red-500 text-amber-100 font-extrabold px-6 py-2 rounded-lg text-sm border-2 border-red-400 transition active:scale-95">
+                    🏴‍☠️ BOARD SHIP (B)
+                </button>
+            </div>
+        </div>
+
+        <!-- DEBUG MODE OVERLAY CONTROL PANEL -->
         <div id="debug-panel" class="hidden fixed bottom-28 left-2 z-30 bg-red-950/95 border border-red-500/50 p-2.5 rounded-xl shadow-lg text-xs w-48 text-center backdrop-blur-sm pointer-events-auto">
             <span class="font-bold text-red-400 block uppercase tracking-wider mb-1">🛠️ DEBUG CONSOLE</span>
             <div class="flex flex-col gap-1.5">
@@ -497,23 +500,33 @@
         <!-- SWORD FIGHT MINI-GAME MODAL -->
         <div id="sword-fight-modal" class="hidden fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
             <div class="bg-amber-950 border-4 border-amber-700 rounded-xl shadow-2xl max-w-md w-full p-5 text-center border-double text-amber-100 space-y-4">
-                <h2 class="parchment-title text-2xl font-bold tracking-wider text-amber-400">⚔️ CAPTAIN'S DUEL</h2>
+                <div class="flex justify-between items-center border-b border-amber-800 pb-1">
+                    <h2 class="parchment-title text-xl font-bold tracking-wider text-amber-400">⚔️ CAPTAIN'S DUEL</h2>
+                    <span id="practice-badge" class="hidden bg-emerald-800/80 border border-emerald-500 text-emerald-200 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Practice Mode</span>
+                </div>
                 <p class="text-[11px] text-amber-300 leading-relaxed font-sans">
-                    Fend off the enemy Captain's strikes! Press the key or button matching the color when the sword emoji enters the golden <span class="text-amber-400 font-bold">HIT zone</span>!
+                    Read the enemy Captain's physical stance and counter immediately! When the enemy preparing to act glows a color, counter before the timer runs out!
                 </p>
                 
-                <!-- Visual Arena Battle Ground (Rhythm Track) -->
-                <div class="h-24 bg-[#091a24] rounded-lg border border-amber-900/40 relative overflow-hidden flex items-center">
-                    <!-- Target Zone Marker -->
-                    <div class="absolute left-[12%] top-0 bottom-0 w-[12%] bg-amber-500/20 border-l border-r border-amber-400/40 flex items-center justify-center text-[10px] font-black text-amber-300 tracking-wider">
-                        HIT
+                <!-- New Close-up Duel Arena visual box layout -->
+                <div class="h-36 bg-gradient-to-b from-[#091a24] to-[#040c11] rounded-lg border border-amber-900/40 relative overflow-hidden flex items-center justify-center">
+                    <div class="absolute inset-y-0 w-0.5 bg-amber-800/20"></div>
+                    
+                    <!-- Player Emoji Avatar (Large & Close) -->
+                    <div id="duel-player-avatar" class="absolute left-[20%] text-6xl transition-all duration-200 z-10 select-none transform" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">🤺</div>
+                    
+                    <!-- Enemy Emoji Avatar (Large, Close & Facing Player) -->
+                    <div id="duel-enemy-avatar" class="absolute right-[20%] text-6xl transition-all duration-200 z-10 select-none transform scale-x-[-1]" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">🤺</div>
+
+                    <!-- Active Strike Alert Overlay -->
+                    <div id="duel-strike-alert" class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber-950/90 border border-amber-600 text-[10px] px-3 py-1 rounded-full text-amber-300 font-bold tracking-widest uppercase hidden animate-pulse">
+                        COUNTER NOW!
                     </div>
-                    <!-- Player Emoji Avatar -->
-                    <div id="duel-player-avatar" class="absolute left-2 text-3xl transition-transform duration-100 z-10">🤺</div>
-                    <!-- Projectile Container -->
-                    <div id="duel-projectiles-container" class="absolute inset-0 pointer-events-none"></div>
-                    <!-- Enemy Emoji Avatar -->
-                    <div id="duel-enemy-avatar" class="absolute right-2 text-3xl transition-transform duration-100 scale-x-[-1] z-10">🤺</div>
+                    
+                    <!-- Visual progress timing indicator -->
+                    <div class="absolute top-2 left-1/2 -translate-x-1/2 w-36 h-2.5 bg-amber-950 rounded-full overflow-hidden border border-amber-800/60">
+                        <div id="duel-timer-progress" class="h-full bg-amber-500 w-full transition-all duration-100"></div>
+                    </div>
                 </div>
 
                 <!-- HP Bars -->
@@ -534,30 +547,37 @@
 
                 <!-- Intent telegrapher box -->
                 <div class="p-2 bg-amber-900/25 rounded border border-amber-800 text-[11px]">
-                    <p id="duel-combat-log" class="text-amber-200 italic font-mono">The duel begins! Ready your guard...</p>
-                    <p id="duel-enemy-intent" class="text-yellow-400 font-bold mt-1">Keep your fingers on keys A, S, D!</p>
+                    <p id="duel-combat-log" class="text-amber-200 italic font-mono h-10 flex items-center justify-center text-center">The duel begins! Ready your guard...</p>
+                    <p id="duel-enemy-intent" class="text-yellow-400 font-bold mt-1">Stance: Readying...</p>
                 </div>
 
                 <!-- Action selection cards -->
                 <div class="grid grid-cols-3 gap-2">
-                    <button onclick="handleDuelAction('slash')" class="bg-red-950 hover:bg-red-900 p-2 rounded-lg border border-red-700 text-xs flex flex-col items-center justify-center transition active:scale-95">
+                    <button id="duel-action-slash-btn" onclick="handleDuelAction('slash')" class="bg-red-950 hover:bg-red-900 p-2 rounded-lg border border-red-700 text-xs flex flex-col items-center justify-center transition active:scale-95">
                         <span class="text-lg">🔴 ⚔️</span>
                         <span class="font-bold text-amber-200">SLASH [A]</span>
-                        <span class="text-[9px] text-red-300">Matches Red 🔴</span>
+                        <span class="text-[9px] text-red-300">Counter Red 🔴</span>
                     </button>
-                    <button onclick="handleDuelAction('parry')" class="bg-blue-950 hover:bg-blue-900 p-2 rounded-lg border border-blue-700 text-xs flex flex-col items-center justify-center transition active:scale-95">
+                    <button id="duel-action-parry-btn" onclick="handleDuelAction('parry')" class="bg-blue-950 hover:bg-blue-900 p-2 rounded-lg border border-blue-700 text-xs flex flex-col items-center justify-center transition active:scale-95">
                         <span class="text-lg">🔵 🛡️</span>
                         <span class="font-bold text-amber-200">PARRY [S]</span>
-                        <span class="text-[9px] text-blue-300">Matches Blue 🔵</span>
+                        <span class="text-[9px] text-blue-300">Counter Blue 🔵</span>
                     </button>
-                    <button onclick="handleDuelAction('thrust')" class="bg-emerald-950 hover:bg-emerald-900 p-2 rounded-lg border border-emerald-700 text-xs flex flex-col items-center justify-center transition active:scale-95">
+                    <button id="duel-action-thrust-btn" onclick="handleDuelAction('thrust')" class="bg-emerald-950 hover:bg-emerald-900 p-2 rounded-lg border border-emerald-700 text-xs flex flex-col items-center justify-center transition active:scale-95">
                         <span class="text-lg">🟢 ⚡</span>
                         <span class="font-bold text-amber-200">THRUST [D]</span>
-                        <span class="text-[9px] text-emerald-300">Matches Green 🟢</span>
+                        <span class="text-[9px] text-emerald-300">Counter Green 🟢</span>
                     </button>
                 </div>
 
-                <p class="text-[9px] text-amber-400/80">Slash (Red/A) matches Red 🔴 | Parry (Blue/S) matches Blue 🔵 | Thrust (Green/D) matches Green 🟢</p>
+                <!-- Practice exit button container -->
+                <div id="practice-exit-container" class="hidden pt-1">
+                    <button onclick="exitPracticeDuel()" class="w-full bg-amber-600 hover:bg-amber-500 text-amber-950 font-bold text-xs py-2 px-4 rounded transition active:scale-95 uppercase tracking-wide">
+                        🚪 Exit Duel Practice
+                    </button>
+                </div>
+
+                <p class="text-[9px] text-amber-400/80">Slash counters Red 🔴 | Parry counters Blue 🔵 | Thrust counters Green 🟢</p>
             </div>
         </div>
 
@@ -676,7 +696,7 @@
 
         <!-- MAP OVERLAY MODAL -->
         <div id="map-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-40 flex flex-col items-center justify-center p-4">
-            <div class="bg-amber-950 border-4 border-amber-800 rounded-xl shadow-2xl max-w-2xl w-full p-4 border-double text-amber-100 space-y-4">
+            <div class="bg-amber-950 border-4 border-amber-800 rounded-xl shadow-2xl max-w-2xl w-full p-4 border-double text-amber-100 space-y-4 font-sans">
                 <div class="flex justify-between items-center border-b border-amber-800 pb-2">
                     <h2 class="parchment-title text-2xl font-bold tracking-wider text-amber-400">🗺️ CARIBBEAN WORLD CHART</h2>
                     <button onclick="toggleMapModal()" class="text-amber-400 hover:text-amber-200 font-black text-xl p-1.5 active:scale-95">&times;</button>
@@ -684,9 +704,15 @@
                 <div class="flex justify-center bg-[#113043] rounded-lg p-2 border border-amber-900/60 relative overflow-hidden">
                     <canvas id="large-map-canvas" width="550" height="550" class="max-w-full h-auto bg-[#113043] block"></canvas>
                 </div>
-                <div class="flex justify-between text-xs text-amber-300">
-                    <span>Press <kbd class="px-1.5 py-0.5 bg-amber-900 rounded border border-amber-700">M</kbd> to toggle chart</span>
-                    <span class="italic font-sans">Navigate with W, A, S, D or Helms wheel to update course live!</span>
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-amber-300">
+                    <span class="font-semibold text-amber-400/90">Press <kbd class="px-1.5 py-0.5 bg-amber-900 rounded border border-amber-700">M</kbd> to toggle chart</span>
+                    
+                    <!-- Dynamic direct-dock prompt button shown inside Map Modal -->
+                    <button id="map-direct-dock-btn" onclick="dockFromMapDirectly()" class="hidden bg-emerald-600 hover:bg-emerald-500 text-amber-950 font-black px-5 py-2 rounded shadow transition duration-150 active:scale-95 uppercase tracking-wider animate-pulse border-2 border-emerald-300">
+                        ⚓ DOCK AT PORT ROYAL DIRECTLY
+                    </button>
+
+                    <span class="italic text-center sm:text-right">Click nearby harbor on chart to enter!</span>
                 </div>
             </div>
         </div>
@@ -875,8 +901,11 @@
         let duelPlayerHp = 100;
         let duelEnemyHp = 100;
         let isDuelActive = false;
-        let duelProjectiles = [];
-        let duelLastSpawn = 0;
+        let isPracticeDuel = false; // Flag representing practice sessions
+        let duelEnemyState = 'idle'; // 'idle', 'slash_prep', 'parry_prep', 'thrust_prep'
+        let duelPrepStartTime = 0;
+        let duelPrepDuration = 1200; // reaction window in ms (decreased over time for difficulty)
+        let duelHasActed = false; // prevents multiple responses in same window
         let duelTimerId = null;
 
         // LAND EXPLORATION STATE MODULE
@@ -1042,6 +1071,58 @@
             keysPressed[e.key.toLowerCase()] = false;
         });
 
+        // Add large-map-canvas click interaction to dock when near a harbor
+        const largeMapCanvas = document.getElementById('large-map-canvas');
+        if (largeMapCanvas) {
+            largeMapCanvas.addEventListener('click', (e) => {
+                if (!isMapOpen) return;
+                
+                const rect = largeMapCanvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+
+                const scaleW = largeMapCanvas.width;
+                const scaleH = largeMapCanvas.height;
+
+                // Click translates to actual game coordinates
+                const worldX = (clickX / scaleW) * WORLD_WIDTH;
+                const worldY = (clickY / scaleH) * WORLD_HEIGHT;
+
+                // Find if clicked on any nearby port which we are close to (< 160 units)
+                const flagshipX = ship.x;
+                const flagshipY = ship.y;
+
+                PORTS_DATA.forEach(p => {
+                    const dx = worldX - p.x;
+                    const dy = worldY - p.y;
+                    const distToPort = Math.sqrt(dx*dx + dy*dy);
+
+                    if (distToPort < 80) { // clicked on harbor node
+                        // Check if flagship is near enough to dock
+                        const flagDx = flagshipX - p.x;
+                        const flagDy = flagshipY - p.y;
+                        const flagDist = Math.sqrt(flagDx*flagDx + flagDy*flagDy);
+
+                        if (flagDist < 160) {
+                            dockFromMapDirectly(p);
+                        } else {
+                            addLogMessage(`🧭 Port ${p.name} is too distant! Navigate closer before docking.`, 'warning');
+                        }
+                    }
+                });
+            });
+        }
+
+        // Docks smoothly when map button is clicked
+        function dockFromMapDirectly(portObj) {
+            const activePort = portObj || gameState.currentPort;
+            if (!activePort) return;
+            
+            gameState.currentPort = activePort;
+            toggleMapModal(); // close map modal
+            dockAtPort();
+        }
+
         function selectFaction(faction) {
             gameState.faction = faction;
             document.querySelectorAll('.faction-btn').forEach(btn => {
@@ -1160,7 +1241,7 @@
         }
 
         function spawnFloatingLoot() {
-            const goods = Object.keys(COMMODITIES);
+            const goods = Object.keys(COMMODITIES).filter(c => c !== 'food');
             const item = goods[Math.floor(Math.random() * goods.length)];
             cargoLoot.push({
                 x: Math.random() * WORLD_WIDTH,
@@ -1805,25 +1886,47 @@
             renderGovernorMansion();
         }
 
+        function startPracticeDuel() {
+            initAudio();
+            isPracticeDuel = true;
+            document.getElementById('practice-badge').classList.remove('hidden');
+            document.getElementById('practice-exit-container').classList.remove('hidden');
+            initDuel();
+        }
+
+        function exitPracticeDuel() {
+            isDuelActive = false;
+            if (duelTimerId) {
+                cancelAnimationFrame(duelTimerId);
+                duelTimerId = null;
+            }
+            document.getElementById('sword-fight-modal').classList.add('hidden');
+            document.getElementById('practice-badge').classList.add('hidden');
+            document.getElementById('practice-exit-container').classList.add('hidden');
+            addLogMessage("🛡️ Left Practice Arena. Ready to set sail!");
+        }
+
         function initDuel() {
             duelPlayerHp = 100;
             duelEnemyHp = 100;
             isDuelActive = true;
-            duelProjectiles = [];
-            duelLastSpawn = Date.now();
+            duelHasActed = false;
+            duelEnemyState = 'idle';
+            duelPrepStartTime = Date.now();
+            duelPrepDuration = isPracticeDuel ? 1400 : 1200; // slightly more generous in practice
+
             updateDuelUI();
-            
-            document.getElementById('duel-combat-log').innerText = "⚔️ FENCE! Fend off incoming colored strikes when they enter the HIT zone!";
-            document.getElementById('duel-enemy-intent').innerText = "Keys: A = Red (Slash) | S = Blue (Parry) | D = Green (Thrust)";
+            setDuelEnemyState('idle');
+            triggerDuelPlayerReset();
+
+            document.getElementById('duel-combat-log').innerText = "⚔️ Fencing Match! Watch the Enemy's visual prep stances!";
+            document.getElementById('duel-enemy-intent').innerText = "Actions: [A] Slash counters Red | [S] Parry counters Blue | [D] Thrust counters Green";
+            document.getElementById('duel-strike-alert').classList.add('hidden');
             
             document.getElementById('sword-fight-modal').classList.remove('hidden');
 
-            // Clear previous projectiles DOM
-            document.getElementById('duel-projectiles-container').innerHTML = '';
-
-            // Run rhythm game animation loop
             if (duelTimerId) cancelAnimationFrame(duelTimerId);
-            duelTimerId = requestAnimationFrame(updateDuelLoop);
+            duelTimerId = requestAnimationFrame(updateDuelNewLoop);
         }
 
         function updateDuelUI() {
@@ -1831,55 +1934,136 @@
             document.getElementById('duel-enemy-hp-bar').style.width = `${duelEnemyHp}%`;
         }
 
-        function spawnDuelProjectile() {
-            const actions = ['slash', 'parry', 'thrust'];
-            const action = actions[Math.floor(Math.random() * actions.length)];
-            duelProjectiles.push({
-                action: action,
-                progress: 0,
-                speed: 1.1 + Math.random() * 0.4
-            });
+        function setDuelEnemyState(state) {
+            duelEnemyState = state;
+            const enemyEl = document.getElementById('duel-enemy-avatar');
+            if (!enemyEl) return;
+
+            // Reset transitions and filter glows
+            enemyEl.style.transition = "all 0.25s ease-out";
+            enemyEl.style.filter = "drop-shadow(0 4px 6px rgba(0,0,0,0.4))";
+            enemyEl.style.transform = "scaleX(-1)";
+
+            const intentText = document.getElementById('duel-enemy-intent');
+
+            if (state === 'idle') {
+                intentText.innerText = "Stance: Readying...";
+            } 
+            else if (state === 'slash_prep') {
+                // RED GLOW - Rotate up pivoting backward for massive slash down
+                enemyEl.style.filter = "drop-shadow(0 0 18px #ef4444) drop-shadow(0 4px 6px rgba(0,0,0,0.4))";
+                enemyEl.style.transform = "scaleX(-1) rotate(-35deg) translateY(-8px)";
+                intentText.innerText = "Stance: Glowing RED! (SLASH coming!)";
+            } 
+            else if (state === 'parry_prep') {
+                // BLUE GLOW - Stay still but glow brightly demanding fast action
+                enemyEl.style.filter = "drop-shadow(0 0 18px #3b82f6) drop-shadow(0 4px 6px rgba(0,0,0,0.4))";
+                enemyEl.style.transform = "scaleX(-1) scale(0.95)";
+                intentText.innerText = "Stance: Glowing BLUE! (PARRY active!)";
+            } 
+            else if (state === 'thrust_prep') {
+                // GREEN GLOW - Slide backward, preparing quick spring thrust charge
+                enemyEl.style.filter = "drop-shadow(0 0 18px #10b981) drop-shadow(0 4px 6px rgba(0,0,0,0.4))";
+                enemyEl.style.transform = "scaleX(-1) translateX(-30px)";
+                intentText.innerText = "Stance: Glowing GREEN! (THRUST loading!)";
+            }
         }
 
-        function updateDuelLoop() {
+        function triggerDuelPlayerReset() {
+            const playerEl = document.getElementById('duel-player-avatar');
+            if (!playerEl) return;
+            playerEl.style.transition = "all 0.25s ease-out";
+            playerEl.style.filter = "drop-shadow(0 4px 6px rgba(0,0,0,0.4))";
+            playerEl.style.transform = "rotate(0deg) translateX(0) scale(1)";
+        }
+
+        function triggerDuelPlayerStrikeVisual(action) {
+            const playerEl = document.getElementById('duel-player-avatar');
+            if (!playerEl) return;
+
+            playerEl.style.transition = "all 0.1s ease-in-out";
+            if (action === 'slash') {
+                playerEl.style.filter = "drop-shadow(0 0 12px #ef4444)";
+                playerEl.style.transform = "rotate(25deg) translateX(20px)";
+            } else if (action === 'parry') {
+                playerEl.style.filter = "drop-shadow(0 0 12px #3b82f6)";
+                playerEl.style.transform = "scale(1.1) rotate(-15deg)";
+            } else if (action === 'thrust') {
+                playerEl.style.filter = "drop-shadow(0 0 12px #10b981)";
+                playerEl.style.transform = "translateX(35px) scale(1.15)";
+            }
+
+            setTimeout(() => {
+                triggerDuelPlayerReset();
+            }, 300);
+        }
+
+        function triggerDuelEnemyStrikeVisual(action) {
+            const enemyEl = document.getElementById('duel-enemy-avatar');
+            if (!enemyEl) return;
+
+            enemyEl.style.transition = "all 0.15s ease-in-out";
+            if (action === 'slash') {
+                enemyEl.style.transform = "scaleX(-1) rotate(40deg) translateX(25px) translateY(8px)";
+            } else if (action === 'thrust') {
+                enemyEl.style.transform = "scaleX(-1) translateX(50px) scale(1.15)";
+            } else if (action === 'parry') {
+                enemyEl.style.transform = "scaleX(-1) scale(1.05)";
+            }
+
+            setTimeout(() => {
+                if (isDuelActive && duelEnemyState === 'idle') {
+                    setDuelEnemyState('idle');
+                }
+            }, 400);
+        }
+
+        function updateDuelNewLoop() {
             if (!isDuelActive) return;
 
             const now = Date.now();
-            
-            // Periodically spawn new sword strikes
-            if (now - duelLastSpawn > 1800) {
-                spawnDuelProjectile();
-                duelLastSpawn = now;
-            }
+            const elapsed = now - duelPrepStartTime;
 
-            // Update existing projects positions
-            const container = document.getElementById('duel-projectiles-container');
-            container.innerHTML = '';
+            const alertOverlay = document.getElementById('duel-strike-alert');
+            const progressEl = document.getElementById('duel-timer-progress');
 
-            for (let i = duelProjectiles.length - 1; i >= 0; i--) {
-                const p = duelProjectiles[i];
-                p.progress += p.speed; // Glide from right to left
-
-                if (p.progress >= 95) {
-                    // Missed completely!
-                    triggerDuelDamage('player', p.action);
-                    duelProjectiles.splice(i, 1);
-                    continue;
-                }
-
-                // Render gliding projectile
-                const el = document.createElement('div');
-                el.className = `absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold shadow-lg transition-transform duration-75 ${
-                    p.action === 'slash' ? 'border-red-500 bg-red-950 text-red-200' :
-                    p.action === 'parry' ? 'border-blue-500 bg-blue-950 text-blue-200' :
-                    'border-green-500 bg-emerald-950 text-emerald-200'
-                }`;
-                el.style.left = `${100 - p.progress}%`;
+            if (duelEnemyState === 'idle') {
+                alertOverlay.classList.add('hidden');
+                progressEl.style.width = "0%";
                 
-                let emoji = p.action === 'slash' ? '🔴' : p.action === 'parry' ? '🔵' : '🟢';
-                el.innerText = emoji;
+                // Pause briefly between attacks
+                if (elapsed > 1100) {
+                    // Spawn new fencer attack stance
+                    const moves = ['slash', 'parry', 'thrust'];
+                    const chosen = moves[Math.floor(Math.random() * moves.length)];
+                    duelHasActed = false;
+                    duelPrepStartTime = now;
+                    setDuelEnemyState(chosen + '_prep');
+                    playSound('impact');
+                }
+            } else {
+                // In active counter prep state
+                alertOverlay.classList.remove('hidden');
+                const remainingPct = Math.max(0, 100 - (elapsed / duelPrepDuration) * 100);
+                progressEl.style.width = `${remainingPct}%`;
 
-                container.appendChild(el);
+                if (elapsed >= duelPrepDuration) {
+                    // Time is up! Enemy strikes flagship crew
+                    alertOverlay.classList.add('hidden');
+                    const strikeAction = duelEnemyState.split('_')[0];
+                    setDuelEnemyState('idle');
+                    duelPrepStartTime = now;
+
+                    if (!duelHasActed) {
+                        // User missed the timing window completely
+                        const dmg = 20 + Math.floor(Math.random() * 8);
+                        duelPlayerHp = Math.max(0, duelPlayerHp - dmg);
+                        document.getElementById('duel-combat-log').innerText = `🩸 LATE! The enemy hit you with a rapid ${strikeAction.toUpperCase()}! -${dmg} HP`;
+                        triggerDuelEnemyStrikeVisual(strikeAction);
+                        playSound('impact');
+                        updateDuelUI();
+                    }
+                }
             }
 
             if (duelPlayerHp <= 0) {
@@ -1891,74 +2075,42 @@
                 return;
             }
 
-            duelTimerId = requestAnimationFrame(updateDuelLoop);
+            duelTimerId = requestAnimationFrame(updateDuelNewLoop);
         }
 
         function handleDuelAction(action) {
-            if (!isDuelActive) return;
+            if (!isDuelActive || duelHasActed || duelEnemyState === 'idle') return;
 
-            // Find if there is any projectile in the hit zone (left percent between 12% and 24%)
-            let hitIndex = -1;
-            for (let i = 0; i < duelProjectiles.length; i++) {
-                const p = duelProjectiles[i];
-                const leftPercent = 100 - p.progress;
-                if (leftPercent >= 12 && leftPercent <= 24) {
-                    hitIndex = i;
-                    break;
-                }
-            }
+            duelHasActed = true;
+            const targetAction = duelEnemyState.split('_')[0];
+            const now = Date.now();
 
-            const playerAv = document.getElementById('duel-player-avatar');
-            playerAv.style.transform = "translateX(15px) scale(1.15)";
-            playSound('impact');
-            setTimeout(() => {
-                playerAv.style.transform = "translateX(0) scale(1)";
-            }, 100);
+            triggerDuelPlayerStrikeVisual(action);
 
-            if (hitIndex !== -1) {
-                const matchedProj = duelProjectiles[hitIndex];
-                if (matchedProj.action === action) {
-                    // Success! Correct parry/strike
-                    triggerDuelDamage('enemy', action);
-                    duelProjectiles.splice(hitIndex, 1);
-                } else {
-                    // Blocked with the wrong guard
-                    triggerDuelDamage('player_wrong', matchedProj.action);
-                    duelProjectiles.splice(hitIndex, 1);
-                }
-            } else {
-                // Out of target zone timing whiff
-                document.getElementById('duel-combat-log').innerText = "⚠️ Swing and a miss! Watch the timing of incoming strikes!";
-            }
-            updateDuelUI();
-        }
-
-        function triggerDuelDamage(target, action) {
-            const logText = document.getElementById('duel-combat-log');
-            const enemyAv = document.getElementById('duel-enemy-avatar');
-
-            if (target === 'enemy') {
+            if (action === targetAction) {
+                // Counters perfectly!
                 const dmg = 25 + Math.floor(Math.random() * 10);
                 duelEnemyHp = Math.max(0, duelEnemyHp - dmg);
-                logText.innerText = `💥 CRITICAL! You countered their ${action.toUpperCase()} strike perfectly! -${dmg} HP`;
+                document.getElementById('duel-combat-log').innerText = `💥 SUCCESS! You countered their ${targetAction.toUpperCase()} stance beautifully! -${dmg} HP`;
                 playSound('gold');
-
-                enemyAv.style.transform = "scale-x(-1) translateX(15px)";
-                setTimeout(() => { enemyAv.style.transform = "scale-x(-1) translateX(0)"; }, 120);
-            } 
-            else if (target === 'player') {
-                const dmg = 20 + Math.floor(Math.random() * 8);
-                duelPlayerHp = Math.max(0, duelPlayerHp - dmg);
-                logText.innerText = `🩸 HIT! You failed to block their incoming ${action.toUpperCase()} strike! -${dmg} HP`;
-                playSound('impact');
-            }
-            else if (target === 'player_wrong') {
+                updateDuelUI();
+            } else {
+                // Counters with wrong defense
                 const dmg = 15 + Math.floor(Math.random() * 5);
                 duelPlayerHp = Math.max(0, duelPlayerHp - dmg);
-                logText.innerText = `🩸 BLOCKED WRONG! You used the wrong guard style against their ${action.toUpperCase()}! -${dmg} HP`;
+                document.getElementById('duel-combat-log').innerText = `🩸 WRONG STYLE! Your ${action.toUpperCase()} failed against their ${targetAction.toUpperCase()}! -${dmg} HP`;
+                triggerDuelEnemyStrikeVisual(targetAction);
                 playSound('impact');
+                updateDuelUI();
             }
-            updateDuelUI();
+
+            // Immediately clear prep state
+            setTimeout(() => {
+                if (isDuelActive) {
+                    setDuelEnemyState('idle');
+                    duelPrepStartTime = Date.now();
+                }
+            }, 450);
         }
 
         function resolveDuelOutcome(playerWon) {
@@ -1966,6 +2118,18 @@
             if (duelTimerId) {
                 cancelAnimationFrame(duelTimerId);
                 duelTimerId = null;
+            }
+
+            if (isPracticeDuel) {
+                setTimeout(() => {
+                    document.getElementById('sword-fight-modal').classList.add('hidden');
+                    document.getElementById('practice-badge').classList.add('hidden');
+                    document.getElementById('practice-exit-container').classList.add('hidden');
+                    isPracticeDuel = false;
+                    addLogMessage("🏆 Practice Completed! You've successfully completed fencing training.", "success");
+                    document.getElementById('intro-screen').classList.remove('hidden');
+                }, 1000);
+                return;
             }
 
             if (playerWon) {
@@ -2941,24 +3105,23 @@
             logBox.scrollTop = logBox.scrollHeight;
 
             const systemPrompt = `You are a legendary 17th-century Caribbean First Mate on a wooden sailing vessel.
-Your personality and dialect strictly depends on the Captain's chosen faction:
-- English Privateer: Elegant, highly disciplined, loyal, uses official Royal Navy terms like "By Her Majesty's grace" or "Steady as she goes".
-- French Buccaneer: Loud, enthusiastic, talks of plunder, French-creole pirate slang.
-- Spanish Guardacosta: Extremely formal, pious, protective of Spanish galleons, addresses captain as "Señor Capitán".
-- Independent Rogue: Cynical, focuses on smuggling, talks of double crossing, informal and rough.
+Your personality depends strictly on the Captain's faction:
+- English Privateer: Elegant, highly disciplined, uses terms like "By Her Majesty's grace".
+- French Buccaneer: Loud, talks of plunder, French-creole slang.
+- Spanish Guardacosta: Extremely formal, addresses captain as "Señor Capitán".
+- Independent Rogue: Cynical, talks of smuggling, rough.
 
-You are fully aware of the ship's current live state:
+You know the ship's current state:
 - Faction: ${gameState.faction}
 - Ship Class: ${gameState.shipType}
-- Gold reserves: ${gameState.gold} doubloons
-- Current Hull strength: ${gameState.hull}/${gameState.hullMax} HP
-- Crew hands: ${gameState.activeCrew} seasoned sailors
-- Current cargo inventory: ${JSON.stringify(gameState.cargo)} (sugar, rum, tobacco, spices, wood, food)
+- Gold: ${gameState.gold} doubloons
+- Current Hull: ${gameState.hull}/${gameState.hullMax} HP
+- Crew: ${gameState.activeCrew} sailors
+- Cargo: ${JSON.stringify(gameState.cargo)}
 - Towed fleet: ${JSON.stringify(gameState.towedShips)}
-- Food supply: ${gameState.cargo.food} barrels remaining.
-- Nearby Caribbean Ports: Havana (Spanish), Port Royal (English), Tortuga (Rogue), Nassau (Rogue), San Juan (Spanish).
+- Food: ${gameState.cargo.food} barrels remaining.
 
-Respond to the Captain in character. Keep answers short, vivid, atmospheric, and strategically helpful. Give accurate advice based on current cargo (e.g. if they have sugar, suggest selling at Tortuga or Port Royal; if hull is damaged, advise stopping at a local shipyard). Maximum length: 3 sentences. Do not mention system rules.`;
+Respond to the Captain in character. Keep answers short, atmospheric, and helpful. Maximum 3 sentences.`;
 
             const apiKey = ""; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -3031,10 +3194,7 @@ Respond to the Captain in character. Keep answers short, vivid, atmospheric, and
             document.getElementById('encounter-resolution').classList.add('hidden');
 
             const systemPrompt = `Generate an immersive, atmospheric 17th-century sea event encounter.
-It could be an encounter with a ghost ship, a stranded merchant, a bizarre sea creature, a mutinous crew dispute, or a mysterious island.
 Create three distinct options for the Captain to choose from, each with a specific consequence (affecting Gold, Hull HP, or Crew).
-Ensure the changes are balanced (e.g. gain 100 gold, lose 20 hull HP, or recruit/lose 1 crew).
-
 Format the output strictly as a JSON object matching this schema:
 {
   "title": "Short Epic Title",
@@ -3042,24 +3202,9 @@ Format the output strictly as a JSON object matching this schema:
   "optionA": "Action description for option A",
   "optionB": "Action description for option B",
   "optionC": "Action description for option C",
-  "outcomeA": {
-    "text": "Outcome narrative if they choose A.",
-    "gold": -50,
-    "hull": 20,
-    "crew": 0
-  },
-  "outcomeB": {
-    "text": "Outcome narrative if they choose B.",
-    "gold": 150,
-    "hull": -30,
-    "crew": 0
-  },
-  "outcomeC": {
-    "text": "Outcome narrative if they choose C.",
-    "gold": 0,
-    "hull": 0,
-    "crew": 1
-  }
+  "outcomeA": { "text": "Outcome narrative if they choose A.", "gold": -50, "hull": 20, "crew": 0 },
+  "outcomeB": { "text": "Outcome narrative if they choose B.", "gold": 150, "hull": -30, "crew": 0 },
+  "outcomeC": { "text": "Outcome narrative if they choose C.", "gold": 0, "hull": 0, "crew": 1 }
 }`;
 
             const userPrompt = `Generate a randomized Caribbean sea encounter for a ${gameState.faction} captain sailing a ${gameState.shipType} with ${gameState.gold} Gold and ${gameState.activeCrew} crew. Use theme elements matching 1600s piracy, colonial rivalry, or sea mythology.`;
@@ -3078,32 +3223,17 @@ Format the output strictly as a JSON object matching this schema:
                             optionC: { type: "STRING" },
                             outcomeA: {
                                 type: "OBJECT",
-                                properties: {
-                                    text: { type: "STRING" },
-                                    gold: { type: "INTEGER" },
-                                    hull: { type: "INTEGER" },
-                                    crew: { type: "INTEGER" }
-                                },
+                                properties: { text: { type: "STRING" }, gold: { type: "INTEGER" }, hull: { type: "INTEGER" }, crew: { type: "INTEGER" } },
                                 required: ["text", "gold", "hull", "crew"]
                             },
                             outcomeB: {
                                 type: "OBJECT",
-                                properties: {
-                                    text: { type: "STRING" },
-                                    gold: { type: "INTEGER" },
-                                    hull: { type: "INTEGER" },
-                                    crew: { type: "INTEGER" }
-                                },
+                                properties: { text: { type: "STRING" }, gold: { type: "INTEGER" }, hull: { type: "INTEGER" }, crew: { type: "INTEGER" } },
                                 required: ["text", "gold", "hull", "crew"]
                             },
                             outcomeC: {
                                 type: "OBJECT",
-                                properties: {
-                                    text: { type: "STRING" },
-                                    gold: { type: "INTEGER" },
-                                    hull: { type: "INTEGER" },
-                                    crew: { type: "INTEGER" }
-                                },
+                                properties: { text: { type: "STRING" }, gold: { type: "INTEGER" }, hull: { type: "INTEGER" }, crew: { type: "INTEGER" } },
                                 required: ["text", "gold", "hull", "crew"]
                             }
                         },
@@ -3572,7 +3702,6 @@ Format the output strictly as a JSON object matching this schema:
                 }
             });
 
-            // Draw player ship (always render at its actual coordinates)
             const playerScrX = ship.x - camX;
             const playerScrY = ship.y - camY;
 
@@ -3818,6 +3947,10 @@ Format the output strictly as a JSON object matching this schema:
                 mctx.fillText(island.name.split(' ')[0], ix, iy);
             });
 
+            let nearbyPort = null;
+            const flagshipX = ship.x;
+            const flagshipY = ship.y;
+
             // Draw Ports on chart
             PORTS_DATA.forEach(p => {
                 const px = (p.x / WORLD_WIDTH) * w;
@@ -3832,11 +3965,35 @@ Format the output strictly as a JSON object matching this schema:
                 mctx.lineWidth = 1;
                 mctx.stroke();
 
+                // Proximity docking checker
+                const flagDx = flagshipX - p.x;
+                const flagDy = flagshipY - p.y;
+                const flagDist = Math.sqrt(flagDx*flagDx + flagDy*flagDy);
+
+                if (flagDist < 160) {
+                    nearbyPort = p;
+                    // Draw a flashing border indicator around this port
+                    mctx.strokeStyle = "rgba(16, 185, 129, 0.8)";
+                    mctx.lineWidth = 2.5;
+                    mctx.beginPath();
+                    mctx.arc(px, py, 11 + Math.sin(Date.now() / 150) * 3, 0, Math.PI * 2);
+                    mctx.stroke();
+                }
+
                 mctx.fillStyle = "#ffe4b5";
                 mctx.font = "bold 9px 'Cinzel Decorative', sans-serif";
                 mctx.textAlign = "center";
                 mctx.fillText(p.name, px, py - 10);
             });
+
+            const directDockBtn = document.getElementById('map-direct-dock-btn');
+            if (nearbyPort) {
+                directDockBtn.classList.remove('hidden');
+                directDockBtn.innerText = `⚓ ENTER ${nearbyPort.name.toUpperCase()} DIRECTLY`;
+                gameState.currentPort = nearbyPort;
+            } else {
+                directDockBtn.classList.add('hidden');
+            }
 
             // Draw Bottles on chart
             bottles.forEach(b => {
@@ -3957,12 +4114,12 @@ Format the output strictly as a JSON object matching this schema:
 
             const baseDt = Math.min(32, dt || 16.6);
             
-            // Fixed timestep accumulator - Safely handles time multipliers without breaking collisions or physics
+            // Fixed timestep accumulator - Safely handles multipliers without breaking physics
             gameState.timeAccumulator = (gameState.timeAccumulator || 0) + (baseDt * timeMultiplier);
             const physicsStepSize = 16.66;
             let loops = 0;
 
-            // Execute sub-steps to process precise physics frames up to accumulator capacity
+            // Execute sub-steps to process precise frames
             while (gameState.timeAccumulator >= physicsStepSize && loops < 12) {
                 updateSailingPhysics();
                 updateEnemiesAndCombat();
