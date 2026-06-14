@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Android Camera OCR/Barcode POC</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 0; background: #111; color: #eee; }
+    #app { padding: 12px; }
+    video, canvas { max-width: 100%; border-radius: 8px; background: #000; }
+    #overlay {
+      position: absolute;
+      border: 2px solid #00ff88;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    #previewWrapper {
+      position: relative;
+      display: inline-block;
+    }
+    #log { font-size: 0.8rem; white-space: pre-wrap; margin-top: 8px; }
+    button { margin-top: 8px; padding: 8px 12px; border-radius: 4px; border: none; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h2>Android Camera OCR/Barcode POC</h2>
+  <div id="previewWrapper">
+    <video id="video" autoplay playsinline></video>
+    <div id="overlay"></div>
+  </div>
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <div>
+    <button id="restartBtn">Restart / Retry</button>
+  </div>
+
+  <h3>Result</h3>
+  <div id="result"></div>
+
+  <h3>Log</h3>
+  <div id="log"></div>
+</div>
+
+<!-- Tesseract.js (CDN) -->
+<script src="https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+<script>
+(async function() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const overlay = document.getElementById('overlay');
+  const resultEl = document.getElementById('result');
+  const logEl = document.getElementById('log');
+  const restartBtn = document.getElementById('restartBtn');
+
+  let stream, track, imageCapture;
+  let lastFrameImageData = null;
+  let autoCaptureRunning = false;
+  let liveFallbackRunning = false;
+  let barcodeDetectorSupported = 'BarcodeDetector' in window;
+  let barcodeDetector = barcodeDetectorSupported ? new BarcodeDetector({ formats: ['ean_13', 'isbn_13'] }) : null;
+
+  function log(msg) {
+    console.log(msg);
+    logEl.textContent += msg + '\n';
+  }
+
+  function setResult(html) {
+    resultEl.innerHTML = html;
+  }
+
+  async function initCamera() {
+    log('Requesting camera…');
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        focusMode: 'continuous',
+        zoom: true,
+        exposureCompensation: true
+      },
+      audio: false
+    });
+
+    video.srcObject = stream;
+    track = stream.getVideoTracks()[0];
+    imageCapture = new ImageCapture(track);
+
+    video.onloadedmetadata = () => {
+      video.play();
+      setupOverlay();
+      startAutoCaptureLoop();
+    };
+
+    log('Camera started.');
+  }
+
+  function setupOverlay() {
+    const rectWidth = video.videoWidth * 0.6;
+    const rectHeight = video.videoHeight * 0.3;
+    overlay.style.width = rectWidth + 'px';
+    overlay.style.height = rectHeight + 'px';
+    overlay.style.left = ((video.clientWidth - rectWidth * (video.clientWidth / video.videoWidth)) / 2) + 'px';
+    overlay.style.top = ((video.clientHeight - rectHeight * (video.clientHeight / video.videoHeight)) / 2) + 'px';
+  }
+
+  async function forceRefocus() {
+    try {
+      const caps = track.getCapabilities();
+      if (!caps.zoom) return;
+      const settings = track.getSettings();
+      const baseZoom = settings.zoom || caps.zoom.min;
+      const jiggle = Math.min(baseZoom + 0.1, caps.zoom.max);
+
+      await track.applyConstraints({ advanced: [{ zoom: jiggle }] });
+      await new Promise(r => setTimeout(r, 150));
+      await track.applyConstraints({ advanced: [{ zoom: baseZoom }] });
+      log('Refocus jiggle applied.');
+    } catch (e) {
+      log('Refocus failed: ' + e.message);
+    }
+  }
+
+  function frameDifferenceScore(ctx, w, h) {
+    const current = ctx.getImageData(0, 0, w, h);
+    if (!lastFrameImageData) {
+      lastFrameImageData = current;
+      return 9999; // treat first as "moving"
+    }
+    let diff = 0;
+    const a = current.data;
+    const b = lastFrameImageData.data;
+    for (let i = 0; i < a.length; i += 4) {
+      const dr = a[i] - b[i];
+      const dg = a[i+1] - b[i+1];
+      const db = a[i+2] - b[i+2];
+      diff += Math.abs(dr) + Math.abs(dg) + Math.abs(db);
+    }
+    lastFrameImageData = current;
+    return diff / (w * h);
+  }
+
+  async function startAutoCaptureLoop() {
+    if (autoCaptureRunning) return;
+    autoCaptureRunning = true;
+    log('Auto capture loop started.');
+
+    const tmpCanvas = document.createElement('canvas');
+    const ctx = tmpCanvas.getContext('2d');
+
+    const checkFrame = async () => {
+      if (!autoCaptureRunning) return;
+
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (!vw || !vh) {
+        requestAnimationFrame(checkFrame);
+        return;
+      }
+
+      const cropW = Math.floor(vw * 0.6);
+      const cropH = Math.floor(vh * 0.3);
+      const cropX = Math.floor((vw - cropW) / 2);
+      const cropY = Math.floor((vh - cropH) / 2);
+
+      tmpCanvas.width = cropW;
+      tmpCanvas.height = cropH;
+      ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+      const score = frameDifferenceScore(ctx, cropW, cropH);
+      // lower score = more stable
+      if (score < 5) {
+        log('Frame stable, score=' + score.toFixed(2) + ' → capturing still.');
+        autoCaptureRunning = false;
+        await captureStillAndProcess();
+        return;
+      }
+
+      requestAnimationFrame(checkFrame);
+    };
+
+    requestAnimationFrame(checkFrame);
+  }
+
+  async function captureStillAndProcess() {
+    try {
+      await forceRefocus();
+      const blob = await imageCapture.takePhoto();
+      log('Still captured, size=' + blob.size);
+
+      const bitmap = await createImageBitmap(blob);
+      setResult('Processing still…');
+
+      // Try barcode first
+      if (barcodeDetector) {
+        try {
+          const barcodes = await barcodeDetector.detect(bitmap);
+          if (barcodes.length > 0) {
+            const code = barcodes[0].rawValue;
+            log('Barcode detected: ' + code);
+            setResult('<b>Barcode:</b> ' + code);
+            return;
+          } else {
+            log('No barcode found in still.');
+          }
+        } catch (e) {
+          log('Barcode detection error: ' + e.message);
+        }
+      } else {
+        log('BarcodeDetector not supported.');
+      }
+
+      // If barcode fails → OCR
+      log('Running OCR on still…');
+      const { data: { text } } = await Tesseract.recognize(blob, 'eng', {
+        logger: m => log('[OCR] ' + m.status + ' ' + (m.progress || ''))
+      });
+      setResult('<b>OCR Text:</b><br><pre>' + text.replace(/</g, '&lt;') + '</pre>');
+
+      // If both are weak, you can decide to start live fallback:
+      if (!text.trim()) {
+        log('OCR empty → starting live fallback.');
+        startLiveFallback();
+      }
+    } catch (e) {
+      log('captureStillAndProcess error: ' + e.message);
+      startLiveFallback();
+    }
+  }
+
+  async function startLiveFallback() {
+    if (!barcodeDetector) {
+      log('Live fallback skipped: BarcodeDetector not supported.');
+      return;
+    }
+    if (liveFallbackRunning) return;
+    liveFallbackRunning = true;
+    log('Starting live barcode fallback…');
+
+    const scan = async () => {
+      if (!liveFallbackRunning) return;
+      try {
+        const barcodes = await barcodeDetector.detect(video);
+        if (barcodes.length > 0) {
+          const code = barcodes[0].rawValue;
+          log('Live barcode detected: ' + code);
+          setResult('<b>Live Barcode:</b> ' + code);
+          liveFallbackRunning = false;
+          return;
+        }
+      } catch (e) {
+        log('Live fallback error: ' + e.message);
+      }
+      requestAnimationFrame(scan);
+    };
+
+    requestAnimationFrame(scan);
+  }
+
+  function stopAll() {
+    autoCaptureRunning = false;
+    liveFallbackRunning = false;
+    lastFrameImageData = null;
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+  }
+
+  restartBtn.addEventListener('click', async () => {
+    stopAll();
+    setResult('');
+    logEl.textContent = '';
+    await initCamera();
+  });
+
+  // Start on load
+  try {
+    await initCamera();
+  } catch (e) {
+    log('Init error: ' + e.message);
+    setResult('Camera init failed: ' + e.message);
+  }
+})();
+</script>
+</body>
+</html>
