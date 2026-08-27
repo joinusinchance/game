@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Limbo Cake Grabber</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Matter.js Physics Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    .btn-control {
+      touch-action: none;
+      transition: transform 0.05s ease, background-color 0.15s ease;
+    }
+    .btn-control:active {
+      transform: scale(0.92);
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-white flex flex-col h-screen w-screen overflow-hidden">
+
+  <!-- TOP HALF: Canvas & Overlay UI (55vh) -->
+  <div class="relative w-full h-[55vh] bg-slate-950 flex flex-col items-center justify-center border-b-4 border-amber-500 shadow-lg">
+    <canvas id="game-canvas" class="w-full h-full block"></canvas>
+
+    <!-- Top Status Bar -->
+    <div class="absolute top-3 left-3 right-3 flex justify-between items-center pointer-events-none">
+      <div class="bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 text-xs sm:text-sm font-bold flex items-center gap-2">
+        <span class="text-amber-400">LEVEL</span>
+        <span id="level-display" class="text-white text-base">1</span>
+      </div>
+      <div id="status-badge" class="bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 text-xs sm:text-sm font-bold text-amber-300">
+        Bend Back & Reach Cake! 🍰
+      </div>
+      <button id="share-btn" onclick="shareGame()" class="pointer-events-auto bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 px-3 py-1.5 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-md">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+        Share
+      </button>
+    </div>
+
+    <!-- Game Over / Level Clear Overlay -->
+    <div id="modal-overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center gap-4 hidden z-20 p-4">
+      <h2 id="modal-title" class="text-3xl font-extrabold text-amber-400 text-center tracking-wide">LEVEL CLEARED!</h2>
+      <p id="modal-msg" class="text-slate-300 text-sm text-center max-w-xs">Great job! You snatched the cake without touching the bar!</p>
+      <div class="flex gap-3 mt-2">
+        <button id="modal-action-btn" onclick="handleModalAction()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-6 py-3 rounded-2xl font-black text-lg shadow-lg active:scale-95 transition-all">
+          NEXT LEVEL
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM HALF: Rigid Body Physics Controls (45vh) -->
+  <div class="w-full h-[45vh] bg-slate-900 p-2 sm:p-4 flex flex-col justify-between max-w-md mx-auto">
+    <div class="text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+      Ragdoll Mechanics & Balance
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 sm:gap-3 flex-1">
+
+      <!-- Left Group: Legs & Movement -->
+      <div class="bg-slate-800/60 p-2 rounded-2xl border border-slate-700/60 flex flex-col justify-between gap-1">
+        <div class="text-[11px] font-bold text-amber-400 text-center flex items-center justify-center gap-1">
+          <span>🦵</span> FEET & CROUCH
+        </div>
+        <div class="grid grid-cols-2 gap-1.5 flex-1">
+          <button id="btn-left" class="btn-control bg-slate-700 hover:bg-slate-600 active:bg-amber-500 active:text-slate-950 text-white rounded-xl font-bold text-xs flex flex-col items-center justify-center p-2 shadow">
+            <span class="text-base">◀</span>
+            <span class="text-[9px] opacity-80">Step Left</span>
+          </button>
+          <button id="btn-right" class="btn-control bg-slate-700 hover:bg-slate-600 active:bg-amber-500 active:text-slate-950 text-white rounded-xl font-bold text-xs flex flex-col items-center justify-center p-2 shadow">
+            <span class="text-base">▶</span>
+            <span class="text-[9px] opacity-80">Step Right</span>
+          </button>
+        </div>
+        <button id="btn-crouch" class="btn-control bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-400 text-white rounded-xl font-bold text-xs py-2 shadow flex items-center justify-center gap-1">
+          <span>⏬</span> Duck Knees / Crouch
+        </button>
+      </div>
+
+      <!-- Right Group: Torso & Arm Reach -->
+      <div class="bg-slate-800/60 p-2 rounded-2xl border border-slate-700/60 flex flex-col justify-between gap-1">
+        <div class="text-[11px] font-bold text-amber-400 text-center flex items-center justify-center gap-1">
+          <span>🤸</span> TORSO & ARM REACH
+        </div>
+        <div class="grid grid-cols-2 gap-1.5 flex-1">
+          <button id="btn-lean-back" class="btn-control bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-xl font-bold text-xs flex flex-col items-center justify-center p-2 shadow">
+            <span class="text-base">↩️</span>
+            <span class="text-[9px] opacity-80">Lean Back</span>
+          </button>
+          <button id="btn-lean-fwd" class="btn-control bg-amber-600 hover:bg-amber-500 active:bg-amber-400 text-white rounded-xl font-bold text-xs flex flex-col items-center justify-center p-2 shadow">
+            <span class="text-base">↪️</span>
+            <span class="text-[9px] opacity-80">Lean Forward</span>
+          </button>
+        </div>
+        <button id="btn-arm-reach" class="btn-control bg-rose-600 hover:bg-rose-500 active:bg-rose-400 text-white rounded-xl font-bold text-xs py-2 shadow flex items-center justify-center gap-1">
+          <span>🖐️</span> Reach Arm to Cake
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Quick Reset Button -->
+    <div class="mt-2 flex justify-between items-center px-1">
+      <button onclick="resetLevel()" class="text-slate-400 hover:text-amber-400 text-xs font-semibold flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-slate-800 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        Reset Level
+      </button>
+      <span class="text-[10px] text-slate-500">Goal: Duck limbo & touch cake with hand!</span>
+    </div>
+  </div>
+
+  <script>
+    // Module aliases
+    const { Engine, World, Bodies, Body, Constraint, Composite, Vector } = Matter;
+
+    // Game Variables
+    let engine, world;
+    let canvas, ctx;
+    let currentLevel = 1;
+    let gameState = 'PLAYING'; // 'PLAYING', 'WON', 'FAILED'
+    
+    // Physical Bodies
+    let ragdoll = {};
+    let ground, limboPole, limboBar, table, cake;
+    
+    // Level Configuration (Limbo Height Drop Tuning)
+    const BASE_LIMBO_CLEARANCE = 175; // Starting clearance height from ground
+    const HEIGHT_DECREMENT = 14;      // Height drop per level
+    let currentPoleClearance = BASE_LIMBO_CLEARANCE;
+    
+    // Control States
+    const keys = {
+      left: false,
+      right: false,
+      leanBack: false,
+      leanFwd: false,
+      crouch: false,
+      armReach: false
+    };
+
+    // Canvas Setup & Resize
+    function initCanvas() {
+      canvas = document.getElementById('game-canvas');
+      ctx = canvas.getContext('2d');
+      
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+    }
+
+    // Initialize Physics World
+    function initGame() {
+      initCanvas();
+
+      // Create Engine with balanced gravity
+      engine = Engine.create({
+        gravity: { x: 0, y: 1.0 }
+      });
+      world = engine.world;
+
+      setupScene();
+      setupControlButtons();
+
+      // Window Resize Listener
+      window.addEventListener('resize', () => {
+        initCanvas();
+        resetLevel();
+      });
+
+      // Start Custom Game Loop
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Create World Objects & Ragdoll
+    function setupScene() {
+      Composite.clear(world, false);
+      gameState = 'PLAYING';
+      document.getElementById('modal-overlay').classList.add('hidden');
+      document.getElementById('status-badge').textContent = 'Bend Back & Reach Cake! 🍰';
+      document.getElementById('status-badge').className = 'bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700 text-xs sm:text-sm font-bold text-amber-300';
+
+      const w = canvas.width;
+      const h = canvas.height;
+      const groundY = h - 30;
+
+      // 1. Ground
+      ground = Bodies.rectangle(w / 2, groundY + 25, w * 3, 50, { 
+        isStatic: true, 
+        friction: 0.9,
+        label: 'ground'
+      });
+
+      // 2. Limbo Pole & Lowering Bar
+      const poleX = w * 0.48;
+      // Calculate clearance based on current level
+      currentPoleClearance = Math.max(65, BASE_LIMBO_CLEARANCE - (currentLevel - 1) * HEIGHT_DECREMENT);
+      const barY = groundY - currentPoleClearance;
+
+      // Limbo Horizontal Bar
+      limboBar = Bodies.rectangle(poleX, barY, 14, 8, {
+        density: 0.005,
+        friction: 0.5,
+        restitution: 0.1,
+        label: 'limboBar'
+      });
+      
+      // Light support constraint holding limbo bar in place until bumped
+      limboPole = Constraint.create({
+        bodyA: limboBar,
+        pointB: { x: poleX, y: barY },
+        stiffness: 0.25,
+        length: 0
+      });
+
+      // 3. Table & Cake
+      const tableX = w * 0.84;
+      const tableHeight = 65;
+      const tableWidth = 60;
+      const tableY = groundY - tableHeight / 2;
+
+      table = Bodies.rectangle(tableX, tableY, tableWidth, tableHeight, { 
+        isStatic: true,
+        friction: 0.5,
+        label: 'table' 
+      });
+
+      const cakeY = groundY - tableHeight - 12;
+      cake = Bodies.circle(tableX, cakeY, 14, {
+        isStatic: true,
+        isSensor: true,
+        label: 'cake'
+      });
+
+      // Add Environment to World
+      Composite.add(world, [ground, limboBar, limboPole, table, cake]);
+
+      // 4. Create Ragdoll Stick Figure (perfectly upright layout)
+      const startX = Math.max(50, w * 0.15);
+      createUprightRagdoll(startX, groundY);
+    }
+
+    // Build Stick Figure Ragdoll that spawns naturally upright
+    function createUprightRagdoll(startX, groundY) {
+      const group = Body.nextGroup(true);
+
+      // Heights from ground up:
+      // Feet: groundY - 8
+      // Lower Leg: length 34
+      // Upper Leg: length 34
+      // Torso: height 60
+      // Head: radius 16
+
+      const footY = groundY - 8;
+      const kneeY = groundY - 40;
+      const hipY = groundY - 72;
+      const torsoY = groundY - 100;
+      const headY = groundY - 140;
+
+      // Bodies
+      const head = Bodies.circle(startX, headY, 16, { collisionFilter: { group }, density: 0.002, friction: 0.2, label: 'head' });
+      const torso = Bodies.rectangle(startX, torsoY, 18, 56, { collisionFilter: { group }, density: 0.005, friction: 0.2, label: 'torso' });
+      
+      const upperLegL = Bodies.rectangle(startX - 6, (hipY + kneeY)/2, 10, 32, { collisionFilter: { group }, density: 0.004 });
+      const lowerLegL = Bodies.rectangle(startX - 6, (kneeY + footY)/2, 9, 32, { collisionFilter: { group }, density: 0.004 });
+      const footL = Bodies.rectangle(startX - 4, footY, 18, 10, { collisionFilter: { group }, density: 0.008, friction: 0.9, label: 'foot' });
+
+      const upperLegR = Bodies.rectangle(startX + 6, (hipY + kneeY)/2, 10, 32, { collisionFilter: { group }, density: 0.004 });
+      const lowerLegR = Bodies.rectangle(startX + 6, (kneeY + footY)/2, 9, 32, { collisionFilter: { group }, density: 0.004 });
+      const footR = Bodies.rectangle(startX + 8, footY, 18, 10, { collisionFilter: { group }, density: 0.008, friction: 0.9, label: 'foot' });
+
+      const upperArm = Bodies.rectangle(startX + 12, torsoY - 8, 8, 28, { collisionFilter: { group }, density: 0.002 });
+      const lowerArm = Bodies.rectangle(startX + 22, torsoY - 8, 7, 26, { collisionFilter: { group }, density: 0.002 });
+      const hand = Bodies.circle(startX + 34, torsoY - 8, 8, { collisionFilter: { group }, density: 0.002, label: 'hand' });
+
+      // Tight Joint Constraints
+      const stiffness = 0.95;
+      const neck = Constraint.create({ bodyA: head, pointB: { x: 0, y: 16 }, bodyB: torso, pointB: { x: 0, y: -27 }, stiffness });
+      
+      // Hip & Leg Joints
+      const hipL = Constraint.create({ bodyA: torso, pointB: { x: -6, y: 26 }, bodyB: upperLegL, pointB: { x: 0, y: -15 }, stiffness });
+      const kneeL = Constraint.create({ bodyA: upperLegL, pointB: { x: 0, y: 15 }, bodyB: lowerLegL, pointB: { x: 0, y: -15 }, stiffness });
+      const ankleL = Constraint.create({ bodyA: lowerLegL, pointB: { x: 0, y: 15 }, bodyB: footL, pointB: { x: -2, y: -4 }, stiffness });
+
+      const hipR = Constraint.create({ bodyA: torso, pointB: { x: 6, y: 26 }, bodyB: upperLegR, pointB: { x: 0, y: -15 }, stiffness });
+      const kneeR = Constraint.create({ bodyA: upperLegR, pointB: { x: 0, y: 15 }, bodyB: lowerLegR, pointB: { x: 0, y: -15 }, stiffness });
+      const ankleR = Constraint.create({ bodyA: lowerLegR, pointB: { x: 0, y: 15 }, bodyB: footR, pointB: { x: -2, y: -4 }, stiffness });
+
+      // Arm & Hand Joints
+      const shoulder = Constraint.create({ bodyA: torso, pointB: { x: 6, y: -18 }, bodyB: upperArm, pointB: { x: 0, y: -12 }, stiffness: 0.8 });
+      const elbow = Constraint.create({ bodyA: upperArm, pointB: { x: 0, y: 12 }, bodyB: lowerArm, pointB: { x: 0, y: -11 }, stiffness: 0.85 });
+      const wrist = Constraint.create({ bodyA: lowerArm, pointB: { x: 0, y: 11 }, bodyB: hand, pointB: { x: 0, y: 0 }, stiffness: 0.9 });
+
+      ragdoll = {
+        head, torso,
+        upperLegL, lowerLegL, footL,
+        upperLegR, lowerLegR, footR,
+        upperArm, lowerArm, hand,
+        constraints: [neck, hipL, kneeL, ankleL, hipR, kneeR, ankleR, shoulder, elbow, wrist]
+      };
+
+      Composite.add(world, [
+        head, torso, upperLegL, lowerLegL, footL, upperLegR, lowerLegR, footR, upperArm, lowerArm, hand,
+        ...ragdoll.constraints
+      ]);
+    }
+
+    // Touch / Button Binding Setup
+    function setupControlButtons() {
+      const bind = (id, key) => {
+        const btn = document.getElementById(id);
+        const start = (e) => { e.preventDefault(); keys[key] = true; };
+        const end = (e) => { e.preventDefault(); keys[key] = false; };
+
+        btn.addEventListener('touchstart', start, { passive: false });
+        btn.addEventListener('touchend', end, { passive: false });
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', end);
+        btn.addEventListener('mouseleave', end);
+      };
+
+      bind('btn-left', 'left');
+      bind('btn-right', 'right');
+      bind('btn-lean-back', 'leanBack');
+      bind('btn-lean-fwd', 'leanFwd');
+      bind('btn-crouch', 'crouch');
+      bind('btn-arm-reach', 'armReach');
+    }
+
+    // Apply Active Balance Physics Controls
+    function applyPhysicsControls() {
+      if (gameState !== 'PLAYING' || !ragdoll.torso) return;
+
+      const { torso, head, upperLegL, upperLegR, footL, footR, upperArm, lowerArm, hand } = ragdoll;
+
+      // Active Target Angle System (Upright Default = 0 rad)
+      let targetTorsoAngle = 0;
+      if (keys.leanBack) targetTorsoAngle = -0.95; // Lean back under bar (~54 deg)
+      if (keys.leanFwd) targetTorsoAngle = 0.65;   // Lean forward towards cake
+
+      // Active Torque to maintain or transition towards target angle
+      const currentAngle = torso.angle;
+      const angleDiff = targetTorsoAngle - currentAngle;
+      const restoringTorque = angleDiff * 0.08 - torso.angularVelocity * 0.25;
+      Body.setAngularVelocity(torso, torso.angularVelocity + restoringTorque);
+
+      // Keep feet flat on ground when upright
+      if (!keys.leanBack && Math.abs(currentAngle) < 0.3) {
+        Body.setAngle(footL, 0);
+        Body.setAngle(footR, 0);
+      }
+
+      // 1. Horizontal Stepping / Sliding Movement
+      if (keys.left) {
+        Body.applyForce(torso, torso.position, { x: -0.006, y: 0 });
+        Body.applyForce(footL, footL.position, { x: -0.005, y: 0 });
+        Body.applyForce(footR, footR.position, { x: -0.005, y: 0 });
+      }
+      if (keys.right) {
+        Body.applyForce(torso, torso.position, { x: 0.007, y: 0 });
+        Body.applyForce(footL, footL.position, { x: 0.005, y: 0 });
+        Body.applyForce(footR, footR.position, { x: 0.005, y: 0 });
+      }
+
+      // 2. Crouch / Bend Knees
+      if (keys.crouch) {
+        Body.applyForce(torso, torso.position, { x: 0, y: 0.012 });
+        Body.applyForce(upperLegL, upperLegL.position, { x: -0.002, y: 0.004 });
+        Body.applyForce(upperLegR, upperLegR.position, { x: -0.002, y: 0.004 });
+      }
+
+      // 3. Arm Reach Forward
+      if (keys.armReach) {
+        Body.applyForce(upperArm, upperArm.position, { x: 0.005, y: -0.006 });
+        Body.applyForce(hand, hand.position, { x: 0.008, y: -0.004 });
+        Body.setAngularVelocity(upperArm, 0.12);
+        Body.setAngularVelocity(lowerArm, 0.1);
+      }
+    }
+
+    // Main Game Loop & Logic Check
+    function gameLoop() {
+      Engine.update(engine, 1000 / 60);
+
+      applyPhysicsControls();
+      checkGameRules();
+      renderScene();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Verify Win / Fail Conditions
+    function checkGameRules() {
+      if (gameState !== 'PLAYING') return;
+
+      const groundY = canvas.height - 30;
+
+      // 1. Fail: Head touches ground
+      if (ragdoll.head && ragdoll.head.position.y >= groundY - 16) {
+        triggerFail("Ouch! Your head hit the ground!");
+        return;
+      }
+
+      // 2. Fail: Limbo bar knocked down off pole
+      if (limboBar) {
+        const barDistFromSupport = Math.abs(limboBar.position.x - canvas.width * 0.48);
+        const barDropped = limboBar.position.y > (groundY - currentPoleClearance + 18);
+        if (barDistFromSupport > 20 || barDropped || Math.abs(limboBar.angle) > 0.5) {
+          triggerFail("You knocked down the limbo pole!");
+          return;
+        }
+      }
+
+      // 3. Win Check: Hand touches cake after going under limbo pole
+      if (ragdoll.hand && cake) {
+        const dx = ragdoll.hand.position.x - cake.position.x;
+        const dy = ragdoll.hand.position.y - cake.position.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Hand touches cake (within 30px radius)
+        if (dist < 30) {
+          // Verify player passed limbo pole (torso x > pole x)
+          if (ragdoll.torso.position.x > canvas.width * 0.45) {
+            triggerWin();
+          }
+        }
+      }
+    }
+
+    function triggerFail(reason) {
+      gameState = 'FAILED';
+      document.getElementById('status-badge').textContent = '❌ FAILED!';
+      document.getElementById('status-badge').className = 'bg-rose-900/90 text-rose-200 px-3 py-1.5 rounded-xl font-bold text-xs sm:text-sm';
+
+      document.getElementById('modal-title').textContent = 'GAME OVER';
+      document.getElementById('modal-title').className = 'text-3xl font-extrabold text-rose-500 text-center tracking-wide';
+      document.getElementById('modal-msg').textContent = reason;
+      document.getElementById('modal-action-btn').textContent = 'TRY AGAIN';
+      document.getElementById('modal-action-btn').className = 'bg-rose-500 hover:bg-rose-400 text-slate-950 px-6 py-3 rounded-2xl font-black text-lg shadow-lg active:scale-95 transition-all';
+      
+      document.getElementById('modal-overlay').classList.remove('hidden');
+    }
+
+    function triggerWin() {
+      gameState = 'WON';
+      confetti({ particleCount: 90, spread: 80, origin: { y: 0.4 } });
+
+      document.getElementById('status-badge').textContent = '🎉 CAKE SECURED!';
+      document.getElementById('status-badge').className = 'bg-emerald-900/90 text-emerald-200 px-3 py-1.5 rounded-xl font-bold text-xs sm:text-sm';
+
+      document.getElementById('modal-title').textContent = `LEVEL ${currentLevel} CLEARED!`;
+      document.getElementById('modal-title').className = 'text-3xl font-extrabold text-emerald-400 text-center tracking-wide';
+      document.getElementById('modal-msg').textContent = `Flexibility master! The limbo pole will be lower next level!`;
+      document.getElementById('modal-action-btn').textContent = 'NEXT LEVEL ➔';
+      document.getElementById('modal-action-btn').className = 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-6 py-3 rounded-2xl font-black text-lg shadow-lg active:scale-95 transition-all';
+
+      document.getElementById('modal-overlay').classList.remove('hidden');
+    }
+
+    function handleModalAction() {
+      if (gameState === 'WON') {
+        currentLevel++;
+        document.getElementById('level-display').textContent = currentLevel;
+      }
+      setupScene();
+    }
+
+    function resetLevel() {
+      setupScene();
+    }
+
+    // Custom Canvas Rendering
+    function renderScene() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const groundY = canvas.height - 30;
+      const poleX = canvas.width * 0.48;
+
+      // Draw Ground
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(0, groundY, canvas.width, 40);
+      ctx.fillStyle = '#22c55e';
+      ctx.fillRect(0, groundY, canvas.width, 5); // Grass line
+
+      // Draw Limbo Vertical Stand
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(poleX, groundY);
+      ctx.lineTo(poleX, groundY - currentPoleClearance - 30);
+      ctx.stroke();
+
+      // Draw Height Clearance Indicator
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 11px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Pole Height: ${Math.round(currentPoleClearance)}px`, poleX, groundY - currentPoleClearance - 36);
+
+      // Draw Limbo Horizontal Bar
+      if (limboBar) {
+        ctx.save();
+        ctx.translate(limboBar.position.x, limboBar.position.y);
+        ctx.rotate(limboBar.angle);
+        ctx.fillStyle = '#ef4444'; // Red bar
+        ctx.fillRect(-60, -5, 120, 10);
+        // Yellow warning stripes on limbo bar
+        ctx.fillStyle = '#facc15';
+        for(let i = -50; i < 60; i += 20) {
+          ctx.fillRect(i, -5, 8, 10);
+        }
+        ctx.restore();
+      }
+
+      // Draw Table
+      if (table) {
+        const tw = 60, th = 65;
+        const tx = table.position.x - tw / 2;
+        const ty = table.position.y - th / 2;
+        ctx.fillStyle = '#78350f'; // Wooden brown
+        ctx.fillRect(tx, ty, tw, 10); // Table top
+        ctx.fillRect(tx + 6, ty + 10, 8, th - 10); // Left leg
+        ctx.fillRect(tx + tw - 14, ty + 10, 8, th - 10); // Right leg
+      }
+
+      // Draw Cake
+      if (cake) {
+        const cx = cake.position.x;
+        const cy = cake.position.y;
+        
+        // Plate
+        ctx.fillStyle = '#e2e8f0';
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 8, 16, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Layer Cake
+        ctx.fillStyle = '#f472b6'; // Pink frosting
+        ctx.fillRect(cx - 12, cy - 6, 24, 14);
+        ctx.fillStyle = '#fde047'; // Sponge layer
+        ctx.fillRect(cx - 12, cy, 24, 4);
+
+        // Candle & Flame
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(cx - 1.5, cy - 12, 3, 6);
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.arc(cx, cy - 14, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw Stick Figure Ragdoll
+      if (ragdoll.head) {
+        ctx.strokeStyle = '#f8fafc';
+        ctx.fillStyle = '#f8fafc';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+
+        const drawBone = (bodyA, bodyB) => {
+          ctx.beginPath();
+          ctx.moveTo(bodyA.position.x, bodyA.position.y);
+          ctx.lineTo(bodyB.position.x, bodyB.position.y);
+          ctx.stroke();
+        };
+
+        // Torso & Limbs
+        drawBone(ragdoll.head, ragdoll.torso);
+        drawBone(ragdoll.torso, ragdoll.upperLegL);
+        drawBone(ragdoll.upperLegL, ragdoll.lowerLegL);
+        drawBone(ragdoll.lowerLegL, ragdoll.footL);
+
+        drawBone(ragdoll.torso, ragdoll.upperLegR);
+        drawBone(ragdoll.upperLegR, ragdoll.lowerLegR);
+        drawBone(ragdoll.lowerLegR, ragdoll.footR);
+
+        drawBone(ragdoll.torso, ragdoll.upperArm);
+        drawBone(ragdoll.upperArm, ragdoll.lowerArm);
+        drawBone(ragdoll.lowerArm, ragdoll.hand);
+
+        // Feet rendering
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(ragdoll.footL.position.x - 8, ragdoll.footL.position.y - 3, 16, 6);
+        ctx.fillRect(ragdoll.footR.position.x - 8, ragdoll.footR.position.y - 3, 16, 6);
+
+        // Head rendering
+        ctx.save();
+        ctx.translate(ragdoll.head.position.x, ragdoll.head.position.y);
+        ctx.rotate(ragdoll.head.angle);
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.arc(0, 0, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eyes & Facial Expression
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(5, -3, 2.5, 0, Math.PI * 2); // Right Eye
+        ctx.arc(-3, -3, 2.5, 0, Math.PI * 2); // Left Eye
+        ctx.fill();
+
+        // Mouth expression
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (gameState === 'FAILED') {
+          ctx.arc(1, 6, 4, Math.PI, 0); // Disappointed curve
+        } else {
+          ctx.arc(1, 3, 4, 0, Math.PI); // Happy smile
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        // Glowing Hand Marker
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(ragdoll.hand.position.x, ragdoll.hand.position.y, 7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Web Share API Integration
+    async function shareGame() {
+      const shareData = {
+        title: 'Limbo Cake Grabber',
+        text: `I passed Level ${currentLevel} in Limbo Cake Grabber! Can you duck lower and snatch the cake? 🍰🤸`,
+        url: window.location.href
+      };
+
+      if (navigator.share) {
+        try {
+          await navigator.share(shareData);
+        } catch (err) {
+          console.log('Share dismissed');
+        }
+      } else {
+        // Fallback: Copy link to clipboard
+        try {
+          await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+          alert('Challenge link copied to clipboard!');
+        } catch (err) {
+          alert(`I reached Level ${currentLevel} in Limbo Cake Grabber!`);
+        }
+      }
+    }
+
+    // Initialize Game on Window Load
+    window.onload = initGame;
+  </script>
+</body>
+</html>
