@@ -11,7 +11,6 @@
             background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
             background-size: 20px 20px;
         }
-        /* Touch safety */
         .touch-none {
             touch-action: none;
         }
@@ -21,7 +20,7 @@
 
     <!-- Header -->
     <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700 p-3 sticky top-0 z-10">
-        <div class="max-w-2xl mx-auto flex justify-between items-center">
+        <div class="max-w-xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-3">
                 <i class="fa-solid fa-fire-flame-curved text-amber-500 text-xl"></i>
                 <h1 class="text-lg font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Matchstick Puzzles</h1>
@@ -38,7 +37,7 @@
     </header>
 
     <!-- Main Game Container -->
-    <main class="flex-1 max-w-2xl w-full mx-auto p-3 flex flex-col justify-between">
+    <main class="flex-1 max-w-xl w-full mx-auto p-3 flex flex-col justify-between">
         
         <!-- Level Info & Instructions -->
         <div class="bg-slate-800/90 rounded-xl p-3 md:p-4 border border-slate-700 shadow-xl mb-3 text-center">
@@ -51,15 +50,15 @@
             <h2 id="level-instruction" class="text-base md:text-lg font-bold text-white mb-0.5">
                 Move 1 match to transform '6' into '9'.
             </h2>
-            <p id="level-subtext" class="text-xs text-slate-400">Tap a match stick to select it, then tap an empty line slot to move it.</p>
+            <p id="level-subtext" class="text-xs text-slate-400">Tap a matchstick to select it, then tap an empty slot to move it.</p>
         </div>
 
         <!-- Canvas Container -->
-        <div class="relative flex-1 flex items-center justify-center bg-slate-950/60 rounded-xl border border-slate-800 p-2 min-h-[280px] shadow-inner overflow-hidden">
+        <div class="relative flex-1 flex items-center justify-center bg-slate-950/60 rounded-xl border border-slate-800 p-2 min-h-[280px] max-h-[340px] shadow-inner overflow-hidden">
             <canvas id="gameCanvas" class="touch-none cursor-pointer max-w-full max-h-full"></canvas>
             
             <!-- Toast Notification -->
-            <div id="toast" class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 text-white px-3 py-1.5 rounded-full shadow-2xl text-xs font-medium opacity-0 transition-opacity duration-300 pointer-events-none flex items-center gap-2">
+            <div id="toast" class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 text-white px-3 py-1.5 rounded-full shadow-2xl text-xs font-medium opacity-0 transition-opacity duration-300 pointer-events-none flex items-center gap-2 z-20">
                 <i class="fa-solid fa-info-circle text-amber-400"></i> <span id="toast-msg">Notification</span>
             </div>
         </div>
@@ -67,8 +66,11 @@
         <!-- Action Bar -->
         <div class="mt-3 flex flex-wrap justify-between items-center gap-2 bg-slate-800/90 rounded-xl p-3 border border-slate-700 shadow-xl">
             <div class="flex gap-2">
+                <button id="btn-undo" disabled class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none">
+                    <i class="fa-solid fa-rotate-left"></i> Undo
+                </button>
                 <button id="btn-reset" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-rotate-left"></i> Reset
+                    <i class="fa-solid fa-arrows-rotate"></i> Reset
                 </button>
                 <button id="btn-hint" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
                     <i class="fa-regular fa-lightbulb text-amber-400"></i> Hint
@@ -76,6 +78,9 @@
             </div>
 
             <div class="flex gap-2">
+                <button id="btn-submit" class="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-check"></i> Submit
+                </button>
                 <button id="btn-share-score" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
                     <i class="fa-solid fa-share-nodes"></i> Share Level
                 </button>
@@ -86,12 +91,12 @@
 
     <!-- Levels Modal -->
     <div id="levels-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6 max-w-md w-full shadow-2xl">
+        <div class="bg-slate-800 rounded-2xl border border-slate-700 p-5 max-w-sm w-full shadow-2xl">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold">Select Level</h3>
+                <h3 class="text-base font-bold">Select Level</h3>
                 <button id="close-levels" class="text-slate-400 hover:text-white text-xl">&times;</button>
             </div>
-            <div id="levels-grid" class="grid grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
+            <div id="levels-grid" class="grid grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
                 <!-- Dynamically Populated -->
             </div>
         </div>
@@ -99,17 +104,17 @@
 
     <!-- Win Modal -->
     <div id="win-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6 max-w-md w-full shadow-2xl text-center">
-            <div class="w-16 h-16 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+        <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6 max-w-sm w-full shadow-2xl text-center">
+            <div class="w-14 h-14 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
                 <i class="fa-solid fa-trophy"></i>
             </div>
-            <h3 class="text-2xl font-bold text-white mb-2">Puzzle Solved!</h3>
-            <p id="win-description" class="text-slate-300 text-sm mb-6">Great job! You transformed the shape in the target number of moves.</p>
-            <div class="flex gap-3 justify-center">
-                <button id="btn-win-share" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-sm font-semibold transition flex items-center gap-2">
-                    <i class="fa-solid fa-share-nodes"></i> Share Victory
+            <h3 class="text-xl font-bold text-white mb-1.5">Puzzle Solved!</h3>
+            <p id="win-description" class="text-slate-300 text-xs mb-5">Great job! You transformed the shape in the target number of moves.</p>
+            <div class="flex gap-2 justify-center">
+                <button id="btn-win-share" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-share-nodes"></i> Share
                 </button>
-                <button id="btn-next-level" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                <button id="btn-next-level" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
                     Next Level <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </div>
@@ -118,22 +123,22 @@
 
     <!-- Custom Puzzle Builder Modal -->
     <div id="builder-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 rounded-2xl border border-slate-700 p-6 max-w-lg w-full shadow-2xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold flex items-center gap-2">
+        <div class="bg-slate-800 rounded-2xl border border-slate-700 p-5 max-w-md w-full shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-base font-bold flex items-center gap-2">
                     <i class="fa-solid fa-pen-ruler text-indigo-400"></i> Puzzle Creator
                 </h3>
                 <button id="close-builder" class="text-slate-400 hover:text-white text-xl">&times;</button>
             </div>
             
-            <div class="space-y-4 overflow-y-auto pr-1 flex-1">
+            <div class="space-y-3 overflow-y-auto pr-1 flex-1">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Instruction</label>
-                    <input id="build-instruction" type="text" placeholder="e.g. Move 1 match to make 'B' into '8'" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                    <input id="build-instruction" type="text" placeholder="e.g. Move 1 match to make 'B' into '8'" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-indigo-500">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Allowed Moves</label>
-                    <input id="build-moves" type="number" min="1" max="5" value="1" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                    <input id="build-moves" type="number" min="1" max="5" value="1" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-indigo-500">
                 </div>
 
                 <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700">
@@ -144,98 +149,79 @@
                             <button id="btn-set-target" class="px-2.5 py-1 bg-slate-700 text-xs rounded font-medium">Target</button>
                         </div>
                     </div>
-                    <p class="text-xs text-slate-400 mb-3">Click matchstick positions to toggle matches on or off.</p>
+                    <p class="text-[11px] text-slate-400 mb-2">Click matchstick positions to toggle matches on or off.</p>
 
-                    <!-- Mini Grid Selector -->
                     <div class="flex justify-center">
-                        <canvas id="builderCanvas" width="280" height="280" class="border border-slate-800 rounded-lg bg-slate-950 cursor-pointer"></canvas>
+                        <canvas id="builderCanvas" width="240" height="240" class="border border-slate-800 rounded-lg bg-slate-950 cursor-pointer"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="mt-4 pt-4 border-t border-slate-700 flex gap-2 justify-end">
-                <button id="btn-builder-reset" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-sm rounded-xl font-medium">Clear Canvas</button>
-                <button id="btn-share-custom" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-sm rounded-xl font-bold flex items-center gap-2">
-                    <i class="fa-solid fa-share-nodes"></i> Share Puzzle Link
+            <div class="mt-3 pt-3 border-t border-slate-700 flex gap-2 justify-end">
+                <button id="btn-builder-reset" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-xs rounded-lg font-medium">Clear Canvas</button>
+                <button id="btn-share-custom" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-xs rounded-lg font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-share-nodes"></i> Share Link
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Script Game Logic -->
     <script>
         // Preset Levels Definition
-        // Edges defined on a 3x3 Grid of Points (x: 0..2, y: 0..2)
-        // Edge format: "x1,y1-x2,y2" where x1,y1 < x2,y2 lexicographically
         const PRESET_LEVELS = [
             {
                 id: 1,
                 title: "Number '6' to '9'",
                 instruction: "Move 1 match to transform '6' into '9'.",
                 moves: 1,
-                // Digital 6 (6 matches)
-                initial: ["0,0-1,0", "0,0-0,1", "0,1-1,1", "0,1-0,2", "0,2-1,2", "1,1-1,2"],
-                // Digital 9 (6 matches)
-                target: ["0,0-1,0", "0,0-0,1", "0,1-1,1", "1,0-1,1", "0,2-1,2", "1,1-1,2"],
-                hint: "Move the bottom-left vertical match to the top-right position."
+                initial: ["0,0-1,0", "0,0-0,1", "0,1-1,1", "0,1-0,2", "1,1-1,2", "0,2-1,2"],
+                target:  ["0,0-1,0", "0,0-0,1", "1,0-1,1", "0,1-1,1", "1,1-1,2", "0,2-1,2"],
+                hint: "Move the bottom-left vertical stick to top-right."
             },
             {
                 id: 2,
                 title: "Letter 'E' to 'P'",
-                instruction: "Move 1 match to change the letter 'E' into 'P'.",
+                instruction: "Move 1 match to transform 'E' into 'P'.",
                 moves: 1,
-                // Letter 'E' (5 matches)
-                initial: ["0,0-0,1", "0,1-0,2", "0,0-1,0", "0,1-1,1", "0,2-1,2"],
-                // Letter 'P' (5 matches)
-                target: ["0,0-0,1", "0,1-0,2", "0,0-1,0", "0,1-1,1", "1,0-1,1"],
-                hint: "Move the bottom horizontal match to the top-right vertical position."
+                initial: ["0,0-1,0", "0,0-0,1", "0,1-1,1", "0,1-0,2", "0,2-1,2"],
+                target:  ["0,0-1,0", "0,0-0,1", "1,0-1,1", "0,1-1,1", "0,1-0,2"],
+                hint: "Move the bottom horizontal stick to top-right vertical position."
             },
             {
                 id: 3,
                 title: "Number '0' to '6'",
                 instruction: "Move 1 match to turn '0' into '6'.",
                 moves: 1,
-                // Digital 0 (6 matches)
                 initial: ["0,0-1,0", "0,0-0,1", "1,0-1,1", "0,1-0,2", "1,1-1,2", "0,2-1,2"],
-                // Digital 6 (6 matches)
-                target: ["0,0-1,0", "0,0-0,1", "0,1-1,1", "0,1-0,2", "1,1-1,2", "0,2-1,2"],
-                hint: "Move the top-right vertical match into the middle horizontal slot."
+                target:  ["0,0-1,0", "0,0-0,1", "0,1-1,1", "0,1-0,2", "1,1-1,2", "0,2-1,2"],
+                hint: "Move the top-right vertical stick to the center horizontal slot."
             },
             {
                 id: 4,
                 title: "Number '2' to '5'",
                 instruction: "Move 2 matches to transform '2' into '5'.",
                 moves: 2,
-                // Digital 2 (5 matches)
                 initial: ["0,0-1,0", "1,0-1,1", "0,1-1,1", "0,1-0,2", "0,2-1,2"],
-                // Digital 5 (5 matches)
-                target: ["0,0-1,0", "0,0-0,1", "0,1-1,1", "1,1-1,2", "0,2-1,2"],
-                hint: "Move the top-right and bottom-left verticals to the opposite sides."
+                target:  ["0,0-1,0", "0,0-0,1", "0,1-1,1", "1,1-1,2", "0,2-1,2"],
+                hint: "Swap top-right and bottom-left sticks to top-left and bottom-right."
             },
             {
                 id: 5,
-                title: "Vertical to Horizontal Triangles",
-                instruction: "Move 1 match to turn 2 vertical triangles into 2 horizontal triangles.",
-                moves: 1,
-                // Diamond split vertically (5 matches)
-                initial: ["0,1-1,0", "1,0-2,1", "2,1-1,2", "1,2-0,1", "1,0-1,2"],
-                // Diamond split horizontally (5 matches)
-                target: ["0,1-1,0", "1,0-2,1", "2,1-1,2", "1,2-0,1", "0,1-2,1"],
-                hint: "Move the vertical middle match to lay horizontally across the center."
+                title: "Flip Triangles Down",
+                instruction: "Move 2 matches to point the double triangle downwards.",
+                moves: 2,
+                initial: ["0,1-1,0", "1,0-2,1", "0,1-1,1", "1,1-2,1"],
+                target:  ["0,1-1,1", "1,1-2,1", "0,1-1,2", "1,2-2,1"],
+                hint: "Move the top two diagonal matches down to the bottom slots."
             }
         ];
 
-        // All valid possible edges in 3x3 point grid (3x3 grid = 2x2 cells)
         const ALL_SLOTS = [];
         for (let x = 0; x <= 2; x++) {
             for (let y = 0; y <= 2; y++) {
-                // Horizontal edge
                 if (x < 2) ALL_SLOTS.push(`${x},${y}-${x+1},${y}`);
-                // Vertical edge
                 if (y < 2) ALL_SLOTS.push(`${x},${y}-${x},${y+1}`);
-                // Diagonal 1
                 if (x < 2 && y < 2) ALL_SLOTS.push(`${x},${y}-${x+1},${y+1}`);
-                // Diagonal 2
                 if (x < 2 && y > 0) ALL_SLOTS.push(`${x},${y}-${x+1},${y-1}`);
             }
         }
@@ -244,8 +230,9 @@
         let currentLevel = null;
         let currentMatches = [];
         let movesMade = 0;
-        let selectedMatch = null; // Index of selected match
+        let selectedMatch = null;
         let isCustom = false;
+        let moveHistory = [];
 
         // Builder State
         let builderState = {
@@ -253,7 +240,7 @@
             moves: 1,
             initial: [],
             target: [],
-            mode: 'initial' // 'initial' or 'target'
+            mode: 'initial'
         };
 
         // Canvas Elements & Setup
@@ -262,28 +249,17 @@
         const bCanvas = document.getElementById('builderCanvas');
         const bCtx = bCanvas.getContext('2d');
 
-        // Initial setup
-        window.addEventListener('resize', resizeCanvas);
-
         function resizeCanvas() {
+            if (!canvas || !canvas.parentElement) return;
             const container = canvas.parentElement;
-            const size = Math.min(container.clientWidth - 16, container.clientHeight - 16, 360);
-            canvas.width = size;
-            canvas.height = size;
+            const size = Math.min(container.clientWidth - 16, container.clientHeight - 16, 340);
+            canvas.width = Math.max(size, 240);
+            canvas.height = Math.max(size, 240);
             drawGame();
         }
 
-        // Standardize Edge ID formatting
-        function formatEdge(p1, p2) {
-            const [x1, y1] = p1;
-            const [x2, y2] = p2;
-            if (x1 < x2 || (x1 === x2 && y1 <= y2)) {
-                return `${x1},${y1}-${x2},${y2}`;
-            }
-            return `${x2},${y2}-${x1},${y1}`;
-        }
+        window.addEventListener('resize', resizeCanvas);
 
-        // Convert Point string to Coord Object
         function slotToCoords(slotStr, width, height) {
             const padding = width * 0.15;
             const usableWidth = width - padding * 2;
@@ -303,23 +279,38 @@
             };
         }
 
-        // Game Mechanics
         function loadLevel(levelObj, custom = false) {
+            if (!levelObj || !levelObj.initial) {
+                levelObj = PRESET_LEVELS[0];
+            }
             currentLevel = levelObj;
             isCustom = custom;
             currentMatches = [...levelObj.initial];
             movesMade = 0;
             selectedMatch = null;
+            moveHistory = [];
 
-            document.getElementById('level-title').innerText = custom ? "Custom Puzzle" : `Level ${levelObj.id}: ${levelObj.title}`;
-            document.getElementById('level-instruction').innerText = levelObj.instruction;
-            document.getElementById('moves-left').innerText = levelObj.moves - movesMade;
+            const titleEl = document.getElementById('level-title');
+            const instEl = document.getElementById('level-instruction');
+            const movesEl = document.getElementById('moves-left');
 
+            if (titleEl) titleEl.innerText = custom ? "Custom Puzzle" : `Level ${levelObj.id}: ${levelObj.title}`;
+            if (instEl) instEl.innerText = levelObj.instruction;
+            if (movesEl) movesEl.innerText = levelObj.moves - movesMade;
+
+            updateUndoButton();
             resizeCanvas();
         }
 
+        function updateUndoButton() {
+            const btnUndo = document.getElementById('btn-undo');
+            if (btnUndo) {
+                btnUndo.disabled = moveHistory.length === 0;
+            }
+        }
+
         function checkVictory() {
-            // Compare current matches with target matches (order-independent)
+            if (!currentLevel || !currentLevel.target) return false;
             if (currentMatches.length !== currentLevel.target.length) return false;
             
             const currentSorted = [...currentMatches].sort();
@@ -328,8 +319,7 @@
             return currentSorted.every((val, idx) => val === targetSorted[idx]);
         }
 
-        // Rendering Engine
-        function drawMatchstick(context, x1, y1, x2, y2, isSelected = false, isHovered = false) {
+        function drawMatchstick(context, x1, y1, x2, y2, isSelected = false) {
             const dx = x2 - x1;
             const dy = y2 - y1;
             const angle = Math.atan2(dy, dx);
@@ -339,34 +329,24 @@
             context.translate(x1, y1);
             context.rotate(angle);
 
-            // Shadow
             context.shadowColor = 'rgba(0,0,0,0.4)';
-            context.shadowBlur = 8;
-            context.shadowOffsetY = 4;
+            context.shadowBlur = 6;
+            context.shadowOffsetY = 3;
 
-            // Matchstick Body (Wood)
             context.beginPath();
-            context.roundRect(0, -4, len, 8, 3);
-            context.fillStyle = isSelected ? '#f59e0b' : (isHovered ? '#fcd34d' : '#d97706');
+            context.roundRect(0, -3.5, len, 7, 3);
+            context.fillStyle = isSelected ? '#f59e0b' : '#d97706';
             context.fill();
 
-            // Highlight if selected
             if (isSelected) {
                 context.strokeStyle = '#ef4444';
                 context.lineWidth = 2;
                 context.stroke();
             }
 
-            // Matchstick Head (Sulfur tip)
             context.beginPath();
-            context.arc(len - 2, 0, 6, 0, Math.PI * 2);
-            context.fillStyle = '#dc2626'; // Red head
-            context.fill();
-
-            // Tip Highlight
-            context.beginPath();
-            context.arc(len - 4, -2, 2, 0, Math.PI * 2);
-            context.fillStyle = '#fca5a5';
+            context.arc(len - 2, 0, 5, 0, Math.PI * 2);
+            context.fillStyle = '#dc2626';
             context.fill();
 
             context.restore();
@@ -378,7 +358,7 @@
             context.moveTo(x1, y1);
             context.lineTo(x2, y2);
             context.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-            context.lineWidth = 6;
+            context.lineWidth = 5;
             context.lineCap = 'round';
             context.stroke();
             context.restore();
@@ -395,32 +375,29 @@
             for (let x = 0; x <= 2; x++) {
                 for (let y = 0; y <= 2; y++) {
                     context.beginPath();
-                    context.arc(padding + x * dx, padding + y * dy, 4, 0, Math.PI * 2);
+                    context.arc(padding + x * dx, padding + y * dy, 3.5, 0, Math.PI * 2);
                     context.fill();
                 }
             }
         }
 
         function drawGame() {
-            if (!ctx) return;
+            if (!ctx || !canvas) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             drawGridPoints(ctx, canvas.width, canvas.height);
 
-            // Draw all potential slots
             ALL_SLOTS.forEach(slot => {
                 const { x1, y1, x2, y2 } = slotToCoords(slot, canvas.width, canvas.height);
                 drawEmptySlot(ctx, x1, y1, x2, y2);
             });
 
-            // Draw active matches
             currentMatches.forEach((slot, idx) => {
                 const { x1, y1, x2, y2 } = slotToCoords(slot, canvas.width, canvas.height);
                 drawMatchstick(ctx, x1, y1, x2, y2, idx === selectedMatch);
             });
         }
 
-        // Distance from point (px, py) to line segment (x1, y1) - (x2, y2)
         function distToSegment(px, py, x1, y1, x2, y2) {
             const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
             if (l2 === 0) return Math.hypot(px - x1, py - y1);
@@ -429,18 +406,17 @@
             return Math.hypot(px - (x1 + t * (x2 - x1)), py - (y1 + t * (y2 - y1)));
         }
 
-        // Handle Canvas Interaction
         function handleCanvasClick(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clickX = (e.clientX || e.touches[0].clientX) - rect.left;
-            const clickY = (e.clientY || e.touches[0].clientY) - rect.top;
+            if (!currentLevel) return;
 
-            // Scale clicks to canvas space
+            const rect = canvas.getBoundingClientRect();
+            const clickX = (e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0)) - rect.left;
+            const clickY = (e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0)) - rect.top;
+
             const scale = canvas.width / rect.width;
             const x = clickX * scale;
             const y = clickY * scale;
 
-            // Find clicked match first
             let clickedMatchIdx = -1;
             for (let i = 0; i < currentMatches.length; i++) {
                 const { x1, y1, x2, y2 } = slotToCoords(currentMatches[i], canvas.width, canvas.height);
@@ -451,22 +427,15 @@
             }
 
             if (clickedMatchIdx !== -1) {
-                // Select / Deselect match
                 selectedMatch = (selectedMatch === clickedMatchIdx) ? null : clickedMatchIdx;
                 drawGame();
                 return;
             }
 
-            // If a match is selected, check if clicking an empty slot to move it
             if (selectedMatch !== null) {
-                if (movesMade >= currentLevel.moves) {
-                    showToast("No moves left! Reset to try again.");
-                    return;
-                }
-
                 let targetSlot = null;
                 for (let slot of ALL_SLOTS) {
-                    if (currentMatches.includes(slot)) continue; // Slot occupied
+                    if (currentMatches.includes(slot)) continue;
                     const { x1, y1, x2, y2 } = slotToCoords(slot, canvas.width, canvas.height);
                     if (distToSegment(x, y, x1, y1, x2, y2) < 15) {
                         targetSlot = slot;
@@ -475,20 +444,20 @@
                 }
 
                 if (targetSlot) {
-                    // Execute Move
+                    moveHistory.push([...currentMatches]);
+
                     currentMatches[selectedMatch] = targetSlot;
                     selectedMatch = null;
                     movesMade++;
-                    document.getElementById('moves-left').innerText = currentLevel.moves - movesMade;
+
+                    const movesEl = document.getElementById('moves-left');
+                    if (movesEl) movesEl.innerText = currentLevel.moves - movesMade;
+
+                    updateUndoButton();
                     drawGame();
 
-                    // Check Win Condition
-                    if (checkVictory()) {
-                        setTimeout(() => {
-                            document.getElementById('win-modal').classList.remove('hidden');
-                        }, 200);
-                    } else if (movesMade >= currentLevel.moves) {
-                        showToast("Out of moves! Check your solution or reset.");
+                    if (movesMade > currentLevel.moves) {
+                        showToast("Used extra moves! You can Undo or Submit your solution.");
                     }
                 }
             }
@@ -496,17 +465,18 @@
 
         canvas.addEventListener('click', handleCanvasClick);
 
-        // Toast Helper
         function showToast(msg) {
             const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = msg;
+            const toastMsg = document.getElementById('toast-msg');
+            if (!toast || !toastMsg) return;
+
+            toastMsg.innerText = msg;
             toast.classList.remove('opacity-0');
             setTimeout(() => {
                 toast.classList.add('opacity-0');
             }, 3000);
         }
 
-        // Native Web Share API integration
         async function shareGame(data) {
             if (navigator.share) {
                 try {
@@ -531,7 +501,6 @@
             showToast("Link copied to clipboard!");
         }
 
-        // Custom Level Encoding/Decoding (URL Hash)
         function encodeCustomPuzzle(puzzle) {
             const payload = {
                 i: puzzle.instruction,
@@ -559,8 +528,8 @@
             }
         }
 
-        // Builder Logic
         function drawBuilder() {
+            if (!bCtx || !bCanvas) return;
             bCtx.clearRect(0, 0, bCanvas.width, bCanvas.height);
             drawGridPoints(bCtx, bCanvas.width, bCanvas.height);
 
@@ -603,31 +572,63 @@
             }
         });
 
-        // UI Event Listeners
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            if (!currentLevel) return;
+            if (moveHistory.length > 0) {
+                currentMatches = moveHistory.pop();
+                movesMade = Math.max(0, movesMade - 1);
+                selectedMatch = null;
+                const movesEl = document.getElementById('moves-left');
+                if (movesEl) movesEl.innerText = currentLevel.moves - movesMade;
+                updateUndoButton();
+                drawGame();
+                showToast("Move undone!");
+            }
+        });
+
         document.getElementById('btn-reset').addEventListener('click', () => {
+            if (!currentLevel) return;
             currentMatches = [...currentLevel.initial];
             movesMade = 0;
             selectedMatch = null;
-            document.getElementById('moves-left').innerText = currentLevel.moves;
+            moveHistory = [];
+            const movesEl = document.getElementById('moves-left');
+            if (movesEl) movesEl.innerText = currentLevel.moves;
+            updateUndoButton();
             drawGame();
             showToast("Level reset.");
         });
 
+        document.getElementById('btn-submit').addEventListener('click', () => {
+            if (!currentLevel) return;
+            if (checkVictory()) {
+                document.getElementById('win-modal').classList.remove('hidden');
+            } else {
+                if (movesMade === 0) {
+                    showToast("Make your moves first, then click Submit!");
+                } else if (movesMade < currentLevel.moves) {
+                    showToast(`Not quite right! You still have ${currentLevel.moves - movesMade} move(s) left.`);
+                } else {
+                    showToast("Not solved yet! Try undoing or resetting.");
+                }
+            }
+        });
+
         document.getElementById('btn-hint').addEventListener('click', () => {
+            if (!currentLevel) return;
             showToast(currentLevel.hint || "Try repositioning sticks along edges.");
         });
 
-        // Levels Modal
         const levelsModal = document.getElementById('levels-modal');
         document.getElementById('btn-levels').addEventListener('click', () => {
             const grid = document.getElementById('levels-grid');
             grid.innerHTML = '';
             PRESET_LEVELS.forEach(lvl => {
                 const card = document.createElement('div');
-                card.className = 'p-3 bg-slate-700/60 hover:bg-slate-700 border border-slate-600 rounded-xl cursor-pointer transition flex flex-col justify-between';
+                card.className = 'p-2.5 bg-slate-700/60 hover:bg-slate-700 border border-slate-600 rounded-xl cursor-pointer transition flex flex-col justify-between';
                 card.innerHTML = `
-                    <div class="font-bold text-sm text-amber-400">Level ${lvl.id}</div>
-                    <div class="text-xs text-slate-300 mt-1 line-clamp-2">${lvl.title}</div>
+                    <div class="font-bold text-xs text-amber-400">Level ${lvl.id}</div>
+                    <div class="text-[11px] text-slate-300 mt-0.5 line-clamp-2">${lvl.title}</div>
                 `;
                 card.onclick = () => {
                     loadLevel(lvl);
@@ -637,12 +638,12 @@
             });
             levelsModal.classList.remove('hidden');
         });
+
         document.getElementById('close-levels').addEventListener('click', () => levelsModal.classList.add('hidden'));
 
-        // Win Modal Actions
         document.getElementById('btn-next-level').addEventListener('click', () => {
             document.getElementById('win-modal').classList.add('hidden');
-            if (isCustom) {
+            if (isCustom || !currentLevel) {
                 loadLevel(PRESET_LEVELS[0]);
             } else {
                 const nextId = currentLevel.id % PRESET_LEVELS.length;
@@ -651,6 +652,7 @@
         });
 
         document.getElementById('btn-win-share').addEventListener('click', () => {
+            if (!currentLevel) return;
             shareGame({
                 title: 'Matchstick Puzzle Solved!',
                 text: `I just solved "${currentLevel.title}" on Matchstick Puzzles! Can you?`,
@@ -659,6 +661,7 @@
         });
 
         document.getElementById('btn-share-score').addEventListener('click', () => {
+            if (!currentLevel) return;
             shareGame({
                 title: 'Matchstick Puzzle',
                 text: `Try solving this puzzle: "${currentLevel.title}"!`,
@@ -666,7 +669,6 @@
             });
         });
 
-        // Builder Modal Controls
         const builderModal = document.getElementById('builder-modal');
         document.getElementById('btn-builder').addEventListener('click', () => {
             builderModal.classList.remove('hidden');
@@ -701,7 +703,7 @@
             const moves = parseInt(document.getElementById('build-moves').value) || 1;
 
             if (builderState.initial.length === 0 || builderState.target.length === 0) {
-                alert("Please add matchsticks to both Initial and Target configurations!");
+                showToast("Add matchsticks to both Initial and Target states!");
                 return;
             }
 
@@ -724,7 +726,6 @@
             builderModal.classList.add('hidden');
         });
 
-        // Check for URL Hash on Load (Custom Shared Level)
         function checkUrlHash() {
             const hash = window.location.hash;
             if (hash.startsWith('#puzzle=')) {
@@ -739,7 +740,6 @@
             loadLevel(PRESET_LEVELS[0]);
         }
 
-        // Initialize Game
         window.onload = () => {
             checkUrlHash();
         };
