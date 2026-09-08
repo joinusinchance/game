@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Imogen the Invigilator</title>
+    <style>
+        :root {
+            --bg-vintage: #eaddca;
+            --parchment: #f4efe2;
+            --ink: #2b261f;
+            --muted-red: #b85a5a;
+            --muted-green: #608066;
+            --accent-gold: #c29d53;
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: #3e3830;
+            color: var(--ink);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 420px;
+            height: 720px;
+            background-color: var(--bg-vintage);
+            border: 8px double var(--ink);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            background-color: var(--bg-vintage);
+            z-index: 10;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* --- Header Element --- */
+        .app-header {
+            border-bottom: 3px double var(--ink);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .app-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            letter-spacing: -0.5px;
+        }
+        .app-subheader {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            background-color: var(--parchment);
+            border: 2px solid var(--ink);
+            color: var(--ink);
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 2px 2px 0px var(--ink);
+            transition: all 0.1s ease;
+            text-align: center;
+        }
+        .btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px var(--ink);
+        }
+        .btn-green { background-color: var(--muted-green); color: white; }
+        .btn-red { background-color: var(--muted-red); color: white; }
+
+        /* --- Splash Screen --- */
+        #screen-splash {
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            z-index: 100;
+            background-color: var(--parchment);
+        }
+        .splash-branding {
+            margin-top: 40px;
+        }
+        .splash-logo {
+            font-size: 6rem;
+            margin: 20px 0;
+            animation: tailWag 2s infinite ease-in-out;
+        }
+        @keyframes tailWag {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(5deg); }
+        }
+        .splash-creds {
+            font-size: 0.75rem;
+            line-height: 1.4;
+            opacity: 0.7;
+            max-width: 280px;
+            margin-bottom: 40px;
+        }
+
+        /* --- Directive Screen --- */
+        #screen-directive {
+            justify-content: space-between;
+        }
+        .clipboard {
+            background-color: var(--parchment);
+            border: 2px solid var(--ink);
+            padding: 20px;
+            flex-grow: 1;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .directive-section {
+            border-top: 1px dashed var(--ink);
+            padding-top: 10px;
+        }
+        .contraband-tokens {
+            display: flex;
+            gap: 15px;
+            font-size: 2rem;
+            margin-top: 5px;
+            justify-content: center;
+        }
+
+        /* --- Entry Screen --- */
+        #screen-entry {
+            justify-content: space-between;
+        }
+        .stage-box {
+            background-color: var(--parchment);
+            border: 2px solid var(--ink);
+            flex-grow: 1;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 15px;
+        }
+        .animal-showcase {
+            font-size: 5.5rem;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .pouch-tray {
+            display: flex;
+            gap: 12px;
+            background: rgba(0,0,0,0.04);
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px dashed var(--ink);
+            width: 100%;
+            justify-content: center;
+        }
+        .pouch-item {
+            font-size: 2.2rem;
+            cursor: pointer;
+            position: relative;
+            padding: 4px;
+            transition: transform 0.1s;
+        }
+        .pouch-item.slashed::after {
+            content: "💥";
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-size: 2rem;
+        }
+        .entry-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* --- Monitor Screen --- */
+        #screen-monitor {
+            justify-content: flex-start;
+        }
+        .metrics-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: var(--parchment);
+            padding: 6px 10px;
+            border: 1px solid var(--ink);
+        }
+        .anxiety-wrapper {
+            width: 100%;
+            height: 14px;
+            background: #d4cbba;
+            border: 2px solid var(--ink);
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .anxiety-fill {
+            height: 100%;
+            width: 50%;
+            background: var(--muted-red);
+            transition: width 0.3s ease;
+        }
+        .hall-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            flex-grow: 1;
+        }
+        .desk-node {
+            background: var(--parchment);
+            border: 2px solid var(--ink);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 var(--ink);
+        }
+        .desk-animal { font-size: 2.5rem; }
+        .desk-status { font-size: 1.1rem; min-height: 1.5rem; margin-top: 2px;}
+        .desk-node.suspicious { background: #faecc5; }
+        .desk-node.cheating { background: #f0c2c2; border-color: var(--muted-red); }
+        .desk-node.panicking { background: #d0e0e3; }
+
+        /* --- Results Screen --- */
+        #screen-results {
+            justify-content: space-between;
+        }
+        .results-box {
+            background: var(--parchment);
+            border: 2px solid var(--ink);
+            padding: 20px;
+            flex-grow: 1;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .result-metric {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 6px;
+        }
+        .verdict-banner {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            border: 2px solid var(--ink);
+        }
+        .verdict-success { background: var(--muted-green); color: white; }
+        .verdict-fail { background: var(--muted-red); color: white; }
+
+        /* --- Feedback Toast --- */
+        .cat-toast {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--ink);
+            color: var(--parchment);
+            padding: 12px 24px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            border-radius: 4px;
+            z-index: 1000;
+            pointer-events: none;
+            animation: fadeOutUp 0.8s forwards;
+            border: 2px solid var(--parchment);
+        }
+        @keyframes fadeOutUp {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -70%) scale(0.9); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+
+    <!-- SCREEN 0: SPLASH SCREEN -->
+    <div id="screen-splash" class="screen">
+        <div class="splash-branding">
+            <h1 class="app-title" style="font-size: 1.8rem;">IMOGEN THE<br>INVIGILATOR</h1>
+            <p class="app-subheader">Maintain test averages<br>Watch the shifty<br>Catch the eaters and cheaters<br>Do not terrify the room</p>
+			<div class="splash-logo">🐈‍⬛</div>
+        </div>
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 15px; align-items: center;">
+            <button class="btn btn-green" style="width: 85%;" onclick="startGame()">ENTER THE HALL</button>
+            <div class="splash-creds">
+            <p class="app-subheader">Single Tap: Confiscate/Reprimand <br>Long Press: Purr to calm panic</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 1: DIRECTIVE SCREEN -->
+    <div id="screen-directive" class="screen hidden">
+        <div class="app-header">
+            <div class="app-title">EXAM BLUEPRINT</div>
+            <div id="directive-day-label" class="app-subheader">DAY X</div>
+        </div>
+        <div class="clipboard">
+            <div><strong>SUBJECT:</strong> <span id="dir-title">Subject</span></div>
+            <div><strong>SHIFT TIMELIMIT:</strong> <span id="dir-time">0:00</span></div>
+            <div class="directive-section">
+                <strong>OFFICIAL CONTRABAND BANLIST:</strong>
+                <div id="dir-contraband" class="contraband-tokens"></div>
+            </div>
+            <div class="directive-section" style="font-style: italic; font-size: 0.85rem;">
+                <strong>Imogen's Notebook:</strong> <span id="dir-hint">Hint</span>
+            </div>
+        </div>
+        <button class="btn btn-green" onclick="startShift()">🔔 START EXAM SHIFT</button>
+    </div>
+
+    <!-- SCREEN 2: ENTRY SCREEN -->
+    <div id="screen-entry" class="screen hidden">
+        <div class="app-header">
+            <div class="app-title">ENTRY SCREENING GATE</div>
+            <div id="entry-timer-label" class="app-subheader">TIME LEFT: 00s</div>
+        </div>
+        <div class="stage-box">
+            <div id="entry-animal" class="animal-showcase">🦊</div>
+            <div style="font-size:0.75rem; margin-bottom:15px; opacity:0.8;">Tap bags/pouches to inspect items:</div>
+            <div id="entry-pouch" class="pouch-tray"></div>
+        </div>
+        <div class="entry-controls">
+            <button class="btn btn-red" onclick="handleEntryDecision(false)">👈 REJECT</button>
+            <button class="btn btn-green" onclick="handleEntryDecision(true)">👉 APPROVE</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 3: MONITOR SCREEN -->
+    <div id="screen-monitor" class="screen hidden">
+        <div class="app-header" style="margin-bottom:5px;">
+            <div class="app-title">EXAM HALL MONITOR</div>
+        </div>
+        <div class="metrics-bar">
+            <span id="monitor-timer-label">⏱️ TIME: 00s</span>
+            <span id="monitor-score-label">🎯 CAUGHT: 0</span>
+        </div>
+        <div style="font-size: 0.75rem; font-weight: bold; margin-bottom: 2px;">ROOM ANXIETY LEVEL:</div>
+        <div class="anxiety-wrapper">
+            <div id="anxiety-fill-bar" class="anxiety-fill"></div>
+        </div>
+        <div id="hall-grid-container" class="hall-grid"></div>
+    </div>
+
+    <!-- SCREEN 4: RESULTS SCREEN -->
+    <div id="screen-results" class="screen hidden">
+        <div class="app-header">
+            <div class="app-title">SHIFT PERFORMANCE REPORT</div>
+            <div id="results-day-label" class="app-subheader">DAY X END</div>
+        </div>
+        <div class="results-box">
+            <div id="results-verdict" class="verdict-banner">VERDICT</div>
+            <div class="result-metric"><span>Caught Bad Actors:</span><strong id="res-caught">0</strong></div>
+            <div class="result-metric"><span>Missed Cheaters:</span><strong id="res-missed">0</strong></div>
+            <div class="result-metric"><span>Innocent Punished:</span><strong id="res-innocent">0</strong></div>
+            <div class="result-metric" style="border-top:2px solid var(--ink); padding-top:10px; margin-top:5px;">
+                <span>CLASS GRADE AVERAGE:</span><strong id="res-average" style="font-size:1.2rem;">0%</strong>
+            </div>
+            <div style="font-size:0.75rem; opacity:0.8; line-height:1.3; text-align:center; margin-top:10px;" id="res-explanation"></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button id="btn-action-primary" class="btn btn-green" onclick="handleResultsAction()">NEXT PROTOCOL</button>
+            <button class="btn" style="background:#d4cbba;" onclick="shareProgress()">🔗 SHARE PERFORMANCE</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const CampaignLevels = {
+        1: { title: "Foraging Fundamentals", time: 120, entryDuration: 45, targetMin: 65, targetMax: 80, contraband: ["🍏", "🥜", "🐛"], animals: ["🐿️", "🐹", "🦘"], hint: "Rodents try to hide nuts in their cheeks or pouches." },
+        2: { title: "Predator Philosophy", time: 175, entryDuration: 65, targetMin: 60, targetMax: 75, contraband: ["🥩", "🍗", "📱"], animals: ["🐺", "🦊", "🦁"], hint: "Predators hide note-scrolls inside hollow bones. Watch their growl gauges!" },
+        3: { title: "Flight Flight", time: 110, entryDuration: 40, targetMin: 70, targetMax: 85, contraband: ["📟", "🪶", "🗺️"], animals: ["🐦", "🦉", "🦅"], hint: "Birds drop paper airplanes over rows. Click mid-air to intercept!" },
+        4: { title: "Hibernation History", time: 80, entryDuration: 30, targetMin: 65, targetMax: 80, contraband: ["🛌", "🍯", "💤"], animals: ["🐻", "🦥"], hint: "Bears try to sleep-cheat with text hidden inside pillows." },
+        5: { title: "Camouflage Chemistry", time: 60, entryDuration: 25, targetMin: 65, targetMax: 80, contraband: ["🎨", "🪞", "💄"], animals: ["🦎", "🐸"], hint: "Chameleons use paint to blend into desks and compact mirrors to spy backwards." },
+        6: { title: "Burrowing Business", time: 60, entryDuration: 25, targetMin: 65, targetMax: 80, contraband: ["🔦", "🪵"], animals: ["🦡", "🦫"], hint: "Smuggling items through floor tunnels." },
+        7: { title: "Aquatic Algebra", time: 60, entryDuration: 25, targetMin: 65, targetMax: 80, contraband: ["🧪", "🦑"], animals: ["🦦", "🦭"], hint: "Waterproof notes hidden under lilypads." },
+        8: { title: "Herding Humanism", time: 60, entryDuration: 25, targetMin: 65, targetMax: 80, contraband: ["📢", "📜"], animals: ["🐑", "🐂"], hint: "Mass copying behaviors spread across adjacent grid nodes." },
+        9: { title: "Migration Mechanics", time: 60, entryDuration: 25, targetMin: 65, targetMax: 80, contraband: ["🧭", "🗺️"], animals: ["🦋", "🦓"], hint: "Migrating cheat sheets floating across grid sectors." },
+        10: { title: "Venom Veterinary", time: 60, entryDuration: 25, targetMin: 65, targetMax: 80, contraband: ["🧪", "💉"], animals: ["🐍", "🦂"], hint: "Final Exam. High movement speeds and stealth items." }
+    };
+
+    const SafeItems = ["✏️", "📐", "📏", "📁", "📓", "🥛"];
+
+    let State = {
+        currentDay: 1,
+        currentPhase: "SPLASH",
+        timer: 0,
+        roomAnxiety: 50,
+        caughtCheaters: 0,
+        missedCheaters: 0,
+        innocentPunished: 0,
+        shiftSuccess: false,
+        tickerInterval: null,
+        
+        // Entry sub-state
+        currentStudent: null,
+        studentPouchItems: [],
+        
+        getAverage() {
+            let base = 72;
+            base += (this.missedCheaters * 6);
+            base -= (this.innocentPunished * 5);
+            base -= (this.roomAnxiety > 75 ? 8 : 0);
+            return Math.max(0, Math.min(100, base));
+        }
+    };
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    function triggerToast(text) {
+        const t = document.createElement('div');
+        t.className = 'cat-toast';
+        t.innerText = text;
+        document.getElementById('game-container').appendChild(t);
+        setTimeout(() => t.remove(), 800);
+    }
+
+    function startGame() {
+        State.currentDay = 1;
+        loadDirective();
+    }
+
+    function loadDirective() {
+        State.currentPhase = "DIRECTIVE";
+        const level = CampaignLevels[State.currentDay];
+        
+        document.getElementById('directive-day-label').innerText = `PROTOCOL DAY ${State.currentDay} / 10`;
+        document.getElementById('dir-title').innerText = level.title.toUpperCase();
+        
+        // Format time display minutes:seconds
+        const mins = Math.floor(level.time / 60);
+        const secs = level.time % 60;
+        document.getElementById('dir-time').innerText = `${mins}:${secs < 10 ? '0' : ''}${secs} MINS`;
+        
+        const contraContainer = document.getElementById('dir-contraband');
+        contraContainer.innerHTML = '';
+        level.contraband.forEach(item => {
+            const span = document.createElement('span');
+            span.innerText = item;
+            contraContainer.appendChild(span);
+        });
+        
+        document.getElementById('dir-hint').innerText = level.hint;
+        showScreen('screen-directive');
+    }
+
+    function startShift() {
+        State.currentPhase = "ENTRY";
+        const level = CampaignLevels[State.currentDay];
+        State.timer = level.time;
+        State.roomAnxiety = 40;
+        State.caughtCheaters = 0;
+        State.missedCheaters = 0;
+        State.innocentPunished = 0;
+        
+        generateStudent();
+        showScreen('screen-entry');
+        
+        clearInterval(State.tickerInterval);
+        State.tickerInterval = setInterval(gameTick, 1000);
+    }
+
+    function generateStudent() {
+        const level = CampaignLevels[State.currentDay];
+        State.currentStudent = level.animals[Math.floor(Math.random() * level.animals.length)];
+        document.getElementById('entry-animal').innerText = State.currentStudent;
+        
+        // Populate items inside their bag/pouch
+        State.studentPouchItems = [];
+        const carryCount = 3 + Math.floor(Math.random() * 2); 
+        
+        // Decide if this student carries illegal materials
+        const isCheater = Math.random() < 0.45;
+        let injectedContraband = false;
+        
+        for(let i=0; i < carryCount; i++) {
+            if(isCheater && !injectedContraband) {
+                const item = level.contraband[Math.floor(Math.random() * level.contraband.length)];
+                State.studentPouchItems.push({ emoji: item, contraband: true, slashed: false });
+                injectedContraband = true;
+            } else {
+                const item = SafeItems[Math.floor(Math.random() * SafeItems.length)];
+                State.studentPouchItems.push({ emoji: item, contraband: false, slashed: false });
+            }
+        }
+        // Shuffle pack arrangement
+        State.studentPouchItems.sort(() => Math.random() - 0.5);
+        renderPouch();
+    }
+
+    function renderPouch() {
+        const pouch = document.getElementById('entry-pouch');
+        pouch.innerHTML = '';
+        State.studentPouchItems.forEach((item, index) => {
+            const el = document.createElement('div');
+            el.className = `pouch-item ${item.slashed ? 'slashed' : ''}`;
+            el.innerText = item.emoji;
+            el.onclick = () => {
+                if(!item.slashed) {
+                    item.slashed = true;
+                    el.classList.add('slashed');
+                    if(item.contraband) {
+                        triggerToast("HISSS! 😾");
+                    } else {
+                        triggerToast("MRRR-OW! 😾");
+                        State.roomAnxiety = Math.min(100, State.roomAnxiety + 8);
+                    }
+                }
+            };
+            pouch.appendChild(el);
+        });
+    }
+
+    function handleEntryDecision(approved) {
+        let profileHasUnslashedContraband = State.studentPouchItems.some(i => i.contraband && !i.slashed);
+        let profileHasSlashedContraband = State.studentPouchItems.some(i => i.contraband && i.slashed);
+        
+        if (approved) {
+            if (profileHasUnslashedContraband) {
+                State.missedCheaters++;
+            } else if (profileHasSlashedContraband) {
+                // Let them in but their cheat item was confiscated, counts as caught at gate
+                State.caughtCheaters++;
+            }
+        } else {
+            // Rejected student
+            if (profileHasUnslashedContraband || profileHasSlashedContraband) {
+                State.caughtCheaters++;
+            } else {
+                State.innocentPunished++;
+                State.roomAnxiety = Math.min(100, State.roomAnxiety + 10);
+            }
+        }
+        generateStudent();
+    }
+
+    function transitionToMonitor() {
+        State.currentPhase = "MONITOR";
+        showScreen('screen-monitor');
+        buildHallGrid();
+    }
+
+    function buildHallGrid() {
+        const container = document.getElementById('hall-grid-container');
+        container.innerHTML = '';
+        const level = CampaignLevels[State.currentDay];
+        
+        // Generate 9 desk elements matching standard layouts
+        for(let i=0; i<9; i++) {
+            const animal = level.animals[Math.floor(Math.random() * level.animals.length)];
+            const node = document.createElement('div');
+            node.className = 'desk-node';
+            node.dataset.index = i;
+            node.dataset.state = 'normal';
+            
+            // Interaction handlers (support touch hold and click parameters)
+            let pressTimer;
+            
+            const startPress = (e) => {
+                e.preventDefault();
+                pressTimer = setTimeout(() => {
+                    handleDeskHold(node);
+                    pressTimer = null;
+                }, 450); // Holding profile duration
+            };
+            
+            const endPress = (e) => {
+                e.preventDefault();
+                if(pressTimer) {
+                    clearTimeout(pressTimer);
+                    handleDeskTap(node);
+                }
+            };
+            
+            node.addEventListener('mousedown', startPress);
+            node.addEventListener('mouseup', endPress);
+            node.addEventListener('touchstart', startPress);
+            node.addEventListener('touchend', endPress);
+
+            node.innerHTML = `<div class="desk-animal">${animal}</div><div class="desk-status" id="desk-status-${i}">📝</div>`;
+            container.appendChild(node);
+        }
+    }
+
+    function handleDeskTap(node) {
+        const currentState = node.dataset.state;
+        if(currentState === 'cheating') {
+            node.dataset.state = 'normal';
+            node.className = 'desk-node';
+            document.getElementById(`desk-status-${node.dataset.index}`).innerText = '📝';
+            State.caughtCheaters++;
+            triggerToast("HISSS! 😾");
+        } else if (currentState === 'normal' || currentState === 'suspicious') {
+            // Accused innocent student
+            State.innocentPunished++;
+            State.roomAnxiety = Math.min(100, State.roomAnxiety + 12);
+            triggerToast("MRRRR-OWW! 😾");
+        }
+    }
+
+    function handleDeskHold(node) {
+        if(node.dataset.state === 'panicking') {
+            node.dataset.state = 'normal';
+            node.className = 'desk-node';
+            document.getElementById(`desk-status-${node.dataset.index}`).innerText = '📝';
+            State.roomAnxiety = Math.max(0, State.roomAnxiety - 15);
+            triggerToast("Purrrrr... 🐈‍⬛");
+        }
+    }
+
+    function gameTick() {
+        if(State.timer <= 0) {
+            endShift();
+            return;
+        }
+        
+        State.timer--;
+        const level = CampaignLevels[State.currentDay];
+        const monitorThreshold = level.time - level.entryDuration;
+        
+        // UI updates based on core phase steps
+        if(State.currentPhase === "ENTRY") {
+            document.getElementById('entry-timer-label').innerText = `GATE TIME: ${State.timer - monitorThreshold}s`;
+            if(State.timer <= monitorThreshold) {
+                transitionToMonitor();
+            }
+        } else if(State.currentPhase === "MONITOR") {
+            document.getElementById('monitor-timer-label').innerText = `⏱️ TIME: ${State.timer}s`;
+            document.getElementById('monitor-score-label').innerText = `🎯 CAUGHT: ${State.caughtCheaters}`;
+            document.getElementById('anxiety-fill-bar').style.width = `${State.roomAnxiety}%`;
+            
+            // Randomly alter desk nodes vectors
+            if(Math.random() < 0.35) {
+                tickGridEvents();
+            }
+            // Room anxiety scales naturally over duration windows
+            if(Math.random() < 0.15) {
+                State.roomAnxiety = Math.min(100, State.roomAnxiety + 2);
+            }
+        }
+    }
+
+    function tickGridEvents() {
+        const nodes = document.querySelectorAll('.desk-node');
+        if(nodes.length === 0) return;
+        const targetNode = nodes[Math.floor(Math.random() * nodes.length)];
+        const curState = targetNode.dataset.state;
+        const statusEl = document.getElementById(`desk-status-${targetNode.dataset.index}`);
+        const level = CampaignLevels[State.currentDay];
+        
+        if(curState === 'normal') {
+            const rng = Math.random();
+            if(rng < 0.4) {
+                targetNode.dataset.state = 'suspicious';
+                targetNode.className = 'desk-node suspicious';
+                statusEl.innerText = '👀⚠️';
+            } else if(rng < 0.7) {
+                targetNode.dataset.state = 'panicking';
+                targetNode.className = 'desk-node panicking';
+                statusEl.innerText = '😰';
+            }
+        } else if(curState === 'suspicious') {
+            // Escalate to cheating if not handled
+            targetNode.dataset.state = 'cheating';
+            targetNode.className = 'desk-node cheating';
+            statusEl.innerText = level.contraband[Math.floor(Math.random() * level.contraband.length)] + '❌';
+        } else if(curState === 'cheating') {
+            // Missed opportunity, reset but flag penalty multiplier metrics
+            targetNode.dataset.state = 'normal';
+            targetNode.className = 'desk-node';
+            statusEl.innerText = '📝';
+            State.missedCheaters++;
+        }
+    }
+
+    function endShift() {
+        clearInterval(State.tickerInterval);
+        State.currentPhase = "RESULTS";
+        
+        const avg = State.getAverage();
+        const level = CampaignLevels[State.currentDay];
+        
+        document.getElementById('results-day-label').innerText = `EXAM RECAP: DAY ${State.currentDay}`;
+        document.getElementById('res-caught').innerText = State.caughtCheaters;
+        document.getElementById('res-missed').innerText = State.missedCheaters;
+        document.getElementById('res-innocent').innerText = State.innocentPunished;
+        document.getElementById('res-average').innerText = `${avg}%`;
+        
+        const banner = document.getElementById('results-verdict');
+        const desc = document.getElementById('res-explanation');
+        const nextBtn = document.getElementById('btn-action-primary');
+        
+        if(avg > level.targetMax) {
+            State.shiftSuccess = false;
+            banner.innerText = "TERMINATED (FRAUD)";
+            banner.className = "verdict-banner verdict-fail";
+            desc.innerText = `The class average (${avg}%) was higher than the ceiling bounds (${level.targetMax}%). You let too many cheating bad actors pass notes! Academic integrity has collapsed!`;
+            nextBtn.innerText = "TRY AGAIN";
+        } else if(avg < level.targetMin) {
+            State.shiftSuccess = false;
+            banner.innerText = "REPRIMANDED (DRACONIAN)";
+            banner.className = "verdict-banner verdict-fail";
+            desc.innerText = `The class average (${avg}%) fell below minimum standards (${level.targetMin}%). Your aggressive auditing entirely terrified the room! Honest animals froze up and failed out!`;
+            nextBtn.innerText = "TRY AGAIN";
+        } else {
+            State.shiftSuccess = true;
+            banner.innerText = "SHIFT EXCELLENT";
+            banner.className = "verdict-banner verdict-success";
+            desc.innerText = `Perfect balance maintained! Honest animals flourished while malicious cheaters were cleanly purged from the hall. Imogen purrs contentedly. Target window was: ${level.targetMin}% - ${level.targetMax}%.`;
+            nextBtn.innerText = State.currentDay === 10 ? "VICTORY LAP" : "NEXT DAY PROTOCOL";
+        }
+        
+        showScreen('screen-results');
+    }
+
+    function handleResultsAction() {
+        if(State.shiftSuccess) {
+            if(State.currentDay === 10) {
+                // Game completely won
+                showScreen('screen-splash');
+            } else {
+                State.currentDay++;
+                loadDirective();
+            }
+        } else {
+            // Reset level node parameters
+            loadDirective();
+        }
+    }
+
+    function shareProgress() {
+        const avg = State.getAverage();
+        const textStr = `🐈‍⬛ Imogen the Invigilator\n📋 Passed Day ${State.currentDay} with a ${avg}% class exam average!\nCan you maintain strict academic balance without terrifying the animal hall? 🐾 #ImogenTheInvigilator`;
+        
+        if(navigator.share) {
+            navigator.share({
+                title: 'Imogen the Invigilator Result',
+                text: textStr
+            }).catch(e => console.log(e));
+        } else {
+            navigator.clipboard.writeText(textStr);
+            alert("Score blueprint successfully copied to clip-board! Paste directly on social channels!");
+        }
+    }
+</script>
+</body>
+</html>
