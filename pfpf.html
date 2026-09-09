@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Phlegmatic Felicity's Phlebotomy Frenzy</title>
+    <style>
+        :root {
+            --bg-color: #1e1a15;
+            --paper-color: #f2ebd9;
+            --ink-color: #2b251f;
+            --blood-red: #8b0000;
+            --pus-yellow: #d4af37;
+            --accent-green: #3b5336;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--paper-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 450px;
+            height: 92vh;
+            max-height: 750px;
+            background-color: var(--paper-color);
+            color: var(--ink-color);
+            border: 6px double var(--ink-color);
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Top Ledger Bar */
+        .ledger-header {
+            border-bottom: 3px double var(--ink-color);
+            padding: 10px;
+            background-color: #e6dcbe;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            position: relative;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Typography & Components */
+        h1 {
+            font-size: 18px;
+            text-align: center;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--ink-color);
+            padding-bottom: 5px;
+        }
+
+        .btn {
+            background-color: var(--ink-color);
+            color: var(--paper-color);
+            border: 2px solid var(--ink-color);
+            padding: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .btn:active {
+            background-color: var(--paper-color);
+            color: var(--ink-color);
+        }
+
+        /* Triage Phase Layout */
+        .patient-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .case-number {
+            font-style: italic;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .patient-bubble {
+            background: #fff;
+            border: 2px solid var(--ink-color);
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 15px;
+            line-height: 1.4;
+            min-height: 120px;
+            position: relative;
+            margin-bottom: 20px;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        .triage-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-admit { background-color: var(--blood-red); color: white; border-color: var(--blood-red); }
+        .btn-reject { background-color: var(--accent-green); color: white; border-color: var(--accent-green); }
+
+        /* Surgery Phase Layout */
+        #surgery-screen {
+            background-color: #12100e;
+            color: #d4af37;
+        }
+        
+        #surgery-screen h1 { border-color: #d4af37; }
+
+        .surgery-metrics {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #ff4d4d;
+        }
+
+        .operating-table {
+            flex: 1;
+            background: #231d16;
+            border: 2px dashed #d4af37;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 8px;
+            padding: 10px;
+            position: relative;
+        }
+
+        .organ-slot {
+            background-color: #33291e;
+            border: 1px solid #4a3c2c;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Disease Targets */
+        .disease {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            animation: popUp 0.2s ease-out forwards;
+            user-select: none;
+            padding: 4px;
+            text-transform: uppercase;
+        }
+
+        @keyframes popUp {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .disease.fever { background-color: #ff3333; box-shadow: 0 0 10px #ff3333; }
+        .disease.stone { background-color: #999999; border: 2px dashed #fff; border-radius: 4px; }
+        .disease.tumor { background-color: #800080; border: 2px solid #ff00ff; }
+        .disease.dropsy { background-color: #3333ff; box-shadow: inset 0 0 8px #fff; }
+
+        /* Summary Screen Layout */
+        .summary-sheet {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: space-between;
+        }
+
+        .ledger-rows {
+            border-top: 1px solid var(--ink-color);
+            border-bottom: 1px solid var(--ink-color);
+            padding: 15px 0;
+            margin: 15px 0;
+        }
+
+        .ledger-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .verdict-box {
+            border: 2px dashed var(--blood-red);
+            padding: 12px;
+            background: #fff5f5;
+            color: var(--blood-red);
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* Screen Interruption Effects */
+        .overlay-alert {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(139, 0, 0, 0.85);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            text-align: center;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- Main Sticky Score Tracker -->
+    <div class="ledger-header">
+        <div>BUDGET: <span id="global-budget">400</span>s</div>
+        <div>MORGUE: <span id="global-morgue">0</span>/12</div>
+    </div>
+
+    <!-- START SCREEN -->
+    <div id="start-screen" class="screen">
+        <h1 style="margin-top: 40px; font-size: 20px;">Phlegmatic Felicity's<br>Phlebotomy Frenzy</h1>
+        <p style="font-size: 14px; line-height: 1.6; text-align: justify; margin: 30px 0;">
+            Greetings, Chief Practitioner. The year is 1902. London's lungs are blackened, and the hospital board demands clinical profits. You must process exactly 12 patients. Evaluate their humours. Clear internal rot via surgery. Keep your balance sheet positive and the public graveyard empty.
+        </p>
+        <button class="btn" onclick="startGame()">Open The Sanatorium Gates</button>
+    </div>
+
+    <!-- TRIAGE DESK SCREEN -->
+    <div id="triage-screen" class="screen hidden">
+        <h1>Surgical Selection Desk</h1>
+        <div class="patient-card">
+            <div>
+                <div class="case-number" id="case-title">Case 1 of 12</div>
+                <div class="patient-bubble" id="patient-complaint">
+                    "Loading diagnosis..."
+                </div>
+            </div>
+            <div class="triage-actions">
+                <button class="btn btn-admit" onclick="admitPatient()">[ Admit to Theatre (-50s) ]</button>
+                <button class="btn btn-reject" onclick="rejectPatient()">[ Prescribe Peppermint Water (0s) ]</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPERATING THEATRE SCREEN (WHACK-A-MOLE) -->
+    <div id="surgery-screen" class="screen hidden">
+        <h1>The Operating Theatre</h1>
+        <div class="surgery-metrics">
+            <div>TIME REMAINING: <span id="surgery-timer">45</span>s</div>
+            <div>PULSE: <span id="surgery-pulse">100</span> bpm</div>
+        </div>
+        
+        <!-- 3x4 Grid for internal organ simulation -->
+        <div class="operating-table" id="organ-grid">
+            <div class="organ-slot" data-index="0"></div>
+            <div class="organ-slot" data-index="1"></div>
+            <div class="organ-slot" data-index="2"></div>
+            <div class="organ-slot" data-index="3"></div>
+            <div class="organ-slot" data-index="4"></div>
+            <div class="organ-slot" data-index="5"></div>
+            <div class="organ-slot" data-index="6"></div>
+            <div class="organ-slot" data-index="7"></div>
+            <div class="organ-slot" data-index="8"></div>
+            <div class="organ-slot" data-index="9"></div>
+            <div class="organ-slot" data-index="10"></div>
+            <div class="organ-slot" data-index="11"></div>
+        </div>
+        <p style="font-size:11px; text-align:center; margin-top:8px; color:#aaa;">TAP ERATIC GROWING DISEASE MASSES IMMEDIATELY</p>
+    </div>
+
+    <!-- SHIFT SUMMARY / END SCREEN -->
+    <div id="summary-screen" class="screen hidden">
+        <h1>Shift Balance Sheet</h1>
+        <div class="summary-sheet">
+            <div>
+                <div class="verdict-box" id="final-verdict">
+                    EVALUATING PERFORMANCE...
+                </div>
+                <div class="ledger-rows">
+                    <div class="ledger-row">
+                        <span>Total Cases Audited:</span>
+                        <strong>12</strong>
+                    </div>
+                    <div class="ledger-row">
+                        <span>Survived Discharges:</span>
+                        <strong id="stat-survived">0</strong>
+                    </div>
+                    <div class="ledger-row">
+                        <span>Morgue Depositions:</span>
+                        <strong id="stat-morgue" style="color:var(--blood-red)">0</strong>
+                    </div>
+                    <div class="ledger-row" style="border-top:1px dashed #2b251f; padding-top:10px;">
+                        <span>Closing Coffers:</span>
+                        <strong id="stat-budget">0 shillings</strong>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <button class="btn btn-admit" onclick="sharePerformance()">Share Diagnostic Records</button>
+                <button class="btn" onclick="location.reload()">Audit Next Shift</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cat Event Layer -->
+    <div id="event-overlay" class="overlay-alert hidden">
+        <h2 style="font-size:24px; margin-bottom:10px;">🐈 INTERRUPTION!</h2>
+        <p id="event-text">The hospital cat has leaped directly onto the patient's open abdomen.</p>
+        <button class="btn" style="background:#fff; color:#000; width:auto; padding:8px 20px;" onclick="closeEvent()">Shoo!</button>
+    </div>
+</div>
+
+<script>
+    // Expanded 12-Round Triage Data Matrix
+    const triageDatabase = [
+        { text: '"My flank features a twisting passion, doctor. It burns like a stoked furnace when pressed."', condition: 'perityphlitis', lethal: true },
+        { text: '"My morning water is thick, foul, and flows as black as a dark London stout."', condition: 'brights', lethal: false },
+        { text: '"A heavy, solid ague cake has grown beneath my ribs on the left side. I can barely draw air."', condition: 'splenomegaly', lethal: true },
+        { text: '"My constitution is clear, but I suffer from a profound modern melancholy and the Vapors."', condition: 'hysteria', lethal: false },
+        { text: '"I cough constantly, coughing up bright red froth, and my skin glows like wax."', condition: 'phthisis', lethal: true },
+        { text: '"My limbs are swollen like water-bladders. When I press my shin, the dimple remains."', condition: 'dropsy', lethal: true },
+        { text: '"I feel sharp gravel grinding inside my lower spine. Passing water is like passing broken glass."', condition: 'gravel', lethal: false },
+        { text: '"A hard, scirrhus excrescence is expanding rapidly across my neck skin. It does not feel pain."', condition: 'tumor', lethal: true },
+        { text: '"I fell from the omnibus, and now my thoughts are soft, sluggish, and I cannot move my left arm."', condition: 'apoplexy', lethal: true },
+        { text: '"My belly has blown up like a wine cask, and my eyeballs have turned as yellow as a lemon."', condition: 'cirrhosis', lethal: true },
+        { text: '"The back of my throat is choked by a gray, leathery membrane. I cannot swallow air."', condition: 'diphtheria', lethal: true },
+        { text: '"I feel perfectly healthy, but I demand you remove my spleen to prevent future bad air."', condition: 'hypochondria', lethal: false }
+    ];
+
+    // Game Variables
+    let currentRound = 0;
+    let budget = 400;
+    let morgue = 0;
+    let survivors = 0;
+    
+    // Surgery Sub-engine Variables
+    let surgeryTimer = null;
+    let moleSpawner = null;
+    let activeTime = 45;
+    let patientPulse = 100;
+    let currentPatientData = null;
+
+    // UI Updates
+    function updateLedgerCounters() {
+        document.getElementById('global-budget').innerText = budget;
+        document.getElementById('global-morgue').innerText = morgue;
+    }
+
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    // Engine Hooks
+    function startGame() {
+        currentRound = 0;
+        budget = 400;
+        morgue = 0;
+        survivors = 0;
+        updateLedgerCounters();
+        nextTriageRound();
+    }
+
+    function nextTriageRound() {
+        if (currentRound >= 12) {
+            endGameSummary();
+            return;
+        }
+        switchScreen('triage-screen');
+        document.getElementById('case-title').innerText = `Case ${currentRound + 1} of 12`;
+        document.getElementById('patient-complaint').innerText = triageDatabase[currentRound].text;
+    }
+
+    function admitPatient() {
+        budget -= 50;
+        updateLedgerCounters();
+        currentPatientData = triageDatabase[currentRound];
+        startSurgicalTheatre();
+    }
+
+    function rejectPatient() {
+        let patient = triageDatabase[currentRound];
+        if (patient.lethal) {
+            morgue++;
+        } else {
+            survivors++; // Safely dismissed hypochondriac or non-lethal
+        }
+        updateLedgerCounters();
+        currentRound++;
+        nextTriageRound();
+    }
+
+    // Whack-a-Mole Surgical Subsystem (Ramped Difficulty)
+    function startSurgicalTheatre() {
+        switchScreen('surgery-screen');
+        activeTime = 45;
+        patientPulse = 100;
+        document.getElementById('surgery-timer').innerText = activeTime;
+        document.getElementById('surgery-pulse').innerText = patientPulse;
+        
+        // Clear old slots
+        document.querySelectorAll('.organ-slot').forEach(slot => slot.innerHTML = '');
+
+        // Check for 25% comedic environmental complication
+        if (Math.random() < 0.25) {
+            triggerComedicEvent();
+        }
+
+        // Active Game Tickers
+        surgeryTimer = setInterval(() => {
+            activeTime--;
+            document.getElementById('surgery-timer').innerText = activeTime;
+            
+            // INCREASED PULSE DECAY: 60% probability of a 4-point drop
+            if(Math.random() < 0.6) {
+                patientPulse -= 4;
+                document.getElementById('surgery-pulse').innerText = Math.max(0, patientPulse);
+            }
+
+            if (activeTime <= 0 || patientPulse <= 0) {
+                resolveSurgery(patientPulse > 0);
+            }
+        }, 1000);
+
+        // HARDER SPEED SPANWING VALUE: 500ms for lethal, 800ms for non-lethal
+        let spawnInterval = currentPatientData.lethal ? 500 : 800;
+        moleSpawner = setInterval(spawnDiseaseTarget, spawnInterval);
+    }
+
+    function triggerComedicEvent() {
+        const events = [
+            "The Chloroform Boy has accidentally inhaled the vapors and passed out cold.",
+            "The Hospital Cat has leaped directly onto the sterile field searching for kidney tissue.",
+            "A group of wealthy medical tourists has crowded the balcony, blocking the gaslight lanterns.",
+            "The bone-saw handle snapped. You must proceed using a rusty kitchen cleaver."
+        ];
+        document.getElementById('event-text').innerText = events[Math.floor(Math.random() * events.length)];
+        document.getElementById('event-overlay').classList.remove('hidden');
+        
+        // Reduce surgical metrics as damage
+        patientPulse -= 15;
+    }
+
+    function closeEvent() {
+        document.getElementById('event-overlay').classList.add('hidden');
+    }
+
+    function spawnDiseaseTarget() {
+        const slots = document.querySelectorAll('.organ-slot');
+        // Find empty spots
+        const emptySlots = Array.from(slots).filter(s => s.innerHTML === '');
+        if (emptySlots.length === 0) {
+            // GRID DEFICIT PENALTY INCREASED: 15 points per tick
+            patientPulse -= 15;
+            document.getElementById('surgery-pulse').innerText = Math.max(0, patientPulse);
+            return;
+        }
+
+        const randomSlot = emptySlots[Math.floor(Math.random() * emptySlots.length)];
+        const types = ['fever', 'stone', 'tumor', 'dropsy'];
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        
+        const mole = document.createElement('div');
+        mole.className = `disease ${randomType}`;
+        mole.innerText = randomType;
+        
+        // HIGHER HIT POINTS: Tumors and Dropsy now take 3 hits
+        let hitsRequired = (randomType === 'tumor' || randomType === 'dropsy') ? 3 : 1;
+        mole.setAttribute('data-hits', hitsRequired);
+
+        mole.onclick = (e) => {
+            e.stopPropagation();
+            let currentHits = parseInt(mole.getAttribute('data-hits'));
+            currentHits--;
+            if (currentHits <= 0) {
+                mole.remove();
+                budget += 8; // Earn shillings per successful incision
+                updateLedgerCounters();
+            } else {
+                mole.setAttribute('data-hits', currentHits);
+                mole.style.opacity = '0.6';
+            }
+        };
+
+        randomSlot.appendChild(mole);
+    }
+
+    function resolveSurgery(wasSuccessful) {
+        clearInterval(surgeryTimer);
+        clearInterval(moleSpawner);
+        
+        if (wasSuccessful && currentPatientData.condition !== 'hysteria' && currentPatientData.condition !== 'hypochondria') {
+            survivors++;
+            budget += 40; // Surgical performance bonus payout
+        } else if (!wasSuccessful || currentPatientData.lethal) {
+            // Malpractice or operation failed on a lethal patient
+            morgue++;
+        } else {
+            // Operated on a hypochondriac (alive, but heavy waste of hospital funds)
+            survivors++;
+            budget -= 20; 
+        }
+
+        updateLedgerCounters();
+        currentRound++;
+        nextTriageRound();
+    }
+
+    // End Game Engine
+    function endGameSummary() {
+        switchScreen('summary-screen');
+        document.getElementById('stat-survived').innerText = survivors;
+        document.getElementById('stat-morgue').innerText = morgue;
+        document.getElementById('stat-budget').innerText = budget;
+
+        let verdict = "";
+        if (budget <= 0) {
+            verdict = "BANKRUPT! You cured the county but bankrupted the board. You have been replaced by a dynamic machine that dispenses castor oil.";
+        } else if (morgue >= 6) {
+            verdict = "BUTCHER! The local street is impassable due to stacking coffins. The Crown has revoked your medical license.";
+        } else {
+            verdict = "SUCCESS! A brilliant display of clinical austerity. You have been awarded a moderately shiny pocket watch.";
+        }
+        document.getElementById('final-verdict').innerText = verdict;
+    }
+
+    // Native HTML Share API Call (Verified Escape Strings)
+    function sharePerformance() {
+        let verdictText = document.getElementById('final-verdict').innerText.split('!')[0];
+        const sharePayload = {
+            title: "Phlegmatic Felicity's Phlebotomy Frenzy",
+            text: "Shift Audit: " + verdictText + " Verdict! 🩺\nSurviving Discharges: " + survivors + "/12\nMorgue Records: " + morgue + "/12\nRemaining Coffers: " + budget + "s.\nCan you balance the humours? Play here:",
+            url: window.location.href
+        };
+
+        if (navigator.share) {
+            navigator.share(sharePayload)
+                .catch(err => useFallbackClipboard(sharePayload));
+        } else {
+            useFallbackClipboard(sharePayload);
+        }
+    }
+
+    function useFallbackClipboard(payload) {
+        const fullString = payload.text.replace('\n', '') + " " + payload.url;
+        navigator.clipboard.writeText(fullString)
+            .then(() => alert("Surgical logs copied to clipboard! Share them with your fellow practitioners."))
+            .catch(() => alert("Could not access medical logs. Output score: " + survivors + " survivors."));
+    }
+</script>
+</body>
+</html>
