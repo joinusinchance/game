@@ -251,40 +251,40 @@
 
         /* DIRECT ORGAN DISEASE COLOR HIGHLIGHTS */
         .organ-path.disease-cut {
-            fill: #dc2626 !important;
-            stroke: #fca5a5 !important;
-            stroke-width: 3.5;
-            animation: pulseCut 0.6s infinite alternate ease-in-out;
+            fill: #f43f5e !important;
+            stroke: #ffe4e6 !important;
+            stroke-width: 4;
+            animation: pulseCut 0.5s infinite alternate ease-in-out;
         }
 
         .organ-path.disease-stitch {
-            fill: #2563eb !important;
-            stroke: #93c5fd !important;
+            fill: #0284c7 !important;
+            stroke: #bae6fd !important;
             stroke-dasharray: 6 3;
-            stroke-width: 3.5;
-            animation: pulseStitch 0.6s infinite alternate ease-in-out;
+            stroke-width: 4;
+            animation: pulseStitch 0.5s infinite alternate ease-in-out;
         }
 
         .organ-path.disease-cauterize {
-            fill: #ea580c !important;
-            stroke: #fdba74 !important;
-            stroke-width: 3.5;
-            animation: pulseCauterize 0.6s infinite alternate ease-in-out;
+            fill: #eab308 !important;
+            stroke: #fef08a !important;
+            stroke-width: 4;
+            animation: pulseCauterize 0.5s infinite alternate ease-in-out;
         }
 
         @keyframes pulseCut {
-            0% { filter: drop-shadow(0 0 4px #ef4444); }
-            100% { filter: drop-shadow(0 0 16px #b91c1c); }
+            0% { filter: drop-shadow(0 0 4px #f43f5e); }
+            100% { filter: drop-shadow(0 0 18px #e11d48); }
         }
 
         @keyframes pulseStitch {
-            0% { filter: drop-shadow(0 0 4px #3b82f6); }
-            100% { filter: drop-shadow(0 0 16px #1d4ed8); }
+            0% { filter: drop-shadow(0 0 4px #38bdf8); }
+            100% { filter: drop-shadow(0 0 18px #0284c7); }
         }
 
         @keyframes pulseCauterize {
-            0% { filter: drop-shadow(0 0 4px #f97316); }
-            100% { filter: drop-shadow(0 0 16px #c2410c); }
+            0% { filter: drop-shadow(0 0 4px #facc15); }
+            100% { filter: drop-shadow(0 0 18px #ca8a04); }
         }
 
         /* Surgical Instrument Toolbar */
@@ -302,7 +302,7 @@
             flex: 1;
             background: #231b14;
             color: #a89a85;
-            border: 1px solid #4a3c2c;
+            border: 2px solid #4a3c2c;
             padding: 6px 4px;
             border-radius: 4px;
             font-size: 11px;
@@ -315,11 +315,31 @@
             transition: all 0.15s;
         }
 
-        .tool-btn.active {
-            background: #78350f;
-            color: #fef08a;
-            border-color: #f59e0b;
-            box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+        /* Idle Tool Borders */
+        #tool-scalpel { border-color: #9f1239; }
+        #tool-sutures { border-color: #075985; }
+        #tool-cautery { border-color: #854d0e; }
+
+        /* High Contrast Active Tool States */
+        #tool-scalpel.active {
+            background: #881337;
+            color: #ffe4e6;
+            border-color: #f43f5e;
+            box-shadow: 0 0 12px rgba(244, 63, 94, 0.65);
+        }
+
+        #tool-sutures.active {
+            background: #0c4a6e;
+            color: #e0f2fe;
+            border-color: #38bdf8;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.65);
+        }
+
+        #tool-cautery.active {
+            background: #713f12;
+            color: #fef9c3;
+            border-color: #facc15;
+            box-shadow: 0 0 12px rgba(250, 204, 21, 0.65);
         }
 
         /* Laudanum Overlay */
@@ -369,28 +389,6 @@
             padding: 14px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
-
-        /* Custom Modal Toast */
-        .toast-modal {
-            position: absolute;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--ink-color);
-            color: var(--paper-color);
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid var(--brass);
-            font-size: 12px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.5);
-            z-index: 100;
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { transform: translate(-50%, 20px); opacity: 0; }
-            to { transform: translate(-50%, 0); opacity: 1; }
-        }
     </style>
 </head>
 <body>
@@ -414,9 +412,9 @@
             <div class="p-2 bg-amber-100 rounded border border-amber-300 text-stone-800">
                 <p class="font-bold mb-1">🔪 SURGICAL COMMANDS ON HIGHLIGHTED ORGANS:</p>
                 <ul class="list-disc pl-4 space-y-1">
-                    <li><b class="text-red-700">RED GLOW (CUT):</b> Tap organ with Scalpel!</li>
-                    <li><b class="text-blue-700">BLUE GLOW (STITCH):</b> Press &amp; LONG HOLD organ (0.4s) with Sutures!</li>
-                    <li><b class="text-amber-700">ORANGE GLOW (CAUTERIZE):</b> Tap organ with Cautery iron!</li>
+                    <li><b class="text-rose-600">CRIMSON RED GLOW (CUT):</b> Select Scalpel &amp; Tap organ!</li>
+                    <li><b class="text-sky-600">ELECTRIC CYAN GLOW (STITCH):</b> Select Sutures &amp; LONG HOLD organ (0.4s)!</li>
+                    <li><b class="text-amber-600">GOLDEN YELLOW GLOW (CAUTERIZE):</b> Select Cautery &amp; Tap organ!</li>
                 </ul>
             </div>
         </div>
@@ -560,6 +558,28 @@
         </div>
     </div>
 
+    <!-- ROUND OUTCOME SCREEN -->
+    <div id="outcome-screen" class="screen hidden">
+        <h1 class="text-center font-bold text-base uppercase mb-2 border-b border-stone-800 pb-1" id="outcome-header">Case Result</h1>
+        <div class="patient-card">
+            <div class="flex-1 flex flex-col justify-center items-center my-3 space-y-3">
+                <div id="outcome-icon" class="text-5xl">🩺</div>
+                <div id="outcome-title" class="text-base font-bold text-center uppercase tracking-wide">
+                    Operation Successful!
+                </div>
+                <div id="outcome-body" class="patient-bubble text-center text-xs leading-relaxed max-w-sm w-full mb-2">
+                    The patient survived the surgery and was discharged.
+                </div>
+                <div id="outcome-ledger-delta" class="text-xs font-bold border-t border-b border-stone-800 py-2 w-full text-center bg-amber-100/60 text-amber-950">
+                    Coffers Change: +60s
+                </div>
+            </div>
+            <button class="btn btn-admit" onclick="proceedFromOutcome()">
+                Continue to Next Case ➔
+            </button>
+        </div>
+    </div>
+
     <!-- SHIFT SUMMARY / END SCREEN -->
     <div id="summary-screen" class="screen hidden">
         <h1 class="text-center font-bold text-base uppercase mb-2 border-b border-stone-800 pb-1">Shift Balance Sheet</h1>
@@ -604,9 +624,6 @@
         <button class="btn bg-amber-100 text-stone-900 font-bold px-6 py-2 w-auto border-amber-300" onclick="closeEvent()">SHOO!</button>
     </div>
 </div>
-
-<!-- Dynamic Toast Modal -->
-<div id="toast-container" class="toast-modal hidden"></div>
 
 <script>
     // Audio Synthesizer Engine
@@ -693,6 +710,18 @@
             gain.connect(audioCtx.destination);
             osc.start(now);
             osc.stop(now + 0.12);
+        } else if (type === 'error') {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(160, now);
+            osc.frequency.linearRampToValueAtTime(50, now + 0.2);
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.2);
         }
     }
 
@@ -819,6 +848,7 @@
     let surgeryTimer = null;
     let organDiseaser = null;
     let ecgInterval = null;
+    let comedicEventTimeout = null;
     let activeTime = 30;
     let patientPulse = 100;
     let laudanumDoses = 3;
@@ -826,18 +856,9 @@
     let laudanumTimeout = null;
     let currentPatientData = null;
 
-    // Active Organ Disease Tracking: { organId: { type: 'cut'|'stitch'|'cauterize', holdTimer: null, holdStart: 0 } }
+    // Active Organ Disease Tracking
     let activeOrganDiseases = {};
 
-    // Toast Notice
-    function showToast(msg) {
-        const toast = document.getElementById('toast-container');
-        toast.innerText = msg;
-        toast.classList.remove('hidden');
-        setTimeout(() => toast.classList.add('hidden'), 2500);
-    }
-
-    // Ledger Updates
     function updateLedgerCounters() {
         document.getElementById('global-budget').innerText = budget;
         document.getElementById('global-morgue').innerText = morgue;
@@ -854,7 +875,6 @@
         document.getElementById(`tool-${tool}`).classList.add('active');
     }
 
-    // Compendium Modal Logic
     function openCompendium() {
         const listContainer = document.getElementById('compendium-list');
         listContainer.innerHTML = '';
@@ -880,7 +900,6 @@
         document.getElementById('compendium-modal').classList.add('hidden');
     }
 
-    // Engine Flow Hooks
     function startGame() {
         initAudio();
         currentRound = 0;
@@ -910,19 +929,30 @@
 
     function rejectPatient() {
         let patient = triageDatabase[currentRound];
-        if (patient.lethal) {
+        let survived = !patient.lethal;
+        
+        if (!survived) {
             morgue++;
-            showToast("Patient perished without treatment!");
+            showOutcome({
+                success: false,
+                icon: '🪦',
+                title: 'PATIENT DECEASED',
+                body: `You prescribed Peppermint Water for <b>${patient.name}</b>, but their condition was lethal! They succumbed in the triage foyer.`,
+                delta: 'Coffers Change: 0s | Morgue Depositions: +1'
+            });
         } else {
             survivors++;
-            showToast("Prescribed peppermint water safely.");
+            showOutcome({
+                success: true,
+                icon: '🍃',
+                title: 'SAFELY DISCHARGED',
+                body: `<b>${patient.name}</b> suffered only from non-lethal vapors. Peppermint Water relieved their malaise without risking unnecessary surgery!`,
+                delta: 'Coffers Change: 0s | Survived Discharges: +1'
+            });
         }
         updateLedgerCounters();
-        currentRound++;
-        nextTriageRound();
     }
 
-    // Surgical Theatre Logic & Organ Highlights
     function startSurgicalTheatre() {
         switchScreen('surgery-screen');
         activeTime = 30;
@@ -931,30 +961,34 @@
         isLaudanumActive = false;
         activeOrganDiseases = {};
 
+        if (comedicEventTimeout) clearTimeout(comedicEventTimeout);
+
         document.getElementById('surgery-timer').innerText = `${activeTime}s`;
         document.getElementById('surgery-pulse').innerText = `${patientPulse} BPM`;
         document.getElementById('laudanum-count').innerText = `${laudanumDoses} LEFT`;
         document.getElementById('laudanum-btn').disabled = false;
         document.getElementById('laudanum-vignette').classList.add('hidden');
         
-        // Reset all organ paths
         document.querySelectorAll('.organ-path').forEach(path => {
             path.classList.remove('disease-cut', 'disease-stitch', 'disease-cauterize');
         });
 
-        // 20% Environmental Complication
-        if (Math.random() < 0.20) {
-            triggerComedicEvent();
+        // 40% chance of random comedic interruption occurring MID-SURGERY
+        if (Math.random() < 0.40) {
+            const randomDelay = Math.floor(Math.random() * 16000) + 4000;
+            comedicEventTimeout = setTimeout(() => {
+                if (!document.getElementById('surgery-screen').classList.contains('hidden')) {
+                    triggerComedicEvent();
+                }
+            }, randomDelay);
         }
 
         startECGAngine();
 
-        // Active Game Ticker
         surgeryTimer = setInterval(() => {
             activeTime--;
             document.getElementById('surgery-timer').innerText = `${activeTime}s`;
             
-            // Pulse decay (slowed if Laudanum active)
             const decayProb = isLaudanumActive ? 0.2 : 0.6;
             if (Math.random() < decayProb) {
                 patientPulse -= isLaudanumActive ? 1 : 4;
@@ -967,15 +1001,14 @@
             }
         }, 1000);
 
-        // Organ Disease Trigger Spawner
-        let spawnInterval = currentPatientData.lethal ? 650 : 900;
+        let baseInterval = 1300 - (currentRound * 80);
+        let spawnInterval = currentPatientData.lethal ? baseInterval : baseInterval + 100;
+        spawnInterval = Math.max(380, spawnInterval);
         organDiseaser = setInterval(spawnOrganDisease, spawnInterval);
 
-        // Bind SVG Organ Touch / Click Listeners
         setupOrganInteractions();
     }
 
-    // ECG Canvas Engine
     function startECGAngine() {
         const canvas = document.getElementById('ecg-canvas');
         const ctx = canvas.getContext('2d');
@@ -1008,7 +1041,6 @@
         }, 50);
     }
 
-    // LAUDANUM MECHANIC
     function useLaudanum() {
         if (laudanumDoses <= 0 || isLaudanumActive) return;
 
@@ -1034,14 +1066,11 @@
         }, 6000);
     }
 
-    // Direct Organ Highlighting & Rot Spawning
     function spawnOrganDisease() {
         const allOrgans = Array.from(document.querySelectorAll('.organ-path'));
-        // Find non-diseased organs
         const cleanOrgans = allOrgans.filter(el => !activeOrganDiseases[el.id]);
 
         if (cleanOrgans.length === 0) {
-            // All organs diseased penalty
             patientPulse = Math.max(0, patientPulse - 6);
             document.getElementById('surgery-pulse').innerText = `${patientPulse} BPM`;
             return;
@@ -1051,19 +1080,17 @@
         const types = ['cut', 'stitch', 'cauterize'];
         const chosenType = types[Math.floor(Math.random() * types.length)];
 
-        // Register disease state on organ
         activeOrganDiseases[targetOrgan.id] = { type: chosenType, holdTimer: null, holdStart: 0 };
         targetOrgan.classList.add(`disease-${chosenType}`);
     }
 
-    // Bind Gesture Interactions Directly to Organ Vector Elements
     function setupOrganInteractions() {
         const organs = document.querySelectorAll('.organ-path');
 
         organs.forEach(organ => {
             let holdTimer = null;
             let holdStart = 0;
-            const holdDuration = 400; // 0.4s hold for stitch
+            const holdDuration = 400;
 
             function handleStart(e) {
                 e.preventDefault();
@@ -1077,27 +1104,46 @@
                 const clickX = rect.left + rect.width / 2 - containerRect.left;
                 const clickY = rect.top + rect.height / 2 - containerRect.top;
 
-                if (disease.type === 'stitch' || activeTool === 'sutures') {
+                const toolToDisease = {
+                    'scalpel': 'cut',
+                    'sutures': 'stitch',
+                    'cautery': 'cauterize'
+                };
+
+                const expectedDiseaseType = toolToDisease[activeTool];
+
+                if (disease.type !== expectedDiseaseType) {
+                    playSynthSound('error');
+                    patientPulse = Math.max(0, patientPulse - 12);
+                    document.getElementById('surgery-pulse').innerText = `${patientPulse} BPM`;
+                    showFloatingText("⚠️ WRONG TOOL! (-12 BPM)", clickX, clickY, "#ef4444");
+                    return;
+                }
+
+                if (activeTool === 'sutures') {
                     holdStart = Date.now();
                     holdTimer = setInterval(() => {
                         const elapsed = Date.now() - holdStart;
                         if (elapsed >= holdDuration) {
                             clearInterval(holdTimer);
-                            resolveOrganTreatment(organ, clickX, clickY, "STITCHED!", "#60a5fa", "stitch");
+                            holdTimer = null;
+                            resolveOrganTreatment(organ, clickX, clickY, "STITCHED!", "#38bdf8", "stitch");
                         }
                     }, 50);
-                } else if (disease.type === 'cauterize' || activeTool === 'cautery') {
-                    resolveOrganTreatment(organ, clickX, clickY, "CAUTERIZED!", "#ea580c", "cauterize");
-                } else {
-                    resolveOrganTreatment(organ, clickX, clickY, "SEVERED!", "#ef4444", "cut");
+                } else if (activeTool === 'cautery') {
+                    resolveOrganTreatment(organ, clickX, clickY, "CAUTERIZED!", "#facc15", "cauterize");
+                } else if (activeTool === 'scalpel') {
+                    resolveOrganTreatment(organ, clickX, clickY, "SEVERED!", "#f43f5e", "cut");
                 }
             }
 
             function handleEnd() {
-                if (holdTimer) clearInterval(holdTimer);
+                if (holdTimer) {
+                    clearInterval(holdTimer);
+                    holdTimer = null;
+                }
             }
 
-            // Remove old events & attach new
             organ.onmousedown = handleStart;
             organ.onmouseup = handleEnd;
             organ.ontouchstart = handleStart;
@@ -1149,26 +1195,61 @@
         clearInterval(organDiseaser);
         clearInterval(ecgInterval);
         if (laudanumTimeout) clearTimeout(laudanumTimeout);
+        if (comedicEventTimeout) clearTimeout(comedicEventTimeout);
 
-        if (wasSuccessful && currentPatientData.condition !== 'hysteria' && currentPatientData.condition !== 'hypochondria') {
+        if (wasSuccessful && currentPatientData.lethal) {
             survivors++;
             budget += 60;
-            showToast("Operation Successful! Patient Discharged.");
-        } else if (!wasSuccessful || currentPatientData.lethal) {
-            morgue++;
-            showToast("Patient perished on the table.");
-        } else {
+            showOutcome({
+                success: true,
+                icon: '🩺',
+                title: 'SURGICAL SUCCESS!',
+                body: `<b>${currentPatientData.name}</b> was saved! The organ rot was excised in time and the chest closed cleanly. The Board awards a fee of 60 shillings.`,
+                delta: 'Coffers Change: +60s | Survived Discharges: +1'
+            });
+        } else if (wasSuccessful && !currentPatientData.lethal) {
             survivors++;
             budget -= 20;
-            showToast("Operated on hypochondriac - funds wasted.");
+            showOutcome({
+                success: false,
+                icon: '⚠️',
+                title: 'UNNECESSARY MALPRACTICE',
+                body: `<b>${currentPatientData.name}</b> survived, but suffered invasive surgery for a non-lethal condition! Hospital board levies a 20s penalty for unnecessary incisions.`,
+                delta: 'Coffers Change: -20s | Survived Discharges: +1'
+            });
+        } else {
+            morgue++;
+            showOutcome({
+                success: false,
+                icon: '☠️',
+                title: 'PATIENT EXPIRED ON TABLE',
+                body: `The humours stagnated and patient cardiac function collapsed during treatment of <b>${currentPatientData.name}</b>.`,
+                delta: 'Coffers Change: -50s (Admission Fee Lost) | Morgue: +1'
+            });
         }
 
         updateLedgerCounters();
-        currentRound++;
-        nextTriageRound();
     }
 
-    // End Game Summary
+    function showOutcome(data) {
+        document.getElementById('outcome-header').innerText = `Case ${currentRound + 1} of 12 Result`;
+        document.getElementById('outcome-icon').innerText = data.icon;
+        document.getElementById('outcome-title').innerText = data.title;
+        document.getElementById('outcome-title').className = `text-base font-bold text-center uppercase tracking-wide ${data.success ? 'text-emerald-800' : 'text-red-800'}`;
+        document.getElementById('outcome-body').innerHTML = data.body;
+        document.getElementById('outcome-ledger-delta').innerText = data.delta;
+        switchScreen('outcome-screen');
+    }
+
+    function proceedFromOutcome() {
+        currentRound++;
+        if (currentRound >= 12) {
+            endGameSummary();
+        } else {
+            nextTriageRound();
+        }
+    }
+
     function endGameSummary() {
         switchScreen('summary-screen');
         document.getElementById('stat-survived').innerText = survivors;
@@ -1188,27 +1269,13 @@
 
     function sharePerformance() {
         let verdictText = document.getElementById('final-verdict').innerText.split('!')[0];
-        const sharePayload = {
-            title: "Phlegmatic Felicity's Phlebotomy Frenzy",
-            text: `Shift Audit: ${verdictText}! 🩺\nDischarges: ${survivors}/12\nMorgue: ${morgue}/12\nCoffers: ${budget}s.\nCan you balance the humours?`,
-            url: window.location.href
-        };
+        const shareText = `Shift Audit: ${verdictText}! 🩺\nDischarges: ${survivors}/12\nMorgue: ${morgue}/12\nCoffers: ${budget}s.`;
 
-        if (navigator.share) {
-            navigator.share(sharePayload).catch(() => useFallbackClipboard(sharePayload));
-        } else {
-            useFallbackClipboard(sharePayload);
-        }
-    }
-
-    function useFallbackClipboard(payload) {
-        const text = `${payload.text} ${payload.url}`;
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text)
-                .then(() => showToast("Diagnostic records copied to clipboard!"))
-                .catch(() => showToast(`Audit: ${survivors} survivors, ${morgue} deaths.`));
+            navigator.clipboard.writeText(shareText);
+            alert("Diagnostic records copied to clipboard!");
         } else {
-            showToast(`Audit: ${survivors} survivors, ${morgue} deaths.`);
+            alert(shareText);
         }
     }
 </script>
