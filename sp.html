@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adjustable Stick Figure Physics Sandpit</title>
+    <!-- Tailwind CSS for modern UI styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Matter.js Physics Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+        }
+        canvas {
+            display: block;
+            touch-action: none;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        input[type="range"] {
+            accent-color: #6366f1;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col md:flex-row select-none overflow-hidden">
+
+    <!-- Extremely Compact Left Sidebar: Only shows remapped sliders for active limb & minimal action buttons -->
+    <aside id="config-sidebar" class="glass-panel w-full md:w-72 lg:w-80 h-auto md:h-full p-3 flex flex-col gap-2.5 border-b md:border-b-0 md:border-r border-slate-800 overflow-y-auto shadow-2xl z-10 shrink-0">
+        <!-- Status Header -->
+        <div class="flex items-center justify-between pb-1 border-b border-slate-800">
+            <span id="active-limb-title" class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle text-[8px]"></i> 1. Head
+            </span>
+            <span id="instability-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">BALANCED</span>
+        </div>
+
+        <!-- Single Remapped Sliders Card -->
+        <div class="space-y-2.5 bg-slate-900/90 p-3 rounded-xl border border-indigo-500/30 shadow-inner">
+            <!-- Slider 1: Mass & Size Proportional -->
+            <div class="space-y-0.5">
+                <div class="flex justify-between text-[11px] text-slate-300 font-medium">
+                    <span>Mass & Size:</span> <span id="val-weight-active" class="font-bold text-white">5.0 kg</span>
+                </div>
+                <input type="range" id="weight-active" min="0.5" max="30" step="0.5" value="5" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="onSliderChange()">
+            </div>
+
+            <!-- Slider 2: Rod Length -->
+            <div class="space-y-0.5">
+                <div class="flex justify-between text-[11px] text-slate-300 font-medium">
+                    <span>Rod Length:</span> <span id="val-len-active" class="font-bold text-white">80 px</span>
+                </div>
+                <input type="range" id="len-active" min="40" max="180" step="5" value="80" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="onSliderChange()">
+            </div>
+
+            <!-- Slider 3: Angle Offset (Degrees) -->
+            <div class="space-y-0.5">
+                <div class="flex justify-between text-[11px] text-slate-300 font-medium">
+                    <span>Angle Offset:</span> <span id="val-ang-active" class="font-bold text-white">0°</span>
+                </div>
+                <input type="range" id="ang-active" min="-90" max="90" step="1" value="0" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="onSliderChange()">
+            </div>
+        </div>
+
+        <!-- Minimal Action Controls -->
+        <div class="flex items-center gap-2 pt-1 mt-auto">
+            <button onclick="resetSimulation()" class="flex-1 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition shadow flex items-center justify-center gap-1">
+                <i class="fa-solid fa-rotate-right"></i> Reset
+            </button>
+            <button onclick="dropDisturbance()" class="flex-1 py-1.5 text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white rounded-lg transition shadow flex items-center justify-center gap-1">
+                <i class="fa-solid fa-meteor"></i> Drop Weight
+            </button>
+        </div>
+    </aside>
+
+    <!-- Right Sandbox Canvas Container (takes majority of screen) -->
+    <main id="canvas-container" class="relative flex-1 w-full h-[70vh] md:h-full cursor-crosshair overflow-hidden bg-[#0b0f19]">
+        <!-- HUD Overlay -->
+        <div id="hud" class="absolute bottom-3 left-3 z-10 pointer-events-none glass-panel px-3 py-1.5 rounded-lg text-[11px] flex flex-wrap gap-2.5 text-slate-300 shadow-xl">
+            <div>Tilt: <span id="stat-tilt" class="font-bold text-indigo-400">0.0°</span></div>
+            <div>FPS: <span id="stat-fps" class="font-bold text-emerald-400">60</span></div>
+            <div class="text-slate-400 italic">Tap any limb to inspect & adjust</div>
+        </div>
+    </main>
+
+    <script>
+        // Module aliases
+        const { Engine, Render, Runner, Bodies, Body, Composite, Constraint, Mouse, MouseConstraint } = Matter;
+
+        let engine, render, runner;
+        let figureComposite = null;
+        let figureMainBody = null; 
+        let mountConstraint = null;
+        let mountType = 'pinned'; // 'pinned' default
+        let selectedLimbIndex = 1;
+        
+        // Data store for the 5 limbs
+        const limbData = {
+            1: { weight: 5.0, len: 80, ang: 0, baseAngle: -Math.PI / 2, color: '#f43f5e', name: 'Head' },
+            2: { weight: 5.0, len: 120, ang: 0, baseAngle: 0, color: '#3b82f6', name: 'Right Arm' },
+            3: { weight: 5.0, len: 120, ang: 0, baseAngle: Math.PI / 2, color: '#10b981', name: 'Arm 3' },
+            4: { weight: 5.0, len: 120, ang: 0, baseAngle: Math.PI, color: '#f59e0b', name: 'Left Arm' },
+            5: { weight: 5.0, len: 100, ang: 0, baseAngle: -3 * Math.PI / 4, color: '#c084fc', name: 'Feet / Base' }
+        };
+
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let fps = 60;
+
+        function initPhysics() {
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Create engine with standard gravity
+            engine = Engine.create();
+            engine.world.gravity.y = 1.0;
+
+            // Create renderer
+            render = Render.create({
+                element: container,
+                engine: engine,
+                options: {
+                    width: width,
+                    height: height,
+                    wireframes: false,
+                    background: '#0b0f19'
+                }
+            });
+
+            Render.run(render);
+
+            // Create runner
+            runner = Runner.create();
+            Runner.run(runner, engine);
+
+            // Create boundaries (floor, walls)
+            createBoundaries(width, height);
+
+            // Build initial rigid stick figure structure
+            buildStickFigure(width / 2, height / 2 - 40);
+
+            // Add mouse control for interacting with bodies
+            const mouse = Mouse.create(render.canvas);
+            const mouseConstraint = MouseConstraint.create(engine, {
+                mouse: mouse,
+                constraint: {
+                    stiffness: 0.2,
+                    render: { visible: true, strokeStyle: '#6366f1', lineWidth: 2 }
+                }
+            });
+            Composite.add(engine.world, mouseConstraint);
+            render.mouse = mouse;
+
+            // Listen for direct taps on canvas to select limbs by clicking on them
+            render.canvas.addEventListener('pointerdown', (event) => {
+                const rect = render.canvas.getBoundingClientRect();
+                const clickX = event.clientX - rect.left;
+                const clickY = event.clientY - rect.top;
+                checkLimbSelection(clickX, clickY);
+            });
+
+            // Handle window resizing
+            window.addEventListener('resize', handleResize);
+
+            // Start HUD and stability update loop
+            requestAnimationFrame(updateHUD);
+        }
+
+        function createBoundaries(width, height) {
+            const wallOptions = {
+                isStatic: true,
+                render: { fillStyle: '#1e293b' },
+                friction: 0.5,
+                restitution: 0.6
+            };
+
+            const thickness = 60;
+            const ground = Bodies.rectangle(width / 2, height + thickness / 2 - 10, width + 200, thickness, wallOptions);
+            const leftWall = Bodies.rectangle(-thickness / 2 + 10, height / 2, thickness, height + 200, wallOptions);
+            const rightWall = Bodies.rectangle(width + thickness / 2 - 10, height / 2, thickness, height + 200, wallOptions);
+            const ceiling = Bodies.rectangle(width / 2, -thickness / 2 + 10, width + 200, thickness, wallOptions);
+
+            Composite.add(engine.world, [ground, leftWall, rightWall, ceiling]);
+        }
+
+        function buildStickFigure(cx, cy) {
+            figureComposite = Composite.create({ label: 'StickFigure' });
+
+            const hubRadius = 20;
+            const hub = Bodies.circle(cx, cy, hubRadius, {
+                mass: 4.0,
+                label: 'hub',
+                render: { fillStyle: '#6366f1', strokeStyle: '#ffffff', lineWidth: 2 }
+            });
+
+            const children = [hub];
+
+            for (let i = 1; i <= 5; i++) {
+                const limb = limbData[i];
+                const angle = limb.baseAngle + (limb.ang * Math.PI / 180);
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+
+                const rodLen = limb.len;
+                const rodX = cx + (cos * rodLen) / 2;
+                const rodY = cy + (sin * rodLen) / 2;
+                
+                const rod = Bodies.rectangle(rodX, rodY, rodLen, 14, {
+                    angle: angle,
+                    chamfer: { radius: 3 },
+                    label: `rod-${i}`,
+                    render: { fillStyle: selectedLimbIndex === i ? '#38bdf8' : '#475569', strokeStyle: selectedLimbIndex === i ? '#ffffff' : '#334155', lineWidth: selectedLimbIndex === i ? 3 : 1 }
+                });
+
+                // Tip size directly proportional to weight
+                const tipRadius = Math.max(10, Math.min(45, 10 + limb.weight * 1.4));
+                const tipX = cx + cos * rodLen;
+                const tipY = cy + sin * rodLen;
+                
+                const tip = Bodies.circle(tipX, tipY, tipRadius, {
+                    mass: limb.weight,
+                    label: `tip-${i}`,
+                    render: { fillStyle: limb.color, strokeStyle: selectedLimbIndex === i ? '#ffffff' : '#cbd5e1', lineWidth: selectedLimbIndex === i ? 4 : 2 }
+                });
+
+                children.push(rod, tip);
+            }
+
+            figureMainBody = Body.create({
+                parts: children,
+                frictionAir: 0.01,
+                restitution: 0.3
+            });
+
+            Composite.add(figureComposite, figureMainBody);
+
+            const anchorPoint = { x: cx, y: cy };
+            mountConstraint = Constraint.create({
+                pointA: anchorPoint,
+                bodyB: figureMainBody,
+                pointB: { x: 0, y: 0 },
+                stiffness: 1.0,
+                length: 0,
+                render: { strokeStyle: '#a855f7', lineWidth: 4, type: 'line' }
+            });
+
+            Composite.add(figureComposite, mountConstraint);
+            Composite.add(engine.world, figureComposite);
+        }
+
+        function checkLimbSelection(x, y) {
+            if (!figureMainBody) return;
+            const parts = figureMainBody.parts;
+            for (let i = 1; i < parts.length; i++) {
+                const part = parts[i];
+                const label = part.label;
+                if (label && label.includes('-')) {
+                    const id = parseInt(label.split('-')[1]);
+                    const dx = part.position.x - x;
+                    const dy = part.position.y - y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 45) {
+                        selectLimb(id);
+                        return;
+                    }
+                }
+            }
+        }
+
+        function selectLimb(id) {
+            selectedLimbIndex = id;
+
+            // Remap slider values to active limb data instantly
+            const limb = limbData[id];
+            document.getElementById('weight-active').value = limb.weight;
+            document.getElementById('len-active').value = limb.len;
+            document.getElementById('ang-active').value = limb.ang;
+
+            document.getElementById('val-weight-active').innerText = limb.weight + ' kg';
+            document.getElementById('val-len-active').innerText = limb.len + ' px';
+            document.getElementById('val-ang-active').innerText = limb.ang + '°';
+
+            const titleEl = document.getElementById('active-limb-title');
+            const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#c084fc'];
+            titleEl.style.color = colors[id - 1];
+            titleEl.innerHTML = `<i class="fa-solid fa-circle text-[8px]"></i> ${id}. ${limb.name}`;
+
+            updateFigureParameters();
+        }
+
+        function onSliderChange() {
+            const w = parseFloat(document.getElementById('weight-active').value);
+            const l = parseFloat(document.getElementById('len-active').value);
+            const a = parseFloat(document.getElementById('ang-active').value);
+
+            limbData[selectedLimbIndex].weight = w;
+            limbData[selectedLimbIndex].len = l;
+            limbData[selectedLimbIndex].ang = a;
+
+            document.getElementById('val-weight-active').innerText = w + ' kg';
+            document.getElementById('val-len-active').innerText = l + ' px';
+            document.getElementById('val-ang-active').innerText = a + '°';
+
+            updateFigureParameters();
+        }
+
+        function updateFigureParameters() {
+            if (figureMainBody) {
+                const currentPos = { x: figureMainBody.position.x, y: figureMainBody.position.y };
+                Composite.remove(engine.world, figureComposite);
+                buildStickFigure(currentPos.x, currentPos.y);
+            }
+        }
+
+        function resetSimulation() {
+            Composite.remove(engine.world, figureComposite);
+            const container = document.getElementById('canvas-container');
+            buildStickFigure(container.clientWidth / 2, container.clientHeight / 2 - 40);
+        }
+
+        function dropDisturbance() {
+            if (!figureMainBody) return;
+            const dropX = figureMainBody.position.x + (Math.random() > 0.5 ? 120 : -120);
+            const dropY = figureMainBody.position.y - 180;
+            const distBall = Bodies.circle(dropX, dropY, 22, {
+                mass: 12.0,
+                friction: 0.1,
+                restitution: 0.7,
+                render: { fillStyle: '#e11d48', strokeStyle: '#ffffff', lineWidth: 2 }
+            });
+            Composite.add(engine.world, distBall);
+        }
+
+        function handleResize() {
+            const container = document.getElementById('canvas-container');
+            if (!container || !render) return;
+            render.options.width = container.clientWidth;
+            render.options.height = container.clientHeight;
+            render.canvas.width = container.clientWidth;
+            render.canvas.height = container.clientHeight;
+        }
+
+        function updateHUD(timestamp) {
+            frameCount++;
+            if (timestamp - lastTime >= 1000) {
+                fps = Math.round((frameCount * 1000) / (timestamp - lastTime));
+                frameCount = 0;
+                lastTime = timestamp;
+                document.getElementById('stat-fps').innerText = fps;
+            }
+
+            if (figureMainBody) {
+                const angleDeg = (figureMainBody.angle * (180 / Math.PI)) % 360;
+                document.getElementById('stat-tilt').innerText = angleDeg.toFixed(1) + '°';
+
+                const badge = document.getElementById('instability-badge');
+                const absAngle = Math.abs(angleDeg);
+
+                if (absAngle > 45 && absAngle < 315) {
+                    badge.innerText = 'TOPPLED';
+                    badge.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse';
+                } else if (absAngle > 15 && absAngle < 345) {
+                    badge.innerText = 'LEANING';
+                    badge.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                } else {
+                    badge.innerText = 'BALANCED';
+                    badge.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                }
+            }
+
+            requestAnimationFrame(updateHUD);
+        }
+
+        window.onload = function() {
+            initPhysics();
+        };
+    </script>
+</body>
+</html>
