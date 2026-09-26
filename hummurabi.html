@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hammurabi - Ancient Babylonian Strategy</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for retro sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Google Fonts: Cinzel & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cinzel: ['Cinzel', 'serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        babylon: {
+                            gold: '#D4AF37',
+                            darkgold: '#AA7C11',
+                            sand: '#F4E8C1',
+                            dark: '#1A1814',
+                            card: '#29251E',
+                            accent: '#C53030'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1A1814;
+            color: #F4E8C1;
+        }
+        h1, h2, h3, .font-cinzel {
+            font-family: 'Cinzel', serif;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1A1814;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4A4033;
+            border-radius: 2px;
+        }
+        .ancient-border {
+            border: 2px solid #D4AF37;
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.15);
+        }
+        .retro-btn {
+            background: linear-gradient(to bottom, #E6C657, #AA7C11);
+            color: #1A1814;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .retro-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.3);
+        }
+        .retro-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col overflow-x-hidden selection:bg-babylon-gold selection:text-babylon-dark">
+
+    <div id="app" class="flex-1 flex flex-col max-w-md mx-auto w-full p-3 justify-between">
+        
+        <!-- Header -->
+        <header class="text-center py-1.5 border-b border-babylon-gold/30 mb-2">
+            <h1 class="text-xl sm:text-2xl font-black tracking-wider text-babylon-gold uppercase">Hammurabi</h1>
+            <p class="text-[11px] text-babylon-sand/70 tracking-widest font-cinzel">Ruler of Babylon • Year <span id="header-year">1</span> of 10</p>
+        </header>
+
+        <!-- Main Dynamic View Area -->
+        <main id="main-view" class="flex-1 flex flex-col justify-center">
+            
+            <!-- Welcome / Intro Screen -->
+            <div id="screen-welcome" class="space-y-3 text-center">
+                <div class="ancient-border bg-babylon-card p-4 rounded-xl space-y-3">
+                    <div class="w-14 h-14 mx-auto bg-babylon-darkgold/20 rounded-full flex items-center justify-center border border-babylon-gold">
+                        <svg class="w-7 h-7 text-babylon-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-lg font-bold text-babylon-gold">Hail, Hammurabi!</h2>
+                    <p class="text-xs text-babylon-sand/90 leading-relaxed text-left">
+                        Manage your ancient city-state wisely for 10 years. Adjust your land, grain distribution, and harvest seeds directly on the dashboard. Keep your people fed and your silos full!
+                    </p>
+                    <button onclick="startGame()" class="w-full py-2.5 rounded-lg retro-btn font-cinzel text-sm uppercase tracking-wider">
+                        Ascend Throne
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard / Status View (Hidden initially) -->
+            <div id="screen-game" class="hidden flex-col space-y-2.5">
+                
+                <!-- Advisor Speech Card -->
+                <div class="ancient-border bg-babylon-card p-2.5 rounded-xl relative overflow-hidden">
+                    <h3 class="text-[10px] uppercase font-cinzel tracking-widest text-babylon-gold mb-0.5 font-bold">Royal Chancellor's Report</h3>
+                    <div id="advisor-message" class="text-[11px] text-babylon-sand leading-relaxed min-h-[35px] max-h-[60px] overflow-y-auto pr-1">
+                        Welcome, Great King. Adjust your kingdom's resources below and proceed to the next harvest.
+                    </div>
+                </div>
+
+                <!-- Unified Interactive Resource & Decision Grid -->
+                <div class="space-y-2">
+                    
+                    <!-- Grain Available (Readout + Reserve Info) -->
+                    <div class="bg-babylon-card border border-babylon-gold/40 p-2.5 rounded-xl flex items-center justify-between">
+                        <div>
+                            <span class="text-babylon-sand/80 text-xs block font-cinzel">Available Grain</span>
+                            <span id="stat-grain" class="font-bold text-babylon-gold text-base">2800</span> <span class="text-[10px] text-babylon-sand/60">bu</span>
+                        </div>
+                        <div class="text-right text-[10px] text-babylon-sand/70">
+                            Land Price: <span id="stat-price" class="text-babylon-gold font-bold">19</span> bu/A
+                        </div>
+                    </div>
+
+                    <!-- Decision Row 1: Land (Buy / Sell) -->
+                    <div class="bg-babylon-card border border-babylon-gold/30 p-2.5 rounded-xl space-y-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-babylon-sand font-cinzel font-bold">Land Holdings</span>
+                            <span class="text-babylon-gold font-bold"><span id="stat-land">1000</span> Acres</span>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-[11px] text-babylon-sand/70">Buy / Sell Acres:</span>
+                            <div class="flex items-center space-x-1">
+                                <button onclick="modifyLand(-50)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">-50</button>
+                                <button onclick="modifyLand(-10)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">-10</button>
+                                <span id="input-land-diff" class="w-12 text-center text-xs font-bold text-babylon-gold">0</span>
+                                <button onclick="modifyLand(10)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">+10</button>
+                                <button onclick="modifyLand(50)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">+50</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Decision Row 2: Feed People -->
+                    <div class="bg-babylon-card border border-babylon-gold/30 p-2.5 rounded-xl space-y-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-babylon-sand font-cinzel font-bold">Feed Citizens</span>
+                            <span class="text-babylon-sand/70 text-[11px]">Pop: <strong id="stat-population" class="text-babylon-gold">95</strong></span>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-[11px] text-babylon-sand/70">Grain to Feed:</span>
+                            <div class="flex items-center space-x-1">
+                                <button onclick="modifyFeed(-100)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">-100</button>
+                                <button onclick="modifyFeed(-20)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">-20</button>
+                                <span id="input-feed" class="w-12 text-center text-xs font-bold text-babylon-gold">1900</span>
+                                <button onclick="modifyFeed(20)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">+20</button>
+                                <button onclick="modifyFeed(100)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">+100</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Decision Row 3: Plant Crops -->
+                    <div class="bg-babylon-card border border-babylon-gold/30 p-2.5 rounded-xl space-y-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-babylon-sand font-cinzel font-bold">Plant Seeds</span>
+                            <span class="text-[10px] text-babylon-sand/60">2 Acres per 1 bu</span>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-[11px] text-babylon-sand/70">Acres to Plant:</span>
+                            <div class="flex items-center space-x-1">
+                                <button onclick="modifyPlant(-100)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">-100</button>
+                                <button onclick="modifyPlant(-10)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">-10</button>
+                                <span id="input-plant" class="w-12 text-center text-xs font-bold text-babylon-gold">500</span>
+                                <button onclick="modifyPlant(10)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">+10</button>
+                                <button onclick="modifyPlant(100)" class="bg-babylon-dark border border-babylon-gold/50 text-babylon-gold px-2 py-1 rounded text-xs font-bold hover:bg-babylon-darkgold/20">+100</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Submit Button -->
+                <button onclick="processYearEnd()" class="w-full py-2.5 rounded-lg retro-btn font-cinzel text-xs uppercase tracking-wider">
+                    Complete Year & Harvest
+                </button>
+
+            </div>
+
+            <!-- Year Summary Splash Screen Overlay (Hidden initially) -->
+            <div id="screen-summary" class="hidden absolute inset-0 bg-babylon-dark/95 z-50 flex flex-col justify-center p-4">
+                <div class="ancient-border bg-babylon-card p-4 rounded-xl space-y-3 text-center max-w-sm mx-auto w-full">
+                    <div class="w-12 h-12 mx-auto bg-babylon-gold/20 rounded-full flex items-center justify-center border border-babylon-gold text-babylon-gold">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                    </div>
+                    <h2 id="summary-title" class="text-base font-bold text-babylon-gold font-cinzel">Year Review</h2>
+                    <div id="summary-content" class="text-xs text-babylon-sand space-y-1.5 text-left bg-babylon-dark/50 p-3 rounded-lg border border-babylon-gold/20 max-h-48 overflow-y-auto">
+                        <!-- Summary logs injected here -->
+                    </div>
+                    <button onclick="dismissSummary()" class="w-full py-2.5 rounded-lg retro-btn font-cinzel text-xs uppercase tracking-wider">
+                        Proceed to Next Year
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game Over / Victory Screen (Hidden initially) -->
+            <div id="screen-gameover" class="hidden text-center space-y-3">
+                <div class="ancient-border bg-babylon-card p-4 rounded-xl space-y-3">
+                    <div id="gameover-icon" class="w-14 h-14 mx-auto rounded-full flex items-center justify-center border border-babylon-gold">
+                        <!-- Dynamic Icon -->
+                    </div>
+                    <h2 id="gameover-title" class="text-base font-bold text-babylon-gold">Game Over</h2>
+                    <p id="gameover-text" class="text-xs text-babylon-sand/90 leading-relaxed">
+                        Your reign has ended.
+                    </p>
+                    <div id="final-stats" class="bg-babylon-dark/60 p-2.5 rounded-lg text-[11px] space-y-1 text-left border border-babylon-gold/20">
+                        <!-- Stats injected here -->
+                    </div>
+                    <button onclick="restartGame()" class="w-full py-2.5 rounded-lg retro-btn font-cinzel text-xs uppercase tracking-wider">
+                        Play Again
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Footer / Sound Toggle -->
+        <footer class="mt-2 pt-1 border-t border-babylon-gold/20 flex justify-between items-center text-[11px] text-babylon-sand/60">
+            <span>Babylonian Empire v1.2</span>
+            <button onclick="toggleSound()" id="sound-btn" class="flex items-center space-x-1 hover:text-babylon-gold transition">
+                <svg id="sound-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                <span id="sound-text">Sound: Off</span>
+            </button>
+        </footer>
+
+    </div>
+
+    <script>
+        // Game State Variables
+        let gameState = {
+            year: 1,
+            population: 95,
+            grain: 2800,
+            baseGrain: 2800, // Starting grain before current adjustments
+            baseAcres: 1000, // Starting acres before current adjustments
+            landPrice: 19,
+            harvestPerAcre: 3,
+            totalEatenByRats: 200,
+            peopleStarvedTotal: 0,
+            immigrantsTotal: 5,
+            plagueOccurred: false,
+            landDiff: 0, // positive = buy, negative = sell
+            feedGrain: 1900,
+            plantAcres: 500,
+            lastYearLog: []
+        };
+
+        let soundEnabled = false;
+        let synth = null;
+
+        function initAudio() {
+            if (!synth) {
+                synth = new Tone.Synth({
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 }
+                }).toDestination();
+            }
+        }
+
+        function playTone(note = "C4", duration = "8n") {
+            if (!soundEnabled) return;
+            try {
+                Tone.start();
+                initAudio();
+                synth.triggerAttackRelease(note, duration);
+            } catch (e) {
+                console.log("Audio context error:", e);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const textEl = document.getElementById('sound-text');
+            if (soundEnabled) {
+                textEl.textContent = "Sound: On";
+                playTone("E5", "8n");
+            } else {
+                textEl.textContent = "Sound: Off";
+            }
+        }
+
+        function startGame() {
+            playTone("G4", "4n");
+            resetGameState();
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-gameover').classList.add('hidden');
+            document.getElementById('screen-summary').classList.add('hidden');
+            const gameScreen = document.getElementById('screen-game');
+            gameScreen.classList.remove('hidden');
+            gameScreen.classList.add('flex');
+            updateUI();
+        }
+
+        function resetGameState() {
+            gameState = {
+                year: 1,
+                population: 95,
+                grain: 2800,
+                baseGrain: 2800,
+                baseAcres: 1000,
+                landPrice: Math.floor(Math.random() * 10) + 17,
+                harvestPerAcre: 3,
+                totalEatenByRats: 200,
+                peopleStarvedTotal: 0,
+                immigrantsTotal: 5,
+                plagueOccurred: false,
+                landDiff: 0,
+                feedGrain: 1900,
+                plantAcres: 400,
+                lastYearLog: []
+            };
+        }
+
+        // Calculate current remaining grain dynamically based on base grain + sales - purchases - feeding - seed planting
+        function calculateRemainingGrain() {
+            let costOfLand = 0;
+            if (gameState.landDiff > 0) {
+                costOfLand = gameState.landDiff * gameState.landPrice;
+            }
+            let incomeFromLand = 0;
+            if (gameState.landDiff < 0) {
+                incomeFromLand = Math.abs(gameState.landDiff) * gameState.landPrice;
+            }
+            let seedCost = Math.ceil(gameState.plantAcres / 2);
+
+            let remaining = gameState.baseGrain + incomeFromLand - costOfLand - gameState.feedGrain - seedCost;
+            return Math.floor(remaining);
+        }
+
+        function updateUI() {
+            document.getElementById('header-year').textContent = gameState.year;
+            document.getElementById('stat-population').textContent = gameState.population;
+            document.getElementById('stat-price').textContent = gameState.landPrice;
+            document.getElementById('stat-land').textContent = gameState.baseAcres + gameState.landDiff;
+
+            let computedGrain = calculateRemainingGrain();
+            document.getElementById('stat-grain').textContent = computedGrain;
+
+            document.getElementById('input-land-diff').textContent = (gameState.landDiff >= 0 ? '+' : '') + gameState.landDiff;
+            document.getElementById('input-feed').textContent = gameState.feedGrain;
+            document.getElementById('input-plant').textContent = gameState.plantAcres;
+        }
+
+        // Adjust Land Buy/Sell (+/- acres)
+        function modifyLand(amount) {
+            playTone("A4", "32n");
+            let newDiff = gameState.landDiff + amount;
+            let currentAcres = gameState.baseAcres + newDiff;
+
+            if (currentAcres < 0) return; // Cannot own negative acres
+
+            // Check if buying exceeds available grain
+            let simulatedGrain = gameState.baseGrain;
+            if (newDiff < 0) simulatedGrain += Math.abs(newDiff) * gameState.landPrice;
+            if (newDiff > 0) simulatedGrain -= newDiff * gameState.landPrice;
+            simulatedGrain -= gameState.feedGrain;
+            simulatedGrain -= Math.ceil(gameState.plantAcres / 2);
+
+            if (simulatedGrain < 0) {
+                document.getElementById('advisor-message').textContent = "Sire! You lack sufficient grain reserves for this land transaction.";
+                return;
+            }
+
+            gameState.landDiff = newDiff;
+            updateUI();
+        }
+
+        // Adjust Feed Grain
+        function modifyFeed(amount) {
+            playTone("F4", "32n");
+            let newFeed = gameState.feedGrain + amount;
+            if (newFeed < 0) return;
+
+            let costOfLand = gameState.landDiff > 0 ? gameState.landDiff * gameState.landPrice : 0;
+            let incomeFromLand = gameState.landDiff < 0 ? Math.abs(gameState.landDiff) * gameState.landPrice : 0;
+            let seedCost = Math.ceil(gameState.plantAcres / 2);
+
+            let simulatedGrain = gameState.baseGrain + incomeFromLand - costOfLand - newFeed - seedCost;
+            if (simulatedGrain < 0) {
+                document.getElementById('advisor-message').textContent = "Sire! You do not have enough grain to feed that many citizens.";
+                return;
+            }
+
+            gameState.feedGrain = newFeed;
+            updateUI();
+        }
+
+        // Adjust Plant Seeds
+        function modifyPlant(amount) {
+            playTone("C5", "32n");
+            let newPlant = gameState.plantAcres + amount;
+            if (newPlant < 0) return;
+
+            let totalAcres = gameState.baseAcres + gameState.landDiff;
+            if (newPlant > totalAcres) {
+                document.getElementById('advisor-message').textContent = `Sire, you only own ${totalAcres} total acres to farm!`;
+                return;
+            }
+            if (newPlant > gameState.population * 10) {
+                document.getElementById('advisor-message').textContent = `Sire, your population can only farm ${gameState.population * 10} acres this year!`;
+                return;
+            }
+
+            let costOfLand = gameState.landDiff > 0 ? gameState.landDiff * gameState.landPrice : 0;
+            let incomeFromLand = gameState.landDiff < 0 ? Math.abs(gameState.landDiff) * gameState.landPrice : 0;
+            let seedCost = Math.ceil(newPlant / 2);
+
+            let simulatedGrain = gameState.baseGrain + incomeFromLand - costOfLand - gameState.feedGrain - seedCost;
+            if (simulatedGrain < 0) {
+                document.getElementById('advisor-message').textContent = "Sire! You do not have enough seed grain for this planting.";
+                return;
+            }
+
+            gameState.plantAcres = newPlant;
+            updateUI();
+        }
+
+        function processYearEnd() {
+            playTone("C5", "8n");
+            let computedGrain = calculateRemainingGrain();
+            if (computedGrain < 0) {
+                document.getElementById('advisor-message').textContent = "Sire, your accounts are overdrawn! Adjust your allocations.";
+                return;
+            }
+
+            // Apply transactions to game state
+            gameState.grain = computedGrain;
+            gameState.baseAcres += gameState.landDiff;
+            let log = [];
+
+            // Starvation calculation
+            const peopleFed = Math.floor(gameState.feedGrain / 20);
+            let starved = 0;
+            if (peopleFed < gameState.population) {
+                starved = gameState.population - peopleFed;
+                gameState.peopleStarvedTotal += starved;
+                gameState.population -= starved;
+                log.push(`⚰️ ${starved} people starved to death.`);
+            } else {
+                log.push("🌾 All citizens were well-fed this year.");
+            }
+
+            if (starved > gameState.population * 0.45 && gameState.year > 1) {
+                endGame(false, `You let ${starved} people starve! The furious populace has dragged you from the throne.`);
+                return;
+            }
+
+            let newcomers = 0;
+            if (starved === 0) {
+                newcomers = Math.floor(Math.random() * 5) + 1;
+                gameState.population += newcomers;
+                gameState.immigrantsTotal += newcomers;
+                log.push(`👥 ${newcomers} new citizens immigrated to Babylon.`);
+            }
+
+            // Harvest
+            const harvestYield = Math.floor(Math.random() * 3) + 1;
+            gameState.harvestPerAcre = harvestYield;
+            const harvestTotal = gameState.plantAcres * harvestYield;
+            gameState.grain += harvestTotal;
+            log.push(`🌾 Harvest yielded ${harvestYield} bu/acre (total ${harvestTotal} bu).`);
+
+            // Rats
+            let ratLoss = 0;
+            if (Math.random() < 0.4) {
+                const ratPercent = (Math.floor(Math.random() * 5) + 1) / 10;
+                ratLoss = Math.floor(gameState.grain * ratPercent);
+                gameState.grain -= ratLoss;
+                gameState.totalEatenByRats += ratLoss;
+                log.push(`🐀 Rats devoured ${ratLoss} bushels of grain!`);
+            } else {
+                log.push("🛡️ Granaries safe from rats.");
+            }
+
+            // Plague
+            gameState.plagueOccurred = false;
+            if (Math.random() < 0.15) {
+                gameState.population = Math.max(10, Math.floor(gameState.population / 2));
+                gameState.plagueOccurred = true;
+                log.push("🦠 Plague swept through, halving the population!");
+            }
+
+            // Setup for next year
+            gameState.baseGrain = gameState.grain;
+            gameState.baseAcres = gameState.baseAcres;
+            gameState.landDiff = 0;
+            gameState.feedGrain = gameState.population * 20;
+            gameState.plantAcres = Math.min(gameState.baseAcres, gameState.population * 10, Math.floor(gameState.baseGrain * 2));
+            gameState.landPrice = Math.floor(Math.random() * 10) + 17;
+            gameState.lastYearLog = log;
+
+            if (gameState.year >= 10) {
+                evaluateVictory();
+                return;
+            }
+
+            showYearSummarySplash(gameState.year, log);
+        }
+
+        function showYearSummarySplash(year, logArr) {
+            document.getElementById('summary-title').textContent = `Year ${year} Review Report`;
+            const contentEl = document.getElementById('summary-content');
+            contentEl.innerHTML = logArr.map(item => `<div>${item}</div>`).join('');
+            document.getElementById('screen-summary').classList.remove('hidden');
+        }
+
+        function dismissSummary() {
+            playTone("G4", "8n");
+            document.getElementById('screen-summary').classList.add('hidden');
+            gameState.year++;
+            document.getElementById('advisor-message').textContent = `Year ${gameState.year} begins. Review your allocations and harvest.`;
+            updateUI();
+        }
+
+        function evaluateVictory() {
+            const acresPerPerson = gameState.baseAcres / gameState.population;
+            let scoreRating = "";
+            let success = true;
+
+            if (gameState.peopleStarvedTotal > 30 || acresPerPerson < 2) {
+                success = false;
+                scoreRating = "Your mismanagement has left Babylon in ruins. Historians remember you with contempt.";
+            } else if (gameState.peopleStarvedTotal > 15 || acresPerPerson < 5) {
+                scoreRating = "You managed the city adequately, though many suffered. Babylon survives.";
+            } else if (gameState.peopleStarvedTotal > 5 || acresPerPerson < 9) {
+                scoreRating = "Your rule was prosperous and wise! The citizens sing praises of Hammurabi.";
+            } else {
+                scoreRating = "Magnificent! You are immortalized as Hammurabi the Great!";
+            }
+
+            endGame(success, scoreRating);
+        }
+
+        function endGame(success, message) {
+            playTone(success ? "C5" : "C3", "2n");
+            document.getElementById('screen-summary').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('flex');
+            document.getElementById('screen-game').classList.add('hidden');
+            
+            const screen = document.getElementById('screen-gameover');
+            screen.classList.remove('hidden');
+
+            const icon = document.getElementById('gameover-icon');
+            const title = document.getElementById('gameover-title');
+            const text = document.getElementById('gameover-text');
+            const stats = document.getElementById('final-stats');
+
+            if (success) {
+                icon.className = "w-14 h-14 mx-auto bg-babylon-gold/20 rounded-full flex items-center justify-center border border-babylon-gold text-babylon-gold";
+                icon.innerHTML = `<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>`;
+                title.textContent = "Glorious Reign Complete!";
+            } else {
+                icon.className = "w-14 h-14 mx-auto bg-red-900/20 rounded-full flex items-center justify-center border border-red-500 text-red-500";
+                icon.innerHTML = `<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+                title.textContent = "Fall of Babylon";
+            }
+
+            text.textContent = message;
+
+            stats.innerHTML = `
+                <div>👑 Final Year Reached: <strong>${gameState.year}</strong></div>
+                <div>👥 Final Population: <strong>${gameState.population}</strong></div>
+                <div>🌾 Remaining Grain: <strong>${Math.floor(gameState.grain)} bu</strong></div>
+                <div>🏞️ Total Acres Owned: <strong>${gameState.baseAcres}</strong></div>
+                <div>⚰️ Total People Starved: <strong>${gameState.peopleStarvedTotal}</strong></div>
+            `;
+        }
+
+        function restartGame() {
+            playTone("G4", "4n");
+            startGame();
+        }
+    </script>
+</body>
+</html>
