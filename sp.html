@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adjustable Stick Figure Physics Sandpit</title>
+    <title>Adjustable Free-Floating Stick Figure Physics Sandpit</title>
     <!-- Tailwind CSS for modern UI styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Matter.js Physics Engine -->
@@ -30,26 +30,37 @@
         input[type="range"] {
             accent-color: #6366f1;
         }
+        .sidebar-transition {
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body class="w-screen h-screen flex flex-col md:flex-row select-none overflow-hidden">
 
-    <!-- Extremely Compact Left Sidebar: Only shows remapped sliders for active limb & minimal action buttons -->
-    <aside id="config-sidebar" class="glass-panel w-full md:w-72 lg:w-80 h-auto md:h-full p-3 flex flex-col gap-2.5 border-b md:border-b-0 md:border-r border-slate-800 overflow-y-auto shadow-2xl z-10 shrink-0">
+    <!-- Left Sidebar: Controls for limb mass, rod length, angle, and central hub mass -->
+    <aside id="config-sidebar" class="sidebar-transition glass-panel absolute md:relative top-0 left-0 z-20 w-full md:w-72 lg:w-80 h-auto md:h-full p-3 flex flex-col gap-2.5 border-b md:border-b-0 md:border-r border-slate-800 overflow-y-auto shadow-2xl shrink-0">
         <!-- Status Header -->
         <div class="flex items-center justify-between pb-1 border-b border-slate-800">
             <span id="active-limb-title" class="text-xs font-bold text-rose-400 flex items-center gap-1.5">
                 <i class="fa-solid fa-circle text-[8px]"></i> 1. Head
             </span>
-            <span id="instability-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">BALANCED</span>
+            <span id="instability-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">FLOATING</span>
+        </div>
+
+        <!-- Central Hub Mass Card -->
+        <div class="space-y-1.5 bg-indigo-950/40 p-2.5 rounded-xl border border-indigo-500/30">
+            <div class="flex justify-between text-[11px] text-indigo-300 font-medium">
+                <span>Central Hub Mass:</span> <span id="val-hub-weight" class="font-bold text-white">4.0 kg</span>
+            </div>
+            <input type="range" id="hub-weight" min="1" max="40" step="1" value="4" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="onHubWeightChange()">
         </div>
 
         <!-- Single Remapped Sliders Card -->
-        <div class="space-y-2.5 bg-slate-900/90 p-3 rounded-xl border border-indigo-500/30 shadow-inner">
+        <div class="space-y-2.5 bg-slate-900/90 p-3 rounded-xl border border-slate-700/60 shadow-inner">
             <!-- Slider 1: Mass & Size Proportional -->
             <div class="space-y-0.5">
                 <div class="flex justify-between text-[11px] text-slate-300 font-medium">
-                    <span>Mass & Size:</span> <span id="val-weight-active" class="font-bold text-white">5.0 kg</span>
+                    <span>Limb Mass & Size:</span> <span id="val-weight-active" class="font-bold text-white">5.0 kg</span>
                 </div>
                 <input type="range" id="weight-active" min="0.5" max="30" step="0.5" value="5" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="onSliderChange()">
             </div>
@@ -82,11 +93,18 @@
         </div>
     </aside>
 
-    <!-- Right Sandbox Canvas Container (takes majority of screen) -->
+    <!-- Right Sandbox Canvas Container -->
     <main id="canvas-container" class="relative flex-1 w-full h-[70vh] md:h-full cursor-crosshair overflow-hidden bg-[#0b0f19]">
+        <!-- Top-Right Floating Toggle Controls Button -->
+        <div class="absolute top-3 right-3 z-10">
+            <button onclick="toggleConfigPanel()" id="toggle-config-btn" class="glass-panel px-3 py-1.5 text-xs font-semibold text-slate-200 hover:text-white rounded-lg shadow-xl transition flex items-center gap-1.5 border border-slate-700">
+                <i class="fa-solid fa-sliders text-indigo-400"></i> <span id="config-btn-text">Hide Controls</span>
+            </button>
+        </div>
+
         <!-- HUD Overlay -->
         <div id="hud" class="absolute bottom-3 left-3 z-10 pointer-events-none glass-panel px-3 py-1.5 rounded-lg text-[11px] flex flex-wrap gap-2.5 text-slate-300 shadow-xl">
-            <div>Tilt: <span id="stat-tilt" class="font-bold text-indigo-400">0.0°</span></div>
+            <div>Status: <span id="stat-status" class="font-bold text-indigo-400">Free-Floating Tumble</span></div>
             <div>FPS: <span id="stat-fps" class="font-bold text-emerald-400">60</span></div>
             <div class="text-slate-400 italic">Tap any limb to inspect & adjust</div>
         </div>
@@ -99,9 +117,9 @@
         let engine, render, runner;
         let figureComposite = null;
         let figureMainBody = null; 
-        let mountConstraint = null;
-        let mountType = 'pinned'; // 'pinned' default
         let selectedLimbIndex = 1;
+        let hubWeight = 4.0;
+        let isConfigVisible = true;
         
         // Data store for the 5 limbs
         const limbData = {
@@ -143,11 +161,11 @@
             runner = Runner.create();
             Runner.run(runner, engine);
 
-            // Create boundaries (floor, walls)
+            // Create boundaries (floor, walls) with visible ground
             createBoundaries(width, height);
 
-            // Build initial rigid stick figure structure
-            buildStickFigure(width / 2, height / 2 - 40);
+            // Build initial unpinned free-floating stick figure structure positioned safely above ground
+            buildStickFigure(width / 2, height / 2 - 120);
 
             // Add mouse control for interacting with bodies
             const mouse = Mouse.create(render.canvas);
@@ -172,20 +190,20 @@
             // Handle window resizing
             window.addEventListener('resize', handleResize);
 
-            // Start HUD and stability update loop
+            // Start HUD update loop
             requestAnimationFrame(updateHUD);
         }
 
         function createBoundaries(width, height) {
             const wallOptions = {
                 isStatic: true,
-                render: { fillStyle: '#1e293b' },
-                friction: 0.5,
-                restitution: 0.6
+                render: { fillStyle: '#1e293b', strokeStyle: '#334155', lineWidth: 2 },
+                friction: 0.8,
+                restitution: 0.4
             };
 
             const thickness = 60;
-            const ground = Bodies.rectangle(width / 2, height + thickness / 2 - 10, width + 200, thickness, wallOptions);
+            const ground = Bodies.rectangle(width / 2, height - thickness / 2, width + 200, thickness, wallOptions);
             const leftWall = Bodies.rectangle(-thickness / 2 + 10, height / 2, thickness, height + 200, wallOptions);
             const rightWall = Bodies.rectangle(width + thickness / 2 - 10, height / 2, thickness, height + 200, wallOptions);
             const ceiling = Bodies.rectangle(width / 2, -thickness / 2 + 10, width + 200, thickness, wallOptions);
@@ -194,11 +212,11 @@
         }
 
         function buildStickFigure(cx, cy) {
-            figureComposite = Composite.create({ label: 'StickFigure' });
+            figureComposite = Composite.create({ label: 'FreeStickFigure' });
 
-            const hubRadius = 20;
+            const hubRadius = 22;
             const hub = Bodies.circle(cx, cy, hubRadius, {
-                mass: 4.0,
+                mass: hubWeight,
                 label: 'hub',
                 render: { fillStyle: '#6366f1', strokeStyle: '#ffffff', lineWidth: 2 }
             });
@@ -222,7 +240,6 @@
                     render: { fillStyle: selectedLimbIndex === i ? '#38bdf8' : '#475569', strokeStyle: selectedLimbIndex === i ? '#ffffff' : '#334155', lineWidth: selectedLimbIndex === i ? 3 : 1 }
                 });
 
-                // Tip size directly proportional to weight
                 const tipRadius = Math.max(10, Math.min(45, 10 + limb.weight * 1.4));
                 const tipX = cx + cos * rodLen;
                 const tipY = cy + sin * rodLen;
@@ -236,6 +253,7 @@
                 children.push(rod, tip);
             }
 
+            // Create free-floating compound body
             figureMainBody = Body.create({
                 parts: children,
                 frictionAir: 0.01,
@@ -243,18 +261,6 @@
             });
 
             Composite.add(figureComposite, figureMainBody);
-
-            const anchorPoint = { x: cx, y: cy };
-            mountConstraint = Constraint.create({
-                pointA: anchorPoint,
-                bodyB: figureMainBody,
-                pointB: { x: 0, y: 0 },
-                stiffness: 1.0,
-                length: 0,
-                render: { strokeStyle: '#a855f7', lineWidth: 4, type: 'line' }
-            });
-
-            Composite.add(figureComposite, mountConstraint);
             Composite.add(engine.world, figureComposite);
         }
 
@@ -280,7 +286,6 @@
         function selectLimb(id) {
             selectedLimbIndex = id;
 
-            // Remap slider values to active limb data instantly
             const limb = limbData[id];
             document.getElementById('weight-active').value = limb.weight;
             document.getElementById('len-active').value = limb.len;
@@ -295,6 +300,12 @@
             titleEl.style.color = colors[id - 1];
             titleEl.innerHTML = `<i class="fa-solid fa-circle text-[8px]"></i> ${id}. ${limb.name}`;
 
+            updateFigureParameters();
+        }
+
+        function onHubWeightChange() {
+            hubWeight = parseFloat(document.getElementById('hub-weight').value);
+            document.getElementById('val-hub-weight').innerText = hubWeight + ' kg';
             updateFigureParameters();
         }
 
@@ -317,20 +328,27 @@
         function updateFigureParameters() {
             if (figureMainBody) {
                 const currentPos = { x: figureMainBody.position.x, y: figureMainBody.position.y };
+                const currentVel = { x: figureMainBody.velocity.x, y: figureMainBody.velocity.y };
+                const currentAngVel = figureMainBody.angularVelocity;
+                
                 Composite.remove(engine.world, figureComposite);
                 buildStickFigure(currentPos.x, currentPos.y);
+
+                // Preserve momentum / velocity through parameter edits safely
+                Body.setVelocity(figureMainBody, currentVel);
+                Body.setAngularVelocity(figureMainBody, currentAngVel);
             }
         }
 
         function resetSimulation() {
             Composite.remove(engine.world, figureComposite);
             const container = document.getElementById('canvas-container');
-            buildStickFigure(container.clientWidth / 2, container.clientHeight / 2 - 40);
+            buildStickFigure(container.clientWidth / 2, container.clientHeight / 2 - 120);
         }
 
         function dropDisturbance() {
             if (!figureMainBody) return;
-            const dropX = figureMainBody.position.x + (Math.random() > 0.5 ? 120 : -120);
+            const dropX = figureMainBody.position.x + (Math.random() > 0.5 ? 140 : -140);
             const dropY = figureMainBody.position.y - 180;
             const distBall = Bodies.circle(dropX, dropY, 22, {
                 mass: 12.0,
@@ -339,6 +357,25 @@
                 render: { fillStyle: '#e11d48', strokeStyle: '#ffffff', lineWidth: 2 }
             });
             Composite.add(engine.world, distBall);
+        }
+
+        function toggleConfigPanel() {
+            const sidebar = document.getElementById('config-sidebar');
+            const btnText = document.getElementById('config-btn-text');
+            isConfigVisible = !isConfigVisible;
+
+            if (isConfigVisible) {
+                sidebar.style.transform = 'translateX(0)';
+                sidebar.style.opacity = '1';
+                sidebar.style.pointerEvents = 'auto';
+                btnText.innerText = 'Hide Controls';
+            } else {
+                sidebar.style.transform = 'translateX(-110%)';
+                sidebar.style.opacity = '0';
+                sidebar.style.pointerEvents = 'none';
+                btnText.innerText = 'Show Controls';
+            }
+            setTimeout(handleResize, 300);
         }
 
         function handleResize() {
@@ -360,21 +397,14 @@
             }
 
             if (figureMainBody) {
-                const angleDeg = (figureMainBody.angle * (180 / Math.PI)) % 360;
-                document.getElementById('stat-tilt').innerText = angleDeg.toFixed(1) + '°';
-
-                const badge = document.getElementById('instability-badge');
-                const absAngle = Math.abs(angleDeg);
-
-                if (absAngle > 45 && absAngle < 315) {
-                    badge.innerText = 'TOPPLED';
-                    badge.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse';
-                } else if (absAngle > 15 && absAngle < 345) {
-                    badge.innerText = 'LEANING';
-                    badge.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                const speed = Math.sqrt(figureMainBody.velocity.x ** 2 + figureMainBody.velocity.y ** 2);
+                const statusEl = document.getElementById('stat-status');
+                if (speed > 1.5) {
+                    statusEl.innerText = 'Tumbling / Falling';
+                    statusEl.className = 'font-bold text-amber-400';
                 } else {
-                    badge.innerText = 'BALANCED';
-                    badge.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                    statusEl.innerText = 'Free-Floating Grounded';
+                    statusEl.className = 'font-bold text-emerald-400';
                 }
             }
 
