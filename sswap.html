@@ -1,0 +1,1171 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentence Shift — Word Transformation Puzzle</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --accent-blue: #38bdf8;
+            --accent-green: #22c55e;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --focus-ring: #0284c7;
+            --token-char-bg: #334155;
+            --token-char-selected: #0284c7;
+            --token-word-bg: #1e293b;
+            --token-word-selected: #0369a1;
+            --space-bg: rgba(255, 255, 255, 0.08);
+            --space-selected: rgba(56, 189, 248, 0.4);
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, ::before, ::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            line-height: 1.5;
+        }
+
+        header {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .brand-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, var(--accent-blue), #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .puzzle-meta {
+            text-align: right;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .puzzle-meta strong {
+            color: var(--text-primary);
+        }
+
+        main {
+            width: 100%;
+            max-width: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+        }
+
+        .target-box {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background-color: rgba(15, 23, 42, 0.6);
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+
+        .target-text-display {
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            word-break: break-all;
+            color: var(--accent-blue);
+        }
+
+        .interactive-board {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .mode-toggle {
+            display: flex;
+            background-color: var(--bg-primary);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            gap: 4px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .text-tokens-container {
+            min-height: 90px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            padding: 1rem;
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            border: 2px dashed var(--border-color);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .token {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 1.125rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+            position: relative;
+        }
+
+        .token:hover {
+            transform: translateY(-2px);
+        }
+
+        .token:focus {
+            outline: 2px solid var(--focus-ring);
+            outline-offset: 2px;
+        }
+
+        /* Character Mode Tokens */
+        .token-char {
+            width: 34px;
+            height: 42px;
+            background-color: var(--token-char-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .token-char.space {
+            width: 28px;
+            background-color: var(--space-bg);
+            border: 1px dashed var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        .token-char.selected {
+            background-color: var(--token-char-selected);
+            border-color: var(--accent-blue);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+        }
+
+        .token-char.space.selected {
+            background-color: var(--space-selected);
+            border-color: var(--accent-blue);
+        }
+
+        /* Word Mode Tokens */
+        .token-word {
+            padding: 0.5rem 0.875rem;
+            background-color: var(--token-word-bg);
+            border: 1px solid var(--border-color);
+            margin: 2px 0;
+        }
+
+        .token-word.selected {
+            background-color: var(--token-word-selected);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(3, 105, 161, 0.4);
+        }
+
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .ops-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .op-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            padding: 0.75rem 0.5rem;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .op-btn:hover:not(:disabled) {
+            background-color: var(--bg-card-hover);
+            border-color: var(--accent-blue);
+        }
+
+        .op-btn.active {
+            background-color: var(--accent-blue);
+            color: #0f172a;
+            border-color: var(--accent-blue);
+        }
+
+        .op-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .input-inline-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .text-input {
+            flex: 1;
+            padding: 0.625rem 0.875rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 1rem;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: var(--focus-ring);
+        }
+
+        .action-btn {
+            padding: 0.625rem 1.25rem;
+            background-color: var(--accent-blue);
+            color: #0f172a;
+            font-weight: 700;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+
+        .game-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 0.5rem;
+        }
+
+        .move-counter {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .move-counter strong {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+
+        .secondary-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.4rem 0.75rem;
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-small:hover:not(:disabled) {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+        }
+
+        .btn-small:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .feedback-message {
+            min-height: 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: center;
+            color: var(--accent-amber);
+        }
+
+        /* Modal / Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 480px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .star-rating {
+            font-size: 2.5rem;
+            letter-spacing: 0.25rem;
+            color: var(--accent-amber);
+            margin: 0.5rem 0;
+        }
+
+        .score-details {
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            text-align: left;
+        }
+
+        .score-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .score-row span {
+            color: var(--text-secondary);
+        }
+
+        .modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .primary-modal-btn {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--accent-green);
+            color: #0f172a;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .primary-modal-btn:hover {
+            opacity: 0.9;
+        }
+
+        .secondary-modal-btn {
+            padding: 0.75rem 1.5rem;
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-weight: 600;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .secondary-modal-btn:hover {
+            background-color: var(--bg-card-hover);
+        }
+
+        .notice-banner {
+            background-color: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--accent-amber);
+            color: #fcd34d;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 0.5rem; }
+            .card { padding: 1rem; }
+            .ops-grid { grid-template-columns: repeat(2, 1fr); }
+            .token-char { width: 30px; height: 38px; font-size: 1rem; }
+            .token-char.space { width: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1 class="brand-title">SENTENCE SHIFT</h1>
+            <div style="font-size:0.75rem; color:var(--text-secondary); font-weight:600;" id="game-mode-subtitle">FREE PLAY MODE</div>
+        </div>
+        <div class="puzzle-meta">
+            <div><strong id="puzzle-number">Level 1</strong></div>
+            <div id="puzzle-date">----- --, ----</div>
+            <div style="margin-top: 4px;">
+                <button id="mode-switcher-btn" class="btn-small" style="font-size:0.75rem; padding: 2px 8px; border-color: var(--accent-blue); color: var(--accent-blue);" onclick="toggleGameMode()">Switch to Daily Mode</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Target Box -->
+        <div class="card target-box">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="section-label" id="target-section-label">Target Text</span>
+                <span id="level-badge" style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.2); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-weight: 700;">Level 1</span>
+            </div>
+            <div id="target-text-display" class="target-text-display">...</div>
+        </div>
+
+        <!-- Interactive Text Board -->
+        <div class="card interactive-board">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="section-label">Current State</span>
+                <!-- Selection Mode Toggle -->
+                <div class="mode-toggle" role="radiogroup" aria-label="Selection Level">
+                    <button id="mode-char-btn" class="mode-btn active" role="radio" aria-checked="true" onclick="setSelectMode('char')">Character</button>
+                    <button id="mode-word-btn" class="mode-btn" role="radio" aria-checked="false" onclick="setSelectMode('word')">Word</button>
+                </div>
+            </div>
+
+            <!-- Token Display Area -->
+            <div id="text-tokens-container" class="text-tokens-container" tabindex="0" aria-label="Interactive Text Board"></div>
+
+            <div id="feedback-message" class="feedback-message" aria-live="polite"></div>
+
+            <!-- Operations Panel -->
+            <div class="controls-panel">
+                <div class="ops-grid">
+                    <button id="op-add" class="op-btn" onclick="triggerOperation('add')">
+                        <span>➕ Add</span>
+                    </button>
+                    <button id="op-remove" class="op-btn" onclick="triggerOperation('remove')">
+                        <span>➖ Remove</span>
+                    </button>
+                    <button id="op-replace" class="op-btn" onclick="triggerOperation('replace')">
+                        <span>🔄 Replace</span>
+                    </button>
+                    <button id="op-transpose" class="op-btn" onclick="triggerOperation('transpose')">
+                        <span>🔀 Swap</span>
+                    </button>
+                </div>
+
+                <!-- Contextual Sub-Input Controls -->
+                <div id="input-subpanel" style="display: none;"></div>
+            </div>
+
+            <!-- Game Bar / Stats & Reset -->
+            <div class="game-bar">
+                <div class="move-counter">
+                    Moves: <strong id="move-count">0</strong> <span style="font-size:0.8rem; color:var(--text-secondary);">(Par: <span id="par-count">0</span>)</span>
+                </div>
+                <div class="secondary-controls">
+                    <button id="undo-btn" class="btn-small" onclick="undoMove()" disabled>↩ Undo</button>
+                    <button id="restart-btn" class="btn-small" onclick="restartPuzzle()">🔄 Restart</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Completion / Shared Score Modal -->
+    <div id="game-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-card">
+            <h2 id="modal-title" class="modal-title">Puzzle Solved!</h2>
+            <div id="modal-stars" class="star-rating">⭐⭐⭐</div>
+
+            <div class="score-details">
+                <div class="score-row"><span>Puzzle:</span> <strong id="modal-puzzle-id">#000</strong></div>
+                <div class="score-row"><span>Start:</span> <strong id="modal-start-text">-</strong></div>
+                <div class="score-row"><span>Target:</span> <strong id="modal-target-text">-</strong></div>
+                <div class="score-row"><span>Your Moves:</span> <strong id="modal-moves">0</strong></div>
+                <div class="score-row"><span>Optimal (Par):</span> <strong id="modal-par">0</strong></div>
+            </div>
+
+            <div id="file-link-notice" class="notice-banner" style="display: none;">
+                ⚠️ <strong>Local File Notice:</strong> Direct <code>file://</code> URLs cannot be shared directly across different devices. Host this file on a web server or GitHub Pages for universal share links!
+            </div>
+
+            <div class="modal-actions">
+                <button id="share-btn" class="primary-modal-btn" onclick="shareResult()">📤 Share Score</button>
+                <button id="modal-next-btn" class="primary-modal-btn" style="background-color: var(--accent-blue); display: none;" onclick="nextFreePlayLevel()">Next Level ➔</button>
+                <button id="modal-play-btn" class="secondary-modal-btn" onclick="closeModal()">Continue Playing</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * SENTENCE SHIFT — CORE GAME LOGIC
+         * Modern Vanilla JS Architecture
+         */
+
+        const PUZZLE_DATABASE = [
+            { id: "lvl-001", start: "THE CAT CHASED DOG", target: "THE DOG CHASED CAT", par: 3 },
+            { id: "lvl-002", start: "JAVA SCRIPT", target: "JAVASCRIPT", par: 1 },
+            { id: "lvl-003", start: "WORD SHIFT", target: "SHIFT WORD", par: 1 },
+            { id: "lvl-004", start: "RED BLUE GREEN", target: "RED GREEN BLUE", par: 1 },
+            { id: "lvl-005", start: "FAST CAT RUNS", target: "FAST DOG RUNS", par: 1 },
+            { id: "lvl-006", start: "HELLO WORLD", target: "WORLD HELLO", par: 1 },
+            { id: "lvl-007", start: "A B C D", target: "D C B A", par: 3 },
+            { id: "lvl-008", start: "TINY MOUSE", target: "HUGE MOUSE", par: 1 },
+            { id: "lvl-009", start: "NIGHT AND DAY", target: "DAY AND NIGHT", par: 3 },
+            { id: "lvl-010", start: "CODE MORE SLEEP LESS", target: "SLEEP MORE CODE LESS", par: 1 },
+            { id: "lvl-011", start: "HOT COLD ICE FIRE", target: "FIRE ICE COLD HOT", par: 3 },
+            { id: "lvl-012", start: "SUPER LIGHT FAST", target: "SUPER FAST LIGHT", par: 1 },
+            { id: "lvl-013", start: "OPEN THE DOOR", target: "CLOSE THE DOOR", par: 1 },
+            { id: "lvl-014", start: "PRACTICE MAKES PERFECT", target: "PERFECT MAKES PRACTICE", par: 1 },
+            { id: "lvl-015", start: "ONE TWO THREE FOUR", target: "FOUR THREE TWO ONE", par: 3 }
+        ];
+
+        // --- STATE MANAGEMENT ---
+        let currentMode = 'free'; // 'free' or 'daily'
+        let currentLevelIndex = 0;
+        let activePuzzle = null;
+        let currentText = "";
+        let moveHistory = [];
+        let selectMode = "char"; // "char" | "word"
+        let selectedIndices = []; // selected token indices
+        let activeOpSubpanel = null;
+
+        // Init App
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('puzzle') && urlParams.has('moves')) {
+                showSharedScoreCard(urlParams);
+                return;
+            }
+
+            if (urlParams.get('mode') === 'daily') {
+                currentMode = 'daily';
+            } else {
+                currentMode = 'free';
+            }
+
+            initGameMode();
+        });
+
+        function toggleGameMode() {
+            currentMode = (currentMode === 'free') ? 'daily' : 'free';
+            
+            // Update URL without reload
+            const url = new URL(window.location.href);
+            if (currentMode === 'daily') {
+                url.searchParams.set('mode', 'daily');
+            } else {
+                url.searchParams.delete('mode');
+            }
+            window.history.pushState({}, '', url);
+
+            initGameMode();
+        }
+
+        function initGameMode() {
+            const modeSubtitle = document.getElementById('game-mode-subtitle');
+            const switcherBtn = document.getElementById('mode-switcher-btn');
+            const dateDisplay = document.getElementById('puzzle-date');
+            const targetSectionLabel = document.getElementById('target-section-label');
+
+            if (currentMode === 'daily') {
+                modeSubtitle.textContent = "DAILY PUZZLE MODE";
+                switcherBtn.textContent = "Switch to Free Play";
+                dateDisplay.style.display = "block";
+                targetSectionLabel.textContent = "Target Text";
+                loadDailyPuzzle();
+            } else {
+                modeSubtitle.textContent = "FREE PLAY MODE";
+                switcherBtn.textContent = "Switch to Daily Mode";
+                dateDisplay.style.display = "none";
+                targetSectionLabel.textContent = "Target Text";
+                loadFreePlayPuzzle(currentLevelIndex);
+            }
+        }
+
+        function loadFreePlayPuzzle(index) {
+            currentLevelIndex = index % PUZZLE_DATABASE.length;
+            activePuzzle = PUZZLE_DATABASE[currentLevelIndex];
+
+            document.getElementById('puzzle-number').textContent = `Level ${currentLevelIndex + 1} of ${PUZZLE_DATABASE.length}`;
+            document.getElementById('level-badge').textContent = `Level ${currentLevelIndex + 1}`;
+            
+            setupPuzzleState();
+        }
+
+        function loadDailyPuzzle() {
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            
+            // Deterministic hash based on date string
+            let hash = 0;
+            for (let i = 0; i < dateStr.length; i++) {
+                hash = (hash << 5) - hash + dateStr.charCodeAt(i);
+                hash |= 0;
+            }
+            const puzzleIdx = Math.abs(hash) % PUZZLE_DATABASE.length;
+            activePuzzle = PUZZLE_DATABASE[puzzleIdx];
+
+            document.getElementById('puzzle-number').textContent = `Daily #${Math.abs(hash) % 1000}`;
+            document.getElementById('puzzle-date').textContent = now.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            document.getElementById('level-badge').textContent = `Daily`;
+
+            setupPuzzleState();
+        }
+
+        function setupPuzzleState() {
+            currentText = activePuzzle.start;
+            moveHistory = [];
+            selectedIndices = [];
+            activeOpSubpanel = null;
+            
+            document.getElementById('target-text-display').textContent = activePuzzle.target;
+            document.getElementById('par-count').textContent = activePuzzle.par;
+            document.getElementById('input-subpanel').style.display = 'none';
+
+            updateUI();
+        }
+
+        function setSelectMode(mode) {
+            selectMode = mode;
+            selectedIndices = [];
+            closeSubpanel();
+            
+            document.getElementById('mode-char-btn').classList.toggle('active', mode === 'char');
+            document.getElementById('mode-char-btn').setAttribute('aria-checked', mode === 'char');
+            document.getElementById('mode-word-btn').classList.toggle('active', mode === 'word');
+            document.getElementById('mode-word-btn').setAttribute('aria-checked', mode === 'word');
+
+            renderTokens();
+            updateOpButtons();
+        }
+
+        function renderTokens() {
+            const container = document.getElementById('text-tokens-container');
+            container.innerHTML = '';
+
+            if (selectMode === 'char') {
+                // Character-level breakdown
+                for (let i = 0; i < currentText.length; i++) {
+                    const char = currentText[i];
+                    const btn = document.createElement('button');
+                    btn.className = 'token token-char' + (char === ' ' ? ' space' : '');
+                    if (selectedIndices.includes(i)) btn.classList.add('selected');
+                    btn.textContent = char === ' ' ? '␣' : char;
+                    btn.onclick = () => toggleSelectToken(i);
+                    container.appendChild(btn);
+                }
+            } else {
+                // Word-level breakdown
+                const words = currentText.split(/(\s+)/); // preserves spaces as individual tokens
+                let charIdx = 0;
+
+                words.forEach((chunk, wIdx) => {
+                    const startIdx = charIdx;
+                    const endIdx = charIdx + chunk.length - 1;
+                    charIdx += chunk.length;
+
+                    if (chunk.trim() === '') {
+                        // Display spaces distinctly
+                        const btn = document.createElement('button');
+                        btn.className = 'token token-char space';
+                        const isSel = selectedIndices.some(idx => idx >= startIdx && idx <= endIdx);
+                        if (isSel) btn.classList.add('selected');
+                        btn.textContent = '␣';
+                        btn.onclick = () => toggleSelectTokenRange(startIdx, endIdx);
+                        container.appendChild(btn);
+                    } else {
+                        const btn = document.createElement('button');
+                        btn.className = 'token token-word';
+                        const isSel = selectedIndices.some(idx => idx >= startIdx && idx <= endIdx);
+                        if (isSel) btn.classList.add('selected');
+                        btn.textContent = chunk;
+                        btn.onclick = () => toggleSelectTokenRange(startIdx, endIdx);
+                        container.appendChild(btn);
+                    }
+                });
+            }
+        }
+
+        function toggleSelectToken(idx) {
+            if (selectedIndices.includes(idx)) {
+                selectedIndices = selectedIndices.filter(i => i !== idx);
+            } else {
+                selectedIndices.push(idx);
+            }
+            selectedIndices.sort((a, b) => a - b);
+            closeSubpanel();
+            renderTokens();
+            updateOpButtons();
+        }
+
+        function toggleSelectTokenRange(startIdx, endIdx) {
+            const isAllSelected = Array.from({length: endIdx - startIdx + 1}, (_, i) => startIdx + i)
+                .every(i => selectedIndices.includes(i));
+
+            if (isAllSelected) {
+                selectedIndices = selectedIndices.filter(i => i < startIdx || i > endIdx);
+            } else {
+                for (let i = startIdx; i <= endIdx; i++) {
+                    if (!selectedIndices.includes(i)) selectedIndices.push(i);
+                }
+            }
+            selectedIndices.sort((a, b) => a - b);
+            closeSubpanel();
+            renderTokens();
+            updateOpButtons();
+        }
+
+        function updateOpButtons() {
+            const hasSelection = selectedIndices.length > 0;
+            const isContiguous = checkContiguous(selectedIndices);
+            
+            document.getElementById('op-add').disabled = false;
+            document.getElementById('op-remove').disabled = !hasSelection;
+            document.getElementById('op-replace').disabled = !hasSelection;
+            document.getElementById('op-transpose').disabled = !isContiguous || selectedIndices.length === 0;
+        }
+
+        function checkContiguous(indices) {
+            if (indices.length <= 1) return true;
+            for (let i = 0; i < indices.length - 1; i++) {
+                if (indices[i + 1] !== indices[i] + 1) return false;
+            }
+            return true;
+        }
+
+        function triggerOperation(op) {
+            if (activeOpSubpanel === op) {
+                closeSubpanel();
+                return;
+            }
+
+            activeOpSubpanel = op;
+            const subpanel = document.getElementById('input-subpanel');
+            subpanel.style.display = 'block';
+            subpanel.innerHTML = '';
+
+            const bar = document.createElement('div');
+            bar.className = 'input-inline-bar';
+
+            if (op === 'remove') {
+                if (selectedIndices.length === 0) {
+                    showFeedback("Select characters or words to remove.");
+                    closeSubpanel();
+                    return;
+                }
+                executeRemove();
+                return;
+            }
+
+            if (op === 'transpose') {
+                executeTranspose();
+                return;
+            }
+
+            if (op === 'add') {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'text-input';
+                input.placeholder = selectMode === 'char' ? 'Type character or space to add...' : 'Type word to insert...';
+                
+                const btn = document.createElement('button');
+                btn.className = 'action-btn';
+                btn.textContent = 'Insert';
+                btn.onclick = () => executeAdd(input.value);
+                
+                input.onkeydown = (e) => { if (e.key === 'Enter') executeAdd(input.value); };
+
+                bar.appendChild(input);
+                bar.appendChild(btn);
+                subpanel.appendChild(bar);
+                input.focus();
+            }
+
+            if (op === 'replace') {
+                if (selectedIndices.length === 0) {
+                    showFeedback("Select characters or words to replace.");
+                    closeSubpanel();
+                    return;
+                }
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'text-input';
+                input.placeholder = 'Type replacement text...';
+                
+                const btn = document.createElement('button');
+                btn.className = 'action-btn';
+                btn.textContent = 'Replace';
+                btn.onclick = () => executeReplace(input.value);
+
+                input.onkeydown = (e) => { if (e.key === 'Enter') executeReplace(input.value); };
+
+                bar.appendChild(input);
+                bar.appendChild(btn);
+                subpanel.appendChild(bar);
+                input.focus();
+            }
+        }
+
+        function closeSubpanel() {
+            activeOpSubpanel = null;
+            const subpanel = document.getElementById('input-subpanel');
+            subpanel.style.display = 'none';
+            subpanel.innerHTML = '';
+        }
+
+        // --- EXECUTING OPERATIONS ---
+
+        function applyStateChange(newText) {
+            moveHistory.push(currentText);
+            currentText = newText;
+            selectedIndices = [];
+            closeSubpanel();
+            updateUI();
+            checkWinCondition();
+        }
+
+        function executeRemove() {
+            let chars = currentText.split('');
+            // remove selected indices
+            const newText = chars.filter((_, idx) => !selectedIndices.includes(idx)).join('');
+            applyStateChange(newText);
+        }
+
+        function executeTranspose() {
+            if (selectedIndices.length === 0) {
+                showFeedback("Select text to swap with adjacent content.");
+                return;
+            }
+
+            let chars = currentText.split('');
+            const minIdx = Math.min(...selectedIndices);
+            const maxIdx = Math.max(...selectedIndices);
+
+            if (selectMode === 'word') {
+                // Word level transpose: Swap selected word with neighbor word
+                const words = currentText.split(/(\s+)/);
+                let charCount = 0;
+                let targetWordIdx = -1;
+
+                for (let i = 0; i < words.length; i++) {
+                    if (charCount === minIdx) {
+                        targetWordIdx = i;
+                        break;
+                    }
+                    charCount += words[i].length;
+                }
+
+                if (targetWordIdx !== -1 && targetWordIdx + 2 < words.length) {
+                    // Swap with next word (skipping spacing)
+                    const temp = words[targetWordIdx];
+                    words[targetWordIdx] = words[targetWordIdx + 2];
+                    words[targetWordIdx + 2] = temp;
+                    applyStateChange(words.join(''));
+                    return;
+                } else if (targetWordIdx >= 2) {
+                    // Swap with prev word
+                    const temp = words[targetWordIdx];
+                    words[targetWordIdx] = words[targetWordIdx - 2];
+                    words[targetWordIdx - 2] = temp;
+                    applyStateChange(words.join(''));
+                    return;
+                }
+            }
+
+            // Character level default adjacent swap
+            if (maxIdx < chars.length - 1) {
+                // Swap selected block with char right after it
+                const block = chars.slice(minIdx, maxIdx + 1);
+                const nextChar = chars[maxIdx + 1];
+                chars.splice(minIdx, selectedIndices.length + 1, nextChar, ...block);
+                applyStateChange(chars.join(''));
+            } else if (minIdx > 0) {
+                // Swap selected block with char right before it
+                const block = chars.slice(minIdx, maxIdx + 1);
+                const prevChar = chars[minIdx - 1];
+                chars.splice(minIdx - 1, selectedIndices.length + 1, ...block, prevChar);
+                applyStateChange(chars.join(''));
+            } else {
+                showFeedback("Cannot swap at boundary.");
+            }
+        }
+
+        function executeAdd(insertText) {
+            if (insertText === undefined || insertText === null) return;
+            
+            let pos = currentText.length;
+            if (selectedIndices.length > 0) {
+                pos = Math.min(...selectedIndices);
+            }
+
+            const newText = currentText.slice(0, pos) + insertText + currentText.slice(pos);
+            applyStateChange(newText);
+        }
+
+        function executeReplace(replacement) {
+            if (selectedIndices.length === 0) return;
+
+            const minIdx = Math.min(...selectedIndices);
+            const maxIdx = Math.max(...selectedIndices);
+
+            const newText = currentText.slice(0, minIdx) + replacement + currentText.slice(maxIdx + 1);
+            applyStateChange(newText);
+        }
+
+        function undoMove() {
+            if (moveHistory.length === 0) return;
+            currentText = moveHistory.pop();
+            selectedIndices = [];
+            closeSubpanel();
+            updateUI();
+        }
+
+        function restartPuzzle() {
+            if (activePuzzle) {
+                setupPuzzleState();
+            }
+        }
+
+        function updateUI() {
+            renderTokens();
+            updateOpButtons();
+
+            document.getElementById('move-count').textContent = moveHistory.length;
+            document.getElementById('undo-btn').disabled = moveHistory.length === 0;
+            document.getElementById('feedback-message').textContent = '';
+        }
+
+        function showFeedback(msg) {
+            document.getElementById('feedback-message').textContent = msg;
+        }
+
+        function checkWinCondition() {
+            if (currentText.trim().toUpperCase() === activePuzzle.target.trim().toUpperCase()) {
+                setTimeout(showCompletionModal, 300);
+            }
+        }
+
+        function showCompletionModal() {
+            const moves = moveHistory.length;
+            const par = activePuzzle.par;
+
+            let stars = "⭐";
+            if (moves <= par) stars = "⭐⭐⭐";
+            else if (moves <= par + 2) stars = "⭐⭐";
+
+            document.getElementById('modal-stars').textContent = stars;
+            document.getElementById('modal-puzzle-id').textContent = activePuzzle.id;
+            document.getElementById('modal-start-text').textContent = activePuzzle.start;
+            document.getElementById('modal-target-text').textContent = activePuzzle.target;
+            document.getElementById('modal-moves').textContent = moves;
+            document.getElementById('modal-par').textContent = par;
+
+            const fileNotice = document.getElementById('file-link-notice');
+            if (window.location.protocol === 'file:') {
+                fileNotice.style.display = 'block';
+            } else {
+                fileNotice.style.display = 'none';
+            }
+
+            const nextBtn = document.getElementById('modal-next-btn');
+            if (currentMode === 'free') {
+                nextBtn.style.display = 'block';
+            } else {
+                nextBtn.style.display = 'none';
+            }
+
+            document.getElementById('game-modal').classList.add('active');
+        }
+
+        function nextFreePlayLevel() {
+            closeModal();
+            loadFreePlayPuzzle(currentLevelIndex + 1);
+        }
+
+        function closeModal() {
+            document.getElementById('game-modal').classList.remove('active');
+        }
+
+        function shareResult() {
+            const moves = moveHistory.length;
+            const par = activePuzzle.par;
+            const stars = document.getElementById('modal-stars').textContent;
+            
+            const shareUrl = `${window.location.origin}${window.location.pathname}?puzzle=${activePuzzle.id}&moves=${moves}&par=${par}&result=${moves <= par ? 'optimal' : 'solved'}`;
+            const shareText = `Sentence Shift #${activePuzzle.id} — Solved in ${moves} moves! ${stars}\nCan you match my score?`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Sentence Shift Result',
+                    text: shareText,
+                    url: shareUrl
+                }).catch(() => fallbackCopy(shareUrl));
+            } else {
+                fallbackCopy(shareUrl);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showFeedback("Share link copied to clipboard!");
+            } catch (err) {
+                showFeedback("Unable to copy share link.");
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showSharedScoreCard(urlParams) {
+            const puzzleId = urlParams.get('puzzle');
+            const moves = urlParams.get('moves');
+            const par = urlParams.get('par');
+
+            const puzzle = PUZZLE_DATABASE.find(p => p.id === puzzleId) || PUZZLE_DATABASE[0];
+
+            let stars = "⭐";
+            if (parseInt(moves) <= parseInt(par)) stars = "⭐⭐⭐";
+            else if (parseInt(moves) <= parseInt(par) + 2) stars = "⭐⭐";
+
+            document.getElementById('modal-title').textContent = "Shared Challenge Result";
+            document.getElementById('modal-stars').textContent = stars;
+            document.getElementById('modal-puzzle-id').textContent = puzzle.id;
+            document.getElementById('modal-start-text').textContent = puzzle.start;
+            document.getElementById('modal-target-text').textContent = puzzle.target;
+            document.getElementById('modal-moves').textContent = moves;
+            document.getElementById('modal-par').textContent = par;
+
+            document.getElementById('share-btn').style.display = 'none';
+            document.getElementById('modal-play-btn').textContent = "Play This Puzzle";
+            document.getElementById('modal-play-btn').onclick = () => {
+                window.location.href = window.location.pathname;
+            };
+
+            document.getElementById('game-modal').classList.add('active');
+        }
+    </script>
+</body>
+</html>
+```
