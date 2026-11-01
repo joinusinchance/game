@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEFLATE Quote Compression Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        .pulse-accent {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .7; }
+        }
+
+        .match-highlight {
+            background-color: rgba(168, 85, 247, 0.3);
+            border: 1px solid rgba(192, 132, 252, 0.8);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-8">
+
+    <!-- Header Section -->
+    <header class="max-w-5xl mx-auto w-full flex flex-col md:flex-row justify-between items-center gap-4 pb-6 border-b border-slate-800">
+        <div>
+            <h1 class="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-500 flex items-center gap-3">
+                <i class="fa-solid fa-compress"></i> Multi-Algo Quote Compressor
+            </h1>
+            <p class="text-sm text-slate-400 mt-1">Compress famous quotes! Choose Literals, LZ77, RLE, or LZW tokens to hit target size.</p>
+        </div>
+
+        <!-- Player Stats Bar -->
+        <div class="flex items-center gap-4 bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+            <div class="text-center px-3 border-r border-slate-700">
+                <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Mode</div>
+                <div id="game-mode-display" class="text-sm font-bold text-purple-400">Short Play</div>
+            </div>
+            <div class="text-center px-3 border-r border-slate-700">
+                <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Credits</div>
+                <div id="extra-credits-display" class="text-lg font-bold text-cyan-400">+0</div>
+            </div>
+            <div class="text-center px-3">
+                <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Score / Medals</div>
+                <div id="medals-display" class="text-sm font-bold flex gap-2 justify-center items-center">
+                    <span class="text-amber-400" title="Gold"><i class="fa-solid fa-medal"></i> <span id="gold-count">0</span></span>
+                    <span class="text-cyan-300" title="Platinum"><i class="fa-solid fa-award"></i> <span id="platinum-count">0</span></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-5xl mx-auto w-full my-6 flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Left / Top Controls & Status Panel -->
+        <section class="lg:col-span-1 bg-slate-800/50 rounded-2xl p-5 border border-slate-700 flex flex-col gap-5 justify-between">
+            <div>
+                <!-- Level Selector & Mode Switch -->
+                <div class="mb-5">
+                    <label class="block text-xs uppercase font-bold text-slate-400 mb-2">Game Length</label>
+                    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-900 rounded-lg border border-slate-800">
+                        <button id="mode-short-btn" onclick="setMode('short')" class="py-2 px-3 text-xs font-bold rounded-md transition-all bg-purple-600 text-white">Short Quotes</button>
+                        <button id="mode-long-btn" onclick="setMode('long')" class="py-2 px-3 text-xs font-bold rounded-md text-slate-400 hover:text-white transition-all">Long Prose</button>
+                    </div>
+                </div>
+
+                <!-- Level Progress Info -->
+                <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 mb-5">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs text-slate-400 font-semibold uppercase">Stage</span>
+                        <span id="stage-indicator" class="text-sm font-bold text-purple-400">1 / 3</span>
+                    </div>
+                    <div class="w-full bg-slate-800 rounded-full h-2 mb-4">
+                        <div id="stage-progress-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-300" style="width: 33%"></div>
+                    </div>
+
+                    <!-- Target Moves Counter -->
+                    <div class="grid grid-cols-2 gap-3 text-center">
+                        <div class="bg-slate-800 p-2 rounded-lg border border-slate-700">
+                            <div class="text-xs text-slate-400">Tokens / Moves</div>
+                            <div id="moves-used" class="text-2xl font-black text-white">0</div>
+                        </div>
+                        <div class="bg-slate-800 p-2 rounded-lg border border-slate-700">
+                            <div class="text-xs text-slate-400">Target Max Tokens</div>
+                            <div id="moves-target" class="text-2xl font-black text-amber-400">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Rules Quick Summary -->
+                <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800 text-xs text-slate-400 space-y-2">
+                    <div class="font-bold text-slate-300 mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-purple-400"></i> Compression Strategy Rules:
+                    </div>
+                    <p>• Output a <span class="text-emerald-400 font-bold">Literal</span> to emit a single character.</p>
+                    <p>• Output an <span class="text-purple-400 font-bold">LZ77 Reference (Dist, Len)</span> for sliding-window matches.</p>
+                    <p>• Output an <span class="text-amber-400 font-bold">RLE (Count, Char)</span> token for consecutive character runs.</p>
+                    <p>• Output an <span class="text-cyan-300 font-bold">LZW (Dict Index)</span> token when a phrase matches a saved dictionary entry!</p>
+                    <p>• Output a <span class="text-fuchsia-400 font-bold">Meta-Encode Token</span> to compress repeated tokens in your output stream!</p>
+                </div>
+            </div>
+
+            <button onclick="resetCurrentLevel()" class="w-full py-3 bg-slate-700 hover:bg-slate-600 active:bg-slate-800 font-bold text-sm rounded-xl transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i> Restart Level
+            </button>
+        </section>
+
+        <!-- Main Gameplay Arena -->
+        <section class="lg:col-span-2 flex flex-col gap-6">
+
+            <!-- Target Quote Compression Board -->
+            <div class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700 flex flex-col gap-4">
+                <div class="flex justify-between items-center border-b border-slate-700/60 pb-3">
+                    <h2 class="font-bold text-lg text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-quote-left text-purple-400"></i> Target Quote String
+                    </h2>
+                    <span class="text-xs bg-slate-900 text-cyan-300 font-semibold px-3 py-1 rounded-full border border-slate-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> Looking Back at Source History
+                    </span>
+                </div>
+
+                <!-- Interactive Text Character View -->
+                <div class="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-xs uppercase font-bold text-slate-400">Quote Stream (History vs Ahead)</label>
+                        <span class="text-[11px] text-slate-400 font-mono">Distance counts characters backward in <span class="text-cyan-300 font-semibold">Source String</span></span>
+                    </div>
+                    <div id="quote-char-stream" class="flex flex-wrap gap-1 font-mono text-base min-h-[60px] p-2 bg-slate-900 rounded-lg">
+                        <!-- Dynamic characters rendered here -->
+                    </div>
+                </div>
+
+                <!-- Compressed Tokens Output Stream -->
+                <div>
+                    <label class="block text-xs uppercase font-bold text-slate-400 mb-2">Your Compressed DEFLATE Output Stream</label>
+                    <div id="compressed-tokens-container" class="min-h-[80px] p-3 bg-slate-950 rounded-xl border border-slate-800 flex flex-wrap gap-2 items-center">
+                        <!-- Compressed tokens appended here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compression Options Panel -->
+            <div class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700 flex flex-col gap-4">
+                <h2 class="font-bold text-lg text-slate-200 flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                    <i class="fa-solid fa-sliders text-cyan-400"></i> Choose Compression Action & Algorithm
+                </h2>
+
+                <!-- Action Selector Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Option A: Emit Literal -->
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 flex flex-col justify-between gap-3">
+                        <div>
+                            <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">Option A (Literal)</div>
+                            <h3 class="font-bold text-white text-base">Emit Literal Character</h3>
+                            <p class="text-xs text-slate-400 mt-1">Output next single character directly without compression.</p>
+                        </div>
+                        <button id="emit-literal-btn" onclick="emitLiteral()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs uppercase rounded-lg transition flex items-center justify-center gap-2 text-white">
+                            <i class="fa-solid fa-font"></i> Output Literal: <span id="next-literal-display" class="font-mono bg-emerald-950 px-2 py-0.5 rounded text-amber-300">''</span>
+                        </button>
+                    </div>
+
+                    <!-- Option B: LZ77 Back Reference -->
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 flex flex-col justify-between gap-3">
+                        <div>
+                            <div class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-1">Option B (LZ77 / DEFLATE)</div>
+                            <h3 class="font-bold text-white text-base">LZ77 Back-Reference Copy</h3>
+                            <p class="text-xs text-slate-400 mt-1">Copy repeating substring from source string history.</p>
+                        </div>
+
+                        <!-- Sliders / Match Selector -->
+                        <div class="space-y-3 bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Distance Back (in Source Text):</span>
+                                    <span id="dist-val" class="font-bold text-purple-400 font-mono">1</span>
+                                </div>
+                                <input id="dist-slider" type="range" min="1" max="1" value="1" oninput="updateControls()" class="w-full accent-purple-500">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Match Length:</span>
+                                    <span id="len-val" class="font-bold text-purple-400 font-mono">3</span>
+                                </div>
+                                <input id="len-slider" type="range" min="3" max="10" value="3" oninput="updateControls()" class="w-full accent-purple-500">
+                            </div>
+
+                            <!-- Proposed Reference Box -->
+                            <div class="p-2.5 rounded bg-slate-900 border border-purple-500/30 flex flex-col gap-1 text-xs">
+                                <div class="flex justify-between items-center text-[11px] text-slate-400">
+                                    <span class="font-bold text-purple-300">Proposed Match Preview:</span>
+                                    <span id="proposed-token-code" class="font-mono text-purple-400 font-bold">&lt;D:1, L:3&gt;</span>
+                                </div>
+                                <div class="flex justify-between font-mono">
+                                    <span class="text-slate-400">Ref Substring:</span>
+                                    <span id="preview-substring" class="text-amber-300 font-bold">""</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="emit-backref-btn" onclick="emitBackRef()" class="w-full py-3 bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:hover:bg-purple-600 font-bold text-xs uppercase rounded-lg transition flex items-center justify-center gap-2 text-white">
+                            <i class="fa-solid fa-copy"></i> Emit LZ77 Reference
+                        </button>
+                    </div>
+
+                    <!-- Option C: Run-Length Encoding (RLE) -->
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 flex flex-col justify-between gap-3">
+                        <div>
+                            <div class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">Option C (RLE)</div>
+                            <h3 class="font-bold text-white text-base">Run-Length Run (RLE)</h3>
+                            <p class="text-xs text-slate-400 mt-1">Compress repeated identical consecutive characters.</p>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono space-y-1">
+                            <div class="flex justify-between text-slate-400">
+                                <span>Detected Consecutive Run:</span>
+                                <span id="rle-count-display" class="text-amber-400 font-bold">1x</span>
+                            </div>
+                            <div class="flex justify-between text-slate-400">
+                                <span>RLE Code:</span>
+                                <span id="rle-code-display" class="text-amber-300 font-bold">&lt;RLE: 1x'A'&gt;</span>
+                            </div>
+                        </div>
+                        <button id="emit-rle-btn" onclick="emitRLE()" class="w-full py-3 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 font-bold text-xs uppercase rounded-lg transition flex items-center justify-center gap-2 text-white">
+                            <i class="fa-solid fa-bolt"></i> Emit RLE Token
+                        </button>
+                    </div>
+
+                    <!-- Option D: LZW Dictionary Entry -->
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 flex flex-col justify-between gap-3">
+                        <div>
+                            <div class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-1">Option D (LZW)</div>
+                            <h3 class="font-bold text-white text-base">LZW Global Dictionary Code</h3>
+                            <p class="text-xs text-slate-400 mt-1">Emit token for matching multi-character phrase in dictionary history.</p>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono space-y-1">
+                            <div class="flex justify-between text-slate-400">
+                                <span>Matched Dictionary Entry:</span>
+                                <span id="lzw-entry-display" class="text-cyan-300 font-bold">None</span>
+                            </div>
+                            <div class="flex justify-between text-slate-400">
+                                <span>LZW Token Code:</span>
+                                <span id="lzw-code-display" class="text-cyan-400 font-bold">&lt;LZW #--&gt;</span>
+                            </div>
+                        </div>
+                        <button id="emit-lzw-btn" onclick="emitLZW()" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 font-bold text-xs uppercase rounded-lg transition flex items-center justify-center gap-2 text-white">
+                            <i class="fa-solid fa-book"></i> Emit LZW Dict Token
+                        </button>
+                    </div>
+
+                    <!-- Option E: Meta-Encode (Encoding the Encoding) -->
+                    <div class="md:col-span-2 bg-slate-900/80 p-4 rounded-xl border border-fuchsia-500/40 flex flex-col justify-between gap-3">
+                        <div>
+                            <div class="text-xs font-bold text-fuchsia-400 uppercase tracking-wider mb-1">Option E (Meta-Encoding / Huffman-RLE)</div>
+                            <h3 class="font-bold text-white text-base">Meta-Compress Token Stream ("Encoding the Encoding")</h3>
+                            <p class="text-xs text-slate-400 mt-1">Compress consecutive identical output tokens into a single meta-token symbol (2nd-stage compression).</p>
+                        </div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono space-y-1">
+                            <div class="flex justify-between text-slate-400">
+                                <span>Detectable Repeated Token Run:</span>
+                                <span id="meta-run-display" class="text-fuchsia-300 font-bold">None</span>
+                            </div>
+                            <div class="flex justify-between text-slate-400">
+                                <span>Meta-Token Output Code:</span>
+                                <span id="meta-code-display" class="text-fuchsia-400 font-bold">&lt;META: --&gt;</span>
+                            </div>
+                        </div>
+                        <button id="emit-meta-btn" onclick="emitMetaEncode()" class="w-full py-3 bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 disabled:opacity-40 font-bold text-xs uppercase rounded-lg transition flex items-center justify-center gap-2 text-white shadow-lg">
+                            <i class="fa-solid fa-layer-group"></i> Meta-Encode Recent Tokens
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Custom Modal -->
+    <div id="game-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-slate-900 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl text-center flex flex-col items-center gap-4">
+            <div id="modal-icon-container" class="text-5xl"></div>
+            <h3 id="modal-title" class="text-2xl font-black text-white"></h3>
+            <p id="modal-description" class="text-sm text-slate-300"></p>
+            
+            <div id="modal-stats" class="w-full bg-slate-800/80 p-3 rounded-xl border border-slate-700 my-2 space-y-1 text-xs">
+                <!-- Detailed results -->
+            </div>
+
+            <button id="modal-action-btn" class="w-full py-3 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 font-bold rounded-xl text-white shadow-lg transition">
+                Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="max-w-5xl mx-auto w-full text-center text-xs text-slate-500 pt-6 border-t border-slate-800">
+        DEFLATE Interactive Quote Compression Game &bull; Built with TailwindCSS & HTML5
+    </footer>
+
+    <!-- Game Logic JavaScript -->
+    <script>
+        // Preset Quote Datasets
+        const SHORT_QUOTES = [
+            "TO BE OR NOT TO BE",
+            "MISSISSIPPI RIVER",
+            "KNOWLEDGE IS POWER",
+            "I THINK THEREFORE I AM"
+        ];
+
+        const LONG_QUOTES = [
+            "IT WAS THE BEST OF TIMES, IT WAS THE WORST OF TIMES, IT WAS THE AGE OF WISDOM.",
+            "ALL THAT IS GOLD DOES NOT GLITTER, NOT ALL THOSE WHO WANDER ARE LOST."
+        ];
+
+        // State Variables
+        let currentMode = 'short';
+        let currentQuotes = SHORT_QUOTES;
+        let currentLevelIndex = 0;
+        
+        let targetQuote = "";
+        let cursorPointer = 0;
+        let compressedTokens = [];
+        let lzwDictionary = [];
+        
+        let movesUsed = 0;
+        let targetMoves = 0;
+        let carryOverCredits = 0;
+
+        let goldMedals = 0;
+        let platinumMedals = 0;
+
+        window.onload = function() {
+            initLevel();
+        };
+
+        function setMode(mode) {
+            if (currentMode === mode) return;
+            currentMode = mode;
+            currentQuotes = mode === 'short' ? SHORT_QUOTES : LONG_QUOTES;
+            currentLevelIndex = 0;
+            carryOverCredits = 0;
+            
+            document.getElementById('mode-short-btn').className = mode === 'short' 
+                ? "py-2 px-3 text-xs font-bold rounded-md transition-all bg-purple-600 text-white"
+                : "py-2 px-3 text-xs font-bold rounded-md text-slate-400 hover:text-white transition-all";
+            
+            document.getElementById('mode-long-btn').className = mode === 'long' 
+                ? "py-2 px-3 text-xs font-bold rounded-md transition-all bg-purple-600 text-white"
+                : "py-2 px-3 text-xs font-bold rounded-md text-slate-400 hover:text-white transition-all";
+
+            document.getElementById('game-mode-display').innerText = mode === 'short' ? "Short Quotes" : "Long Prose";
+            initLevel();
+        }
+
+        // Optimal Compression Calculator to set realistic target limits across algorithms
+        function calculateOptimalTokens(text) {
+            let tokensCount = 0;
+            let i = 0;
+
+            while (i < text.length) {
+                // Check RLE match
+                let rleLen = 1;
+                while (i + rleLen < text.length && text[i + rleLen] === text[i]) {
+                    rleLen++;
+                }
+
+                // Check LZ77 match
+                let matchLength = 0;
+                for (let dist = 1; dist <= Math.min(i, 32); dist++) {
+                    let len = 0;
+                    while (i + len < text.length && text[i - dist + len] === text[i + len]) {
+                        len++;
+                    }
+                    if (len >= 3 && len > matchLength) {
+                        matchLength = len;
+                    }
+                }
+
+                if (rleLen >= 3 && rleLen > matchLength) {
+                    tokensCount++;
+                    i += rleLen;
+                } else if (matchLength >= 3) {
+                    tokensCount++;
+                    i += matchLength;
+                } else {
+                    tokensCount++;
+                    i++;
+                }
+            }
+            return tokensCount;
+        }
+
+        function initLevel() {
+            targetQuote = currentQuotes[currentLevelIndex];
+            cursorPointer = 0;
+            compressedTokens = [];
+            lzwDictionary = [];
+            movesUsed = 0;
+
+            // Build dynamic LZW phrase dictionary from earlier quote occurrences
+            buildLzwDictionary(targetQuote);
+
+            const optimalTokens = calculateOptimalTokens(targetQuote);
+            targetMoves = optimalTokens + carryOverCredits;
+
+            updateUI();
+        }
+
+        function buildLzwDictionary(text) {
+            const seenPhrases = new Map();
+            for (let len = 2; len <= 8; len++) {
+                for (let i = 0; i <= text.length - len; i++) {
+                    const phrase = text.substring(i, i + len);
+                    if (!seenPhrases.has(phrase)) {
+                        seenPhrases.set(phrase, i);
+                    }
+                }
+            }
+            // Keep unique repeated phrases
+            seenPhrases.forEach((firstPos, phrase) => {
+                const secondPos = text.indexOf(phrase, firstPos + phrase.length);
+                if (secondPos !== -1 && !lzwDictionary.includes(phrase)) {
+                    lzwDictionary.push(phrase);
+                }
+            });
+        }
+
+        function updateUI() {
+            // Stats
+            document.getElementById('stage-indicator').innerText = `${currentLevelIndex + 1} / ${currentQuotes.length}`;
+            document.getElementById('stage-progress-bar').style.width = `${((currentLevelIndex + 1) / currentQuotes.length) * 100}%`;
+            document.getElementById('moves-used').innerText = movesUsed;
+            document.getElementById('moves-target').innerText = targetMoves;
+            document.getElementById('extra-credits-display').innerText = `+${carryOverCredits}`;
+            document.getElementById('gold-count').innerText = goldMedals;
+            document.getElementById('platinum-count').innerText = platinumMedals;
+
+            // Render Quote Character Stream (Processed vs Remaining)
+            const streamContainer = document.getElementById('quote-char-stream');
+            streamContainer.innerHTML = '';
+
+            const distVal = parseInt(document.getElementById('dist-slider').value) || 1;
+            const lenVal = parseInt(document.getElementById('len-slider').value) || 3;
+            const matchStartIdx = cursorPointer - distVal;
+
+            for (let i = 0; i < targetQuote.length; i++) {
+                const charEl = document.createElement('span');
+                const ch = targetQuote[i] === ' ' ? '␣' : targetQuote[i];
+
+                let classes = "px-2 py-1 rounded font-mono text-sm border font-bold flex items-center justify-center ";
+
+                if (i < cursorPointer) {
+                    if (matchStartIdx >= 0 && i >= matchStartIdx && i < matchStartIdx + lenVal) {
+                        classes += "match-highlight text-purple-300 ";
+                    } else {
+                        classes += "bg-slate-800 text-slate-500 border-slate-800 ";
+                    }
+                } else if (i === cursorPointer) {
+                    classes += "bg-purple-500/20 text-purple-300 border-purple-400 scale-105 pulse-accent ";
+                } else {
+                    classes += "bg-slate-950 text-slate-300 border-slate-800 ";
+                }
+
+                charEl.className = classes;
+                charEl.innerText = ch;
+                streamContainer.appendChild(charEl);
+            }
+
+            // Next Literal Button update
+            const nextChar = targetQuote[cursorPointer];
+            document.getElementById('next-literal-display').innerText = nextChar ? `'${nextChar === ' ' ? '␣' : nextChar}'` : 'EOF';
+
+            // Controls update across all algorithms
+            updateControls();
+
+            // Render Compressed Tokens
+            const tokensContainer = document.getElementById('compressed-tokens-container');
+            tokensContainer.innerHTML = '';
+
+            compressedTokens.forEach((token) => {
+                const tokenEl = document.createElement('div');
+                let badgeClass = '';
+                let label = '';
+
+                switch (token.type) {
+                    case 'lz77':
+                        badgeClass = 'bg-purple-500/20 text-purple-300 border-purple-400';
+                        label = `<D:${token.dist}, L:${token.len}>`;
+                        break;
+                    case 'rle':
+                        badgeClass = 'bg-amber-500/20 text-amber-300 border-amber-400';
+                        label = `<RLE: ${token.count}x'${token.char === ' ' ? '␣' : token.char}'>`;
+                        break;
+                    case 'lzw':
+                        badgeClass = 'bg-cyan-500/20 text-cyan-300 border-cyan-400';
+                        label = `<LZW #${token.code}: "${token.phrase}">`;
+                        break;
+                    case 'meta':
+                        badgeClass = 'bg-fuchsia-500/30 text-fuchsia-300 border-fuchsia-400 ring-1 ring-fuchsia-400/50';
+                        label = `<META: ${token.count}x [${token.subLabel}]>`;
+                        break;
+                    default:
+                        badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-400';
+                        label = `'${token.char === ' ' ? '␣' : token.char}'`;
+                }
+
+                tokenEl.className = `px-3 py-2 rounded-lg font-mono text-xs font-bold border ${badgeClass}`;
+                tokenEl.innerText = label;
+                tokensContainer.appendChild(tokenEl);
+            });
+        }
+
+        function updateControls() {
+            // LZ77 Controls
+            const distSlider = document.getElementById('dist-slider');
+            const lenSlider = document.getElementById('len-slider');
+            const backRefBtn = document.getElementById('emit-backref-btn');
+            const tokenCodeEl = document.getElementById('proposed-token-code');
+
+            if (cursorPointer === 0) {
+                distSlider.disabled = true;
+                lenSlider.disabled = true;
+                backRefBtn.disabled = true;
+                document.getElementById('preview-substring').innerText = '""';
+                tokenCodeEl.innerText = '<D:0, L:0>';
+            } else {
+                distSlider.disabled = false;
+                lenSlider.disabled = false;
+
+                distSlider.max = cursorPointer;
+                let distVal = parseInt(distSlider.value);
+                if (distVal > cursorPointer) distVal = cursorPointer;
+                distSlider.value = distVal;
+
+                let remainingLen = targetQuote.length - cursorPointer;
+                lenSlider.max = Math.max(3, Math.min(12, remainingLen));
+                let lenVal = parseInt(lenSlider.value);
+
+                document.getElementById('dist-val').innerText = distVal;
+                document.getElementById('len-val').innerText = lenVal;
+                tokenCodeEl.innerText = `<D:${distVal}, L:${lenVal}>`;
+
+                let isValidMatch = true;
+                let subStr = "";
+
+                for (let c = 0; c < lenVal; c++) {
+                    let historyChar = targetQuote[cursorPointer - distVal + c];
+                    let aheadChar = targetQuote[cursorPointer + c];
+
+                    if (!aheadChar || historyChar !== aheadChar) {
+                        isValidMatch = false;
+                        break;
+                    }
+                    subStr += aheadChar;
+                }
+
+                const previewEl = document.getElementById('preview-substring');
+                if (isValidMatch && subStr.length >= 3) {
+                    previewEl.className = "text-purple-300 font-bold";
+                    previewEl.innerText = `"${subStr}" (Valid Match!)`;
+                    backRefBtn.disabled = false;
+                } else {
+                    previewEl.className = "text-rose-400 font-bold";
+                    previewEl.innerText = subStr ? `"${subStr}" (Mismatch)` : '"Invalid Match"';
+                    backRefBtn.disabled = true;
+                }
+            }
+
+            // RLE Controls
+            let rleCount = 0;
+            if (cursorPointer < targetQuote.length) {
+                const rleChar = targetQuote[cursorPointer];
+                while (cursorPointer + rleCount < targetQuote.length && targetQuote[cursorPointer + rleCount] === rleChar) {
+                    rleCount++;
+                }
+            }
+            const rleBtn = document.getElementById('emit-rle-btn');
+            document.getElementById('rle-count-display').innerText = `${rleCount}x`;
+            document.getElementById('rle-code-display').innerText = rleCount >= 2 
+                ? `<RLE: ${rleCount}x'${targetQuote[cursorPointer] === ' ' ? '␣' : targetQuote[cursorPointer]}'>` 
+                : `<RLE: Invalid (<2)`;
+            rleBtn.disabled = rleCount < 2;
+
+            // LZW Controls
+            let lzwMatch = null;
+            let lzwCode = -1;
+            for (let i = 0; i < lzwDictionary.length; i++) {
+                const phrase = lzwDictionary[i];
+                if (targetQuote.startsWith(phrase, cursorPointer)) {
+                    if (!lzwMatch || phrase.length > lzwMatch.length) {
+                        lzwMatch = phrase;
+                        lzwCode = 256 + i;
+                    }
+                }
+            }
+            const lzwBtn = document.getElementById('emit-lzw-btn');
+            if (lzwMatch) {
+                document.getElementById('lzw-entry-display').innerText = `"${lzwMatch}"`;
+                document.getElementById('lzw-code-display').innerText = `<LZW #${lzwCode}>`;
+                lzwBtn.disabled = false;
+            } else {
+                document.getElementById('lzw-entry-display').innerText = "No Match";
+                document.getElementById('lzw-code-display').innerText = "<LZW #-->";
+                lzwBtn.disabled = true;
+            }
+
+            // Meta-Encoding Controls (Meta-compressing recent output tokens)
+            const metaBtn = document.getElementById('emit-meta-btn');
+            let metaRunCount = 0;
+            let metaTokenRun = null;
+
+            if (compressedTokens.length >= 2) {
+                const lastToken = compressedTokens[compressedTokens.length - 1];
+                let idx = compressedTokens.length - 1;
+                while (idx >= 0 && isSameToken(compressedTokens[idx], lastToken)) {
+                    metaRunCount++;
+                    idx--;
+                }
+                metaTokenRun = lastToken;
+            }
+
+            if (metaRunCount >= 2 && metaTokenRun) {
+                const tokenStr = formatTokenString(metaTokenRun);
+                document.getElementById('meta-run-display').innerText = `${metaRunCount}x [${tokenStr}]`;
+                document.getElementById('meta-code-display').innerText = `<META: ${metaRunCount}x [${tokenStr}]>`;
+                metaBtn.disabled = false;
+            } else {
+                document.getElementById('meta-run-display').innerText = "None (Need >= 2 identical consecutive tokens)";
+                document.getElementById('meta-code-display').innerText = "<META: -- >";
+                metaBtn.disabled = true;
+            }
+        }
+
+        function isSameToken(a, b) {
+            if (!a || !b || a.type !== b.type) return false;
+            if (a.type === 'literal') return a.char === b.char;
+            if (a.type === 'lz77') return a.dist === b.dist && a.len === b.len;
+            if (a.type === 'rle') return a.char === b.char && a.count === b.count;
+            if (a.type === 'lzw') return a.code === b.code;
+            if (a.type === 'meta') return a.subLabel === b.subLabel && a.count === b.count;
+            return false;
+        }
+
+        function formatTokenString(t) {
+            if (t.type === 'literal') return `'${t.char === ' ' ? '␣' : t.char}'`;
+            if (t.type === 'lz77') return `D:${t.dist},L:${t.len}`;
+            if (t.type === 'rle') return `RLE:${t.count}x'${t.char}'`;
+            if (t.type === 'lzw') return `LZW:#${t.code}`;
+            if (t.type === 'meta') return `META:${t.count}x`;
+            return 'Token';
+        }
+
+        function emitMetaEncode() {
+            if (compressedTokens.length < 2) return;
+
+            const lastToken = compressedTokens[compressedTokens.length - 1];
+            let metaRunCount = 0;
+            let idx = compressedTokens.length - 1;
+            while (idx >= 0 && isSameToken(compressedTokens[idx], lastToken)) {
+                metaRunCount++;
+                idx--;
+            }
+
+            if (metaRunCount < 2) return;
+
+            // Remove the consecutive raw tokens and substitute 1 Meta-token
+            compressedTokens.splice(compressedTokens.length - metaRunCount, metaRunCount);
+            compressedTokens.push({
+                type: 'meta',
+                count: metaRunCount,
+                subLabel: formatTokenString(lastToken)
+            });
+
+            // Reduces effective token move count retroactively (reflecting 2nd stage compression savings!)
+            movesUsed = Math.max(1, movesUsed - (metaRunCount - 1));
+
+            updateUI();
+            checkGameState();
+        }
+
+        function emitLiteral() {
+            if (cursorPointer >= targetQuote.length) return;
+
+            const char = targetQuote[cursorPointer];
+            compressedTokens.push({ type: 'literal', char: char });
+            cursorPointer += 1;
+            movesUsed++;
+
+            updateUI();
+            checkGameState();
+        }
+
+        function emitBackRef() {
+            const distVal = parseInt(document.getElementById('dist-slider').value);
+            const lenVal = parseInt(document.getElementById('len-slider').value);
+
+            compressedTokens.push({ type: 'lz77', dist: distVal, len: lenVal });
+            cursorPointer += lenVal;
+            movesUsed++;
+
+            updateUI();
+            checkGameState();
+        }
+
+        function emitRLE() {
+            const char = targetQuote[cursorPointer];
+            let count = 0;
+            while (cursorPointer + count < targetQuote.length && targetQuote[cursorPointer + count] === char) {
+                count++;
+            }
+            if (count < 2) return;
+
+            compressedTokens.push({ type: 'rle', char: char, count: count });
+            cursorPointer += count;
+            movesUsed++;
+
+            updateUI();
+            checkGameState();
+        }
+
+        function emitLZW() {
+            let lzwMatch = null;
+            let lzwCode = -1;
+            for (let i = 0; i < lzwDictionary.length; i++) {
+                const phrase = lzwDictionary[i];
+                if (targetQuote.startsWith(phrase, cursorPointer)) {
+                    if (!lzwMatch || phrase.length > lzwMatch.length) {
+                        lzwMatch = phrase;
+                        lzwCode = 256 + i;
+                    }
+                }
+            }
+            if (!lzwMatch) return;
+
+            compressedTokens.push({ type: 'lzw', phrase: lzwMatch, code: lzwCode });
+            cursorPointer += lzwMatch.length;
+            movesUsed++;
+
+            updateUI();
+            checkGameState();
+        }
+
+        function checkGameState() {
+            if (cursorPointer >= targetQuote.length) {
+                if (movesUsed <= targetMoves) {
+                    let moveDifference = targetMoves - movesUsed;
+                    let isPlatinum = moveDifference > 0;
+
+                    if (isPlatinum) {
+                        platinumMedals++;
+                        carryOverCredits += moveDifference;
+                        showModal(
+                            '<i class="fa-solid fa-award text-cyan-400"></i>',
+                            'Platinum Rank Achieved!',
+                            `Outstanding! You compressed the quote using fewer tokens than the optimal target. Unused moves saved as carry-over credits!`,
+                            `Unused Moves Carried Over: +${moveDifference}`,
+                            nextLevel
+                        );
+                    } else {
+                        goldMedals++;
+                        showModal(
+                            '<i class="fa-solid fa-medal text-amber-400"></i>',
+                            'Gold Medal Awarded!',
+                            `Great job! You compressed the quote within the target token limit.`,
+                            `Tokens Used: ${movesUsed} / ${targetMoves}`,
+                            nextLevel
+                        );
+                    }
+                }
+            } else if (movesUsed >= targetMoves) {
+                showModal(
+                    '<i class="fa-solid fa-triangle-exclamation text-rose-500"></i>',
+                    'Token Limit Exceeded!',
+                    `You ran out of token budget before completing quote compression. Try combining LZ77, RLE, and LZW tokens!`,
+                    `Tokens Used: ${movesUsed} / ${targetMoves}`,
+                    resetCurrentLevel
+                );
+            }
+        }
+
+        function nextLevel() {
+            closeModal();
+            if (currentLevelIndex + 1 < currentQuotes.length) {
+                currentLevelIndex++;
+                initLevel();
+            } else {
+                showModal(
+                    '<i class="fa-solid fa-trophy text-amber-300"></i>',
+                    'DEFLATE Compression Master!',
+                    `Congratulations! You compressed all quotes in this mode!`,
+                    `Total Gold: ${goldMedals} | Total Platinum: ${platinumMedals}`,
+                    () => { closeModal(); setMode('short'); }
+                );
+            }
+        }
+
+        function resetCurrentLevel() {
+            closeModal();
+            initLevel();
+        }
+
+        function showModal(iconHtml, title, desc, stats, actionFn) {
+            document.getElementById('modal-icon-container').innerHTML = iconHtml;
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-description').innerText = desc;
+            document.getElementById('modal-stats').innerText = stats;
+            
+            const btn = document.getElementById('modal-action-btn');
+            btn.onclick = actionFn;
+
+            document.getElementById('game-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('game-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
