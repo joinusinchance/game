@@ -324,7 +324,6 @@
         let currentPiece = null;
         let score = 0;
         let isProcessing = false;
-        let lastSelectedCell = null;
         let top5Scores = [];
         let toastTimeout = null;
         let history = null;
@@ -452,30 +451,12 @@
             }
         }
 
+        // Single-tap placement for all devices
         function handleCellInteraction(r, c) {
             if (isProcessing) return;
-            const isMobile = !window.matchMedia("(pointer: fine)").matches;
-            const currentCoord = `${r},${c}`;
-            if (isMobile) {
-                if (lastSelectedCell !== currentCoord) {
-                    clearAllHighlights();
-                    highlightPreview(r, c, true);
-                    lastSelectedCell = currentCoord;
-                } else {
-                    if (isValidPlacement(r, c)) {
-                        saveStateForUndo();
-                        placePiece(r, c);
-                        lastSelectedCell = null;
-                    } else {
-                        clearAllHighlights();
-                        lastSelectedCell = null;
-                    }
-                }
-            } else {
-                if (isValidPlacement(r, c)) {
-                    saveStateForUndo();
-                    placePiece(r, c);
-                }
+            if (isValidPlacement(r, c)) {
+                saveStateForUndo();
+                placePiece(r, c);
             }
         }
 
