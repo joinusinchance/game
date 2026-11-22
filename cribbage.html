@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cribbage - Seeded & Base64 URL State</title>
+<style>
+  :root {
+    --felt: #164e32;
+    --felt-dark: #0f3823;
+    --board-wood: #5c3a21;
+    --board-light: #7c5030;
+    --gold: #eab308;
+    --card-bg: #ffffff;
+    --card-back: #1e3a8a;
+    --red: #dc2626;
+    --black: #111827;
+    --text-light: #f3f4f6;
+    --text-muted: #9ca3af;
+    --accent: #3b82f6;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--felt-dark);
+    color: var(--text-light);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+  }
+
+  header {
+    width: 100%;
+    max-width: 960px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .title-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+    letter-spacing: 0.5px;
+    color: var(--gold);
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  select, input[type="text"], button {
+    font-family: inherit;
+    font-size: 0.88rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 6px 10px;
+    outline: none;
+  }
+
+  select, input[type="text"] {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+
+  select option {
+    background: #1f2937;
+    color: #fff;
+  }
+
+  input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  button {
+    background: #2563eb;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.1s, background 0.15s;
+  }
+
+  button:hover:not(:disabled) {
+    background: #1d4ed8;
+  }
+
+  button:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  button.secondary {
+    background: #374151;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  button.secondary:hover:not(:disabled) {
+    background: #4b5563;
+  }
+
+  button.gold-btn {
+    background: #ca8a04;
+    color: #fff;
+  }
+
+  button.gold-btn:hover:not(:disabled) {
+    background: #a16207;
+  }
+
+  /* Cribbage Board */
+  .board-container {
+    width: 100%;
+    max-width: 960px;
+    background: linear-gradient(180deg, var(--board-light), var(--board-wood));
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    border: 2px solid #3e2513;
+  }
+
+  .score-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .player-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.3);
+  }
+
+  .peg-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .peg-p1 { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+  .peg-p2 { background: #3b82f6; box-shadow: 0 0 6px #3b82f6; }
+
+  .track-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .track-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .track-label {
+    width: 65px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #fde68a;
+  }
+
+  .progress-bar-bg {
+    flex: 1;
+    height: 14px;
+    background: #2b180c;
+    border-radius: 7px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .progress-fill {
+    height: 100%;
+    transition: width 0.4s ease;
+    border-radius: 7px;
+  }
+
+  .fill-p1 { background: linear-gradient(90deg, #b91c1c, #ef4444); }
+  .fill-p2 { background: linear-gradient(90deg, #1d4ed8, #3b82f6); }
+
+  .skunk-markers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+  }
+
+  .skunk-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  /* Main Felt Table */
+  .table-area {
+    width: 100%;
+    max-width: 960px;
+    background: radial-gradient(circle at center, #1d6340 0%, var(--felt) 100%);
+    border-radius: 16px;
+    padding: 16px;
+    border: 3px solid #0d3320;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+  }
+
+  .status-banner {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(234, 179, 8, 0.4);
+    border-radius: 10px;
+    padding: 10px 14px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fef08a;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-text {
+    flex: 1;
+    text-align: left;
+  }
+
+  .dealer-pill {
+    background: var(--gold);
+    color: #111827;
+    font-size: 0.78rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+  }
+
+  /* Zones */
+  .zone {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .zone-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.88rem;
+    color: #d1d5db;
+    font-weight: 600;
+  }
+
+  .middle-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 12px;
+  }
+
+  @media (max-width: 720px) {
+    .middle-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .cards-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 98px;
+    align-items: center;
+  }
+
+  /* Playing Cards */
+  .card {
+    width: 68px;
+    height: 96px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 5px 6px;
+    font-weight: 700;
+    position: relative;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    border: 1px solid #d1d5db;
+  }
+
+  .card.red { color: var(--red); }
+  .card.black { color: var(--black); }
+
+  .card.selectable {
+    cursor: pointer;
+  }
+
+  .card.selectable:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 14px rgba(0,0,0,0.45);
+  }
+
+  .card.selected {
+    transform: translateY(-12px);
+    outline: 3px solid var(--gold);
+    box-shadow: 0 10px 16px rgba(234, 179, 8, 0.45);
+  }
+
+  .card.played-dim {
+    opacity: 0.4;
+    filter: grayscale(40%);
+  }
+
+  .card.back {
+    background: repeating-linear-gradient(
+      45deg,
+      #1e3a8a,
+      #1e3a8a 6px,
+      #1d4ed8 6px,
+      #1d4ed8 12px
+    );
+    border: 2px solid #fff;
+    color: transparent;
+  }
+
+  .card-top {
+    font-size: 0.95rem;
+    line-height: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .card-center {
+    font-size: 1.55rem;
+    text-align: center;
+    line-height: 1;
+  }
+
+  .card-bottom {
+    font-size: 0.95rem;
+    line-height: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    transform: rotate(180deg);
+  }
+
+  /* Pegging Center */
+  .pegging-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .running-count {
+    background: #111827;
+    color: var(--gold);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    border: 1px solid var(--gold);
+  }
+
+  .action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    align-items: center;
+  }
+
+  /* Show / Scoring Breakdown */
+  .breakdown-box {
+    background: rgba(17, 24, 39, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .breakdown-box h3 {
+    color: var(--gold);
+    margin-bottom: 6px;
+    font-size: 1rem;
+  }
+
+  .breakdown-list {
+    list-style: none;
+    margin-bottom: 8px;
+  }
+
+  .breakdown-list li {
+    padding: 2px 0;
+    border-bottom: 1px dashed rgba(255,255,255,0.1);
+  }
+
+  /* Share & URL State Bar */
+  .url-panel {
+    width: 100%;
+    max-width: 960px;
+    margin-top: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .url-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .url-input {
+    flex: 1;
+    min-width: 220px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    background: rgba(0, 0, 0, 0.5);
+    color: #93c5fd;
+  }
+
+  /* Turn Handoff Overlay for 2P Mode */
+  .handoff-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(9, 26, 17, 0.96);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .handoff-card {
+    background: #1f2937;
+    border: 2px solid var(--gold);
+    border-radius: 16px;
+    padding: 28px 24px;
+    max-width: 460px;
+    width: 100%;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+  }
+
+  .handoff-card h2 {
+    color: var(--gold);
+    margin-bottom: 10px;
+    font-size: 1.4rem;
+  }
+
+  .handoff-card p {
+    color: #d1d5db;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #10b981;
+    color: #064e3b;
+    font-weight: 700;
+    padding: 10px 18px;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+    z-index: 200;
+  }
+
+  .toast.show {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-area">
+    <h1>♠️ Cribbage</h1>
+    <span id="seedDisplay" style="font-size: 0.8rem; color: #9ca3af; font-family: monospace;"></span>
+  </div>
+  <div class="controls">
+    <select id="modeSelect" title="Game Mode">
+      <option value="ai">1 Player vs AI</option>
+      <option value="2p">2 Players (Share Link)</option>
+    </select>
+    <input type="text" id="seedInput" placeholder="Custom Seed (optional)" style="width: 155px;">
+    <button id="newGameBtn" class="gold-btn">New Game</button>
+  </div>
+</header>
+
+<!-- Scoreboard -->
+<div class="board-container">
+  <div class="score-header">
+    <div class="player-badge">
+      <span class="peg-dot peg-p1"></span>
+      <span id="p1NameLabel">Player 1</span>: <span id="p1ScoreText" style="color:#fca5a5;">0</span> / 121
+    </div>
+    <div style="font-size: 0.8rem; color: #fde68a;">First to 121 Wins</div>
+    <div class="player-badge">
+      <span class="peg-dot peg-p2"></span>
+      <span id="p2NameLabel">Computer</span>: <span id="p2ScoreText" style="color:#93c5fd;">0</span> / 121
+    </div>
+  </div>
+  <div class="track-wrapper">
+    <div class="track-row">
+      <div class="track-label" id="p1TrackLabel">P1</div>
+      <div class="progress-bar-bg">
+        <div id="p1Progress" class="progress-fill fill-p1" style="width: 0%;"></div>
+        <div class="skunk-markers">
+          <div class="skunk-line" style="left: 75.2%;" title="Skunk Line (91)"></div>
+        </div>
+      </div>
+    </div>
+    <div class="track-row">
+      <div class="track-label" id="p2TrackLabel">AI</div>
+      <div class="progress-bar-bg">
+        <div id="p2Progress" class="progress-fill fill-p2" style="width: 0%;"></div>
+        <div class="skunk-markers">
+          <div class="skunk-line" style="left: 75.2%;" title="Skunk Line (91)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Table -->
+<div class="table-area">
+  <div class="status-banner">
+    <div class="status-text" id="statusMessage">Welcome to Cribbage!</div>
+    <div class="dealer-pill" id="dealerBadge">Dealer: Player 1</div>
+  </div>
+
+  <!-- Opponent Hand Zone -->
+  <div class="zone" id="opponentZone">
+    <div class="zone-header">
+      <span id="oppHandTitle">Opponent's Hand</span>
+      <span id="oppHandCount">6 cards</span>
+    </div>
+    <div class="cards-row" id="oppCardsRow"></div>
+  </div>
+
+  <!-- Middle Area: Starter, Pegging Play, Crib -->
+  <div class="middle-row">
+    <!-- Starter Card -->
+    <div class="zone">
+      <div class="zone-header">
+        <span>Starter (Cut)</span>
+      </div>
+      <div class="cards-row" id="starterRow" style="justify-content: center;"></div>
+    </div>
+
+    <!-- Pegging Sequence -->
+    <div class="zone">
+      <div class="pegging-info">
+        <span style="font-size: 0.88rem; font-weight: 600; color: #d1d5db;">Pegging Sequence</span>
+        <span class="running-count">Count: <span id="runningCount">0</span> / 31</span>
+      </div>
+      <div class="cards-row" id="peggingRow"></div>
+    </div>
+
+    <!-- Crib -->
+    <div class="zone">
+      <div class="zone-header">
+        <span id="cribTitle">The Crib</span>
+        <span id="cribCount">0 / 4</span>
+      </div>
+      <div class="cards-row" id="cribRow" style="justify-content: center;"></div>
+    </div>
+  </div>
+
+  <!-- Active / Bottom Player Hand Zone -->
+  <div class="zone" id="playerZone">
+    <div class="zone-header">
+      <span id="myHandTitle">Your Hand</span>
+      <span id="myHandHint">Select 2 cards to discard to the crib</span>
+    </div>
+    <div class="cards-row" id="myCardsRow"></div>
+    <div class="action-bar" id="actionBar"></div>
+  </div>
+
+  <!-- Show Breakdown / Log -->
+  <div class="breakdown-box" id="logBox">
+    <h3 id="logTitle">Game Log</h3>
+    <ul class="breakdown-list" id="logList"></ul>
+  </div>
+</div>
+
+<!-- URL State Sharing Panel -->
+<div class="url-panel">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+    <span style="font-size: 0.85rem; font-weight: 600; color: #fde68a;">
+      🔗 Base64 URL Game State (Seeded PRNG)
+    </span>
+    <span id="turnShareHint" style="font-size: 0.8rem; color: #93c5fd;"></span>
+  </div>
+  <div class="url-row">
+    <input type="text" id="shareUrlInput" class="url-input" readonly>
+    <button id="copyUrlBtn">Copy Turn Link</button>
+    <button id="loadUrlBtn" class="secondary">Load State from Input</button>
+  </div>
+</div>
+
+<!-- 2-Player Privacy Curtain Overlay -->
+<div class="handoff-overlay" id="handoffOverlay">
+  <div class="handoff-card">
+    <h2 id="handoffTitle">Player 2's Turn</h2>
+    <p id="handoffDesc">
+      Player 1's cards are hidden to keep hands secret. Make sure only the active player is looking at the screen before revealing your hand.
+    </p>
+    <button id="revealHandBtn" class="gold-btn" style="font-size: 1.05rem; padding: 10px 22px;">
+      I am Ready — Show My Cards
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast">Link copied to clipboard!</div>
+
+<script>
+/**
+ * Cribbage Game with Seeded PRNG & Base64 URL State Serialization
+ * Supports 1P vs AI and 2P Asynchronous Link Sharing (with opponent hand hiding).
+ */
+
+const SUITS = ['S', 'H', 'D', 'C']; // Spades, Hearts, Diamonds, Clubs
+const SUIT_SYMBOLS = { S: '♠', H: '♥', D: '♦', C: '♣' };
+const RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+const RANK_LABELS = {
+  1: 'A', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 7: '7',
+  8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K'
+};
+
+// Seeded PRNG (Mulberry32 + FNV-1a string hash)
+function hashSeed(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seedInt) {
+  let a = seedInt >>> 0;
+  return function() {
+    a |= 0;
+    a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// Card helpers
+function cardValue(rank) {
+  return rank > 10 ? 10 : rank;
+}
+
+function cardToCode(c) {
+  return `${c.r}${c.s}`;
+}
+
+function codeToCard(code) {
+  const s = code.slice(-1);
+  const r = parseInt(code.slice(0, -1), 10);
+  return { r, s };
+}
+
+function formatCardText(c) {
+  return `${RANK_LABELS[c.r]}${SUIT_SYMBOLS[c.s]}`;
+}
+
+// Generate deterministic deck for a given seed + handNumber
+function generateSeededDeck(seedStr, handNumber) {
+  const rng = mulberry32(hashSeed(`${seedStr}::hand_${handNumber}`));
+  const deck = [];
+  for (const s of SUITS) {
+    for (const r of RANKS) {
+      deck.push({ r, s });
+    }
+  }
+  // Fisher-Yates shuffle with seeded PRNG
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+// Global Game State
+let state = null;
+let selectedIndices = [];
+let handRevealedForSession = false; // Tracks whether current browser session revealed the 2P privacy curtain
+let lastEncodedUrlParam = "";
+
+function createInitialState(mode = 'ai', customSeed = '') {
+  const seed = customSeed.trim() || Math.random().toString(36).substring(2, 10).toUpperCase();
+  const initialState = {
+    v: 2,
+    mode: mode,          // 'ai' or '2p'
+    seed: seed,
+    handNum: 1,
+    dealer: 1,           // 1 or 2
+    scores: [0, 0],      // [P1 score, P2 score]
+    phase: 'discard',    // 'discard' | 'pegging' | 'show' | 'gameover'
+    turn: 1,             // 1 or 2 (whose action is required next)
+    p1Hand: [],          // Remaining cards in P1 hand (6 during discard, 4 after)
+    p2Hand: [],          // Remaining cards in P2 hand
+    p1Orig: [],          // 4 cards kept by P1 for the Show
+    p2Orig: [],          // 4 cards kept by P2 for the Show
+    crib: [],            // 4 discarded cards
+    starter: null,       // Cut card
+    pegSeq: [],          // Current sequence up to 31: [{c, p}]
+    pegAll: [],          // All cards played in pegging this round: [{c, p}]
+    pegCount: 0,
+    lastGoPlayer: null,
+    logs: [],
+    showResults: null
+  };
+  dealNewHand(initialState, true);
+  return initialState;
+}
+
+function dealNewHand(st, isFirstHand = false) {
+  if (!isFirstHand) {
+    st.handNum += 1;
+    st.dealer = st.dealer === 1 ? 2 : 1;
+  }
+  const deck = generateSeededDeck(st.seed, st.handNum);
+  st.p1Hand = deck.slice(0, 6);
+  st.p2Hand = deck.slice(6, 12);
+  st.p1Orig = [];
+  st.p2Orig = [];
+  st.crib = [];
+  st.starter = null;
+  st.pegSeq = [];
+  st.pegAll = [];
+  st.pegCount = 0;
+  st.lastGoPlayer = null;
+  st.showResults = null;
+  st.phase = 'discard';
+  // In 2P mode, Player 1 discards first, then shares link for Player 2 to discard
+  st.turn = 1;
+  selectedIndices = [];
+  st.logs = [`Hand #${st.handNum} dealt (Seed: ${st.seed}). Dealer: ${playerName(st.dealer, st.mode)}.`];
+}
+
+function playerName(p, mode = state.mode) {
+  if (p === 1) return 'Player 1';
+  return mode === 'ai' ? 'Computer' : 'Player 2';
+}
+
+// Base64 Serialization of Compact Game State
+function encodeStateToBase64(st) {
+  const compact = {
+    v: st.v,
+    m: st.mode,
+    s: st.seed,
+    hn: st.handNum,
+    d: st.dealer,
+    sc: st.scores,
+    ph: st.phase,
+    t: st.turn,
+    h1: st.p1Hand.map(cardToCode),
+    h2: st.p2Hand.map(cardToCode),
+    o1: st.p1Orig.map(cardToCode),
+    o2: st.p2Orig.map(cardToCode),
+    cr: st.crib.map(cardToCode),
+    st: st.starter ? cardToCode(st.starter) : null,
+    ps: st.pegSeq.map(x => [cardToCode(x.c), x.p]),
+    pa: st.pegAll.map(x => [cardToCode(x.c), x.p]),
+    pc: st.pegCount,
+    lg: st.lastGoPlayer,
+    l: st.logs.slice(-6),
+    sr: st.showResults
+  };
+  const json = JSON.stringify(compact);
+  // UTF-8 safe base64url
+  const bytes = new TextEncoder().encode(json);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodeStateFromBase64(b64) {
+  try {
+    let norm = b64.replace(/-/g, '+').replace(/_/g, '/');
+    while (norm.length % 4) norm += '=';
+    const bin = atob(norm);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const json = new TextDecoder().decode(bytes);
+    const c = JSON.parse(json);
+    if (!c || !c.s || !c.ph) return null;
+    return {
+      v: c.v || 2,
+      mode: c.m || 'ai',
+      seed: c.s,
+      handNum: c.hn || 1,
+      dealer: c.d || 1,
+      scores: c.sc || [0, 0],
+      phase: c.ph,
+      turn: c.t || 1,
+      p1Hand: (c.h1 || []).map(codeToCard),
+      p2Hand: (c.h2 || []).map(codeToCard),
+      p1Orig: (c.o1 || []).map(codeToCard),
+      p2Orig: (c.o2 || []).map(codeToCard),
+      crib: (c.cr || []).map(codeToCard),
+      starter: c.st ? codeToCard(c.st) : null,
+      pegSeq: (c.ps || []).map(x => ({ c: codeToCard(x[0]), p: x[1] })),
+      pegAll: (c.pa || []).map(x => ({ c: codeToCard(x[0]), p: x[1] })),
+      pegCount: c.pc || 0,
+      lastGoPlayer: c.lg || null,
+      logs: c.l || [],
+      showResults: c.sr || null
+    };
+  } catch (e) {
+    console.error("Failed to decode state:", e);
+    return null;
+  }
+}
+
+function syncUrlWithState(shouldTriggerCurtainCheck = false) {
+  const encoded = encodeStateToBase64(state);
+  const url = new URL(window.location.href);
+  url.searchParams.set('g', encoded);
+  try {
+    window.history.replaceState({}, '', url.toString());
+  } catch (e) {
+    // Fallback if sandboxed iframe restricts history.replaceState
+  }
+  const shareInput = document.getElementById('shareUrlInput');
+  if (shareInput) shareInput.value = url.toString();
+
+  if (shouldTriggerCurtainCheck && state.mode === '2p' && state.phase !== 'show' && state.phase !== 'gameover') {
+    if (encoded !== lastEncodedUrlParam) {
+      handRevealedForSession = false;
+    }
+  }
+  lastEncodedUrlParam = encoded;
+}
+
+// Scoring Utilities
+function addPoints(player, pts, reason) {
+  if (pts <= 0 || state.phase === 'gameover') return;
+  const idx = player - 1;
+  state.scores[idx] = Math.min(121, state.scores[idx] + pts);
+  state.logs.push(`${playerName(player)} +${pts} pts (${reason})`);
+  if (state.scores[idx] >= 121) {
+    state.phase = 'gameover';
+    state.logs.push(`🏆 ${playerName(player)} wins the game ${state.scores[0]} to ${state.scores[1]}!`);
+  }
+}
+
+// Pegging scoring for the newly played card
+function scorePeggingPlay(seq) {
+  let pts = 0;
+  const reasons = [];
+  const sum = seq.reduce((acc, item) => acc + cardValue(item.c.r), 0);
+
+  if (sum === 15) {
+    pts += 2;
+    reasons.push('Fifteen for 2');
+  } else if (sum === 31) {
+    pts += 2;
+    reasons.push('Thirty-one for 2');
+  }
+
+  // Pairs / Three-of-a-kind / Four-of-a-kind from the end of sequence
+  const lastRank = seq[seq.length - 1].c.r;
+  let sameRankCount = 1;
+  for (let i = seq.length - 2; i >= 0; i--) {
+    if (seq[i].c.r === lastRank) sameRankCount++;
+    else break;
+  }
+  if (sameRankCount === 2) { pts += 2; reasons.push('Pair for 2'); }
+  else if (sameRankCount === 3) { pts += 6; reasons.push('Pair Royal for 6'); }
+  else if (sameRankCount === 4) { pts += 12; reasons.push('Double Pair Royal for 12'); }
+
+  // Runs of 3 or more at the end of the sequence
+  for (let len = seq.length; len >= 3; len--) {
+    const slice = seq.slice(seq.length - len).map(x => x.c.r).sort((a, b) => a - b);
+    let isRun = true;
+    for (let i = 1; i < slice.length; i++) {
+      if (slice[i] !== slice[i - 1] + 1) {
+        isRun = false;
+        break;
+      }
+    }
+    if (isRun) {
+      pts += len;
+      reasons.push(`Run of ${len} for ${len}`);
+      break;
+    }
+  }
+
+  return { pts, reason: reasons.join(', ') };
+}
+
+// Full Hand / Crib Counting (4 cards + starter)
+function scoreShowHand(fourCards, starter, isCrib = false) {
+  const all = [...fourCards, starter];
+  let total = 0;
+  const items = [];
+
+  // 1. Fifteens (all subsets of size 2..5)
+  for (let mask = 1; mask < 32; mask++) {
+    let sum = 0;
+    const combo = [];
+    for (let i = 0; i < 5; i++) {
+      if (mask & (1 << i)) {
+        sum += cardValue(all[i].r);
+        combo.push(formatCardText(all[i]));
+      }
+    }
+    if (sum === 15) {
+      total += 2;
+      items.push(`Fifteen (${combo.join('+')}) for 2`);
+    }
+  }
+
+  // 2. Pairs
+  for (let i = 0; i < 5; i++) {
+    for (let j = i + 1; j < 5; j++) {
+      if (all[i].r === all[j].r) {
+        total += 2;
+        items.push(`Pair (${formatCardText(all[i])}, ${formatCardText(all[j])}) for 2`);
+      }
+    }
+  }
+
+  // 3. Runs (check longest run length first: 5, then 4, then 3)
+  let foundRunLen = 0;
+  for (let len = 5; len >= 3; len--) {
+    const runCombos = [];
+    for (let mask = 1; mask < 32; mask++) {
+      let bits = 0;
+      const subset = [];
+      for (let i = 0; i < 5; i++) {
+        if (mask & (1 << i)) {
+          bits++;
+          subset.push(all[i]);
+        }
+      }
+      if (bits !== len) continue;
+      const sorted = [...subset].sort((a, b) => a.r - b.r);
+      let isRun = true;
+      for (let k = 1; k < sorted.length; k++) {
+        if (sorted[k].r !== sorted[k - 1].r + 1) {
+          isRun = false;
+          break;
+        }
+      }
+      if (isRun) {
+        runCombos.push(sorted.map(formatCardText).join('-'));
+      }
+    }
+    if (runCombos.length > 0) {
+      foundRunLen = len;
+      for (const rc of runCombos) {
+        total += len;
+        items.push(`Run of ${len} (${rc}) for ${len}`);
+      }
+      break;
+    }
+  }
+
+  // 4. Flush
+  const handSuit = fourCards[0].s;
+  const allFourSameSuit = fourCards.every(c => c.s === handSuit);
+  if (allFourSameSuit) {
+    if (starter.s === handSuit) {
+      total += 5;
+      items.push(`5-card Flush (${SUIT_SYMBOLS[handSuit]}) for 5`);
+    } else if (!isCrib) {
+      total += 4;
+      items.push(`4-card Flush (${SUIT_SYMBOLS[handSuit]}) for 4`);
+    }
+  }
+
+  // 5. His Nobs (Jack in hand matching starter suit)
+  for (const c of fourCards) {
+    if (c.r === 11 && c.s === starter.s) {
+      total += 1;
+      items.push(`His Nobs (${formatCardText(c)}) for 1`);
+    }
+  }
+
+  return { total, items };
+}
+
+// Game Flow Actions
+function confirmDiscard() {
+  if (state.phase !== 'discard' || selectedIndices.length !== 2) return;
+  const activePlayer = state.mode === 'ai' ? 1 : state.turn;
+  const hand = activePlayer === 1 ? state.p1Hand : state.p2Hand;
+
+  const sortedDesc = [...selectedIndices].sort((a, b) => b - a);
+  const discarded = [];
+  for (const idx of sortedDesc) {
+    discarded.push(hand.splice(idx, 1)[0]);
+  }
+  state.crib.push(...discarded);
+  if (activePlayer === 1) state.p1Orig = [...hand];
+  else state.p2Orig = [...hand];
+
+  selectedIndices = [];
+  state.logs.push(`${playerName(activePlayer)} discarded 2 cards to the crib.`);
+
+  if (state.mode === 'ai') {
+    // AI discards 2 cards immediately
+    aiDiscard();
+    startPeggingPhase();
+  } else {
+    // 2P mode: If P1 just discarded, pass turn to P2
+    if (activePlayer === 1 && state.p2Hand.length === 6) {
+      state.turn = 2;
+      handRevealedForSession = false;
+      syncUrlWithState(false);
+      render();
+      showToast("Player 1 discarded! Share link with Player 2.");
+    } else {
+      // Both players discarded
+      startPeggingPhase();
+    }
+  }
+}
+
+function aiDiscard() {
+  // Simple heuristic: keep combination of 4 cards that maximizes base hand score
+  let bestScore = -1;
+  let bestKeep = [0, 1, 2, 3];
+  for (let i = 0; i < 6; i++) {
+    for (let j = i + 1; j < 6; j++) {
+      const keep = [];
+      for (let k = 0; k < 6; k++) {
+        if (k !== i && k !== j) keep.push(state.p2Hand[k]);
+      }
+      // Score without starter using dummy off-suit starter
+      const res = scoreShowHand(keep, { r: 99, s: 'X' }, false);
+      if (res.total > bestScore) {
+        bestScore = res.total;
+        bestKeep = keep;
+      }
+    }
+  }
+  const discarded = state.p2Hand.filter(c => !bestKeep.includes(c));
+  state.p2Hand = [...bestKeep];
+  state.p2Orig = [...bestKeep];
+  state.crib.push(...discarded);
+  state.logs.push(`Computer discarded 2 cards to the crib.`);
+}
+
+function startPeggingPhase() {
+  const deck = generateSeededDeck(state.seed, state.handNum);
+  state.starter = deck[12];
+  state.phase = 'pegging';
+  state.pegSeq = [];
+  state.pegAll = [];
+  state.pegCount = 0;
+  state.lastGoPlayer = null;
+
+  state.logs.push(`Starter card cut: ${formatCardText(state.starter)}.`);
+
+  // His Heels (Jack cut as starter gives dealer 2 points)
+  if (state.starter.r === 11) {
+    addPoints(state.dealer, 2, 'His Heels (Jack starter)');
+    if (state.phase === 'gameover') {
+      syncUrlWithState(false);
+      render();
+      return;
+    }
+  }
+
+  // Non-dealer leads pegging
+  state.turn = state.dealer === 1 ? 2 : 1;
+  handRevealedForSession = false;
+
+  if (state.mode === 'ai' && state.turn === 2) {
+    syncUrlWithState(false);
+    render();
+    setTimeout(aiPeggingStep, 600);
+  } else {
+    syncUrlWithState(false);
+    render();
+  }
+}
+
+function canPlayerPlay(player) {
+  const hand = player === 1 ? state.p1Hand : state.p2Hand;
+  return hand.some(c => state.pegCount + cardValue(c.r) <= 31);
+}
+
+function playPeggingCard(player, cardIdx) {
+  if (state.phase !== 'pegging' || state.turn !== player) return;
+  const hand = player === 1 ? state.p1Hand : state.p2Hand;
+  const card = hand[cardIdx];
+  if (!card) return;
+  const val = cardValue(card.r);
+  if (state.pegCount + val > 31) return;
+
+  hand.splice(cardIdx, 1);
+  state.pegCount += val;
+  const playEntry = { c: card, p: player };
+  state.pegSeq.push(playEntry);
+  state.pegAll.push(playEntry);
+  state.lastGoPlayer = player;
+
+  const { pts, reason } = scorePeggingPlay(state.pegSeq);
+  state.logs.push(`${playerName(player)} played ${formatCardText(card)} (Count: ${state.pegCount}).`);
+  if (pts > 0) {
+    addPoints(player, pts, reason);
+    if (state.phase === 'gameover') {
+      syncUrlWithState(false);
+      render();
+      return;
+    }
+  }
+
+  advancePeggingTurn(player);
+}
+
+function declareGo(player) {
+  if (state.phase !== 'pegging' || state.turn !== player || canPlayerPlay(player)) return;
+  state.logs.push(`${playerName(player)} says "Go" at ${state.pegCount}.`);
+  const other = player === 1 ? 2 : 1;
+
+  if (canPlayerPlay(other)) {
+    state.turn = other;
+    handRevealedForSession = false;
+    syncUrlWithState(false);
+    render();
+    if (state.mode === 'ai' && state.turn === 2) {
+      setTimeout(aiPeggingStep, 600);
+    }
+  } else {
+    // Neither player can play -> award 1 pt for Go (unless count is 31, already scored 2)
+    if (state.pegCount < 31 && state.lastGoPlayer) {
+      addPoints(state.lastGoPlayer, 1, 'Go / Last Card');
+      if (state.phase === 'gameover') {
+        syncUrlWithState(false);
+        render();
+        return;
+      }
+    }
+    resetSequenceOrEndPegging(state.lastGoPlayer || player);
+  }
+}
+
+function advancePeggingTurn(justPlayedPlayer) {
+  const other = justPlayedPlayer === 1 ? 2 : 1;
+
+  // Check if all cards from both hands are exhausted
+  if (state.p1Hand.length === 0 && state.p2Hand.length === 0) {
+    if (state.pegCount < 31) {
+      addPoints(justPlayedPlayer, 1, 'Last Card');
+      if (state.phase === 'gameover') {
+        syncUrlWithState(false);
+        render();
+        return;
+      }
+    }
+    beginShowPhase();
+    return;
+  }
+
+  // If count hit 31, reset sequence and pass lead to other player
+  if (state.pegCount === 31) {
+    resetSequenceOrEndPegging(justPlayedPlayer);
+    return;
+  }
+
+  // Check if other player can play
+  if (canPlayerPlay(other)) {
+    state.turn = other;
+    handRevealedForSession = false;
+    syncUrlWithState(false);
+    render();
+    if (state.mode === 'ai' && state.turn === 2) {
+      setTimeout(aiPeggingStep, 600);
+    }
+  } else if (canPlayerPlay(justPlayedPlayer)) {
+    // Other player has an automatic Go; justPlayedPlayer continues
+    state.logs.push(`${playerName(other)} has no legal play ("Go"). ${playerName(justPlayedPlayer)} plays again.`);
+    state.turn = justPlayedPlayer;
+    syncUrlWithState(false);
+    render();
+    if (state.mode === 'ai' && state.turn === 2) {
+      setTimeout(aiPeggingStep, 600);
+    }
+  } else {
+    // Neither can play
+    if (state.pegCount < 31) {
+      addPoints(justPlayedPlayer, 1, 'Go');
+      if (state.phase === 'gameover') {
+        syncUrlWithState(false);
+        render();
+        return;
+      }
+    }
+    resetSequenceOrEndPegging(justPlayedPlayer);
+  }
+}
+
+function resetSequenceOrEndPegging(lastPlayer) {
+  if (state.p1Hand.length === 0 && state.p2Hand.length === 0) {
+    beginShowPhase();
+    return;
+  }
+  state.pegSeq = [];
+  state.pegCount = 0;
+  state.lastGoPlayer = null;
+  const nextLead = lastPlayer === 1 ? 2 : 1;
+  state.turn = canPlayerPlay(nextLead) ? nextLead : lastPlayer;
+  state.logs.push(`Count reset to 0. ${playerName(state.turn)} leads.`);
+  handRevealedForSession = false;
+  syncUrlWithState(false);
+  render();
+  if (state.mode === 'ai' && state.turn === 2) {
+    setTimeout(aiPeggingStep, 600);
+  }
+}
+
+function aiPeggingStep() {
+  if (state.phase !== 'pegging' || state.mode !== 'ai' || state.turn !== 2) return;
+  const legalIndices = [];
+  state.p2Hand.forEach((c, idx) => {
+    if (state.pegCount + cardValue(c.r) <= 31) legalIndices.push(idx);
+  });
+  if (legalIndices.length === 0) {
+    declareGo(2);
+    return;
+  }
+  // Pick card that scores the most immediate pegging points
+  let bestIdx = legalIndices[0];
+  let bestPts = -1;
+  for (const idx of legalIndices) {
+    const testSeq = [...state.pegSeq, { c: state.p2Hand[idx], p: 2 }];
+    const { pts } = scorePeggingPlay(testSeq);
+    if (pts > bestPts) {
+      bestPts = pts;
+      bestIdx = idx;
+    }
+  }
+  playPeggingCard(2, bestIdx);
+}
+
+function beginShowPhase() {
+  state.phase = 'show';
+  const pone = state.dealer === 1 ? 2 : 1;
+  const dealer = state.dealer;
+
+  const poneCards = pone === 1 ? state.p1Orig : state.p2Orig;
+  const dealerCards = dealer === 1 ? state.p1Orig : state.p2Orig;
+
+  const poneEval = scoreShowHand(poneCards, state.starter, false);
+  const dealerEval = scoreShowHand(dealerCards, state.starter, false);
+  const cribEval = scoreShowHand(state.crib, state.starter, true);
+
+  state.showResults = {
+    pone,
+    dealer,
+    poneEval,
+    dealerEval,
+    cribEval
+  };
+
+  // Count non-dealer first!
+  addPoints(pone, poneEval.total, `${playerName(pone)}'s Hand`);
+  if (state.phase !== 'gameover') {
+    addPoints(dealer, dealerEval.total, `${playerName(dealer)}'s Hand`);
+  }
+  if (state.phase !== 'gameover') {
+    addPoints(dealer, cribEval.total, `${playerName(dealer)}'s Crib`);
+  }
+
+  handRevealedForSession = true;
+  syncUrlWithState(false);
+  render();
+}
+
+// Rendering UI
+function createCardEl(card, options = {}) {
+  const { faceDown = false, selectable = false, selected = false, dimmed = false, onClick = null } = options;
+  const div = document.createElement('div');
+  if (faceDown) {
+    div.className = 'card back';
+    return div;
+  }
+  const isRed = card.s === 'H' || card.s === 'D';
+  div.className = `card ${isRed ? 'red' : 'black'}`;
+  if (selectable) div.classList.add('selectable');
+  if (selected) div.classList.add('selected');
+  if (dimmed) div.classList.add('played-dim');
+
+  const rankStr = RANK_LABELS[card.r];
+  const suitStr = SUIT_SYMBOLS[card.s];
+
+  div.innerHTML = `
+    <div class="card-top"><span>${rankStr}</span><span>${suitStr}</span></div>
+    <div class="card-center">${suitStr}</div>
+    <div class="card-bottom"><span>${rankStr}</span><span>${suitStr}</span></div>
+  `;
+
+  if (selectable && onClick) {
+    div.addEventListener('click', onClick);
+  }
+  return div;
+}
+
+function render() {
+  if (!state) return;
+
+  // Header & Mode
+  document.getElementById('modeSelect').value = state.mode;
+  document.getElementById('seedDisplay').textContent = `Seed: ${state.seed} | Hand #${state.handNum}`;
+
+  // Scoreboard
+  const p2Label = state.mode === 'ai' ? 'Computer' : 'Player 2';
+  document.getElementById('p1NameLabel').textContent = 'Player 1';
+  document.getElementById('p2NameLabel').textContent = p2Label;
+  document.getElementById('p1TrackLabel').textContent = 'Player 1';
+  document.getElementById('p2TrackLabel').textContent = p2Label;
+  document.getElementById('p1ScoreText').textContent = state.scores[0];
+  document.getElementById('p2ScoreText').textContent = state.scores[1];
+  document.getElementById('p1Progress').style.width = `${Math.min(100, (state.scores[0] / 121) * 100)}%`;
+  document.getElementById('p2Progress').style.width = `${Math.min(100, (state.scores[1] / 121) * 100)}%`;
+
+  // Dealer badge
+  document.getElementById('dealerBadge').textContent = `Dealer: ${playerName(state.dealer)}`;
+
+  // Determine which player is viewing at the bottom of the screen
+  // In AI mode, Player 1 is always at the bottom.
+  // In 2P mode, the active player (`state.turn`) is placed at the bottom, and the opponent is at the top with hidden cards!
+  const viewer = state.mode === 'ai' ? 1 : state.turn;
+  const opponent = viewer === 1 ? 2 : 1;
+
+  // 2P Privacy Curtain Logic:
+  // When in 2P mode during active play ('discard' or 'pegging'), hide cards behind a curtain until revealed
+  const overlay = document.getElementById('handoffOverlay');
+  if (state.mode === '2p' && (state.phase === 'discard' || state.phase === 'pegging') && !handRevealedForSession) {
+    overlay.style.display = 'flex';
+    document.getElementById('handoffTitle').textContent = `${playerName(viewer)}'s Turn (${state.phase.toUpperCase()})`;
+    document.getElementById('handoffDesc').textContent =
+      `${playerName(opponent)}'s cards are hidden. Ensure only ${playerName(viewer)} is viewing the screen before revealing your hand.`;
+  } else {
+    overlay.style.display = 'none';
+  }
+
+  // Status Banner & Hints
+  const statusEl = document.getElementById('statusMessage');
+  const shareHintEl = document.getElementById('turnShareHint');
+  if (state.phase === 'discard') {
+    statusEl.textContent = `${playerName(viewer)}: Select 2 cards to send to ${playerName(state.dealer)}'s crib.`;
+    shareHintEl.textContent = state.mode === '2p'
+      ? `Currently ${playerName(viewer)}'s turn to discard. Share link after confirming.`
+      : `1P Mode: State auto-saved to URL.`;
+  } else if (state.phase === 'pegging') {
+    statusEl.textContent = `Pegging Phase — ${playerName(state.turn)}'s turn to play (Count: ${state.pegCount}/31).`;
+    shareHintEl.textContent = state.mode === '2p'
+      ? `Pass the updated URL to ${playerName(state.turn)} when it's their turn!`
+      : `1P Mode: Pegging vs Computer.`;
+  } else if (state.phase === 'show') {
+    statusEl.textContent = `The Show — Hands & Crib scored! Ready for next hand.`;
+    shareHintEl.textContent = `Both hands revealed for counting. Share link so both players see the Show!`;
+  } else if (state.phase === 'gameover') {
+    const winner = state.scores[0] >= 121 ? 'Player 1' : p2Label;
+    statusEl.textContent = `🏆 Game Over! ${winner} wins (${state.scores[0]} - ${state.scores[1]})!`;
+    shareHintEl.textContent = `Game completed! Share final result link or start a New Game.`;
+  }
+
+  // Render Opponent Zone (Top)
+  const oppRow = document.getElementById('oppCardsRow');
+  oppRow.innerHTML = '';
+  const oppHand = opponent === 1 ? state.p1Hand : state.p2Hand;
+  const oppOrig = opponent === 1 ? state.p1Orig : state.p2Orig;
+  document.getElementById('oppHandTitle').textContent = `${playerName(opponent)}'s Hand`;
+
+  if (state.phase === 'show' || state.phase === 'gameover') {
+    const cardsToShow = oppOrig.length ? oppOrig : oppHand;
+    document.getElementById('oppHandCount').textContent = `${cardsToShow.length} cards (Revealed)`;
+    cardsToShow.forEach(c => oppRow.appendChild(createCardEl(c)));
+  } else {
+    // Strictly hide opponent cards (face down)
+    document.getElementById('oppHandCount').textContent = `${oppHand.length} cards (Hidden)`;
+    for (let i = 0; i < oppHand.length; i++) {
+      oppRow.appendChild(createCardEl(null, { faceDown: true }));
+    }
+  }
+
+  // Render Starter Card
+  const starterRow = document.getElementById('starterRow');
+  starterRow.innerHTML = '';
+  if (state.starter) {
+    starterRow.appendChild(createCardEl(state.starter));
+  } else {
+    starterRow.appendChild(createCardEl(null, { faceDown: true }));
+  }
+
+  // Render Pegging Sequence
+  document.getElementById('runningCount').textContent = state.pegCount;
+  const peggingRow = document.getElementById('peggingRow');
+  peggingRow.innerHTML = '';
+  state.pegSeq.forEach(entry => {
+    const el = createCardEl(entry.c);
+    const badge = document.createElement('div');
+    badge.style.cssText = 'position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;font-size:0.65rem;padding:1px 5px;border-radius:4px;border:1px solid #6b7280;';
+    badge.textContent = entry.p === 1 ? 'P1' : (state.mode === 'ai' ? 'AI' : 'P2');
+    el.appendChild(badge);
+    peggingRow.appendChild(el);
+  });
+
+  // Render Crib
+  document.getElementById('cribTitle').textContent = `${playerName(state.dealer)}'s Crib`;
+  document.getElementById('cribCount').textContent = `${state.crib.length} / 4`;
+  const cribRow = document.getElementById('cribRow');
+  cribRow.innerHTML = '';
+  if (state.phase === 'show' || state.phase === 'gameover') {
+    state.crib.forEach(c => cribRow.appendChild(createCardEl(c)));
+  } else {
+    for (let i = 0; i < state.crib.length; i++) {
+      cribRow.appendChild(createCardEl(null, { faceDown: true }));
+    }
+  }
+
+  // Render Viewer's Hand (Bottom)
+  const myRow = document.getElementById('myCardsRow');
+  myRow.innerHTML = '';
+  const myHand = viewer === 1 ? state.p1Hand : state.p2Hand;
+  const myOrig = viewer === 1 ? state.p1Orig : state.p2Orig;
+  document.getElementById('myHandTitle').textContent = `${playerName(viewer)}'s Hand`;
+
+  if (state.phase === 'discard') {
+    document.getElementById('myHandHint').textContent = `Selected: ${selectedIndices.length} / 2`;
+    myHand.forEach((c, idx) => {
+      const isSelected = selectedIndices.includes(idx);
+      myRow.appendChild(createCardEl(c, {
+        selectable: true,
+        selected: isSelected,
+        onClick: () => {
+          if (selectedIndices.includes(idx)) {
+            selectedIndices = selectedIndices.filter(i => i !== idx);
+          } else if (selectedIndices.length < 2) {
+            selectedIndices.push(idx);
+          }
+          render();
+        }
+      }));
+    });
+  } else if (state.phase === 'pegging') {
+    const isMyTurn = state.turn === viewer;
+    document.getElementById('myHandHint').textContent = isMyTurn
+      ? 'Click a legal card (sum ≤ 31) to play'
+      : `Waiting for ${playerName(state.turn)}...`;
+
+    myHand.forEach((c, idx) => {
+      const legal = isMyTurn && (state.pegCount + cardValue(c.r) <= 31);
+      myRow.appendChild(createCardEl(c, {
+        selectable: legal,
+        dimmed: isMyTurn && !legal,
+        onClick: () => playPeggingCard(viewer, idx)
+      }));
+    });
+  } else {
+    // Show or Game Over
+    const cardsToShow = myOrig.length ? myOrig : myHand;
+    document.getElementById('myHandHint').textContent = 'Show Complete';
+    cardsToShow.forEach(c => myRow.appendChild(createCardEl(c)));
+  }
+
+  // Render Action Buttons
+  const actionBar = document.getElementById('actionBar');
+  actionBar.innerHTML = '';
+
+  if (state.phase === 'discard') {
+    const btn = document.createElement('button');
+    btn.textContent = `Send 2 Cards to Crib`;
+    btn.disabled = selectedIndices.length !== 2;
+    btn.onclick = confirmDiscard;
+    actionBar.appendChild(btn);
+  } else if (state.phase === 'pegging' && state.turn === viewer) {
+    if (!canPlayerPlay(viewer)) {
+      const goBtn = document.createElement('button');
+      goBtn.className = 'gold-btn';
+      goBtn.textContent = 'Say "Go" (No Legal Play)';
+      goBtn.onclick = () => declareGo(viewer);
+      actionBar.appendChild(goBtn);
+    }
+  } else if (state.phase === 'show') {
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'gold-btn';
+    nextBtn.textContent = 'Deal Next Hand';
+    nextBtn.onclick = () => {
+      dealNewHand(state, false);
+      syncUrlWithState(false);
+      render();
+    };
+    actionBar.appendChild(nextBtn);
+  } else if (state.phase === 'gameover') {
+    const restartBtn = document.createElement('button');
+    restartBtn.className = 'gold-btn';
+    restartBtn.textContent = 'Play Again (New Seed)';
+    restartBtn.onclick = () => {
+      state = createInitialState(state.mode, '');
+      handRevealedForSession = true;
+      syncUrlWithState(false);
+      render();
+    };
+    actionBar.appendChild(restartBtn);
+  }
+
+  // In 2P mode, provide a prominent quick-copy button whenever waiting on turn handoff
+  if (state.mode === '2p' && state.phase !== 'gameover') {
+    const copyTurnBtn = document.createElement('button');
+    copyTurnBtn.className = 'secondary';
+    copyTurnBtn.textContent = '📋 Copy Shareable Turn Link';
+    copyTurnBtn.onclick = copyShareLink;
+    actionBar.appendChild(copyTurnBtn);
+  }
+
+  // Render Show Breakdown or Game Log
+  const logTitle = document.getElementById('logTitle');
+  const logList = document.getElementById('logList');
+  logList.innerHTML = '';
+
+  if ((state.phase === 'show' || state.phase === 'gameover') && state.showResults) {
+    const sr = state.showResults;
+    logTitle.textContent = `The Show Breakdown (Starter: ${formatCardText(state.starter)})`;
+
+    const sections = [
+      { label: `${playerName(sr.pone)}'s Hand (Non-Dealer)`, evalData: sr.poneEval },
+      { label: `${playerName(sr.dealer)}'s Hand (Dealer)`, evalData: sr.dealerEval },
+      { label: `${playerName(sr.dealer)}'s Crib`, evalData: sr.cribEval }
+    ];
+
+    sections.forEach(sec => {
+      const li = document.createElement('li');
+      const detail = sec.evalData.items.length > 0 ? sec.evalData.items.join('; ') : 'Nineteen (0 points)';
+      li.innerHTML = `<strong>${sec.label}: +${sec.evalData.total} pts</strong> — <span style="color:#d1d5db;">${detail}</span>`;
+      logList.appendChild(li);
+    });
+  } else {
+    logTitle.textContent = 'Recent Game Log';
+    state.logs.slice(-6).forEach(msg => {
+      const li = document.createElement('li');
+      li.textContent = msg;
+      logList.appendChild(li);
+    });
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function copyShareLink() {
+  const input = document.getElementById('shareUrlInput');
+  input.select();
+  input.setSelectionRange(0, 99999);
+  document.execCommand('copy');
+  showToast('Turn URL copied! Send it to the next player.');
+}
+
+// Event Listeners
+document.getElementById('newGameBtn').addEventListener('click', () => {
+  const mode = document.getElementById('modeSelect').value;
+  const seed = document.getElementById('seedInput').value;
+  state = createInitialState(mode, seed);
+  handRevealedForSession = true; // Creator immediately sees P1's cards
+  syncUrlWithState(false);
+  render();
+});
+
+document.getElementById('modeSelect').addEventListener('change', (e) => {
+  const mode = e.target.value;
+  const seed = document.getElementById('seedInput').value;
+  state = createInitialState(mode, seed);
+  handRevealedForSession = true;
+  syncUrlWithState(false);
+  render();
+});
+
+document.getElementById('copyUrlBtn').addEventListener('click', copyShareLink);
+
+document.getElementById('loadUrlBtn').addEventListener('click', () => {
+  const raw = document.getElementById('shareUrlInput').value.trim();
+  let b64 = raw;
+  try {
+    if (raw.includes('g=')) {
+      const parsed = new URL(raw);
+      b64 = parsed.searchParams.get('g') || raw;
+    }
+  } catch (e) {}
+
+  const decoded = decodeStateFromBase64(b64);
+  if (decoded) {
+    state = decoded;
+    handRevealedForSession = false; // Enforce privacy curtain on loaded 2P state
+    syncUrlWithState(false);
+    render();
+    showToast('Game state loaded from Base64 URL!');
+  } else {
+    showToast('Invalid Base64 game state!');
+  }
+});
+
+document.getElementById('revealHandBtn').addEventListener('click', () => {
+  handRevealedForSession = true;
+  render();
+});
+
+// Initialization on load
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const gParam = params.get('g');
+  if (gParam) {
+    const loaded = decodeStateFromBase64(gParam);
+    if (loaded) {
+      state = loaded;
+      // When opening a shared 2P link from URL, keep opponent cards hidden and show the privacy curtain first
+      handRevealedForSession = false;
+      syncUrlWithState(false);
+      render();
+      return;
+    }
+  }
+  state = createInitialState('ai', '');
+  handRevealedForSession = true;
+  syncUrlWithState(false);
+  render();
+});
+</script>
+</body>
+</html>
