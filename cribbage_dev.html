@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Compact Cribbage — Web Share & Seeded PRNG</title>
+<style>
+  :root {
+    --felt: #164e32;
+    --felt-dark: #0b291a;
+    --wood: #4a2e19;
+    --gold: #eab308;
+    --card-bg: #ffffff;
+    --red: #dc2626;
+    --black: #111827;
+    --text-light: #f3f4f6;
+    --text-muted: #9ca3af;
+    --accent: #2563eb;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--felt-dark);
+    color: var(--text-light);
+  }
+
+  .app-shell {
+    height: 100dvh;
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    background: var(--felt);
+    border-left: 1px solid rgba(255,255,255,0.1);
+    border-right: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* Top Navigation Bar */
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--wood);
+    padding: 6px 10px;
+    border-bottom: 2px solid #2d1b0e;
+    flex-shrink: 0;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--gold);
+  }
+
+  .mode-pill {
+    font-size: 0.68rem;
+    background: rgba(0,0,0,0.4);
+    color: #fde68a;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .tab-btn {
+    background: rgba(0,0,0,0.3);
+    color: #d1d5db;
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .tab-btn.active {
+    background: var(--gold);
+    color: #111827;
+    border-color: var(--gold);
+  }
+
+  /* Compact Scoreboard Strip */
+  .score-strip {
+    background: rgba(0,0,0,0.45);
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+  }
+
+  .score-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+  }
+
+  .p-tag {
+    width: 82px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .dealer-d {
+    background: var(--gold);
+    color: #000;
+    font-size: 0.62rem;
+    font-weight: 900;
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 8px;
+    background: #111827;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+  }
+
+  .fill-1 { background: #ef4444; }
+  .fill-2 { background: #3b82f6; }
+
+  .score-num {
+    width: 44px;
+    text-align: right;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Views */
+  .view-panel {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8px 10px;
+    overflow: hidden;
+  }
+
+  .view-panel.active {
+    display: flex;
+  }
+
+  /* Status Banner */
+  .status-bar {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(234, 179, 8, 0.35);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #fef08a;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* Compact Table Zones */
+  .zone-box {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .zone-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: #d1d5db;
+    font-weight: 600;
+  }
+
+  /* Overlaid Compact Cards */
+  .card-fan {
+    display: flex;
+    align-items: center;
+    min-height: 58px;
+    padding-left: 2px;
+  }
+
+  .mini-card {
+    width: 46px;
+    height: 62px;
+    background: var(--card-bg);
+    border-radius: 6px;
+    border: 1px solid #9ca3af;
+    box-shadow: -2px 2px 5px rgba(0,0,0,0.35);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 3px 4px;
+    font-weight: 800;
+    font-size: 0.82rem;
+    line-height: 1;
+    position: relative;
+    transition: transform 0.12s ease;
+    flex-shrink: 0;
+  }
+
+  .card-fan.overlap .mini-card:not(:first-child) {
+    margin-left: -14px;
+  }
+
+  .mini-card.red { color: var(--red); }
+  .mini-card.black { color: var(--black); }
+
+  .mini-card.selectable {
+    cursor: pointer;
+  }
+
+  .mini-card.selectable:hover {
+    transform: translateY(-4px);
+    z-index: 5;
+  }
+
+  .mini-card.selected {
+    transform: translateY(-9px);
+    outline: 2.5px solid var(--gold);
+    z-index: 10;
+  }
+
+  .mini-card.dimmed {
+    opacity: 0.4;
+  }
+
+  .mini-card.back {
+    background: repeating-linear-gradient(
+      45deg,
+      #1e3a8a,
+      #1e3a8a 4px,
+      #2563eb 4px,
+      #2563eb 8px
+    );
+    border: 1.5px solid #fff;
+  }
+
+  .mini-card-center {
+    font-size: 1.15rem;
+    text-align: center;
+  }
+
+  /* Compact Middle Row: Starter | Pegging | Crib */
+  .mid-grid {
+    display: grid;
+    grid-template-columns: 64px 1fr 78px;
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .count-badge {
+    background: #111827;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.72rem;
+  }
+
+  /* Inline Text Pills for Crib / Starter / Log */
+  .chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .card-chip {
+    background: #fff;
+    color: #111827;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 2px 5px;
+    border-radius: 4px;
+    border: 1px solid #9ca3af;
+  }
+
+  .card-chip.red { color: var(--red); }
+  .card-chip.hidden-chip {
+    background: #1e3a8a;
+    color: #bfdbfe;
+    border-color: #60a5fa;
+  }
+
+  /* Action Row */
+  .action-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    min-height: 34px;
+    flex-shrink: 0;
+  }
+
+  button.btn {
+    padding: 7px 14px;
+    border-radius: 7px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    background: var(--accent);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  button.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  button.btn-gold {
+    background: var(--gold);
+    color: #111827;
+  }
+
+  button.btn-share {
+    background: #10b981;
+    color: #052e16;
+  }
+
+  /* Compact Log Box */
+  .mini-log {
+    background: rgba(0,0,0,0.4);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 0.73rem;
+    line-height: 1.35;
+    color: #d1d5db;
+    max-height: 68px;
+    overflow-y: auto;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* Options Tab Styling */
+  .options-card {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 0.85rem;
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-group label {
+    font-size: 0.78rem;
+    color: #fde68a;
+    font-weight: 600;
+  }
+
+  select, input[type="text"], textarea {
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 7px 9px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-family: inherit;
+  }
+
+  textarea {
+    font-family: monospace;
+    font-size: 0.72rem;
+    resize: none;
+    height: 64px;
+    color: #93c5fd;
+  }
+
+  /* Privacy Curtain Overlay */
+  .curtain {
+    position: fixed;
+    inset: 0;
+    background: rgba(7, 24, 15, 0.97);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .curtain-box {
+    background: #1f2937;
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    padding: 22px 18px;
+    max-width: 380px;
+    width: 100%;
+  }
+
+  .curtain-box h2 {
+    color: var(--gold);
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+
+  .curtain-box p {
+    font-size: 0.85rem;
+    color: #d1d5db;
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #10b981;
+    color: #052e16;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 7px 14px;
+    border-radius: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 200;
+  }
+
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- Header & Tabs -->
+  <div class="top-bar">
+    <div class="brand">
+      <span>♠️ Cribbage</span>
+      <span class="mode-pill" id="headerModePill">1P vs AI</span>
+    </div>
+    <div class="nav-tabs">
+      <button class="tab-btn active" id="tabGameBtn" onclick="switchTab('game')">Table</button>
+      <button class="tab-btn" id="tabOptionsBtn" onclick="switchTab('options')">Options & URL</button>
+    </div>
+  </div>
+
+  <!-- Compact Scoreboard -->
+  <div class="score-strip">
+    <div class="score-line">
+      <div class="p-tag"><span id="p1Label">Player 1</span><span class="dealer-d" id="d1Badge">D</span></div>
+      <div class="bar-track"><div class="bar-fill fill-1" id="p1Bar" style="width:0%"></div></div>
+      <div class="score-num" id="p1Score">0/121</div>
+    </div>
+    <div class="score-line">
+      <div class="p-tag"><span id="p2Label">AI</span><span class="dealer-d" id="d2Badge" style="display:none">D</span></div>
+      <div class="bar-track"><div class="bar-fill fill-2" id="p2Bar" style="width:0%"></div></div>
+      <div class="score-num" id="p2Score">0/121</div>
+    </div>
+  </div>
+
+  <!-- TAB 1: COMPACT GAME TABLE -->
+  <div class="view-panel active" id="gamePanel">
+    <div class="status-bar" id="statusBar">Select 2 cards for the crib</div>
+
+    <!-- Opponent Hand -->
+    <div class="zone-box">
+      <div class="zone-meta">
+        <span id="oppTitle">Opponent</span>
+        <span id="oppMeta">6 cards</span>
+      </div>
+      <div class="card-fan overlap" id="oppCards"></div>
+    </div>
+
+    <!-- Middle Board: Starter | Pegging | Crib -->
+    <div class="mid-grid">
+      <div class="zone-box" style="align-items:center;">
+        <div class="zone-meta"><span>Cut</span></div>
+        <div id="starterSlot"></div>
+      </div>
+
+      <div class="zone-box">
+        <div class="zone-meta">
+          <span>Pegging</span>
+          <span class="count-badge" id="countBadge">0 / 31</span>
+        </div>
+        <div class="card-fan overlap" id="peggingCards"></div>
+      </div>
+
+      <div class="zone-box">
+        <div class="zone-meta">
+          <span id="cribTitle">Crib</span>
+          <span id="cribCount">0/4</span>
+        </div>
+        <div class="chip-list" id="cribChips"></div>
+      </div>
+    </div>
+
+    <!-- Active Player Hand -->
+    <div class="zone-box">
+      <div class="zone-meta">
+        <span id="myTitle">Your Hand</span>
+        <span id="myHint">Pick 2 to discard</span>
+      </div>
+      <div class="card-fan" id="myCards" style="gap:5px; justify-content:center;"></div>
+    </div>
+
+    <!-- Context Actions -->
+    <div class="action-row" id="actionRow"></div>
+
+    <!-- Compact Log / Show Breakdown -->
+    <div class="mini-log" id="miniLog"></div>
+  </div>
+
+  <!-- TAB 2: OPTIONS & BASE64 URL STATE -->
+  <div class="view-panel" id="optionsPanel" style="justify-content:flex-start; gap:12px; overflow-y:auto;">
+    <div class="options-card">
+      <div class="field-group">
+        <label for="modeSelect">Game Mode</label>
+        <select id="modeSelect">
+          <option value="ai">1 Player vs AI</option>
+          <option value="webshare">2 Players (Web Share API / WhatsApp)</option>
+          <option value="2p">2 Players (Manual URL Link)</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="seedInput">PRNG Deck Seed (Leave blank for random)</label>
+        <input type="text" id="seedInput" placeholder="e.g. LONDON26">
+      </div>
+
+      <button class="btn btn-gold" id="newGameBtn" style="justify-content:center;">Start New Game</button>
+    </div>
+
+    <div class="options-card">
+      <div class="field-group">
+        <label>Current Base64 State URL (Seed: <span id="optSeedLabel"></span> | Hand #<span id="optHandLabel"></span>)</label>
+        <textarea id="urlTextarea" readonly></textarea>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-share" id="optWebShareBtn">📤 Share Turn Link</button>
+        <button class="btn" id="optCopyBtn">📋 Copy URL</button>
+        <button class="btn" style="background:#374151;" id="optLoadBtn">Load Pasted URL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 2-Player Privacy Curtain -->
+<div class="curtain" id="privacyCurtain">
+  <div class="curtain-box">
+    <h2 id="curtainTitle">Player 2's Turn</h2>
+    <p id="curtainText">Opponent's cards are hidden. Tap below when only the active player is looking at the screen.</p>
+    <button class="btn btn-gold" id="revealBtn" style="width:100%; justify-content:center; padding:10px;">Show My Cards</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+/**
+ * Compact Cribbage with Seeded PRNG, Base64 URL State, and Native Web Share API 2P Mode
+ */
+const SUITS = ['S', 'H', 'D', 'C'];
+const SYMBOLS = { S: '♠', H: '♥', D: '♦', C: '♣' };
+const RANKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+const LABELS = { 1:'A', 2:'2', 3:'3', 4:'4', 5:'5', 6:'6', 7:'7', 8:'8', 9:'9', 10:'10', 11:'J', 12:'Q', 13:'K' };
+
+function hashSeed(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function cardVal(r) { return r > 10 ? 10 : r; }
+function toCode(c) { return `${c.r}${c.s}`; }
+function fromCode(code) { return { r: parseInt(code.slice(0, -1), 10), s: code.slice(-1) }; }
+function fmtCard(c) { return `${LABELS[c.r]}${SYMBOLS[c.s]}`; }
+function fmtShort(c) { return `${LABELS[c.r]}${c.s}`; }
+
+function seededDeck(seed, handNum) {
+  const rng = mulberry32(hashSeed(`${seed}::${handNum}`));
+  const deck = [];
+  for (const s of SUITS) for (const r of RANKS) deck.push({ r, s });
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+let state = null;
+let selected = [];
+let revealed = false;
+
+function newState(mode = 'ai', seedInput = '') {
+  const seed = seedInput.trim() || Math.random().toString(36).substring(2, 8).toUpperCase();
+  const st = {
+    v: 3,
+    mode,           // 'ai' | 'webshare' | '2p'
+    seed,
+    handNum: 1,
+    dealer: 1,
+    scores: [0, 0],
+    phase: 'discard',
+    turn: 1,
+    p1Hand: [],
+    p2Hand: [],
+    p1Orig: [],
+    p2Orig: [],
+    crib: [],
+    starter: null,
+    pegSeq: [],
+    pegCount: 0,
+    lastGo: null,
+    logs: [],
+    showRes: null
+  };
+  dealHand(st, true);
+  return st;
+}
+
+function dealHand(st, first = false) {
+  if (!first) {
+    st.handNum += 1;
+    st.dealer = st.dealer === 1 ? 2 : 1;
+  }
+  const deck = seededDeck(st.seed, st.handNum);
+  st.p1Hand = deck.slice(0, 6);
+  st.p2Hand = deck.slice(6, 12);
+  st.p1Orig = [];
+  st.p2Orig = [];
+  st.crib = [];
+  st.starter = null;
+  st.pegSeq = [];
+  st.pegCount = 0;
+  st.lastGo = null;
+  st.showRes = null;
+  st.phase = 'discard';
+  st.turn = 1;
+  selected = [];
+  st.logs = [`Hand #${st.handNum} (Seed ${st.seed}). Dealer: ${pName(st.dealer, st.mode)}.`];
+}
+
+function pName(p, mode = state.mode) {
+  if (p === 1) return 'Player 1';
+  return mode === 'ai' ? 'AI' : 'Player 2';
+}
+
+function isTwoPlayer(mode = state.mode) {
+  return mode === 'webshare' || mode === '2p';
+}
+
+// Base64 URL Encoding / Decoding
+function encodeB64(st) {
+  const payload = {
+    v: st.v, m: st.mode, s: st.seed, hn: st.handNum, d: st.dealer,
+    sc: st.scores, ph: st.phase, t: st.turn,
+    h1: st.p1Hand.map(toCode), h2: st.p2Hand.map(toCode),
+    o1: st.p1Orig.map(toCode), o2: st.p2Orig.map(toCode),
+    cr: st.crib.map(toCode), st: st.starter ? toCode(st.starter) : null,
+    ps: st.pegSeq.map(x => [toCode(x.c), x.p]), pc: st.pegCount,
+    lg: st.lastGo, l: st.logs.slice(-5), sr: st.showRes
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodeB64(b64) {
+  try {
+    let norm = b64.replace(/-/g, '+').replace(/_/g, '/');
+    while (norm.length % 4) norm += '=';
+    const bin = atob(norm);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const c = JSON.parse(new TextDecoder().decode(bytes));
+    if (!c || !c.s || !c.ph) return null;
+    return {
+      v: c.v || 3, mode: c.m || 'ai', seed: c.s, handNum: c.hn || 1, dealer: c.d || 1,
+      scores: c.sc || [0, 0], phase: c.ph, turn: c.t || 1,
+      p1Hand: (c.h1 || []).map(fromCode), p2Hand: (c.h2 || []).map(fromCode),
+      p1Orig: (c.o1 || []).map(fromCode), p2Orig: (c.o2 || []).map(fromCode),
+      crib: (c.cr || []).map(fromCode), starter: c.st ? fromCode(c.st) : null,
+      pegSeq: (c.ps || []).map(x => ({ c: fromCode(x[0]), p: x[1] })),
+      pegCount: c.pc || 0, lastGo: c.lg || null, logs: c.l || [], showRes: c.sr || null
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+function getShareUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.set('g', encodeB64(state));
+  return url.toString();
+}
+
+function syncUrl() {
+  const fullUrl = getShareUrl();
+  try { window.history.replaceState({}, '', fullUrl); } catch (e) {}
+  document.getElementById('urlTextarea').value = fullUrl;
+  document.getElementById('optSeedLabel').textContent = state.seed;
+  document.getElementById('optHandLabel').textContent = state.handNum;
+}
+
+// Native Web Share API with Clipboard Fallback
+async function triggerTurnShare(autoTriggered = false) {
+  const shareUrl = getShareUrl();
+  const nextPlayerName = pName(state.turn);
+  const title = `Cribbage — ${nextPlayerName}'s Turn`;
+  const text = `Your turn in Cribbage! (${pName(1)}: ${state.scores[0]} | ${pName(2)}: ${state.scores[1]})`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text, url: shareUrl });
+      showToast(`Shared link for ${nextPlayerName}!`);
+      return;
+    } catch (err) {
+      // User dismissed share sheet or browser blocked non-gesture call -> fallback to clipboard
+    }
+  }
+  copyToClipboard(shareUrl, autoTriggered
+    ? `Turn complete! Link copied for ${nextPlayerName} (tap Share Turn anytime).`
+    : `Link copied for ${nextPlayerName}!`);
+}
+
+function copyToClipboard(text, msg = 'Copied to clipboard!') {
+  const ta = document.getElementById('urlTextarea');
+  ta.value = text;
+  ta.select();
+  ta.setSelectionRange(0, 99999);
+  document.execCommand('copy');
+  showToast(msg);
+}
+
+// Scoring Rules
+function addPts(player, pts, reason) {
+  if (pts <= 0 || state.phase === 'gameover') return;
+  state.scores[player - 1] = Math.min(121, state.scores[player - 1] + pts);
+  state.logs.push(`${pName(player)} +${pts} (${reason})`);
+  if (state.scores[player - 1] >= 121) {
+    state.phase = 'gameover';
+    state.logs.push(`🏆 ${pName(player)} wins ${state.scores[0]}–${state.scores[1]}!`);
+  }
+}
+
+function scorePegging(seq) {
+  let pts = 0;
+  const reasons = [];
+  const sum = seq.reduce((a, x) => a + cardVal(x.c.r), 0);
+  if (sum === 15) { pts += 2; reasons.push('15 for 2'); }
+  else if (sum === 31) { pts += 2; reasons.push('31 for 2'); }
+
+  const lastR = seq[seq.length - 1].c.r;
+  let same = 1;
+  for (let i = seq.length - 2; i >= 0; i--) {
+    if (seq[i].c.r === lastR) same++; else break;
+  }
+  if (same === 2) { pts += 2; reasons.push('Pair 2'); }
+  else if (same === 3) { pts += 6; reasons.push('Trips 6'); }
+  else if (same === 4) { pts += 12; reasons.push('Quads 12'); }
+
+  for (let len = seq.length; len >= 3; len--) {
+    const sub = seq.slice(seq.length - len).map(x => x.c.r).sort((a, b) => a - b);
+    let ok = true;
+    for (let i = 1; i < sub.length; i++) if (sub[i] !== sub[i - 1] + 1) { ok = false; break; }
+    if (ok) { pts += len; reasons.push(`Run ${len}`); break; }
+  }
+  return { pts, reason: reasons.join(', ') };
+}
+
+function scoreHand(four, starter, isCrib = false) {
+  const all = [...four, starter];
+  let total = 0;
+  const items = [];
+
+  for (let m = 1; m < 32; m++) {
+    let sum = 0, combo = [];
+    for (let i = 0; i < 5; i++) if (m & (1 << i)) { sum += cardVal(all[i].r); combo.push(fmtCard(all[i])); }
+    if (sum === 15) { total += 2; items.push(`15 (${combo.join('+')})`); }
+  }
+
+  for (let i = 0; i < 5; i++) {
+    for (let j = i + 1; j < 5; j++) {
+      if (all[i].r === all[j].r) { total += 2; items.push(`Pair (${fmtCard(all[i])},${fmtCard(all[j])})`); }
+    }
+  }
+
+  for (let len = 5; len >= 3; len--) {
+    const runs = [];
+    for (let m = 1; m < 32; m++) {
+      let bits = 0, sub = [];
+      for (let i = 0; i < 5; i++) if (m & (1 << i)) { bits++; sub.push(all[i]); }
+      if (bits !== len) continue;
+      sub.sort((a, b) => a.r - b.r);
+      let ok = true;
+      for (let k = 1; k < sub.length; k++) if (sub[k].r !== sub[k - 1].r + 1) { ok = false; break; }
+      if (ok) runs.push(sub.map(fmtCard).join('-'));
+    }
+    if (runs.length) {
+      runs.forEach(r => { total += len; items.push(`Run ${len} (${r})`); });
+      break;
+    }
+  }
+
+  const s0 = four[0].s;
+  if (four.every(c => c.s === s0)) {
+    if (starter.s === s0) { total += 5; items.push('Flush 5'); }
+    else if (!isCrib) { total += 4; items.push('Flush 4'); }
+  }
+
+  for (const c of four) {
+    if (c.r === 11 && c.s === starter.s) { total += 1; items.push('His Nobs 1'); }
+  }
+  return { total, items };
+}
+
+// Game Progression
+function confirmDiscard() {
+  if (state.phase !== 'discard' || selected.length !== 2) return;
+  const actor = state.mode === 'ai' ? 1 : state.turn;
+  const hand = actor === 1 ? state.p1Hand : state.p2Hand;
+
+  const desc = [...selected].sort((a, b) => b - a);
+  for (const idx of desc) state.crib.push(hand.splice(idx, 1)[0]);
+  if (actor === 1) state.p1Orig = [...hand]; else state.p2Orig = [...hand];
+  selected = [];
+  state.logs.push(`${pName(actor)} discarded 2 to crib.`);
+
+  if (state.mode === 'ai') {
+    aiDiscard();
+    beginPegging();
+  } else if (actor === 1 && state.p2Hand.length === 6) {
+    state.turn = 2;
+    revealed = false;
+    syncUrl();
+    render();
+    if (state.mode === 'webshare') triggerTurnShare(true);
+  } else {
+    beginPegging();
+    if (state.mode === 'webshare') triggerTurnShare(true);
+  }
+}
+
+function aiDiscard() {
+  let best = -1, keepBest = state.p2Hand.slice(0, 4);
+  for (let i = 0; i < 6; i++) {
+    for (let j = i + 1; j < 6; j++) {
+      const keep = state.p2Hand.filter((_, k) => k !== i && k !== j);
+      const sc = scoreHand(keep, { r: 99, s: 'X' }, false).total;
+      if (sc > best) { best = sc; keepBest = keep; }
+    }
+  }
+  const drop = state.p2Hand.filter(c => !keepBest.includes(c));
+  state.p2Hand = [...keepBest];
+  state.p2Orig = [...keepBest];
+  state.crib.push(...drop);
+}
+
+function beginPegging() {
+  const deck = seededDeck(state.seed, state.handNum);
+  state.starter = deck[12];
+  state.phase = 'pegging';
+  state.pegSeq = [];
+  state.pegCount = 0;
+  state.lastGo = null;
+  state.logs.push(`Cut: ${fmtCard(state.starter)}.`);
+
+  if (state.starter.r === 11) {
+    addPts(state.dealer, 2, 'His Heels');
+    if (state.phase === 'gameover') { syncUrl(); render(); return; }
+  }
+
+  state.turn = state.dealer === 1 ? 2 : 1;
+  revealed = false;
+  syncUrl();
+  render();
+
+  if (state.mode === 'ai' && state.turn === 2) {
+    setTimeout(aiPegStep, 500);
+  }
+}
+
+function canPlay(p) {
+  const h = p === 1 ? state.p1Hand : state.p2Hand;
+  return h.some(c => state.pegCount + cardVal(c.r) <= 31);
+}
+
+function playCard(p, idx) {
+  if (state.phase !== 'pegging' || state.turn !== p) return;
+  const h = p === 1 ? state.p1Hand : state.p2Hand;
+  const card = h[idx];
+  if (!card || state.pegCount + cardVal(card.r) > 31) return;
+
+  h.splice(idx, 1);
+  state.pegCount += cardVal(card.r);
+  state.pegSeq.push({ c: card, p });
+  state.lastGo = p;
+
+  const { pts, reason } = scorePegging(state.pegSeq);
+  state.logs.push(`${pName(p)} played ${fmtCard(card)} (${state.pegCount}).`);
+  if (pts > 0) {
+    addPts(p, pts, reason);
+    if (state.phase === 'gameover') { syncUrl(); render(); return; }
+  }
+
+  const prevTurn = state.turn;
+  advanceTurn(p);
+
+  if (state.mode === 'webshare' && state.turn !== prevTurn && state.phase !== 'show') {
+    triggerTurnShare(true);
+  }
+}
+
+function sayGo(p) {
+  if (state.phase !== 'pegging' || state.turn !== p || canPlay(p)) return;
+  state.logs.push(`${pName(p)}: "Go" at ${state.pegCount}.`);
+  const other = p === 1 ? 2 : 1;
+
+  if (canPlay(other)) {
+    state.turn = other;
+    revealed = false;
+    syncUrl();
+    render();
+    if (state.mode === 'webshare') triggerTurnShare(true);
+    if (state.mode === 'ai' && state.turn === 2) setTimeout(aiPegStep, 500);
+  } else {
+    if (state.pegCount < 31 && state.lastGo) {
+      addPts(state.lastGo, 1, 'Go');
+      if (state.phase === 'gameover') { syncUrl(); render(); return; }
+    }
+    resetSeq(state.lastGo || p);
+  }
+}
+
+function advanceTurn(justPlayed) {
+  const other = justPlayed === 1 ? 2 : 1;
+
+  if (state.p1Hand.length === 0 && state.p2Hand.length === 0) {
+    if (state.pegCount < 31) {
+      addPts(justPlayed, 1, 'Last Card');
+      if (state.phase === 'gameover') { syncUrl(); render(); return; }
+    }
+    beginShow();
+    return;
+  }
+
+  if (state.pegCount === 31) {
+    resetSeq(justPlayed);
+    return;
+  }
+
+  if (canPlay(other)) {
+    state.turn = other;
+    revealed = false;
+    syncUrl();
+    render();
+    if (state.mode === 'ai' && state.turn === 2) setTimeout(aiPegStep, 500);
+  } else if (canPlay(justPlayed)) {
+    state.logs.push(`${pName(other)} has no play ("Go"). ${pName(justPlayed)} goes again.`);
+    state.turn = justPlayed;
+    syncUrl();
+    render();
+    if (state.mode === 'ai' && state.turn === 2) setTimeout(aiPegStep, 500);
+  } else {
+    if (state.pegCount < 31) {
+      addPts(justPlayed, 1, 'Go');
+      if (state.phase === 'gameover') { syncUrl(); render(); return; }
+    }
+    resetSeq(justPlayed);
+  }
+}
+
+function resetSeq(lastP) {
+  if (state.p1Hand.length === 0 && state.p2Hand.length === 0) {
+    beginShow();
+    return;
+  }
+  state.pegSeq = [];
+  state.pegCount = 0;
+  state.lastGo = null;
+  const nextLead = lastP === 1 ? 2 : 1;
+  state.turn = canPlay(nextLead) ? nextLead : lastP;
+  state.logs.push(`Count reset to 0. ${pName(state.turn)} leads.`);
+  revealed = false;
+  syncUrl();
+  render();
+  if (state.mode === 'ai' && state.turn === 2) setTimeout(aiPegStep, 500);
+}
+
+function aiPegStep() {
+  if (state.phase !== 'pegging' || state.mode !== 'ai' || state.turn !== 2) return;
+  const legal = [];
+  state.p2Hand.forEach((c, i) => { if (state.pegCount + cardVal(c.r) <= 31) legal.push(i); });
+  if (!legal.length) { sayGo(2); return; }
+  let bestIdx = legal[0], bestPts = -1;
+  for (const idx of legal) {
+    const { pts } = scorePegging([...state.pegSeq, { c: state.p2Hand[idx], p: 2 }]);
+    if (pts > bestPts) { bestPts = pts; bestIdx = idx; }
+  }
+  playCard(2, bestIdx);
+}
+
+function beginShow() {
+  state.phase = 'show';
+  const pone = state.dealer === 1 ? 2 : 1;
+  const dealer = state.dealer;
+  const poneRes = scoreHand(pone === 1 ? state.p1Orig : state.p2Orig, state.starter, false);
+  const dealerRes = scoreHand(dealer === 1 ? state.p1Orig : state.p2Orig, state.starter, false);
+  const cribRes = scoreHand(state.crib, state.starter, true);
+
+  state.showRes = { pone, dealer, poneRes, dealerRes, cribRes };
+  addPts(pone, poneRes.total, `${pName(pone)} Hand`);
+  if (state.phase !== 'gameover') addPts(dealer, dealerRes.total, `${pName(dealer)} Hand`);
+  if (state.phase !== 'gameover') addPts(dealer, cribRes.total, `${pName(dealer)} Crib`);
+
+  revealed = true;
+  syncUrl();
+  render();
+  if (state.mode === 'webshare') triggerTurnShare(true);
+}
+
+// UI Helpers
+function switchTab(tab) {
+  document.getElementById('tabGameBtn').classList.toggle('active', tab === 'game');
+  document.getElementById('tabOptionsBtn').classList.toggle('active', tab === 'options');
+  document.getElementById('gamePanel').classList.toggle('active', tab === 'game');
+  document.getElementById('optionsPanel').classList.toggle('active', tab === 'options');
+}
+
+function makeMiniCard(card, opts = {}) {
+  const { back = false, selectable = false, isSelected = false, dimmed = false, onClick = null } = opts;
+  const div = document.createElement('div');
+  if (back) { div.className = 'mini-card back'; return div; }
+  const isRed = card.s === 'H' || card.s === 'D';
+  div.className = `mini-card ${isRed ? 'red' : 'black'}`;
+  if (selectable) div.classList.add('selectable');
+  if (isSelected) div.classList.add('selected');
+  if (dimmed) div.classList.add('dimmed');
+  div.innerHTML = `<div>${LABELS[card.r]}</div><div class="mini-card-center">${SYMBOLS[card.s]}</div>`;
+  if (selectable && onClick) div.onclick = onClick;
+  return div;
+}
+
+function makeChip(card, hidden = false) {
+  const span = document.createElement('span');
+  if (hidden) {
+    span.className = 'card-chip hidden-chip';
+    span.textContent = '🂠';
+    return span;
+  }
+  const isRed = card.s === 'H' || card.s === 'D';
+  span.className = `card-chip ${isRed ? 'red' : ''}`;
+  span.textContent = fmtShort(card);
+  return span;
+}
+
+function render() {
+  if (!state) return;
+
+  // Header & Mode Pill
+  document.getElementById('modeSelect').value = state.mode;
+  const pillMap = { ai: '1P vs AI', webshare: '2P Web Share', '2p': '2P Link' };
+  document.getElementById('headerModePill').textContent = pillMap[state.mode] || '1P';
+
+  // Scores
+  document.getElementById('p1Label').textContent = 'Player 1';
+  document.getElementById('p2Label').textContent = state.mode === 'ai' ? 'AI' : 'Player 2';
+  document.getElementById('d1Badge').style.display = state.dealer === 1 ? 'inline-block' : 'none';
+  document.getElementById('d2Badge').style.display = state.dealer === 2 ? 'inline-block' : 'none';
+  document.getElementById('p1Score').textContent = `${state.scores[0]}/121`;
+  document.getElementById('p2Score').textContent = `${state.scores[1]}/121`;
+  document.getElementById('p1Bar').style.width = `${(state.scores[0] / 121) * 100}%`;
+  document.getElementById('p2Bar').style.width = `${(state.scores[1] / 121) * 100}%`;
+
+  const viewer = state.mode === 'ai' ? 1 : state.turn;
+  const opp = viewer === 1 ? 2 : 1;
+
+  // 2P Privacy Curtain
+  const curtain = document.getElementById('privacyCurtain');
+  if (isTwoPlayer() && (state.phase === 'discard' || state.phase === 'pegging') && !revealed) {
+    curtain.style.display = 'flex';
+    document.getElementById('curtainTitle').textContent = `${pName(viewer)}'s Turn (${state.phase.toUpperCase()})`;
+    document.getElementById('curtainText').textContent =
+      `${pName(opp)}'s cards are hidden. Tap below when only ${pName(viewer)} is viewing the screen.`;
+  } else {
+    curtain.style.display = 'none';
+  }
+
+  // Status Bar
+  const statusBar = document.getElementById('statusBar');
+  if (state.phase === 'discard') {
+    statusBar.textContent = `${pName(viewer)}: Discard 2 cards to ${pName(state.dealer)}'s crib`;
+  } else if (state.phase === 'pegging') {
+    statusBar.textContent = `Pegging: ${pName(state.turn)}'s turn (Count: ${state.pegCount}/31)`;
+  } else if (state.phase === 'show') {
+    statusBar.textContent = `The Show — Hands & Crib Scored!`;
+  } else {
+    const win = state.scores[0] >= 121 ? 'Player 1' : pName(2);
+    statusBar.textContent = `🏆 ${win} Wins (${state.scores[0]}–${state.scores[1]})!`;
+  }
+
+  // Opponent Hand (Overlaid mini cards, strictly hidden until Show)
+  const oppRow = document.getElementById('oppCards');
+  oppRow.innerHTML = '';
+  const oppHand = opp === 1 ? state.p1Hand : state.p2Hand;
+  const oppOrig = opp === 1 ? state.p1Orig : state.p2Orig;
+  document.getElementById('oppTitle').textContent = pName(opp);
+
+  if (state.phase === 'show' || state.phase === 'gameover') {
+    const showList = oppOrig.length ? oppOrig : oppHand;
+    document.getElementById('oppMeta').textContent = `Revealed`;
+    showList.forEach(c => oppRow.appendChild(makeMiniCard(c)));
+  } else {
+    document.getElementById('oppMeta').textContent = `${oppHand.length} hidden`;
+    for (let i = 0; i < oppHand.length; i++) oppRow.appendChild(makeMiniCard(null, { back: true }));
+  }
+
+  // Starter Card (Compact)
+  const starterSlot = document.getElementById('starterSlot');
+  starterSlot.innerHTML = '';
+  starterSlot.appendChild(state.starter ? makeMiniCard(state.starter) : makeMiniCard(null, { back: true }));
+
+  // Pegging Sequence (Overlaid)
+  document.getElementById('countBadge').textContent = `${state.pegCount} / 31`;
+  const pegRow = document.getElementById('peggingCards');
+  pegRow.innerHTML = '';
+  state.pegSeq.forEach(entry => {
+    pegRow.appendChild(makeMiniCard(entry.c));
+  });
+
+  // Crib (Compact text chips e.g. 2H, KS)
+  document.getElementById('cribTitle').textContent = `${pName(state.dealer)} Crib`;
+  document.getElementById('cribCount').textContent = `${state.crib.length}/4`;
+  const cribChips = document.getElementById('cribChips');
+  cribChips.innerHTML = '';
+  if (state.phase === 'show' || state.phase === 'gameover') {
+    state.crib.forEach(c => cribChips.appendChild(makeChip(c, false)));
+  } else {
+    for (let i = 0; i < state.crib.length; i++) cribChips.appendChild(makeChip(null, true));
+  }
+
+  // My Hand (Bottom)
+  const myRow = document.getElementById('myCards');
+  myRow.innerHTML = '';
+  const myHand = viewer === 1 ? state.p1Hand : state.p2Hand;
+  const myOrig = viewer === 1 ? state.p1Orig : state.p2Orig;
+  document.getElementById('myTitle').textContent = pName(viewer);
+
+  if (state.phase === 'discard') {
+    document.getElementById('myHint').textContent = `Selected ${selected.length}/2`;
+    myHand.forEach((c, idx) => {
+      myRow.appendChild(makeMiniCard(c, {
+        selectable: true,
+        isSelected: selected.includes(idx),
+        onClick: () => {
+          if (selected.includes(idx)) selected = selected.filter(i => i !== idx);
+          else if (selected.length < 2) selected.push(idx);
+          render();
+        }
+      }));
+    });
+  } else if (state.phase === 'pegging') {
+    const myTurn = state.turn === viewer;
+    document.getElementById('myHint').textContent = myTurn ? 'Tap card to play' : `Waiting...`;
+    myHand.forEach((c, idx) => {
+      const legal = myTurn && (state.pegCount + cardVal(c.r) <= 31);
+      myRow.appendChild(makeMiniCard(c, {
+        selectable: legal,
+        dimmed: myTurn && !legal,
+        onClick: () => playCard(viewer, idx)
+      }));
+    });
+  } else {
+    document.getElementById('myHint').textContent = 'Show';
+    (myOrig.length ? myOrig : myHand).forEach(c => myRow.appendChild(makeMiniCard(c)));
+  }
+
+  // Action Buttons
+  const actionRow = document.getElementById('actionRow');
+  actionRow.innerHTML = '';
+
+  if (state.phase === 'discard') {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-gold';
+    btn.textContent = state.mode === 'webshare' ? 'Discard & Share Turn' : 'Discard 2 Cards';
+    btn.disabled = selected.length !== 2;
+    btn.onclick = confirmDiscard;
+    actionRow.appendChild(btn);
+  } else if (state.phase === 'pegging' && state.turn === viewer && !canPlay(viewer)) {
+    const goBtn = document.createElement('button');
+    goBtn.className = 'btn btn-gold';
+    goBtn.textContent = 'Say "Go"';
+    goBtn.onclick = () => sayGo(viewer);
+    actionRow.appendChild(goBtn);
+  } else if (state.phase === 'show') {
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-gold';
+    nextBtn.textContent = 'Next Hand';
+    nextBtn.onclick = () => {
+      dealHand(state, false);
+      revealed = true;
+      syncUrl();
+      render();
+    };
+    actionRow.appendChild(nextBtn);
+  } else if (state.phase === 'gameover') {
+    const newBtn = document.createElement('button');
+    newBtn.className = 'btn btn-gold';
+    newBtn.textContent = 'New Game';
+    newBtn.onclick = () => {
+      state = newState(state.mode, '');
+      revealed = true;
+      syncUrl();
+      render();
+    };
+    actionRow.appendChild(newBtn);
+  }
+
+  if (isTwoPlayer() && state.phase !== 'gameover') {
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'btn btn-share';
+    shareBtn.textContent = `📤 Share (${pName(state.turn)})`;
+    shareBtn.onclick = () => triggerTurnShare(false);
+    actionRow.appendChild(shareBtn);
+  }
+
+  // Mini Log / Show Summary
+  const miniLog = document.getElementById('miniLog');
+  if ((state.phase === 'show' || state.phase === 'gameover') && state.showRes) {
+    const sr = state.showRes;
+    miniLog.innerHTML = `
+      <div><strong>${pName(sr.pone)} Hand (+${sr.poneRes.total}):</strong> ${sr.poneRes.items.join(', ') || '0 pts'}</div>
+      <div><strong>${pName(sr.dealer)} Hand (+${sr.dealerRes.total}):</strong> ${sr.dealerRes.items.join(', ') || '0 pts'}</div>
+      <div><strong>${pName(sr.dealer)} Crib (+${sr.cribRes.total}):</strong> ${sr.cribRes.items.join(', ') || '0 pts'}</div>
+    `;
+  } else {
+    miniLog.innerHTML = state.logs.slice(-4).map(l => `<div>• ${l}</div>`).join('');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Event Bindings
+document.getElementById('newGameBtn').onclick = () => {
+  const mode = document.getElementById('modeSelect').value;
+  const seed = document.getElementById('seedInput').value;
+  state = newState(mode, seed);
+  revealed = true;
+  syncUrl();
+  render();
+  switchTab('game');
+};
+
+document.getElementById('optWebShareBtn').onclick = () => triggerTurnShare(false);
+document.getElementById('optCopyBtn').onclick = () => copyToClipboard(getShareUrl(), 'Turn URL copied!');
+document.getElementById('optLoadBtn').onclick = () => {
+  const raw = document.getElementById('urlTextarea').value.trim();
+  let b64 = raw;
+  try {
+    if (raw.includes('g=')) b64 = new URL(raw).searchParams.get('g') || raw;
+  } catch (e) {}
+  const loaded = decodeB64(b64);
+  if (loaded) {
+    state = loaded;
+    revealed = false;
+    syncUrl();
+    render();
+    switchTab('game');
+    showToast('Game loaded!');
+  } else {
+    showToast('Invalid state URL');
+  }
+};
+
+document.getElementById('revealBtn').onclick = () => {
+  revealed = true;
+  render();
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  const g = new URLSearchParams(window.location.search).get('g');
+  if (g) {
+    const loaded = decodeB64(g);
+    if (loaded) {
+      state = loaded;
+      revealed = false;
+      syncUrl();
+      render();
+      return;
+    }
+  }
+  state = newState('ai', '');
+  revealed = true;
+  syncUrl();
+  render();
+});
+</script>
+</body>
+</html>
