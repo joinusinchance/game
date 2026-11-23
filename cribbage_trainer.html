@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cribbage: Human vs Optimal AI</title>
+  <style>
+    :root {
+      --felt-bg: #1e4620;
+      --felt-dark: #143316;
+      --gold: #f5c542;
+      --gold-dark: #c99d24;
+      --card-bg: #ffffff;
+      --card-back: #2b4c7e;
+      --red-suit: #d32f2f;
+      --black-suit: #1a1a1a;
+      --text-light: #f4f7f5;
+      --panel-bg: rgba(15, 36, 17, 0.85);
+      --hint-glow: #00e5ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(circle at center, var(--felt-bg) 0%, var(--felt-dark) 100%);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+      overflow-x: hidden;
+    }
+
+    /* Header & Scoreboard */
+    header {
+      width: 100%;
+      max-width: 960px;
+      background: var(--panel-bg);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      margin-bottom: 14px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      letter-spacing: 0.5px;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dealer-badge {
+      font-size: 0.75rem;
+      background: var(--gold);
+      color: #111;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .scores-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .score-box {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .score-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .score-num {
+      font-size: 1.15rem;
+      color: var(--gold);
+      font-weight: 800;
+    }
+
+    .peg-track {
+      width: 100%;
+      height: 10px;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .peg-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      border-radius: 5px;
+    }
+
+    .peg-fill.human {
+      background: linear-gradient(90deg, #4caf50, #81c784);
+    }
+
+    .peg-fill.ai {
+      background: linear-gradient(90deg, #ef5350, #e57373);
+    }
+
+    /* Main Table Layout */
+    main {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .zone {
+      background: var(--panel-bg);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+    }
+
+    .zone-label {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.75);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .cards-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      min-height: 108px;
+      width: 100%;
+    }
+
+    /* Playing Cards */
+    .card {
+      width: 72px;
+      height: 104px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 6px;
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      cursor: default;
+      border: 2px solid transparent;
+    }
+
+    .card.clickable {
+      cursor: pointer;
+    }
+
+    .card.clickable:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+    }
+
+    .card.selected {
+      transform: translateY(-12px);
+      border-color: var(--gold);
+      box-shadow: 0 0 14px rgba(245, 197, 66, 0.75);
+    }
+
+    .card.hinted {
+      border-color: var(--hint-glow);
+      box-shadow: 0 0 18px rgba(0, 229, 255, 0.9);
+      animation: pulseHint 1.4s infinite alternate;
+    }
+
+    @keyframes pulseHint {
+      from { transform: translateY(-4px); }
+      to { transform: translateY(-10px); }
+    }
+
+    .card.disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .card.red {
+      color: var(--red-suit);
+    }
+
+    .card.black {
+      color: var(--black-suit);
+    }
+
+    .card-corner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1;
+      font-weight: 800;
+      font-size: 0.95rem;
+      width: 18px;
+    }
+
+    .card-corner.bottom {
+      align-self: flex-end;
+      transform: rotate(180deg);
+    }
+
+    .card-center {
+      font-size: 1.75rem;
+      align-self: center;
+      line-height: 1;
+    }
+
+    .card-back {
+      background: repeating-linear-gradient(
+        45deg,
+        #1f3a60,
+        #1f3a60 6px,
+        #2c5282 6px,
+        #2c5282 12px
+      );
+      border: 3px solid #fff;
+    }
+
+    .card-tag {
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222;
+      color: #fff;
+      font-size: 0.65rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      font-weight: 700;
+    }
+
+    /* Middle Table: Starter, Crib, and Pegging Pile */
+    .table-center {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      gap: 12px;
+      width: 100%;
+    }
+
+    @media (max-width: 720px) {
+      .table-center {
+        grid-template-columns: 1fr;
+      }
+      .card {
+        width: 62px;
+        height: 90px;
+        padding: 4px;
+      }
+      .card-center {
+        font-size: 1.45rem;
+      }
+    }
+
+    .pegging-stats {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .count-badge {
+      background: var(--gold);
+      color: #111;
+      font-weight: 900;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    /* Controls & Status Banner */
+    .status-panel {
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(245, 197, 66, 0.35);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .status-text {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.4;
+    }
+
+    .hint-box {
+      background: rgba(0, 229, 255, 0.12);
+      border-left: 4px solid var(--hint-glow);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: #e0f7fa;
+      display: none;
+    }
+
+    .hint-box.visible {
+      display: block;
+    }
+
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: transform 0.1s ease, filter 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--gold);
+      color: #141414;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+
+    .btn-hint {
+      background: #00acc1;
+      color: #fff;
+    }
+
+    .btn-hint:hover:not(:disabled) {
+      background: #00bcd4;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Show / Counting Modal Overlay */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.78);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #173619;
+      border: 2px solid var(--gold);
+      border-radius: 14px;
+      max-width: 560px;
+      width: 100%;
+      padding: 20px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      color: var(--gold);
+      font-weight: 800;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      padding-bottom: 8px;
+    }
+
+    .breakdown-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.92rem;
+    }
+
+    .breakdown-list li {
+      background: rgba(255, 255, 255, 0.07);
+      padding: 6px 10px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Log Drawer */
+    .log-box {
+      width: 100%;
+      max-width: 960px;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.8);
+      max-height: 110px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .log-entry {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      padding-bottom: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="top-bar">
+      <h1>Cribbage <span class="dealer-badge" id="dealer-indicator">Dealer: You</span></h1>
+      <button class="btn-secondary" id="new-game-btn" style="padding: 6px 12px; font-size: 0.8rem;">New Game</button>
+    </div>
+    <div class="scores-grid">
+      <div class="score-box">
+        <div class="score-header">
+          <span>You (Human)</span>
+          <span class="score-num"><span id="human-score">0</span> / 121</span>
+        </div>
+        <div class="peg-track">
+          <div class="peg-fill human" id="human-peg"></div>
+        </div>
+      </div>
+      <div class="score-box">
+        <div class="score-header">
+          <span>Optimal AI</span>
+          <span class="score-num"><span id="ai-score">0</span> / 121</span>
+        </div>
+        <div class="peg-track">
+          <div class="peg-fill ai" id="ai-peg"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- AI Hand Zone -->
+    <section class="zone">
+      <div class="zone-label">
+        <span>AI Hand</span>
+        <span id="ai-hand-status">6 cards</span>
+      </div>
+      <div class="cards-row" id="ai-hand"></div>
+    </section>
+
+    <!-- Center Board: Starter, Pegging Pile, Crib -->
+    <div class="table-center">
+      <section class="zone">
+        <div class="zone-label"><span>Starter Cut</span></div>
+        <div class="cards-row" id="starter-zone"></div>
+      </section>
+
+      <section class="zone">
+        <div class="zone-label">
+          <span>Pegging Sequence</span>
+          <div class="pegging-stats">
+            <span class="count-badge">Count: <span id="pegging-count">0</span></span>
+          </div>
+        </div>
+        <div class="cards-row" id="pegging-pile"></div>
+      </section>
+
+      <section class="zone">
+        <div class="zone-label">
+          <span>Crib (<span id="crib-owner">Yours</span>)</span>
+          <span id="crib-count">0/4</span>
+        </div>
+        <div class="cards-row" id="crib-zone"></div>
+      </section>
+    </div>
+
+    <!-- Human Hand Zone -->
+    <section class="zone">
+      <div class="zone-label">
+        <span>Your Hand</span>
+        <span id="human-hand-status">Select 2 cards to discard</span>
+      </div>
+      <div class="cards-row" id="human-hand"></div>
+    </section>
+
+    <!-- Status & Actions -->
+    <section class="status-panel">
+      <div class="status-text" id="status-message">Welcome to Cribbage! Select 2 cards from your hand to send to the crib.</div>
+      <div class="hint-box" id="hint-box"></div>
+      <div class="controls-row">
+        <button class="btn-primary" id="action-btn" disabled>Discard Selected (0/2)</button>
+        <button class="btn-hint" id="hint-btn">Reveal Best Move (Hint)</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="log-box" id="game-log"></div>
+
+  <!-- Show / Counting Modal -->
+  <div class="modal-backdrop" id="show-modal">
+    <div class="modal-card">
+      <div class="modal-title" id="modal-title">Hand Counting</div>
+      <div class="cards-row" id="modal-cards"></div>
+      <ul class="breakdown-list" id="modal-breakdown"></ul>
+      <button class="btn-primary" id="modal-continue-btn">Continue</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ============================================================================
+  // 1. CONSTANTS & CARD UTILITIES
+  // ============================================================================
+  const SUITS = ['♠', '♥', '♦', '♣'];
+  const RANKS = [
+    { rank: 1, label: 'A', val: 1 },
+    { rank: 2, label: '2', val: 2 },
+    { rank: 3, label: '3', val: 3 },
+    { rank: 4, label: '4', val: 4 },
+    { rank: 5, label: '5', val: 5 },
+    { rank: 6, label: '6', val: 6 },
+    { rank: 7, label: '7', val: 7 },
+    { rank: 8, label: '8', val: 8 },
+    { rank: 9, label: '9', val: 9 },
+    { rank: 10, label: '10', val: 10 },
+    { rank: 11, label: 'J', val: 10 },
+    { rank: 12, label: 'Q', val: 10 },
+    { rank: 13, label: 'K', val: 10 }
+  ];
+
+  function createDeck() {
+    const deck = [];
+    let id = 0;
+    for (const suit of SUITS) {
+      for (const r of RANKS) {
+        deck.push({
+          id: id++,
+          rank: r.rank,
+          label: r.label,
+          val: r.val,
+          suit,
+          color: (suit === '♥' || suit === '♦') ? 'red' : 'black'
+        });
+      }
+    }
+    return deck;
+  }
+
+  function shuffle(deck) {
+    const arr = [...deck];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function cardStr(c) {
+    return `${c.label}${c.suit}`;
+  }
+
+  // ============================================================================
+  // 2. EXACT CRIBBAGE SCORING ENGINE (HAND/CRIB & PEGGING)
+  // ============================================================================
+
+  /**
+   * Evaluates a 4-card hand + 1 starter card (5 cards total).
+   * Returns { total, details: [{ label, points }] }
+   */
+  function scoreHand(fourCards, starter, isCrib = false) {
+    const cards = [...fourCards, starter];
+    const details = [];
+    let total = 0;
+
+    // 1. Fifteens (all subsets of size 2..5 summing to 15)
+    let fifteenCount = 0;
+    for (let mask = 1; mask < 32; mask++) {
+      let sum = 0;
+      const subset = [];
+      for (let i = 0; i < 5; i++) {
+        if (mask & (1 << i)) {
+          sum += cards[i].val;
+          subset.push(cardStr(cards[i]));
+        }
+      }
+      if (sum === 15) {
+        fifteenCount++;
+        details.push({ label: `Fifteen (${subset.join('+')})`, points: 2 });
+      }
+    }
+    total += fifteenCount * 2;
+
+    // 2. Pairs (all pairs of cards with identical rank)
+    for (let i = 0; i < 5; i++) {
+      for (let j = i + 1; j < 5; j++) {
+        if (cards[i].rank === cards[j].rank) {
+          total += 2;
+          details.push({ label: `Pair (${cardStr(cards[i])}, ${cardStr(cards[j])})`, points: 2 });
+        }
+      }
+    }
+
+    // 3. Runs (longest contiguous rank sequences of length >= 3, with multiplicity)
+    const freq = new Array(14).fill(0);
+    for (const c of cards) freq[c.rank]++;
+
+    let runPoints = 0;
+    let r = 1;
+    while (r <= 13) {
+      if (freq[r] > 0) {
+        let len = 0;
+        let mult = 1;
+        let curr = r;
+        while (curr <= 13 && freq[curr] > 0) {
+          len++;
+          mult *= freq[curr];
+          curr++;
+        }
+        if (len >= 3) {
+          const pts = len * mult;
+          runPoints += pts;
+          details.push({
+            label: `${mult > 1 ? mult + 'x ' : ''}Run of ${len} (${RANKS[r - 1].label}–${RANKS[curr - 2].label})`,
+            points: pts
+          });
+        }
+        r = curr;
+      } else {
+        r++;
+      }
+    }
+    total += runPoints;
+
+    // 4. Flush
+    const handSuit = fourCards[0].suit;
+    const allFourSame = fourCards.every(c => c.suit === handSuit);
+    if (allFourSame) {
+      if (starter.suit === handSuit) {
+        total += 5;
+        details.push({ label: `5-Card Flush (${handSuit})`, points: 5 });
+      } else if (!isCrib) {
+        total += 4;
+        details.push({ label: `4-Card Flush (${handSuit})`, points: 4 });
+      }
+    }
+
+    // 5. His Nobs (Jack in hand matching starter suit)
+    for (const c of fourCards) {
+      if (c.rank === 11 && c.suit === starter.suit) {
+        total += 1;
+        details.push({ label: `His Nobs (${cardStr(c)})`, points: 1 });
+      }
+    }
+
+    return { total, details };
+  }
+
+  /**
+   * Evaluates immediate pegging points when `card` is played onto `sequence` (current count <= 31).
+   * `sequence` is the list of cards played in the current 31-count run BEFORE `card`.
+   */
+  function scorePeggingPlay(sequence, card) {
+    const newSeq = [...sequence, card];
+    const newCount = newSeq.reduce((acc, c) => acc + c.val, 0);
+    let points = 0;
+    const reasons = [];
+
+    // 1. Fifteen or Thirty-One
+    if (newCount === 15) {
+      points += 2;
+      reasons.push('Fifteen for 2');
+    } else if (newCount === 31) {
+      points += 2;
+      reasons.push('Thirty-One for 2');
+    }
+
+    // 2. Pairs / Three-of-a-kind / Four-of-a-kind at the tail
+    let sameRankCount = 1;
+    for (let i = newSeq.length - 2; i >= 0; i--) {
+      if (newSeq[i].rank === card.rank) {
+        sameRankCount++;
+      } else {
+        break;
+      }
+    }
+    if (sameRankCount === 2) {
+      points += 2;
+      reasons.push('Pair for 2');
+    } else if (sameRankCount === 3) {
+      points += 6;
+      reasons.push('Three of a Kind for 6');
+    } else if (sameRankCount === 4) {
+      points += 12;
+      reasons.push('Four of a Kind for 12');
+    }
+
+    // 3. Runs at the tail (check longest suffix of length >= 3 that forms a contiguous rank set)
+    let maxRunLen = 0;
+    for (let len = newSeq.length; len >= 3; len--) {
+      const slice = newSeq.slice(newSeq.length - len);
+      const ranks = slice.map(c => c.rank).sort((a, b) => a - b);
+      let isRun = true;
+      for (let k = 1; k < ranks.length; k++) {
+        if (ranks[k] !== ranks[k - 1] + 1) {
+          isRun = false;
+          break;
+        }
+      }
+      if (isRun) {
+        maxRunLen = len;
+        break;
+      }
+    }
+    if (maxRunLen >= 3) {
+      points += maxRunLen;
+      reasons.push(`Run of ${maxRunLen} for ${maxRunLen}`);
+    }
+
+    return { points, newCount, reasons };
+  }
+
+  // ============================================================================
+  // 3. OPTIMAL DECISION ENGINE (EXACT EXPECTATION & MINIMAX PEGGING)
+  // ============================================================================
+
+  /**
+   * Computes exact expected value for every 2-card discard choice from a 6-card hand,
+   * iterating over all 46 unseen starter cards AND sampling/evaluating crib potential
+   * using only information known to the player!
+   */
+  function evaluateBestDiscard(sixCards, isDealer) {
+    const knownIds = new Set(sixCards.map(c => c.id));
+    const unseenDeck = createDeck().filter(c => !knownIds.has(c.id)); // 46 unseen cards
+
+    // Pre-sample 120 random 2-card opponent crib contributions from unseenDeck for fast, accurate crib EV
+    // (Combined with exact enumeration over all 46 starter cards!)
+    const cribPairs = [];
+    for (let s = 0; s < 120; s++) {
+      const i1 = Math.floor(Math.random() * unseenDeck.length);
+      let i2 = Math.floor(Math.random() * (unseenDeck.length - 1));
+      if (i2 >= i1) i2++;
+      cribPairs.push([unseenDeck[i1], unseenDeck[i2]]);
+    }
+
+    let bestChoice = null;
+
+    // All 15 combinations of keeping 4 cards and discarding 2
+    for (let i = 0; i < 6; i++) {
+      for (let j = i + 1; j < 6; j++) {
+        const discarded = [sixCards[i], sixCards[j]];
+        const kept = sixCards.filter((_, idx) => idx !== i && idx !== j);
+
+        // 1. Exact Expected Hand Score across all 46 unseen starter cards
+        let handSum = 0;
+        for (const starter of unseenDeck) {
+          handSum += scoreHand(kept, starter, false).total;
+        }
+        const expectedHand = handSum / unseenDeck.length;
+
+        // 2. Expected Crib Score (evaluated over unseen starters & unseen opponent discards)
+        let cribSum = 0;
+        let cribTrials = 0;
+        for (let k = 0; k < 46; k += 2) {
+          const starter = unseenDeck[k];
+          for (let p = 0; p < 30; p++) {
+            const [o1, o2] = cribPairs[p];
+            if (o1.id === starter.id || o2.id === starter.id) continue;
+            cribSum += scoreHand([discarded[0], discarded[1], o1, o2], starter, true).total;
+            cribTrials++;
+          }
+        }
+        const expectedCrib = cribTrials > 0 ? (cribSum / cribTrials) : 0;
+
+        // Net expected value: Dealer gains crib points, Non-dealer concedes crib points
+        const netEV = expectedHand + (isDealer ? expectedCrib : -expectedCrib);
+
+        if (!bestChoice || netEV > bestChoice.netEV) {
+          bestChoice = {
+            kept,
+            discarded,
+            expectedHand,
+            expectedCrib,
+            netEV
+          };
+        }
+      }
+    }
+
+    return bestChoice;
+  }
+
+  /**
+   * Computes the optimal pegging card given only known information:
+   * - `myHand`: player's remaining unplayed pegging cards
+   * - `sequence`: cards played in the current 31-count run
+   * - `currentCount`: current running total (0..30)
+   * - `seenCardIds`: Set of all card IDs visible so far (own initial 6 cards + starter + all played cards)
+   * - `oppCardsLeft`: number of unplayed cards remaining in opponent's hand
+   */
+  function evaluateBestPeggingMove(myHand, sequence, currentCount, seenCardIds, oppCardsLeft) {
+    const legalMoves = myHand.filter(c => currentCount + c.val <= 31);
+    if (legalMoves.length === 0) return null;
+
+    const unseenCards = createDeck().filter(c => !seenCardIds.has(c.id));
+
+    let bestMove = null;
+
+    for (const card of legalMoves) {
+      const { points: immediatePts, newCount, reasons } = scorePeggingPlay(sequence, card);
+      const nextSeq = [...sequence, card];
+
+      // Immediate points + Last Card / Go bonus if hitting 31 or opponent has 0 cards
+      let score = immediatePts;
+      if (oppCardsLeft === 0 && newCount < 31) {
+        score += 1; // Guaranteed "Last Card" point
+      }
+
+      // 1-ply lookahead over all unseen cards that opponent could hold & legally play next
+      let oppExpectedReply = 0;
+      if (oppCardsLeft > 0 && newCount < 31) {
+        const legalReplies = unseenCards.filter(u => newCount + u.val <= 31);
+        if (legalReplies.length === 0) {
+          // Opponent cannot reply -> "Go" point for us!
+          score += 1;
+        } else {
+          // Probability opponent holds at least one playable card, weighted by reply score
+          let replySum = 0;
+          for (const reply of legalReplies) {
+            const repEval = scorePeggingPlay(nextSeq, reply);
+            replySum += repEval.points;
+          }
+          const avgReplyIfPlayable = replySum / legalReplies.length;
+          // Approximate probability opponent has a card <= (31 - newCount)
+          const probHasReply = 1 - Math.pow(1 - (legalReplies.length / unseenCards.length), oppCardsLeft);
+          oppExpectedReply = probHasReply * avgReplyIfPlayable;
+        }
+      }
+
+      // Strategic tie-breakers (keep low cards for flexibility, avoid leaving count at 5 or 21)
+      let heuristic = 0;
+      if (newCount === 5 || newCount === 21) heuristic -= 0.35;
+      if (newCount === 31 || newCount === 15) heuristic += 0.25;
+      heuristic += (10 - card.val) * 0.015; // Slightly prefer playing higher cards early to save low cards for 31/Go
+
+      const totalVal = score - oppExpectedReply + heuristic;
+
+      if (!bestMove || totalVal > bestMove.totalVal) {
+        bestMove = {
+          card,
+          immediatePts,
+          newCount,
+          reasons,
+          oppExpectedReply,
+          totalVal
+        };
+      }
+    }
+
+    return bestMove;
+  }
+
+  // ============================================================================
+  // 4. GAME STATE & CONTROLLER
+  // ============================================================================
+  const state = {
+    humanScore: 0,
+    aiScore: 0,
+    dealer: 'human', // 'human' or 'ai'
+    phase: 'DISCARD', // 'DISCARD' | 'PEGGING' | 'SHOW' | 'GAME_OVER'
+    deck: [],
+    humanHand: [],
+    aiHand: [],
+    humanPegHand: [],
+    aiPegHand: [],
+    crib: [],
+    starter: null,
+    selectedIds: new Set(),
+    peggingSequence: [],
+    peggingHistory: [], // All cards played across the entire pegging phase
+    peggingCount: 0,
+    turn: 'ai', // Who acts next in pegging
+    lastPlayedBy: null,
+    humanPassed: false,
+    aiPassed: false,
+    hintHighlightIds: new Set(),
+    showQueue: []
+  };
+
+  // DOM Elements
+  const elHumanScore = document.getElementById('human-score');
+  const elAiScore = document.getElementById('ai-score');
+  const elHumanPeg = document.getElementById('human-peg');
+  const elAiPeg = document.getElementById('ai-peg');
+  const elDealerIndicator = document.getElementById('dealer-indicator');
+  const elCribOwner = document.getElementById('crib-owner');
+  const elCribCount = document.getElementById('crib-count');
+  const elAiHand = document.getElementById('ai-hand');
+  const elAiHandStatus = document.getElementById('ai-hand-status');
+  const elHumanHand = document.getElementById('human-hand');
+  const elHumanHandStatus = document.getElementById('human-hand-status');
+  const elStarterZone = document.getElementById('starter-zone');
+  const elPeggingPile = document.getElementById('pegging-pile');
+  const elPeggingCount = document.getElementById('pegging-count');
+  const elCribZone = document.getElementById('crib-zone');
+  const elStatusMsg = document.getElementById('status-message');
+  const elHintBox = document.getElementById('hint-box');
+  const elActionBtn = document.getElementById('action-btn');
+  const elHintBtn = document.getElementById('hint-btn');
+  const elNewGameBtn = document.getElementById('new-game-btn');
+  const elGameLog = document.getElementById('game-log');
+  const elModal = document.getElementById('show-modal');
+  const elModalTitle = document.getElementById('modal-title');
+  const elModalCards = document.getElementById('modal-cards');
+  const elModalBreakdown = document.getElementById('modal-breakdown');
+  const elModalContinueBtn = document.getElementById('modal-continue-btn');
+
+  function log(msg) {
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.textContent = msg;
+    elGameLog.prepend(div);
+  }
+
+  function addPoints(who, pts, reason) {
+    if (pts <= 0 || state.phase === 'GAME_OVER') return false;
+    if (who === 'human') {
+      state.humanScore = Math.min(121, state.humanScore + pts);
+      log(`You scored +${pts} (${reason}) → ${state.humanScore}`);
+    } else {
+      state.aiScore = Math.min(121, state.aiScore + pts);
+      log(`AI scored +${pts} (${reason}) → ${state.aiScore}`);
+    }
+    updateScoreboard();
+
+    if (state.humanScore >= 121 || state.aiScore >= 121) {
+      state.phase = 'GAME_OVER';
+      const winner = state.humanScore >= 121 ? 'You win the game!' : 'AI wins the game!';
+      elStatusMsg.textContent = `Game Over! ${winner} (${state.humanScore} to ${state.aiScore})`;
+      elActionBtn.disabled = true;
+      elHintBtn.disabled = true;
+      renderAll();
+      return true;
+    }
+    return false;
+  }
+
+  function startNewGame() {
+    state.humanScore = 0;
+    state.aiScore = 0;
+    state.dealer = Math.random() < 0.5 ? 'human' : 'ai';
+    elGameLog.innerHTML = '';
+    log(`New game started. ${state.dealer === 'human' ? 'You deal' : 'AI deals'} first.`);
+    startRound();
+  }
+
+  function startRound() {
+    if (state.phase === 'GAME_OVER') return;
+    state.phase = 'DISCARD';
+    state.deck = shuffle(createDeck());
+    state.humanHand = state.deck.splice(0, 6).sort((a, b) => a.rank - b.rank);
+    state.aiHand = state.deck.splice(0, 6).sort((a, b) => a.rank - b.rank);
+    state.crib = [];
+    state.starter = null;
+    state.selectedIds.clear();
+    state.hintHighlightIds.clear();
+    state.peggingSequence = [];
+    state.peggingHistory = [];
+    state.peggingCount = 0;
+    state.humanPassed = false;
+    state.aiPassed = false;
+    state.lastPlayedBy = null;
+
+    hideHint();
+    elStatusMsg.textContent = `Select 2 cards to discard to ${state.dealer === 'human' ? 'your' : "the AI's"} crib.`;
+    elHintBtn.disabled = false;
+    updateActionButton();
+    renderAll();
+  }
+
+  function hideHint() {
+    state.hintHighlightIds.clear();
+    elHintBox.classList.remove('visible');
+    elHintBox.textContent = '';
+  }
+
+  // ============================================================================
+  // 5. DISCARD PHASE & CUT
+  // ============================================================================
+  function toggleCardSelection(cardId) {
+    if (state.phase !== 'DISCARD') return;
+    if (state.selectedIds.has(cardId)) {
+      state.selectedIds.delete(cardId);
+    } else {
+      if (state.selectedIds.size >= 2) {
+        const first = state.selectedIds.values().next().value;
+        state.selectedIds.delete(first);
+      }
+      state.selectedIds.add(cardId);
+    }
+    updateActionButton();
+    renderAll();
+  }
+
+  function confirmHumanDiscard() {
+    if (state.phase !== 'DISCARD' || state.selectedIds.size !== 2) return;
+    hideHint();
+
+    const humanDiscards = state.humanHand.filter(c => state.selectedIds.has(c.id));
+    state.humanHand = state.humanHand.filter(c => !state.selectedIds.has(c.id));
+    state.selectedIds.clear();
+
+    // Optimal AI Discard
+    const aiEval = evaluateBestDiscard(state.aiHand, state.dealer === 'ai');
+    const aiDiscardIds = new Set(aiEval.discarded.map(c => c.id));
+    state.aiHand = state.aiHand.filter(c => !aiDiscardIds.has(c.id));
+
+    state.crib = [...humanDiscards, ...aiEval.discarded];
+    log(`Discards sent to ${state.dealer === 'human' ? 'your' : "AI's"} crib.`);
+
+    // Cut Starter Card
+    state.starter = state.deck.pop();
+    log(`Starter card cut: ${cardStr(state.starter)}.`);
+
+    // Check His Heels (Jack cut gives dealer 2 points immediately)
+    if (state.starter.rank === 11) {
+      if (addPoints(state.dealer, 2, `His Heels (${cardStr(state.starter)})`)) return;
+    }
+
+    // Transition to Pegging
+    state.phase = 'PEGGING';
+    state.humanPegHand = [...state.humanHand];
+    state.aiPegHand = [...state.aiHand];
+    state.turn = state.dealer === 'human' ? 'ai' : 'human'; // Non-dealer leads
+    renderAll();
+    advancePegging();
+  }
+
+  // ============================================================================
+  // 6. PEGGING PHASE
+  // ============================================================================
+  function getHumanLegalPegCards() {
+    return state.humanPegHand.filter(c => state.peggingCount + c.val <= 31);
+  }
+
+  function getAiLegalPegCards() {
+    return state.aiPegHand.filter(c => state.peggingCount + c.val <= 31);
+  }
+
+  function advancePegging() {
+    if (state.phase !== 'PEGGING') return;
+
+    // Check if both hands are completely empty
+    if (state.humanPegHand.length === 0 && state.aiPegHand.length === 0) {
+      if (state.peggingCount > 0 && state.peggingCount < 31 && state.lastPlayedBy) {
+        if (addPoints(state.lastPlayedBy, 1, 'Last Card')) return;
+      }
+      beginShowPhase();
+      return;
+    }
+
+    const humanLegal = getHumanLegalPegCards();
+    const aiLegal = getAiLegalPegCards();
+
+    // Neither player can legally play under 31 -> award Go point and reset count to 0
+    if (humanLegal.length === 0 && aiLegal.length === 0) {
+      if (state.peggingCount < 31 && state.lastPlayedBy) {
+        if (addPoints(state.lastPlayedBy, 1, 'Go')) return;
+      }
+      log(`Count reset from ${state.peggingCount} to 0.`);
+      state.peggingSequence = [];
+      state.peggingCount = 0;
+      state.humanPassed = false;
+      state.aiPassed = false;
+      // Player after the one who played the last card leads the new sequence
+      state.turn = state.lastPlayedBy === 'human' ? 'ai' : 'human';
+      renderAll();
+      advancePegging();
+      return;
+    }
+
+    // Current turn belongs to AI
+    if (state.turn === 'ai') {
+      elHintBtn.disabled = true;
+      elActionBtn.disabled = true;
+
+      if (aiLegal.length === 0) {
+        if (!state.aiPassed) {
+          state.aiPassed = true;
+          log('AI says "Go".');
+        }
+        state.turn = 'human';
+        renderAll();
+        advancePegging();
+        return;
+      }
+
+      elStatusMsg.textContent = 'AI is thinking...';
+      setTimeout(() => {
+        if (state.phase !== 'PEGGING') return;
+        const seenIds = new Set([
+          ...state.aiHand.map(c => c.id),
+          ...state.crib.filter(c => c.id === state.crib[2]?.id || c.id === state.crib[3]?.id).map(c => c.id),
+          state.starter.id,
+          ...state.peggingHistory.map(c => c.id)
+        ]);
+        const bestAiMove = evaluateBestPeggingMove(
+          state.aiPegHand,
+          state.peggingSequence,
+          state.peggingCount,
+          seenIds,
+          state.humanPegHand.length
+        );
+        playPeggingCard('ai', bestAiMove.card);
+      }, 450);
+    } else {
+      // Current turn belongs to Human
+      if (humanLegal.length === 0) {
+        elHintBtn.disabled = true;
+        elActionBtn.disabled = false;
+        elActionBtn.textContent = 'Say "Go"';
+        elStatusMsg.textContent = `No playable cards at count ${state.peggingCount}. Click "Say Go".`;
+        renderAll();
+      } else {
+        elHintBtn.disabled = false;
+        elActionBtn.disabled = true;
+        elActionBtn.textContent = 'Click a Card to Play';
+        elStatusMsg.textContent = `Your turn to peg (Count: ${state.peggingCount}). Click a playable card.`;
+        renderAll();
+      }
+    }
+  }
+
+  function handleHumanGo() {
+    if (state.phase !== 'PEGGING' || state.turn !== 'human') return;
+    hideHint();
+    state.humanPassed = true;
+    log('You say "Go".');
+    state.turn = 'ai';
+    renderAll();
+    advancePegging();
+  }
+
+  function playPeggingCard(who, card) {
+    hideHint();
+    const { points, newCount, reasons } = scorePeggingPlay(state.peggingSequence, card);
+
+    if (who === 'human') {
+      state.humanPegHand = state.humanPegHand.filter(c => c.id !== card.id);
+    } else {
+      state.aiPegHand = state.aiPegHand.filter(c => c.id !== card.id);
+    }
+
+    state.peggingSequence.push(card);
+    state.peggingHistory.push({ ...card, playedBy: who });
+    state.peggingCount = newCount;
+    state.lastPlayedBy = who;
+
+    log(`${who === 'human' ? 'You' : 'AI'} played ${cardStr(card)} (Count: ${newCount}).`);
+
+    if (points > 0) {
+      if (addPoints(who, points, reasons.join(', '))) return;
+    }
+
+    if (newCount === 31) {
+      log('Count hit 31! Resetting count to 0.');
+      state.peggingSequence = [];
+      state.peggingCount = 0;
+      state.humanPassed = false;
+      state.aiPassed = false;
+    }
+
+    state.turn = who === 'human' ? 'ai' : 'human';
+    renderAll();
+    advancePegging();
+  }
+
+  // ============================================================================
+  // 7. SHOW / COUNTING PHASE
+  // ============================================================================
+  function beginShowPhase() {
+    state.phase = 'SHOW';
+    hideHint();
+    elHintBtn.disabled = true;
+    elActionBtn.disabled = true;
+    elStatusMsg.textContent = 'Pegging complete! Counting hands...';
+    renderAll();
+
+    // Non-dealer counts first, then dealer's hand, then dealer's crib
+    const nonDealer = state.dealer === 'human' ? 'ai' : 'human';
+    state.showQueue = [
+      {
+        owner: nonDealer,
+        title: nonDealer === 'human' ? 'Your Hand (Non-Dealer)' : "AI's Hand (Non-Dealer)",
+        cards: nonDealer === 'human' ? state.humanHand : state.aiHand,
+        isCrib: false
+      },
+      {
+        owner: state.dealer,
+        title: state.dealer === 'human' ? 'Your Hand (Dealer)' : "AI's Hand (Dealer)",
+        cards: state.dealer === 'human' ? state.humanHand : state.aiHand,
+        isCrib: false
+      },
+      {
+        owner: state.dealer,
+        title: state.dealer === 'human' ? 'Your Crib' : "AI's Crib",
+        cards: state.crib,
+        isCrib: true
+      }
+    ];
+
+    processNextShowItem();
+  }
+
+  function processNextShowItem() {
+    if (state.phase === 'GAME_OVER') return;
+    if (state.showQueue.length === 0) {
+      elModal.classList.remove('open');
+      state.dealer = state.dealer === 'human' ? 'ai' : 'human';
+      log(`--- End of Round. ${state.dealer === 'human' ? 'You are' : 'AI is'} now Dealer ---`);
+      startRound();
+      return;
+    }
+
+    const item = state.showQueue.shift();
+    const evalResult = scoreHand(item.cards, state.starter, item.isCrib);
+
+    elModalTitle.textContent = `${item.title}: ${evalResult.total} Points`;
+    elModalCards.innerHTML = '';
+    item.cards.forEach(c => elModalCards.appendChild(renderCardElement(c, { tag: item.isCrib ? 'Crib' : 'Hand' })));
+    elModalCards.appendChild(renderCardElement(state.starter, { tag: 'Starter' }));
+
+    elModalBreakdown.innerHTML = '';
+    if (evalResult.details.length === 0) {
+      const li = document.createElement('li');
+      li.innerHTML = '<span>No scoring combinations</span><strong>0 pts</strong>';
+      elModalBreakdown.appendChild(li);
+    } else {
+      evalResult.details.forEach(d => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${d.label}</span><strong>+${d.points}</strong>`;
+        elModalBreakdown.appendChild(li);
+      });
+    }
+
+    elModal.classList.add('open');
+
+    // Award points immediately (in exact cribbage order so first to 121 wins)
+    if (evalResult.total > 0) {
+      const won = addPoints(item.owner, evalResult.total, item.title);
+      if (won) {
+        elModalContinueBtn.textContent = 'Finish Game';
+        elModalContinueBtn.onclick = () => elModal.classList.remove('open');
+        return;
+      }
+    }
+
+    elModalContinueBtn.textContent = state.showQueue.length > 0 ? 'Next Hand' : 'Start Next Round';
+    elModalContinueBtn.onclick = () => processNextShowItem();
+  }
+
+  // ============================================================================
+  // 8. HUMAN HINT SYSTEM
+  // ============================================================================
+  function revealHint() {
+    if (state.phase === 'DISCARD') {
+      const best = evaluateBestDiscard(state.humanHand, state.dealer === 'human');
+      state.hintHighlightIds = new Set(best.discarded.map(c => c.id));
+      state.selectedIds = new Set(best.discarded.map(c => c.id));
+
+      const cribSign = state.dealer === 'human' ? '+' : '-';
+      elHintBox.innerHTML = `
+        <strong>Optimal Discard:</strong> Send <strong>${best.discarded.map(cardStr).join(' & ')}</strong> to the crib.<br>
+        Keeping <strong>${best.kept.map(cardStr).join(', ')}</strong> yields <strong>${best.expectedHand.toFixed(2)}</strong> avg hand pts 
+        (${cribSign}${best.expectedCrib.toFixed(2)} avg crib pts = <strong>${best.netEV.toFixed(2)} net EV</strong>).
+      `;
+      elHintBox.classList.add('visible');
+      updateActionButton();
+      renderAll();
+    } else if (state.phase === 'PEGGING' && state.turn === 'human') {
+      const seenIds = new Set([
+        ...state.humanHand.map(c => c.id),
+        ...state.crib.map(c => c.id), // includes human's 2 discarded cards
+        state.starter.id,
+        ...state.peggingHistory.map(c => c.id)
+      ]);
+      const best = evaluateBestPeggingMove(
+        state.humanPegHand,
+        state.peggingSequence,
+        state.peggingCount,
+        seenIds,
+        state.aiPegHand.length
+      );
+      if (!best) return;
+      state.hintHighlightIds = new Set([best.card.id]);
+
+      const reasonText = best.reasons.length > 0
+        ? `scores <strong>+${best.immediatePts} pts</strong> (${best.reasons.join(', ')})`
+        : `brings count to <strong>${best.newCount}</strong> with minimal opponent reply risk (~${best.oppExpectedReply.toFixed(2)} avg pts)`;
+
+      elHintBox.innerHTML = `
+        <strong>Optimal Pegging Play:</strong> Play <strong>${cardStr(best.card)}</strong> — ${reasonText}.
+      `;
+      elHintBox.classList.add('visible');
+      renderAll();
+    }
+  }
+
+  // ============================================================================
+  // 9. RENDERING
+  // ============================================================================
+  function renderCardElement(card, options = {}) {
+    const div = document.createElement('div');
+    if (options.faceDown) {
+      div.className = 'card card-back';
+      return div;
+    }
+
+    div.className = `card ${card.color}`;
+    if (options.clickable) div.classList.add('clickable');
+    if (options.selected) div.classList.add('selected');
+    if (options.hinted) div.classList.add('hinted');
+    if (options.disabled) div.classList.add('disabled');
+
+    div.innerHTML = `
+      <div class="card-corner">
+        <span>${card.label}</span>
+        <span>${card.suit}</span>
+      </div>
+      <div class="card-center">${card.suit}</div>
+      <div class="card-corner bottom">
+        <span>${card.label}</span>
+        <span>${card.suit}</span>
+      </div>
+    `;
+
+    if (options.tag) {
+      const tag = document.createElement('span');
+      tag.className = 'card-tag';
+      tag.textContent = options.tag;
+      div.appendChild(tag);
+    }
+
+    if (options.onClick) {
+      div.addEventListener('click', options.onClick);
+    }
+    return div;
+  }
+
+  function updateScoreboard() {
+    elHumanScore.textContent = state.humanScore;
+    elAiScore.textContent = state.aiScore;
+    elHumanPeg.style.width = `${Math.min(100, (state.humanScore / 121) * 100)}%`;
+    elAiPeg.style.width = `${Math.min(100, (state.aiScore / 121) * 100)}%`;
+    elDealerIndicator.textContent = `Dealer: ${state.dealer === 'human' ? 'You' : 'AI'}`;
+    elCribOwner.textContent = state.dealer === 'human' ? 'Yours' : "AI's";
+  }
+
+  function updateActionButton() {
+    if (state.phase === 'DISCARD') {
+      elActionBtn.textContent = `Discard Selected (${state.selectedIds.size}/2)`;
+      elActionBtn.disabled = state.selectedIds.size !== 2;
+    }
+  }
+
+  function renderAll() {
+    updateScoreboard();
+
+    // 1. AI Hand
+    elAiHand.innerHTML = '';
+    if (state.phase === 'DISCARD') {
+      state.aiHand.forEach(() => elAiHand.appendChild(renderCardElement(null, { faceDown: true })));
+      elAiHandStatus.textContent = '6 cards';
+    } else if (state.phase === 'PEGGING') {
+      state.aiPegHand.forEach(() => elAiHand.appendChild(renderCardElement(null, { faceDown: true })));
+      elAiHandStatus.textContent = `${state.aiPegHand.length} unplayed`;
+    } else {
+      state.aiHand.forEach(c => elAiHand.appendChild(renderCardElement(c)));
+      elAiHandStatus.textContent = 'Revealed';
+    }
+
+    // 2. Starter Card
+    elStarterZone.innerHTML = '';
+    if (state.starter) {
+      elStarterZone.appendChild(renderCardElement(state.starter, { tag: 'Cut' }));
+    } else {
+      elStarterZone.appendChild(renderCardElement(null, { faceDown: true }));
+    }
+
+    // 3. Pegging Pile
+    elPeggingCount.textContent = state.peggingCount;
+    elPeggingPile.innerHTML = '';
+    state.peggingSequence.forEach(c => {
+      elPeggingPile.appendChild(renderCardElement(c));
+    });
+
+    // 4. Crib Zone
+    elCribCount.textContent = `${state.crib.length}/4`;
+    elCribZone.innerHTML = '';
+    if (state.crib.length > 0) {
+      if (state.phase === 'SHOW' && state.showQueue.length === 0) {
+        state.crib.forEach(c => elCribZone.appendChild(renderCardElement(c)));
+      } else {
+        state.crib.forEach(() => elCribZone.appendChild(renderCardElement(null, { faceDown: true })));
+      }
+    }
+
+    // 5. Human Hand
+    elHumanHand.innerHTML = '';
+    if (state.phase === 'DISCARD') {
+      elHumanHandStatus.textContent = 'Select 2 cards to discard';
+      state.humanHand.forEach(c => {
+        elHumanHand.appendChild(renderCardElement(c, {
+          clickable: true,
+          selected: state.selectedIds.has(c.id),
+          hinted: state.hintHighlightIds.has(c.id),
+          onClick: () => toggleCardSelection(c.id)
+        }));
+      });
+    } else if (state.phase === 'PEGGING') {
+      elHumanHandStatus.textContent = `${state.humanPegHand.length} unplayed`;
+      const isHumanTurn = state.turn === 'human';
+      state.humanPegHand.forEach(c => {
+        const playable = isHumanTurn && (state.peggingCount + c.val <= 31);
+        elHumanHand.appendChild(renderCardElement(c, {
+          clickable: playable,
+          disabled: isHumanTurn && !playable,
+          hinted: state.hintHighlightIds.has(c.id),
+          onClick: playable ? () => playPeggingCard('human', c) : null
+        }));
+      });
+    } else {
+      elHumanHandStatus.textContent = 'Hand';
+      state.humanHand.forEach(c => elHumanHand.appendChild(renderCardElement(c)));
+    }
+  }
+
+  // Event Listeners
+  elActionBtn.addEventListener('click', () => {
+    if (state.phase === 'DISCARD') {
+      confirmHumanDiscard();
+    } else if (state.phase === 'PEGGING' && state.turn === 'human') {
+      handleHumanGo();
+    }
+  });
+
+  elHintBtn.addEventListener('click', revealHint);
+  elNewGameBtn.addEventListener('click', startNewGame);
+
+  // Start initial game
+  startNewGame();
+})();
+</script>
+</body>
+</html>
